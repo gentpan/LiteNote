@@ -14,6 +14,8 @@ use App\Enums\PostStatus;
 use App\Enums\Toggle;
 use App\Models\Category;
 use App\Models\Post;
+use App\Services\AiSummaryService;
+use App\Services\ImageUploadService;
 use App\Services\PostContentStorage;
 use App\Traits\HasFlashRedirect;
 use App\Traits\HasSlug;
@@ -117,6 +119,34 @@ class PostController
         Response::json([
             'html' => Markdown::parse((string)$request->input('markdown', '')),
         ]);
+    }
+
+    public function uploadImage(Request $request): never
+    {
+        $file = $request->files['image'] ?? null;
+        if (!is_array($file)) {
+            Response::json(['code' => 1, 'msg' => '请选择图片']);
+        }
+
+        try {
+            $data = ImageUploadService::upload($file, (string)$request->input('purpose', 'post'));
+            Response::json(['code' => 0, 'msg' => 'ok', 'data' => $data]);
+        } catch (\Throwable $e) {
+            Response::json(['code' => 1, 'msg' => $e->getMessage()]);
+        }
+    }
+
+    public function generateSummary(Request $request): never
+    {
+        try {
+            $result = AiSummaryService::summarize(
+                (string)$request->input('markdown', ''),
+                (string)$request->input('title', '')
+            );
+            Response::json(['code' => 0, 'msg' => 'ok', 'data' => $result]);
+        } catch (\Throwable $e) {
+            Response::json(['code' => 1, 'msg' => $e->getMessage()]);
+        }
     }
 
     public function importMarkdown(Request $request): never

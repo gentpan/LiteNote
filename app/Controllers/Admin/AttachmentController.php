@@ -10,6 +10,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
 use App\Models\Attachment;
+use App\Services\ImageUploadService;
 
 class AttachmentController
 {
@@ -45,6 +46,16 @@ class AttachmentController
         if ($file['size'] > Config::get('upload.max_size')) {
             Response::json(['code' => 1, 'msg' => '文件太大']);
         }
+
+        if (ImageUploadService::isImageUpload($file)) {
+            try {
+                $data = ImageUploadService::upload($file, 'attachment');
+                Response::json(['code' => 0, 'msg' => 'ok', 'data' => $data]);
+            } catch (\Throwable $e) {
+                Response::json(['code' => 1, 'msg' => $e->getMessage()]);
+            }
+        }
+
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         $allowed = Config::get('upload.allowed_ext', []);
         if (!in_array($ext, $allowed, true)) {

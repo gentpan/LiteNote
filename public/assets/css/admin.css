@@ -482,6 +482,31 @@ i { font-style: normal; }
     color: var(--c-text-soft);
     max-width: 760px;
 }
+.cover-upload {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.cover-upload input[type="text"] {
+    min-width: 0;
+    flex: 1;
+}
+.cover-upload .btn {
+    white-space: nowrap;
+}
+.cover-preview {
+    margin-top: 10px;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: #fff;
+}
+.cover-preview img {
+    display: block;
+    width: 100%;
+    max-height: 180px;
+    object-fit: cover;
+}
 .editor-head {
     display: flex;
     align-items: center;
@@ -531,6 +556,10 @@ i { font-style: normal; }
     color: var(--c-blue);
     border-color: var(--c-blue-soft);
     background: #fff;
+}
+.editor-toolbar button:disabled {
+    opacity: 0.7;
+    cursor: wait;
 }
 .editor-file input { display: none; }
 .editor-pane {
@@ -1064,4 +1093,3 @@ i { font-style: normal; }
 .preset-chip i { font-size: 13px; }
 
 .text-danger { color: var(--c-danger); }
-

@@ -65,8 +65,15 @@
                 <textarea name="summary" rows="2"></textarea>
             </div>
             <div class="form-group">
-                <label>封面 URL</label>
-                <input type="text" name="cover" placeholder="/assets/uploads/...">
+                <label>特色图</label>
+                <div class="cover-upload">
+                    <input type="text" name="cover" id="cover-url" placeholder="/assets/uploads/...">
+                    <button type="button" class="btn" id="cover-upload-btn"><i class="fa-regular fa-image"></i> 上传</button>
+                    <input type="file" id="cover-file" accept="image/*" hidden>
+                </div>
+                <div class="cover-preview hidden" id="cover-preview">
+                    <img src="" alt="特色图预览">
+                </div>
             </div>
         </div>
 
@@ -81,4 +88,8 @@
             <a href="/admin/posts" class="btn"><i class="fa-solid fa-xmark"></i> 取消</a>
         </div>
     </form>
+    <div class="markdown-editor hidden"
+         data-upload-url="/admin/posts/upload-image"
+         data-csrf="{{ $csrf }}"></div>
+    <script src="/assets/js/markdown-editor.js?v=20260603b"></script>
 @endsection

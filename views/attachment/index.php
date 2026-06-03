@@ -3,6 +3,7 @@
 @section('content')
     <div class="upload-area" id="upload-area">
         <p><i class="fa-solid fa-paperclip"></i> 拖拽文件到此处，或 <button type="button" id="upload-btn" class="btn btn-primary">点击上传</button></p>
+        <p class="field-hint">图片上传后会自动转换为 WebP；非图片文件保持原格式。</p>
         <input type="file" id="file-input" multiple style="display:none">
     </div>
 
