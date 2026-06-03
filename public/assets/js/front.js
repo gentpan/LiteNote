@@ -36,6 +36,7 @@
     // 图片懒加载 + Tokinx ViewImage 灯箱
     (function() {
         var images = Array.prototype.slice.call(document.querySelectorAll('.post-cover img, .post-content img, .page-content img, .shuoshuo-images img'));
+        var postCoverImages = Array.prototype.slice.call(document.querySelectorAll('.post-hero-card .post-cover img'));
 
         if (!images.length) {
             return;
@@ -88,12 +89,24 @@
                 img.setAttribute('loading', 'lazy');
             }
             img.setAttribute('decoding', 'async');
-            img.classList.add('view-image-target');
+            if (img.closest('.post-hero-card')) {
+                img.setAttribute('no-view', '');
+            } else {
+                img.classList.add('view-image-target');
+            }
             prepareImageLoading(img);
         });
 
+        postCoverImages.forEach(function(img) {
+            img.style.cursor = 'default';
+            img.setAttribute('draggable', 'false');
+            img.addEventListener('contextmenu', function(event) {
+                event.preventDefault();
+            });
+        });
+
         if (window.ViewImage) {
-            ViewImage.init('.post-cover img, .post-content img, .page-content img, .shuoshuo-images img');
+            ViewImage.init('.post-content img, .page-content img, .shuoshuo-images img');
         }
     })();
 

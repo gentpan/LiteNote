@@ -5,7 +5,7 @@
         @if($post->cover)
             <header class="post-hero-card">
                 <div class="post-cover">
-                    <img src="{{ $post->cover }}" alt="{{ $post->title }}" loading="lazy" decoding="async">
+                    <img src="{{ $post->cover }}" alt="{{ $post->title }}" loading="lazy" decoding="async" no-view draggable="false">
                 </div>
                 <div class="post-hero-title">
                     <h1 class="post-title">
