@@ -44,19 +44,6 @@ final class Markdown
         // 删除线
         $text = preg_replace('/~~(.+?)~~/s', '<del>$1</del>', $text);
 
-        // 链接
-        $text = preg_replace_callback(
-            '/\[(.+?)\]\((.+?)\)/',
-            function ($m) {
-                $url = $m[2];
-                if (!preg_match('/^https?:\/\//', $url) && !str_starts_with($url, '/') && !str_starts_with($url, '#')) {
-                    $url = '/' . ltrim($url, '/');
-                }
-                return '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="nofollow noopener">' . $m[1] . '</a>';
-            },
-            $text
-        );
-
         // 图片
         $text = preg_replace_callback(
             '/!\[(.+?)\]\((.+?)(?:\s+&quot;(.+?)&quot;)?\)/',
@@ -69,6 +56,19 @@ final class Markdown
                 }
                 $titleAttr = $title ? ' title="' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '"' : '';
                 return '<img src="' . htmlspecialchars($src, ENT_QUOTES, 'UTF-8') . '" alt="' . htmlspecialchars($alt, ENT_QUOTES, 'UTF-8') . '"' . $titleAttr . ' loading="lazy">';
+            },
+            $text
+        );
+
+        // 链接
+        $text = preg_replace_callback(
+            '/\[(.+?)\]\((.+?)\)/',
+            function ($m) {
+                $url = $m[2];
+                if (!preg_match('/^https?:\/\//', $url) && !str_starts_with($url, '/') && !str_starts_with($url, '#')) {
+                    $url = '/' . ltrim($url, '/');
+                }
+                return '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="nofollow noopener">' . $m[1] . '</a>';
             },
             $text
         );
