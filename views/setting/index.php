@@ -5,12 +5,14 @@
         <input type="hidden" name="_csrf" value="{{ $csrf }}">
         @foreach($grouped as $group => $items)
             <h3 class="settings-group-title">
-                @switch($group)
-                    @case('basic')    基础设置 @break
-                    @case('comment')  评论设置 @break
-                    @case('feature')  功能开关 @break
-                    @default          {{ $group }}
-                @endswitch
+                @php
+                    $groupLabels = [
+                        'basic' => '基础设置',
+                        'comment' => '评论设置',
+                        'feature' => '功能开关',
+                    ];
+                @endphp
+                {{ $groupLabels[$group] ?? $group }}
             </h3>
             <div class="settings-section">
                 @foreach($items as $item)
