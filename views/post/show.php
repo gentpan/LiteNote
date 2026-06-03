@@ -22,7 +22,7 @@
             </div>
         @endif
         <div class="post-content">
-            {!! $post->content !!}
+            {!! $post->html() !!}
         </div>
         {{-- 标签功能已下线,UI 隐藏(数据 + 代码保留) --}}
         {{-- 文章底部 author block 已删除(2026-06) --}}

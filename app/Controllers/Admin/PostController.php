@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace App\Controllers\Admin;
 
 use App\Core\Helper;
-use App\Core\Markdown;
 use App\Core\Request;
 use App\Core\Session;
 use App\Core\Validator;
@@ -13,6 +12,7 @@ use App\Enums\PostStatus;
 use App\Enums\Toggle;
 use App\Models\Category;
 use App\Models\Post;
+use App\Services\PostContentStorage;
 use App\Traits\HasFlashRedirect;
 use App\Traits\HasSlug;
 
@@ -106,7 +106,6 @@ class PostController
             'title'    => $request->input('title', ''),
             'slug'     => $request->input('slug', ''),
             'summary'  => $request->input('summary', ''),
-            'content'  => $request->input('content', ''),
             'markdown' => $request->input('markdown_content', ''),
             'cover'    => $request->input('cover', ''),
             'category_id' => $request->input('category_id', 0),
@@ -118,7 +117,6 @@ class PostController
 
         $validator = Validator::make($data, [
             'title'   => 'required|string|min:1|max:200',
-            'content' => 'required_if:markdown,',
             'status'  => 'in:' . implode(',', PostStatus::values()),
         ]);
 
@@ -127,14 +125,9 @@ class PostController
             $this->redirect($id ? "/admin/posts/{$id}/edit" : '/admin/posts/create');
         }
 
-        // Markdown 优先
-        $content = trim((string)$data['content']);
         $markdown = trim((string)$data['markdown']);
-        if ($markdown !== '') {
-            $content = Markdown::parse($markdown);
-        }
-        if ($content === '' && $markdown === '') {
-            $this->flashError('内容和 Markdown 至少填一个');
+        if ($markdown === '') {
+            $this->flashError('Markdown 内容不能为空');
             $this->redirect($id ? "/admin/posts/{$id}/edit" : '/admin/posts/create');
         }
 
@@ -147,12 +140,13 @@ class PostController
                 $this->flashError('文章不存在');
                 $this->redirect('/admin/posts');
             }
+            $oldSlug = (string)$post->slug;
             $post->fill([
                 'title'            => trim((string)$data['title']),
                 'slug'             => $slug,
                 'summary'          => trim((string)$data['summary']),
-                'content'          => $content,
-                'markdown_content' => $markdown,
+                'content'          => '',
+                'markdown_content' => '',
                 'cover'            => trim((string)$data['cover']),
                 'category_id'      => (int)$data['category_id'],
                 'is_top'           => Toggle::fromInput($data['is_top'])->value,
@@ -161,13 +155,15 @@ class PostController
                 'updated_at'       => $now,
             ]);
             $post->save();
+            PostContentStorage::rename($oldSlug, $slug);
+            PostContentStorage::write($slug, $markdown);
         } else {
             $post = new Post([
                 'title'            => trim((string)$data['title']),
                 'slug'             => $slug,
                 'summary'          => trim((string)$data['summary']),
-                'content'          => $content,
-                'markdown_content' => $markdown,
+                'content'          => '',
+                'markdown_content' => '',
                 'cover'            => trim((string)$data['cover']),
                 'category_id'      => (int)$data['category_id'],
                 'user_id'          => Session::get('admin_user.id', 1),
@@ -179,6 +175,7 @@ class PostController
                 'updated_at'       => $now,
             ]);
             $post->save();
+            PostContentStorage::write($slug, $markdown);
         }
 
         $this->flashSuccess($id ? '文章已更新' : '文章已发布');
@@ -189,12 +186,16 @@ class PostController
     {
         $id = (int)($params['id'] ?? 0);
         if ($id) {
+            $post = Post::find($id);
             $db = Post::db();
             try {
                 $db->beginTransaction();
                 $db->delete('comments', 'post_id = ?', [$id]);
                 $db->delete('posts', 'id = ?', [$id]);
                 $db->commit();
+                if ($post) {
+                    PostContentStorage::delete((string)$post->slug);
+                }
             } catch (\Throwable $e) {
                 $db->rollBack();
                 $this->flashError('删除失败: ' . $e->getMessage());
@@ -229,10 +230,14 @@ class PostController
 
         switch ($action) {
             case 'delete':
+                $posts = Post::whereInIds($ids);
                 $db->beginTransaction();
                 $db->query("DELETE FROM comments WHERE post_id IN ({$placeholders})", $ids);
                 $db->query("DELETE FROM posts WHERE id IN ({$placeholders})", $ids);
                 $db->commit();
+                foreach ($posts as $post) {
+                    PostContentStorage::delete((string)$post->slug);
+                }
                 $this->flashSuccess('已删除 ' . count($ids) . ' 篇文章');
                 break;
             case 'publish':

@@ -49,12 +49,8 @@
             </div>
         </div>
         <div class="form-group">
-            <label>内容（HTML）</label>
-            <textarea name="content" rows="12" id="editor-html">{{ $post->content ?? '' }}</textarea>
-        </div>
-        <div class="form-group">
-            <label>内容（Markdown，二选一，留空则使用上面 HTML）</label>
-            <textarea name="markdown_content" rows="12" id="editor-md" placeholder="# 标题\n\n内容...">{{ $post->markdown_content ?? '' }}</textarea>
+            <label>内容（Markdown）</label>
+            <textarea name="markdown_content" rows="18" id="editor-md" placeholder="# 标题\n\n内容..." required>{{ $post ? $post->markdown() : '' }}</textarea>
         </div>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> 保存</button>

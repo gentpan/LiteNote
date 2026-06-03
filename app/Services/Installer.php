@@ -265,17 +265,19 @@ final class Installer
         $exists = $db->fetchOne('SELECT id FROM posts LIMIT 1');
         if (!$exists) {
             $now = date('Y-m-d H:i:s');
+            $welcomeMarkdown = "欢迎使用 **LiteNote**！这是你的第一篇文章。\n\n你可以在后台编辑或删除它。";
             $db->insert('posts', [
                 'title'        => '欢迎使用我的博客',
                 'slug'         => 'welcome',
                 'summary'      => '这是第一篇示例文章',
-                'content'      => '<p>欢迎使用 <strong>LiteNote</strong>！这是你的第一篇文章。</p><p>你可以在后台编辑或删除它。</p>',
-                'markdown_content' => "欢迎使用 **LiteNote**！这是你的第一篇文章。\n\n你可以在后台编辑或删除它。",
+                'content'      => '',
+                'markdown_content' => '',
                 'category_id'  => 1,
                 'is_top'       => Toggle::On->value,
                 'status'       => PostStatus::Published->value,
                 'published_at' => $now,
             ]);
+            PostContentStorage::write('welcome', $welcomeMarkdown);
             $log[] = '示例文章创建完成';
         }
 
@@ -325,6 +327,38 @@ final class Installer
             } catch (\Throwable) {
                 // 列已存在,忽略
             }
+        }
+
+        self::migratePostMarkdownFiles($db, $log);
+    }
+
+    /**
+     * 2026-06:文章正文改为 Markdown 文件存储。
+     * 老库里如果还有 markdown_content,自动导出到 storage/posts/{slug}.md。
+     */
+    private static function migratePostMarkdownFiles(Database $db, array &$log): void
+    {
+        try {
+            $rows = $db->fetchAll(
+                "SELECT slug, markdown_content FROM posts WHERE markdown_content IS NOT NULL AND LENGTH(markdown_content) > 0"
+            );
+        } catch (\Throwable) {
+            return;
+        }
+
+        $count = 0;
+        foreach ($rows as $row) {
+            $slug = (string)($row['slug'] ?? '');
+            $markdown = (string)($row['markdown_content'] ?? '');
+            if ($slug === '' || $markdown === '' || PostContentStorage::read($slug) !== '') {
+                continue;
+            }
+            PostContentStorage::write($slug, $markdown);
+            $count++;
+        }
+
+        if ($count > 0) {
+            $log[] = "升级: 已导出 {$count} 篇文章 Markdown 文件";
         }
     }
 }

@@ -29,7 +29,7 @@ class FeedController
         $items = [];
         foreach ($rows as $r) {
             $post = new Post($r);
-            $content = $fullText ? (string)$post->content : (string)$post->summary_or_content;
+            $content = $fullText ? $post->html() : $post->summaryOrContent(300);
             $items[] = [
                 'title'       => $post->title,
                 'link'        => $baseUrl . '/post/' . $post->slug . '.html',

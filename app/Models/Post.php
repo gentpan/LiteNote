@@ -4,8 +4,10 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Core\Helper;
+use App\Core\Markdown;
 use App\Enums\PostStatus;
 use App\Enums\Toggle;
+use App\Services\PostContentStorage;
 use App\Traits\HasSlug;
 
 /**
@@ -83,21 +85,47 @@ final class Post extends Model
         if ($keyword === '' || mb_strlen($keyword) > 100) {
             return ['items' => [], 'total' => 0];
         }
-        $like = '%' . $keyword . '%';
         $published = PostStatus::Published->value;
-        $total = (int) self::db()->fetchColumn(
-            "SELECT COUNT(*) FROM posts WHERE status='{$published}' AND (title LIKE ? OR summary LIKE ? OR content LIKE ?)",
-            [$like, $like, $like]
-        );
-        $offset = max(0, ($page - 1) * $perPage);
         $rows = self::db()->fetchAll(
-            "SELECT * FROM posts WHERE status='{$published}' AND (title LIKE ? OR summary LIKE ? OR content LIKE ?) ORDER BY published_at DESC LIMIT {$perPage} OFFSET {$offset}",
-            [$like, $like, $like]
+            "SELECT * FROM posts WHERE status='{$published}' ORDER BY published_at DESC"
         );
+        $matches = [];
+        foreach ($rows as $row) {
+            $post = new self($row);
+            $haystacks = [
+                (string)$post->title,
+                (string)($post->summary ?? ''),
+                $post->markdown(),
+            ];
+            foreach ($haystacks as $haystack) {
+                if (mb_stripos($haystack, $keyword) !== false) {
+                    $matches[] = $post;
+                    break;
+                }
+            }
+        }
+
+        $offset = max(0, ($page - 1) * $perPage);
         return [
-            'items' => array_map(fn($r) => new self($r), $rows),
-            'total' => $total,
+            'items' => array_slice($matches, $offset, $perPage),
+            'total' => count($matches),
         ];
+    }
+
+    /**
+     * @param int[] $ids
+     * @return self[]
+     */
+    public static function whereInIds(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
+        if ($ids === []) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $rows = self::db()->fetchAll("SELECT * FROM posts WHERE id IN ({$placeholders})", $ids);
+        return array_map(fn($row) => new self($row), $rows);
     }
 
     public static function archives(): array
@@ -149,6 +177,24 @@ final class Post extends Model
         if (!empty($this->summary)) {
             return Helper::truncate($this->summary, $length);
         }
-        return Helper::truncate(strip_tags((string)$this->content), $length);
+        return Helper::truncate($this->markdown(), $length);
+    }
+
+    public function markdown(): string
+    {
+        $markdown = PostContentStorage::read((string)$this->slug);
+        if ($markdown !== '') {
+            return $markdown;
+        }
+        return (string)($this->markdown_content ?? '');
+    }
+
+    public function html(): string
+    {
+        $markdown = $this->markdown();
+        if ($markdown !== '') {
+            return Markdown::parse($markdown);
+        }
+        return (string)$this->content;
     }
 }
