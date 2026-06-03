@@ -33,6 +33,9 @@ $router->group('/admin', function ($r) {
     $r->get('/posts',                  [PostController::class, 'index']);
     $r->get('/posts/create',           [PostController::class, 'create']);
     $r->post('/posts/create',          [PostController::class, 'store'],  [\App\Middleware\CsrfMiddleware::class]);
+    $r->get('/posts/import',           [PostController::class, 'importForm']);
+    $r->post('/posts/import',          [PostController::class, 'importMarkdown'], [\App\Middleware\CsrfMiddleware::class]);
+    $r->post('/posts/preview',         [PostController::class, 'preview'], [\App\Middleware\CsrfMiddleware::class]);
     $r->get('/posts/{id}/edit',        [PostController::class, 'edit']);
     $r->post('/posts/{id}/edit',       [PostController::class, 'update'], [\App\Middleware\CsrfMiddleware::class]);
     $r->post('/posts/{id}/delete',     [PostController::class, 'destroy'],[\App\Middleware\CsrfMiddleware::class]);

@@ -48,13 +48,41 @@
                 <label><input type="checkbox" name="is_recommend" value="1" {{ ($post->is_recommend ?? 0) ? 'checked' : '' }}> 推荐</label>
             </div>
         </div>
-        <div class="form-group">
-            <label>内容（Markdown）</label>
-            <textarea name="markdown_content" rows="18" id="editor-md" placeholder="# 标题\n\n内容..." required>{{ $post ? $post->markdown() : '' }}</textarea>
+        <div class="form-group markdown-editor" data-preview-url="/admin/posts/preview" data-csrf="{{ $csrf }}">
+            <div class="editor-head">
+                <label>内容（Markdown）</label>
+                <div class="editor-stats">
+                    <span id="md-words">0 字</span>
+                    <span id="md-lines">0 行</span>
+                </div>
+            </div>
+            <div class="editor-toolbar" aria-label="Markdown 工具栏">
+                <button type="button" data-md="heading" title="标题"><i class="fa-solid fa-heading"></i></button>
+                <button type="button" data-md="bold" title="加粗"><i class="fa-solid fa-bold"></i></button>
+                <button type="button" data-md="italic" title="斜体"><i class="fa-solid fa-italic"></i></button>
+                <button type="button" data-md="quote" title="引用"><i class="fa-solid fa-quote-left"></i></button>
+                <button type="button" data-md="code" title="代码块"><i class="fa-solid fa-code"></i></button>
+                <button type="button" data-md="link" title="链接"><i class="fa-solid fa-link"></i></button>
+                <button type="button" data-md="image" title="图片"><i class="fa-regular fa-image"></i></button>
+                <button type="button" data-md="ul" title="无序列表"><i class="fa-solid fa-list-ul"></i></button>
+                <button type="button" data-md="ol" title="有序列表"><i class="fa-solid fa-list-ol"></i></button>
+                <button type="button" data-md="table" title="表格"><i class="fa-solid fa-table"></i></button>
+                <label class="editor-file" title="导入本地 .md">
+                    <i class="fa-solid fa-file-arrow-up"></i>
+                    <input type="file" id="md-file-picker" accept=".md,text/markdown,text/plain">
+                </label>
+            </div>
+            <div class="editor-pane">
+                <textarea name="markdown_content" rows="24" id="editor-md" placeholder="# 标题\n\n内容..." required>{{ $post ? $post->markdown() : '' }}</textarea>
+                <div class="editor-preview" id="md-preview">
+                    <div class="empty">预览会显示在这里</div>
+                </div>
+            </div>
         </div>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> 保存</button>
             <a href="/admin/posts" class="btn"><i class="fa-solid fa-xmark"></i> 取消</a>
         </div>
     </form>
+    <script src="/assets/js/markdown-editor.js?v=20260603"></script>
 @endsection

@@ -4,7 +4,9 @@ declare(strict_types=1);
 namespace App\Controllers\Admin;
 
 use App\Core\Helper;
+use App\Core\Markdown;
 use App\Core\Request;
+use App\Core\Response;
 use App\Core\Session;
 use App\Core\Validator;
 use App\Core\View;
@@ -69,6 +71,16 @@ class PostController
         return $this->form(null);
     }
 
+    public function importForm(): string
+    {
+        return View::render('post.import', [
+            'categories' => Category::allEnabled(),
+            'files'      => $this->availableImportFiles(),
+            'csrf'       => Session::csrfToken(),
+            'pageTitle'  => '导入 Markdown',
+        ], 'layouts.admin');
+    }
+
     public function edit(Request $request, array $params): string
     {
         $id = (int)($params['id'] ?? 0);
@@ -98,6 +110,80 @@ class PostController
     public function update(Request $request, array $params): never
     {
         $this->persist($request, (int)($params['id'] ?? 0));
+    }
+
+    public function preview(Request $request): never
+    {
+        Response::json([
+            'html' => Markdown::parse((string)$request->input('markdown', '')),
+        ]);
+    }
+
+    public function importMarkdown(Request $request): never
+    {
+        [$markdown, $sourceName] = $this->readImportMarkdown($request);
+        $markdown = trim($markdown);
+        if ($markdown === '') {
+            $this->flashError('请选择 Markdown 文件，或确认文件内容不为空');
+            $this->redirect('/admin/posts/import');
+        }
+
+        $frontMatter = $this->extractFrontMatter($markdown);
+        $body = $frontMatter['body'];
+        $meta = $frontMatter['meta'];
+
+        $title = trim((string)$request->input('title', ''));
+        if ($title === '') {
+            $title = (string)($meta['title'] ?? $this->inferTitle($body, $sourceName));
+        }
+        if ($title === '') {
+            $this->flashError('无法识别标题，请手动填写标题');
+            $this->redirect('/admin/posts/import');
+        }
+
+        $slug = Post::resolveSlug(
+            (string)$request->input('slug', $meta['slug'] ?? ''),
+            $title,
+            null
+        );
+        $status = (string)$request->input('status', $meta['status'] ?? PostStatus::Draft->value);
+        if (!in_array($status, PostStatus::values(), true)) {
+            $status = PostStatus::Draft->value;
+        }
+
+        $summary = trim((string)$request->input('summary', $meta['summary'] ?? ''));
+        $cover = trim((string)$request->input('cover', $meta['cover'] ?? ''));
+        $publishedAt = trim((string)($meta['published_at'] ?? ''));
+        if ($publishedAt === '') {
+            $publishedAt = date('Y-m-d H:i:s');
+        }
+        $now = date('Y-m-d H:i:s');
+
+        $post = new Post([
+            'title'            => $title,
+            'slug'             => $slug,
+            'summary'          => $summary,
+            'content'          => '',
+            'markdown_content' => '',
+            'cover'            => $cover,
+            'category_id'      => (int)$request->input('category_id', 0),
+            'user_id'          => Session::get('admin_user.id', 1),
+            'is_top'           => Toggle::fromInput($request->input('is_top', 0))->value,
+            'is_recommend'     => Toggle::fromInput($request->input('is_recommend', 0))->value,
+            'status'           => $status,
+            'published_at'     => $publishedAt,
+            'created_at'       => $now,
+            'updated_at'       => $now,
+        ]);
+        $post->save();
+        PostContentStorage::write($slug, $body);
+
+        if ((string)$request->input('delete_source', '') === '1') {
+            $this->deleteImportSource((string)$request->input('import_file', ''));
+        }
+
+        $this->flashSuccess('Markdown 已导入为文章：' . $title);
+        $this->redirect('/admin/posts/' . $post->id . '/edit');
     }
 
     private function persist(Request $request, ?int $id): never
@@ -271,5 +357,91 @@ class PostController
         }
 
         $this->redirect('/admin/posts');
+    }
+
+    private function importDir(): string
+    {
+        return dirname(__DIR__, 3) . '/storage/imports';
+    }
+
+    private function availableImportFiles(): array
+    {
+        $dir = $this->importDir();
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0775, true);
+        }
+        $files = glob($dir . '/*.md') ?: [];
+        sort($files);
+        return array_map(fn($path) => [
+            'name' => basename($path),
+            'size' => is_file($path) ? filesize($path) : 0,
+            'mtime' => is_file($path) ? filemtime($path) : 0,
+        ], $files);
+    }
+
+    /**
+     * @return array{0:string,1:string}
+     */
+    private function readImportMarkdown(Request $request): array
+    {
+        $upload = $request->files['md_file'] ?? null;
+        if (is_array($upload) && ($upload['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+            $name = (string)($upload['name'] ?? 'import.md');
+            if (!str_ends_with(strtolower($name), '.md')) {
+                $this->flashError('只能导入 .md 文件');
+                $this->redirect('/admin/posts/import');
+            }
+            return [(string)file_get_contents((string)$upload['tmp_name']), $name];
+        }
+
+        $selected = basename((string)$request->input('import_file', ''));
+        if ($selected !== '') {
+            $path = $this->importDir() . '/' . $selected;
+            if (is_file($path) && str_ends_with(strtolower($path), '.md')) {
+                return [(string)file_get_contents($path), $selected];
+            }
+        }
+
+        return ['', ''];
+    }
+
+    /**
+     * @return array{meta:array<string,string>, body:string}
+     */
+    private function extractFrontMatter(string $markdown): array
+    {
+        if (!preg_match('/^---\s*\n(.*?)\n---\s*\n(.*)$/s', $markdown, $matches)) {
+            return ['meta' => [], 'body' => $markdown];
+        }
+        $meta = [];
+        foreach (explode("\n", trim($matches[1])) as $line) {
+            if (!str_contains($line, ':')) {
+                continue;
+            }
+            [$key, $value] = explode(':', $line, 2);
+            $meta[trim($key)] = trim($value, " \t\n\r\0\x0B\"'");
+        }
+        return ['meta' => $meta, 'body' => trim($matches[2])];
+    }
+
+    private function inferTitle(string $markdown, string $sourceName): string
+    {
+        if (preg_match('/^#\s+(.+)$/m', $markdown, $matches)) {
+            return trim($matches[1]);
+        }
+        $name = pathinfo($sourceName, PATHINFO_FILENAME);
+        return trim(str_replace(['-', '_'], ' ', $name));
+    }
+
+    private function deleteImportSource(string $filename): void
+    {
+        $filename = basename($filename);
+        if ($filename === '') {
+            return;
+        }
+        $path = $this->importDir() . '/' . $filename;
+        if (is_file($path)) {
+            @unlink($path);
+        }
     }
 }

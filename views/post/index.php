@@ -3,6 +3,7 @@
 @section('content')
     <div class="admin-toolbar">
         <a class="btn btn-primary" href="/admin/posts/create"><i class="fa-solid fa-pen"></i> 写新文章</a>
+        <a class="btn" href="/admin/posts/import"><i class="fa-solid fa-file-import"></i> 导入 Markdown</a>
         <form method="get" class="admin-search">
             <input type="text" name="q" value="{{ $keyword }}" placeholder="搜索标题...">
             <select name="status">
