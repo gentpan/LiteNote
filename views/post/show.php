@@ -2,11 +2,30 @@
 
 @section('content')
     <article class="post-detail">
-        <header class="post-header">
-            <h1 class="post-title">
-                @if($post->is_top)<span class="badge badge-top">置顶</span>@endif
-                {{ $post->title }}
-            </h1>
+        @if($post->cover)
+            <header class="post-hero-card">
+                <div class="post-cover">
+                    <img src="{{ $post->cover }}" alt="{{ $post->title }}" loading="lazy" decoding="async">
+                </div>
+                <div class="post-hero-title">
+                    <h1 class="post-title">
+                        @if($post->is_top)<span class="badge badge-top">置顶</span>@endif
+                        {{ $post->title }}
+                    </h1>
+                </div>
+            </header>
+        @else
+            <header class="post-header">
+                <h1 class="post-title">
+                    @if($post->is_top)<span class="badge badge-top">置顶</span>@endif
+                    {{ $post->title }}
+                </h1>
+            </header>
+        @endif
+        <div class="post-content">
+            {!! $post->html() !!}
+        </div>
+        <footer class="post-footer-meta">
             <p class="post-meta">
                 <span><i class="fa-regular fa-calendar"></i> {!! \App\Core\Helper::timeTag($post->published_at) !!}</span>
                 @if($category)
@@ -15,15 +34,7 @@
                 <span><i class="fa-regular fa-eye"></i> {{ $post->views }} 浏览</span>
                 <span><i class="fa-regular fa-comments"></i> {{ count($comments) }} 评论</span>
             </p>
-        </header>
-        @if($post->cover)
-            <div class="post-cover">
-                <img src="{{ $post->cover }}" alt="{{ $post->title }}" loading="lazy" decoding="async">
-            </div>
-        @endif
-        <div class="post-content">
-            {!! $post->html() !!}
-        </div>
+        </footer>
         {{-- 标签功能已下线,UI 隐藏(数据 + 代码保留) --}}
         {{-- 文章底部 author block 已删除(2026-06) --}}
 
