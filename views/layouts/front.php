@@ -49,6 +49,7 @@
         </footer>
     </div>
 
+    <script src="/assets/js/view-image.min.js?v={{ @filemtime(__DIR__ . '/../../public/assets/js/view-image.min.js') ?: time() }}"></script>
     <script src="/assets/js/front.js?v={{ @filemtime(__DIR__ . '/../../public/assets/js/front.js') ?: time() }}"></script>
 </body>
 </html>
