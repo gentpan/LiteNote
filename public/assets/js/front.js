@@ -41,12 +41,55 @@
             return;
         }
 
+        function finishImageLoad(img, wrapper) {
+            img.classList.remove('is-image-loading');
+            wrapper.classList.remove('is-loading');
+            wrapper.classList.add('is-loaded');
+        }
+
+        function prepareImageLoading(img) {
+            if (img.dataset.imageLoadingReady === '1') {
+                return;
+            }
+
+            img.dataset.imageLoadingReady = '1';
+
+            var wrapper = img.parentElement && img.parentElement.classList.contains('image-loading-wrap')
+                ? img.parentElement
+                : document.createElement('span');
+
+            if (!wrapper.parentElement) {
+                wrapper.className = 'image-loading-wrap is-loading';
+                img.parentNode.insertBefore(wrapper, img);
+                wrapper.appendChild(img);
+            } else {
+                wrapper.classList.add('image-loading-wrap');
+            }
+
+            img.classList.add('is-image-loading');
+
+            if (img.complete) {
+                finishImageLoad(img, wrapper);
+                return;
+            }
+
+            img.addEventListener('load', function() {
+                finishImageLoad(img, wrapper);
+            }, { once: true });
+
+            img.addEventListener('error', function() {
+                finishImageLoad(img, wrapper);
+                wrapper.classList.add('is-error');
+            }, { once: true });
+        }
+
         images.forEach(function(img) {
             if (!img.hasAttribute('loading')) {
                 img.setAttribute('loading', 'lazy');
             }
             img.setAttribute('decoding', 'async');
             img.classList.add('view-image-target');
+            prepareImageLoading(img);
         });
 
         if (window.ViewImage) {

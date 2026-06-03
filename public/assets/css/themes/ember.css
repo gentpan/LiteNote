@@ -415,6 +415,59 @@ hr { margin: 28px 0; border: 0; border-top: 1px solid var(--c-border); }
 .post-content a:hover { border-bottom-color: var(--c-primary); }
 .post-content img { display: block; margin: 14px auto; }
 .view-image-target { cursor: zoom-in; }
+.image-loading-wrap {
+    position: relative;
+    display: block;
+    max-width: 100%;
+    width: 100%;
+    margin: 14px auto;
+    line-height: 0;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    background: linear-gradient(135deg, var(--c-card-soft), var(--c-card));
+}
+.post-cover .image-loading-wrap,
+.post-content .image-loading-wrap,
+.page-content .image-loading-wrap {
+    min-height: 180px;
+}
+.post-cover .image-loading-wrap {
+    min-height: 240px;
+}
+.image-loading-wrap img {
+    display: block;
+    margin: 0 auto;
+    transition: opacity .24s ease;
+}
+.image-loading-wrap.is-loading img {
+    opacity: 0;
+}
+.image-loading-wrap::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 28px;
+    height: 28px;
+    margin: -14px 0 0 -14px;
+    border-radius: 50%;
+    border: 3px solid var(--c-border);
+    border-top-color: var(--c-primary);
+    opacity: 0;
+    pointer-events: none;
+    animation: image-loading-spin .75s linear infinite;
+    transition: opacity .18s ease;
+}
+.image-loading-wrap.is-loading::after {
+    opacity: 1;
+}
+.image-loading-wrap.is-error::after {
+    animation: none;
+    border-top-color: var(--c-danger);
+}
+@keyframes image-loading-spin {
+    to { transform: rotate(360deg); }
+}
 
 /* ===========================================
    Comments
@@ -589,6 +642,14 @@ hr { margin: 28px 0; border: 0; border-top: 1px solid var(--c-border); }
     max-width: 140px;
     border-radius: var(--radius-sm);
     border: 1px solid var(--c-border);
+}
+.shuoshuo-images .image-loading-wrap {
+    width: 140px;
+    min-height: 96px;
+    margin: 0;
+}
+.shuoshuo-images .image-loading-wrap img {
+    margin: 0;
 }
 
 /* ===========================================
@@ -1048,6 +1109,10 @@ hr { margin: 28px 0; border: 0; border-top: 1px solid var(--c-border); }
     border-radius: var(--radius);
     border: 1px solid var(--c-border);
     cursor: zoom-in;
+}
+.shuoshuo-card .shuoshuo-images .image-loading-wrap {
+    width: 160px;
+    min-height: 120px;
 }
 .shuoshuo-card .shuoshuo-music {
     margin: 14px 0 10px;
