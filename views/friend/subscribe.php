@@ -2,16 +2,9 @@
 
 @section('content')
     <h2 class="section-title">订阅</h2>
-    <p class="section-desc">这里聚合友情链接的 RSS 文章更新；本站自己的文章 RSS 请使用 `/feed`。</p>
+    <p class="section-desc">这里展示友情链接的文章订阅更新；本站自己的文章 RSS 请使用 `/feed`。</p>
 
     <div class="subscribe-actions">
-        <a class="subscribe-card" href="/friends/feed">
-            <i class="fa-solid fa-users"></i>
-            <span>
-                <strong>友链聚合 RSS</strong>
-                <em>订阅友情链接的最新文章</em>
-            </span>
-        </a>
         <a class="subscribe-card" href="/feed">
             <i class="fa-solid fa-square-rss"></i>
             <span>
@@ -21,9 +14,12 @@
         </a>
     </div>
 
-    <h3 class="section-subtitle"><i class="fa-solid fa-rss"></i> 友情链接最新文章</h3>
+    <h3 class="section-subtitle"><i class="fa-solid fa-rss"></i> 友情链接订阅更新</h3>
+    @if(!empty($lastUpdated))
+        <p class="section-desc">后台每天自动抓取 4 次，上次更新：{!! \App\Core\Helper::timeTag(date('Y-m-d H:i:s', (int)$lastUpdated)) !!}</p>
+    @endif
     @if(empty($rssItems))
-        <p class="empty">还没有抓取到友链 RSS 更新。</p>
+        <p class="empty">还没有抓取到友链订阅更新，后台任务会自动刷新。</p>
     @else
         <ul class="friend-rss-list subscribe-feed-list">
             @foreach($rssItems as $item)

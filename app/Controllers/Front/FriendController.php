@@ -45,6 +45,7 @@ class FriendController
 
         return View::render('friend.subscribe', [
             'rssItems' => $rssItems,
+            'lastUpdated' => FriendRssService::lastUpdated(),
             'pageTitle' => '订阅',
             'categories' => Category::allEnabled(),
             'recentPosts' => Post::recent(5),

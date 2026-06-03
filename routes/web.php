@@ -51,7 +51,6 @@ $router->post('/comment/submit',  [CommentController::class, 'submit']);
 
 // RSS
 $router->get('/feed',             [FeedController::class, 'feed']);
-$router->get('/friends/feed',     [FeedController::class, 'friendsFeed']);
 
 // 统计图
 $router->get('/api/stats',        [StatController::class, 'summary']);

@@ -8,10 +8,8 @@ use App\Core\Helper;
 use App\Core\Response;
 use App\Core\Rss;
 use App\Enums\PostStatus;
-use App\Models\Link;
 use App\Models\Post;
 use App\Models\Setting;
-use App\Services\FriendRssService;
 
 class FeedController
 {
@@ -47,39 +45,6 @@ class FeedController
             'description' => $siteDesc,
             'language'    => 'zh-CN',
             'atom_link'   => $baseUrl . '/feed',
-        ], $items);
-
-        Response::xml($xml);
-    }
-
-    public function friendsFeed(): never
-    {
-        $siteTitle = Setting::get('title', 'LiteNote');
-        $siteDesc  = '友情链接最新文章聚合';
-        $baseUrl   = $this->baseUrl();
-
-        $items = [];
-        try {
-            $aggregated = FriendRssService::aggregate(5, 50);
-            foreach ($aggregated as $it) {
-                $items[] = [
-                    'title'       => '[' . ($it['friend_name'] ?? '') . '] ' . ($it['title'] ?? ''),
-                    'link'        => $it['link'] ?? '',
-                    'description' => $it['description'] ?? '',
-                    'content'     => $it['description'] ?? '',
-                    'pubDate'     => strtotime($it['pubDate'] ?? '') ?: time(),
-                ];
-            }
-        } catch (\Throwable) {
-            // ignore
-        }
-
-        $xml = Rss::feed([
-            'title'       => $siteTitle . ' - 友链聚合',
-            'link'        => $baseUrl . '/friends',
-            'description' => $siteDesc,
-            'language'    => 'zh-CN',
-            'atom_link'   => $baseUrl . '/friends/feed',
         ], $items);
 
         Response::xml($xml);

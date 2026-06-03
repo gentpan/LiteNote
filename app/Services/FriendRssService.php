@@ -11,22 +11,21 @@ namespace App\Services;
  */
 final class FriendRssService
 {
-    /** @var array<string, array> 缓存 */
-    private static array $cache = [];
+    private const CACHE_DIR = __DIR__ . '/../../storage/cache';
+    private const AGGREGATE_FILE = self::CACHE_DIR . '/friend_rss_aggregate.json';
 
     /**
      * 抓取单个友链的最新文章
      * @return array<int, array{title:string,link:string,pubDate:string,description:string}>
      */
-    public static function fetch(string $rssUrl, int $limit = 5, int $cacheTtl = 1800): array
+    public static function fetch(string $rssUrl, int $limit = 5, int $cacheTtl = 21600, bool $force = false): array
     {
         $key = md5($rssUrl);
-        $cacheFile = __DIR__ . '/../../storage/cache/friend_' . $key . '.json';
-        $cacheDir = dirname($cacheFile);
-        if (!is_dir($cacheDir)) @mkdir($cacheDir, 0775, true);
+        $cacheFile = self::CACHE_DIR . '/friend_' . $key . '.json';
+        self::ensureCacheDir();
 
         // 缓存命中
-        if (is_file($cacheFile) && (time() - filemtime($cacheFile)) < $cacheTtl) {
+        if (!$force && is_file($cacheFile) && (time() - filemtime($cacheFile)) < $cacheTtl) {
             $data = json_decode((string)file_get_contents($cacheFile), true);
             if (is_array($data)) return $data;
         }
@@ -53,7 +52,7 @@ final class FriendRssService
             // 网络错误
         }
 
-        @file_put_contents($cacheFile, json_encode($items, JSON_UNESCAPED_UNICODE));
+        @file_put_contents($cacheFile, json_encode($items, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
         return $items;
     }
 
@@ -102,15 +101,22 @@ final class FriendRssService
         return $items;
     }
 
-    /**
-     * 抓取所有有 RSS 的友链最新文章，合并按时间倒序
-     */
     public static function aggregate(int $perFriend = 3, int $totalLimit = 30): array
+    {
+        $payload = self::readAggregateCache();
+        $items = $payload['items'] ?? [];
+        if (!is_array($items)) {
+            return [];
+        }
+        return array_slice($items, 0, $totalLimit);
+    }
+
+    public static function refreshAggregate(int $perFriend = 5, int $totalLimit = 50): array
     {
         $all = [];
         $links = \App\Models\Link::withRss();
         foreach ($links as $link) {
-            $items = self::fetch($link->rss_url, $perFriend);
+            $items = self::fetch((string)$link->rss_url, $perFriend, 21600, true);
             foreach ($items as $item) {
                 $item['friend_name'] = $link->name;
                 $item['friend_url']  = $link->url;
@@ -123,6 +129,40 @@ final class FriendRssService
             $tb = strtotime($b['pubDate'] ?? '') ?: 0;
             return $tb <=> $ta;
         });
-        return array_slice($all, 0, $totalLimit);
+        $all = array_slice($all, 0, $totalLimit);
+        self::writeAggregateCache($all);
+        return $all;
+    }
+
+    public static function lastUpdated(): ?int
+    {
+        $payload = self::readAggregateCache();
+        $time = (int)($payload['updated_at'] ?? 0);
+        return $time > 0 ? $time : null;
+    }
+
+    private static function readAggregateCache(): array
+    {
+        if (!is_file(self::AGGREGATE_FILE)) {
+            return [];
+        }
+        $payload = json_decode((string)file_get_contents(self::AGGREGATE_FILE), true);
+        return is_array($payload) ? $payload : [];
+    }
+
+    private static function writeAggregateCache(array $items): void
+    {
+        self::ensureCacheDir();
+        @file_put_contents(self::AGGREGATE_FILE, json_encode([
+            'updated_at' => time(),
+            'items' => $items,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+    }
+
+    private static function ensureCacheDir(): void
+    {
+        if (!is_dir(self::CACHE_DIR)) {
+            @mkdir(self::CACHE_DIR, 0775, true);
+        }
     }
 }

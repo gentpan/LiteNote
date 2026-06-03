@@ -34,8 +34,6 @@
         <p class="rss-link">
             <i class="fa-solid fa-users"></i> <a href="/subscribe">查看友链订阅页</a>
             <span>·</span>
-            <a href="/friends/feed">友链聚合 RSS</a>
-            <span>·</span>
             <a href="/feed">本站 RSS</a>
         </p>
     @endif
