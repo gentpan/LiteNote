@@ -18,7 +18,7 @@
         </header>
         @if($post->cover)
             <div class="post-cover">
-                <img src="{{ $post->cover }}" alt="{{ $post->title }}">
+                <img src="{{ $post->cover }}" alt="{{ $post->title }}" loading="lazy" decoding="async">
             </div>
         @endif
         <div class="post-content">

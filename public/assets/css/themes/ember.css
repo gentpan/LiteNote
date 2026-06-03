@@ -414,6 +414,7 @@ hr { margin: 28px 0; border: 0; border-top: 1px solid var(--c-border); }
 .post-content a { color: var(--c-primary); border-bottom: 1px solid var(--c-primary-soft); }
 .post-content a:hover { border-bottom-color: var(--c-primary); }
 .post-content img { display: block; margin: 14px auto; }
+.view-image-target { cursor: zoom-in; }
 
 /* ===========================================
    Comments
@@ -1122,6 +1123,82 @@ hr { margin: 28px 0; border: 0; border-top: 1px solid var(--c-border); }
         max-width: 120px;
         max-height: 120px;
     }
+}
+
+/* ===========================================
+   ViewImage Lightbox
+   =========================================== */
+body.view-image-open { overflow: hidden; }
+.view-image-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 28px;
+    background: rgba(26, 26, 26, 0.88);
+    backdrop-filter: blur(10px);
+}
+.view-image-stage {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-width: min(1200px, 94vw);
+    max-height: 86vh;
+}
+.view-image-img {
+    display: block;
+    max-width: min(1200px, 94vw);
+    max-height: 86vh;
+    border-radius: var(--radius);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
+    opacity: 0;
+    transform: scale(0.985);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.view-image-overlay.is-loaded .view-image-img {
+    opacity: 1;
+    transform: scale(1);
+}
+.view-image-close {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    width: 42px;
+    height: 42px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: var(--radius-pill);
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    font-size: 28px;
+    line-height: 38px;
+    cursor: pointer;
+}
+.view-image-close:hover { background: rgba(255, 255, 255, 0.2); }
+.view-image-caption {
+    position: fixed;
+    left: 24px;
+    right: 24px;
+    bottom: 20px;
+    color: rgba(255, 255, 255, 0.86);
+    text-align: center;
+    font-size: 14px;
+    line-height: 1.6;
+}
+.view-image-spinner {
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(255, 255, 255, 0.22);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: view-image-spin 0.8s linear infinite;
+}
+.view-image-overlay.is-loaded .view-image-spinner { display: none; }
+@keyframes view-image-spin {
+    to { transform: rotate(360deg); }
 }
 
 /* Site Author (footer 上方全局) 已删除(2026-06) */
