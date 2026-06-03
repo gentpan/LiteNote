@@ -13,6 +13,7 @@ final class FriendRssService
 {
     private const CACHE_DIR = __DIR__ . '/../../storage/cache';
     private const AGGREGATE_FILE = self::CACHE_DIR . '/friend_rss_aggregate.json';
+    private const AGGREGATE_RETENTION_DAYS = 30;
 
     /**
      * 抓取单个友链的最新文章
@@ -104,7 +105,7 @@ final class FriendRssService
     public static function aggregate(int $perFriend = 3, int $totalLimit = 30): array
     {
         $payload = self::readAggregateCache();
-        $items = $payload['items'] ?? [];
+        $items = self::filterRetainedItems($payload['items'] ?? []);
         if (!is_array($items)) {
             return [];
         }
@@ -113,25 +114,35 @@ final class FriendRssService
 
     public static function refreshAggregate(int $perFriend = 5, int $totalLimit = 50): array
     {
-        $all = [];
+        $payload = self::readAggregateCache();
+        $merged = [];
+        foreach (self::filterRetainedItems($payload['items'] ?? []) as $item) {
+            $merged[self::itemKey($item)] = $item;
+        }
+
         $links = \App\Models\Link::withRss();
         foreach ($links as $link) {
             $items = self::fetch((string)$link->rss_url, $perFriend, 21600, true);
             foreach ($items as $item) {
                 $item['friend_name'] = $link->name;
                 $item['friend_url']  = $link->url;
-                $all[] = $item;
+                $item['fetched_at'] = time();
+                $item['published_ts'] = self::publishedTimestamp($item);
+                $merged[self::itemKey($item)] = $item;
             }
         }
-        // 按 pubDate 倒序
+
+        $all = self::filterRetainedItems(array_values($merged));
+
+        // 按发布时间倒序；没有发布时间时按抓取时间倒序
         usort($all, function ($a, $b) {
-            $ta = strtotime($a['pubDate'] ?? '') ?: 0;
-            $tb = strtotime($b['pubDate'] ?? '') ?: 0;
+            $ta = self::sortTimestamp($a);
+            $tb = self::sortTimestamp($b);
             return $tb <=> $ta;
         });
-        $all = array_slice($all, 0, $totalLimit);
+
         self::writeAggregateCache($all);
-        return $all;
+        return array_slice($all, 0, $totalLimit);
     }
 
     public static function lastUpdated(): ?int
@@ -155,8 +166,62 @@ final class FriendRssService
         self::ensureCacheDir();
         @file_put_contents(self::AGGREGATE_FILE, json_encode([
             'updated_at' => time(),
-            'items' => $items,
+            'updated_at_iso' => date(DATE_ATOM),
+            'retention_days' => self::AGGREGATE_RETENTION_DAYS,
+            'item_count' => count($items),
+            'items' => array_values($items),
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+    }
+
+    private static function filterRetainedItems(mixed $items): array
+    {
+        if (!is_array($items)) {
+            return [];
+        }
+
+        $cutoff = time() - self::AGGREGATE_RETENTION_DAYS * 86400;
+        $retained = [];
+        foreach ($items as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            if (!isset($item['published_ts'])) {
+                $item['published_ts'] = self::publishedTimestamp($item);
+            }
+            $timestamp = self::sortTimestamp($item);
+            if ($timestamp === 0 || $timestamp >= $cutoff) {
+                $retained[] = $item;
+            }
+        }
+        return $retained;
+    }
+
+    private static function itemKey(array $item): string
+    {
+        $link = trim((string)($item['link'] ?? ''));
+        if ($link !== '') {
+            return 'link:' . $link;
+        }
+        return 'hash:' . md5(
+            (string)($item['friend_name'] ?? '') . '|' .
+            (string)($item['title'] ?? '') . '|' .
+            (string)($item['pubDate'] ?? '')
+        );
+    }
+
+    private static function publishedTimestamp(array $item): int
+    {
+        $time = strtotime((string)($item['pubDate'] ?? ''));
+        return $time === false ? 0 : $time;
+    }
+
+    private static function sortTimestamp(array $item): int
+    {
+        $published = (int)($item['published_ts'] ?? 0);
+        if ($published > 0) {
+            return $published;
+        }
+        return (int)($item['fetched_at'] ?? 0);
     }
 
     private static function ensureCacheDir(): void
