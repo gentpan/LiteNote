@@ -8,7 +8,7 @@
                 {{ $post->title }}
             </h1>
             <p class="post-meta">
-                <span><i class="fa-regular fa-calendar"></i> {{ \App\Core\Helper::formatDate($post->published_at) }}</span>
+                <span><i class="fa-regular fa-calendar"></i> {!! \App\Core\Helper::timeTag($post->published_at) !!}</span>
                 @if($category)
                     <span><i class="fa-solid fa-folder"></i> <a href="/category/{{ $category->slug }}">{{ $category->name }}</a></span>
                 @endif
@@ -42,7 +42,7 @@
                         <div class="comment-body">
                             <div class="comment-meta">
                                 <strong>{{ $cmt->nickname }}</strong>
-                                <span>· {{ \App\Core\Helper::humanDate($cmt->created_at) }}</span>
+                                <span>· {!! \App\Core\Helper::timeTag($cmt->created_at) !!}</span>
                             </div>
                             <div class="comment-content">{{ $cmt->content }}</div>
                         </div>

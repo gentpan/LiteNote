@@ -15,7 +15,7 @@
                         <li class="comment-item">
                             <div class="comment-meta">
                                 <strong>{{ $cmt->nickname }}</strong>
-                                <span>· {{ \App\Core\Helper::humanDate($cmt->created_at) }}</span>
+                                <span>· {!! \App\Core\Helper::timeTag($cmt->created_at) !!}</span>
                             </div>
                             <div class="comment-content">{{ $cmt->content }}</div>
                         </li>

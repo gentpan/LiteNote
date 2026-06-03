@@ -12,7 +12,7 @@
                 <a href="/post/{{ $post->slug }}.html">{{ $post->title }}</a>
             </h3>
             <p class="post-meta">
-                <span><i class="fa-regular fa-calendar"></i> {{ \App\Core\Helper::humanDate($post->published_at) }}</span>
+                <span><i class="fa-regular fa-calendar"></i> {!! \App\Core\Helper::timeTag($post->published_at) !!}</span>
                 <span><i class="fa-regular fa-eye"></i> {{ $post->views }} 浏览</span>
             </p>
             <p class="post-excerpt">{{ $post->summaryOrContent(200) }}</p>

@@ -13,7 +13,7 @@
                     <a href="/post/{{ $post->slug }}.html">{{ $post->title }}</a>
                 </h3>
                 <p class="post-meta">
-                    <span><i class="fa-regular fa-calendar"></i> {{ \App\Core\Helper::humanDate($post->published_at) }}</span>
+                    <span><i class="fa-regular fa-calendar"></i> {!! \App\Core\Helper::timeTag($post->published_at) !!}</span>
                     @if($post->getCategory())
                         <span><i class="fa-solid fa-folder"></i> <a href="/category/{{ $post->getCategory()->slug }}">{{ $post->getCategory()->name }}</a></span>
                     @endif

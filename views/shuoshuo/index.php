@@ -15,7 +15,7 @@
                 <td><div class="comment-cell">{{ \App\Core\Helper::truncate($s->content, 100) }}</div></td>
                 <td>{{ $s->mood }}</td>
                 <td>{{ $s->is_public ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-xmark"></i>' }}</td>
-                <td>{{ \App\Core\Helper::humanDate($s->created_at) }}</td>
+                <td>{!! \App\Core\Helper::timeTag($s->created_at) !!}</td>
                 <td>
                     <a href="/admin/shuoshuo/{{ $s->id }}/edit">编辑</a>
                     <form method="post" action="/admin/shuoshuo/delete" style="display:inline" onsubmit="return confirm('确定删除？')">

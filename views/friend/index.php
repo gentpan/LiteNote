@@ -27,7 +27,7 @@
                 <li>
                     <a href="{{ $item['link'] }}" target="_blank" rel="nofollow noopener">{{ $item['title'] }}</a>
                     <span class="friend-source">- {{ $item['friend_name'] }}</span>
-                    <span class="friend-date">· {{ \App\Core\Helper::humanDate($item['pubDate'] ?? '') }}</span>
+                    <span class="friend-date">· {!! \App\Core\Helper::timeTag($item['pubDate'] ?? '') !!}</span>
                 </li>
             @endforeach
         </ul>

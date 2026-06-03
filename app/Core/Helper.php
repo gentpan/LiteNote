@@ -42,7 +42,7 @@ final class Helper
     public static function formatDate(string|int|\DateTimeInterface $date, string $format = 'Y-m-d H:i'): string
     {
         if (is_int($date)) {
-            $d = new \DateTime('@' . $date);
+            return date($format, $date);
         } elseif ($date instanceof \DateTimeInterface) {
             $d = $date;
         } else {
@@ -57,19 +57,40 @@ final class Helper
 
     public static function humanDate(string|int|\DateTimeInterface $date): string
     {
-        $ts = match (true) {
-            $date instanceof \DateTimeInterface => $date->getTimestamp(),
-            is_int($date)                      => $date,
-            default                            => strtotime((string)$date) ?: time(),
-        };
+        $ts = self::timestamp($date);
         $now = time();
-        $diff = $now - $ts;
+        $diff = max(0, $now - $ts);
         return match (true) {
             $diff < 60        => '刚刚',
             $diff < 3600      => floor($diff / 60) . ' 分钟前',
             $diff < 86400     => floor($diff / 3600) . ' 小时前',
-            $diff < 86400 * 7 => floor($diff / 86400) . ' 天前',
-            default           => self::formatDate($ts, 'Y-m-d'),
+            $diff < 86400 * 30 => floor($diff / 86400) . ' 天前',
+            $diff < 86400 * 365 => floor($diff / (86400 * 30)) . ' 个月前',
+            default           => floor($diff / (86400 * 365)) . ' 年前',
+        };
+    }
+
+    public static function fullDate(string|int|\DateTimeInterface $date): string
+    {
+        return self::formatDate(self::timestamp($date), 'Y-m-d H:i:s');
+    }
+
+    public static function timeTag(string|int|\DateTimeInterface $date, ?string $class = null): string
+    {
+        $ts = self::timestamp($date);
+        $full = self::formatDate($ts, 'Y-m-d H:i:s');
+        $classAttr = $class ? ' class="' . self::e($class) . '"' : '';
+        return '<time' . $classAttr . ' datetime="' . self::e(date('c', $ts)) . '" title="' . self::e($full) . '">'
+            . self::e(self::humanDate($ts))
+            . '</time>';
+    }
+
+    private static function timestamp(string|int|\DateTimeInterface $date): int
+    {
+        return match (true) {
+            $date instanceof \DateTimeInterface => $date->getTimestamp(),
+            is_int($date)                      => $date,
+            default                            => strtotime((string)$date) ?: time(),
         };
     }
 

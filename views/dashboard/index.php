@@ -38,7 +38,7 @@
                     <tr>
                         <td><a href="/post/{{ $p->slug }}.html" target="_blank">{{ $p->title }}</a></td>
                         <td><span class="status status-{{ $p->status }}">{{ $p->status }}</span></td>
-                        <td>{{ \App\Core\Helper::humanDate($p->created_at) }}</td>
+                        <td>{!! \App\Core\Helper::timeTag($p->created_at) !!}</td>
                     </tr>
                     @endforeach
                 </tbody>

@@ -55,7 +55,7 @@
                     <td>{{ $p->views }}</td>
                     <td>{{ $p->comments_count }}</td>
                     <td><span class="status status-{{ $p->status }}">{{ $p->status }}</span></td>
-                    <td>{{ \App\Core\Helper::humanDate($p->published_at) }}</td>
+                    <td>{!! \App\Core\Helper::timeTag($p->published_at) !!}</td>
                     <td>
                         <a href="/admin/posts/{{ $p->id }}/edit" class="link-btn"><i class="fa-solid fa-pen-to-square"></i> 编辑</a>
                         <form method="post" action="/admin/posts/{{ $p->id }}/delete" style="display:inline" onsubmit="return confirm('确定删除？')">

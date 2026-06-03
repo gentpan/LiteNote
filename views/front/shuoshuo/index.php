@@ -32,7 +32,7 @@
                     @if($s->mood)
                         <span class="mood">{!! $s->mood !!}</span>
                     @endif
-                    <span class="time">{{ \App\Core\Helper::humanDate($s->created_at) }}</span>
+                    <span class="time">{!! \App\Core\Helper::timeTag($s->created_at) !!}</span>
                 </div>
             </article>
         @endforeach

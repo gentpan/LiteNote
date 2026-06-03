@@ -35,7 +35,7 @@
                 </td>
                 <td><div class="comment-cell">{{ $c['content'] }}</div></td>
                 <td><span class="status status-{{ $c['status'] }}">{{ $c['status'] }}</span></td>
-                <td>{{ \App\Core\Helper::humanDate($c['created_at']) }}</td>
+                <td>{!! \App\Core\Helper::timeTag($c['created_at']) !!}</td>
                 <td>
                     @if($c['status'] !== 'approved')
                     <button type="button" class="link-btn approve-cmt" data-id="{{ $c['id'] }}">通过</button>
