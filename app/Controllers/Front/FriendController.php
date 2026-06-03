@@ -33,4 +33,21 @@ class FriendController
             'recentPosts' => Post::recent(5),
         ], 'layouts.front');
     }
+
+    public function subscribe(): string
+    {
+        $rssItems = [];
+        try {
+            $rssItems = FriendRssService::aggregate(5, 50);
+        } catch (\Throwable) {
+            $rssItems = [];
+        }
+
+        return View::render('friend.subscribe', [
+            'rssItems' => $rssItems,
+            'pageTitle' => '订阅',
+            'categories' => Category::allEnabled(),
+            'recentPosts' => Post::recent(5),
+        ], 'layouts.front');
+    }
 }

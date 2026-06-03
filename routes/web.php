@@ -44,6 +44,7 @@ $router->get('/search',           [SearchController::class, 'index']);
 
 // 友链页
 $router->get('/friends',          [FriendController::class, 'index']);
+$router->get('/subscribe',        [FriendController::class, 'subscribe']);
 
 // 评论提交
 $router->post('/comment/submit',  [CommentController::class, 'submit']);

@@ -29,6 +29,10 @@
                 <i class="fa-regular fa-comments"></i>
                 <span>说说</span>
             </a>
+            <a href="/subscribe" class="nav-item {{ ($pageTitle ?? '') === '订阅' ? 'active' : '' }}">
+                <i class="fa-solid fa-square-rss"></i>
+                <span>订阅</span>
+            </a>
         </div>
     </nav>
 
