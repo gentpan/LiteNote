@@ -8,6 +8,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
 use App\Models\User;
+use App\Services\ImageUploadService;
 
 class ProfileController
 {
@@ -60,6 +61,20 @@ class ProfileController
         Session::set('admin_user.nickname', $user->nickname);
         Session::flash('success', '资料已更新');
         Response::redirect('/admin/profile');
+    }
+
+    public function uploadAvatar(Request $request): never
+    {
+        if (empty($_FILES['avatar'])) {
+            Response::json(['code' => 1, 'msg' => '没有选择头像文件']);
+        }
+
+        try {
+            $data = ImageUploadService::upload($_FILES['avatar'], 'avatar');
+            Response::json(['code' => 0, 'msg' => 'ok', 'data' => $data]);
+        } catch (\Throwable $e) {
+            Response::json(['code' => 1, 'msg' => $e->getMessage()]);
+        }
     }
 
     public function password(Request $request): never

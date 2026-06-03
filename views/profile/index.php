@@ -10,7 +10,16 @@
                  src="{{ $user->getAvatarUrl(96) }}"
                  alt="{{ $user->nickname ?: $user->username }}"
                  width="96" height="96">
-            <p class="muted small">留空头像 URL 时,使用 Gravatar 头像(根据邮箱自动生成)。</p>
+            <div class="profile-avatar-tools">
+                <p class="muted small">支持上传头像或直接填写头像 URL。留空时使用 Gravatar 头像。</p>
+                <div class="avatar-upload-row">
+                    <input type="file" id="avatarUploadInput" accept="image/jpeg,image/png,image/gif,image/webp">
+                    <button type="button" class="btn" id="avatarUploadBtn">
+                        <i class="fa-solid fa-upload"></i> 上传头像
+                    </button>
+                    <span class="muted small" id="avatarUploadStatus"></span>
+                </div>
+            </div>
         </div>
 
         <div class="form-row">
@@ -29,7 +38,7 @@
                 <input type="email" name="email" value="{{ $user->email }}">
             </div>
             <div class="form-group">
-                <label>头像 URL <small class="muted">留空则用 Gravatar</small></label>
+                <label>头像 URL <small class="muted">可粘贴外部图片地址，也可由上传自动填入</small></label>
                 <input type="text" name="avatar" value="{{ $user->avatar }}" id="avatarInput" placeholder="https://... 或留空">
             </div>
         </div>
@@ -71,6 +80,51 @@
         var preview = document.getElementById('avatarPreview');
         if (v) preview.src = v;
     });
+
+    // 上传头像并自动填入头像 URL
+    (function () {
+        var input = document.getElementById('avatarUploadInput');
+        var btn = document.getElementById('avatarUploadBtn');
+        var status = document.getElementById('avatarUploadStatus');
+        var avatarInput = document.getElementById('avatarInput');
+        var preview = document.getElementById('avatarPreview');
+        var csrf = '{{ $csrf }}';
+        if (!input || !btn || !avatarInput || !preview) return;
+
+        btn.addEventListener('click', function () {
+            if (!input.files || !input.files[0]) {
+                status.textContent = '请先选择图片';
+                return;
+            }
+            var fd = new FormData();
+            fd.append('_csrf', csrf);
+            fd.append('avatar', input.files[0]);
+
+            btn.disabled = true;
+            status.textContent = '上传中...';
+            fetch('/admin/profile/avatar', {
+                method: 'POST',
+                body: fd,
+                credentials: 'same-origin'
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (res) {
+                    if (!res || res.code !== 0) {
+                        throw new Error((res && res.msg) || '上传失败');
+                    }
+                    var url = res.data.url;
+                    avatarInput.value = url;
+                    preview.src = url;
+                    status.textContent = '已上传，保存全部后生效';
+                })
+                .catch(function (err) {
+                    status.textContent = err.message || '上传失败';
+                })
+                .finally(function () {
+                    btn.disabled = false;
+                });
+        });
+    })();
 
     // ===== 社交链接动态行 =====
     (function () {

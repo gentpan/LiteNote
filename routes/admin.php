@@ -93,6 +93,7 @@ $router->group('/admin', function ($r) {
     // 个人资料
     $r->get('/profile',                [ProfileController::class, 'index']);
     $r->post('/profile',               [ProfileController::class, 'update'], [\App\Middleware\CsrfMiddleware::class]);
+    $r->post('/profile/avatar',        [ProfileController::class, 'uploadAvatar'], [\App\Middleware\CsrfMiddleware::class]);
     $r->post('/profile/password',      [ProfileController::class, 'password'],[\App\Middleware\CsrfMiddleware::class]);
 
 }, [AdminAuth::class]);

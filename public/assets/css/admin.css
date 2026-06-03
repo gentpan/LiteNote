@@ -412,7 +412,7 @@ i { font-style: normal; }
     font-weight: 500;
 }
 .admin-form input[type=text], .admin-form input[type=email], .admin-form input[type=url],
-.admin-form input[type=password], .admin-form input[type=number], .admin-form select,
+.admin-form input[type=password], .admin-form input[type=number], .admin-form input[type=file], .admin-form select,
 .admin-form textarea {
     width: 100%;
     padding: 9px 12px;
@@ -949,6 +949,21 @@ i { font-style: normal; }
     flex-shrink: 0;
 }
 .profile-header p { margin: 0; }
+.profile-avatar-tools {
+    flex: 1;
+    min-width: 220px;
+}
+.avatar-upload-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+.avatar-upload-row input[type=file] {
+    max-width: 260px;
+    background: #fff;
+}
 
 .muted { color: var(--c-text-muted); }
 .small { font-size: 12px; }
