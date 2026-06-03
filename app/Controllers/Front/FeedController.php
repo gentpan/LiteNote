@@ -19,7 +19,7 @@ class FeedController
     {
         $siteTitle = Setting::get('title', 'LiteNote');
         $siteDesc  = Setting::get('description', '');
-        $baseUrl   = rtrim(Config::get('app.url'), '/');
+        $baseUrl   = $this->baseUrl();
         $fullText  = (bool) Setting::get('rss_full_text', 1);
 
         $rows = Post::db()->fetchAll(
@@ -56,7 +56,7 @@ class FeedController
     {
         $siteTitle = Setting::get('title', 'LiteNote');
         $siteDesc  = '友情链接最新文章聚合';
-        $baseUrl   = rtrim(Config::get('app.url'), '/');
+        $baseUrl   = $this->baseUrl();
 
         $items = [];
         try {
@@ -83,5 +83,15 @@ class FeedController
         ], $items);
 
         Response::xml($xml);
+    }
+
+    private function baseUrl(): string
+    {
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        if ($host !== '') {
+            return (Helper::isHttps() ? 'https://' : 'http://') . $host;
+        }
+
+        return rtrim(Config::get('app.url'), '/');
     }
 }
