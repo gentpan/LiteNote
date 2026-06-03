@@ -14,12 +14,17 @@ final class AiSummaryService
             throw new \RuntimeException('正文为空，无法生成摘要');
         }
 
-        $apiKey = trim((string)(getenv('OPENAI_API_KEY') ?: Setting::get('openai_api_key', '')));
-        if ($apiKey !== '') {
+        $provider = strtolower(trim((string)Setting::get('ai_provider', 'deepseek')));
+        if ($provider === '') {
+            $provider = 'deepseek';
+        }
+
+        $providers = $provider === 'local' ? [] : array_values(array_unique([$provider, 'openai']));
+        foreach ($providers as $candidate) {
             try {
-                $summary = self::openAiSummary($apiKey, $plain, $title);
+                $summary = self::remoteSummary($candidate, $plain, $title);
                 if ($summary !== '') {
-                    return ['summary' => $summary, 'provider' => 'openai'];
+                    return ['summary' => $summary, 'provider' => $candidate];
                 }
             } catch (\Throwable) {
                 // 线上写作不能因为外部 API 失败而中断，自动降级到本地摘要。
@@ -29,12 +34,33 @@ final class AiSummaryService
         return ['summary' => self::localSummary($plain), 'provider' => 'local'];
     }
 
-    private static function openAiSummary(string $apiKey, string $plain, string $title): string
+    private static function remoteSummary(string $provider, string $plain, string $title): string
     {
-        $model = trim((string)(getenv('OPENAI_MODEL') ?: Setting::get('openai_model', 'gpt-4o-mini')));
-        if (!function_exists('curl_init')) {
+        return match ($provider) {
+            'openai' => self::chatSummary(
+                trim((string)(getenv('OPENAI_API_KEY') ?: Setting::get('openai_api_key', ''))),
+                trim((string)(getenv('OPENAI_MODEL') ?: Setting::get('openai_model', 'gpt-4o-mini'))),
+                'https://api.openai.com/v1',
+                $plain,
+                $title
+            ),
+            'deepseek' => self::chatSummary(
+                trim((string)(getenv('DEEPSEEK_API_KEY') ?: Setting::get('deepseek_api_key', ''))),
+                trim((string)(getenv('DEEPSEEK_MODEL') ?: Setting::get('deepseek_model', 'deepseek-v4-flash'))),
+                trim((string)(getenv('DEEPSEEK_BASE_URL') ?: Setting::get('deepseek_base_url', 'https://api.deepseek.com'))),
+                $plain,
+                $title
+            ),
+            default => '',
+        };
+    }
+
+    private static function chatSummary(string $apiKey, string $model, string $baseUrl, string $plain, string $title): string
+    {
+        if ($apiKey === '' || $model === '' || !function_exists('curl_init')) {
             return '';
         }
+        $baseUrl = rtrim($baseUrl, '/');
         $payload = [
             'model' => $model,
             'messages' => [
@@ -51,7 +77,7 @@ final class AiSummaryService
             'max_tokens' => 220,
         ];
 
-        $ch = curl_init('https://api.openai.com/v1/chat/completions');
+        $ch = curl_init($baseUrl . '/chat/completions');
         if (!$ch) {
             return '';
         }

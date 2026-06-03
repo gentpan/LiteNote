@@ -27,6 +27,26 @@ final class Setting extends Model
         return $grouped;
     }
 
+    public static function ensureDefaults(array $settings): void
+    {
+        foreach ($settings as $setting) {
+            if (!isset($setting['k'])) {
+                continue;
+            }
+            if (self::findBy('k', (string)$setting['k'])) {
+                continue;
+            }
+            self::db()->insert('settings', [
+                'k' => (string)$setting['k'],
+                'v' => (string)($setting['v'] ?? ''),
+                'type' => (string)($setting['type'] ?? 'string'),
+                'label' => (string)($setting['label'] ?? $setting['k']),
+                'group_name' => (string)($setting['group_name'] ?? 'basic'),
+                'sort' => (int)($setting['sort'] ?? 0),
+            ]);
+        }
+    }
+
     public static function get(string $key, mixed $default = null): mixed
     {
         $row = self::findBy('k', $key);

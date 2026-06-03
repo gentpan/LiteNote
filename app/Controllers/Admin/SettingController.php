@@ -13,6 +13,7 @@ class SettingController
 {
     public function index(): string
     {
+        $this->ensureAiSettings();
         $grouped = Setting::grouped();
         return View::render('setting.index', [
             'grouped' => $grouped,
@@ -37,5 +38,43 @@ class SettingController
         \App\Core\View::share('site', \App\Core\Config::get('site'));
         Session::flash('success', '设置已保存');
         Response::redirect('/admin/settings');
+    }
+
+    private function ensureAiSettings(): void
+    {
+        Setting::ensureDefaults([
+            [
+                'k' => 'ai_provider',
+                'v' => 'deepseek',
+                'type' => 'string',
+                'label' => 'AI 服务商',
+                'group_name' => 'ai',
+                'sort' => 1,
+            ],
+            [
+                'k' => 'deepseek_api_key',
+                'v' => '',
+                'type' => 'password',
+                'label' => 'DeepSeek API Key',
+                'group_name' => 'ai',
+                'sort' => 2,
+            ],
+            [
+                'k' => 'deepseek_model',
+                'v' => 'deepseek-v4-flash',
+                'type' => 'string',
+                'label' => 'DeepSeek 模型',
+                'group_name' => 'ai',
+                'sort' => 3,
+            ],
+            [
+                'k' => 'deepseek_base_url',
+                'v' => 'https://api.deepseek.com',
+                'type' => 'string',
+                'label' => 'DeepSeek Base URL',
+                'group_name' => 'ai',
+                'sort' => 4,
+            ],
+        ]);
     }
 }

@@ -7,6 +7,7 @@
             <h3 class="settings-group-title">
                 @php
                     $groupLabels = [
+                        'ai' => 'AI 设置',
                         'basic' => '基础设置',
                         'comment' => '评论设置',
                         'feature' => '功能开关',
@@ -19,7 +20,8 @@
                     @php
                         $val = (string)$item['v'];
                         // bool 字段判定:值是 '0'/'1' 或 type='bool'
-                        $isToggle = in_array($val, ['0', '1'], true) || ($item['type'] ?? '') === 'bool';
+                        $type = (string)($item['type'] ?? 'string');
+                        $isToggle = in_array($val, ['0', '1'], true) || $type === 'bool';
                     @endphp
                     <div class="form-group @if($isToggle) form-group-toggle @endif">
                         <label for="setting-{{ $item['k'] }}">
@@ -40,6 +42,8 @@
                             </div>
                         @elseif(mb_strlen($val) > 100 || str_contains($val, "\n"))
                             <textarea name="settings[{{ $item['k'] }}]" id="setting-{{ $item['k'] }}" rows="3">{{ $val }}</textarea>
+                        @elseif($type === 'password')
+                            <input type="password" name="settings[{{ $item['k'] }}]" id="setting-{{ $item['k'] }}" value="{{ $val }}" autocomplete="off">
                         @else
                             <input type="text" name="settings[{{ $item['k'] }}]" id="setting-{{ $item['k'] }}" value="{{ $val }}">
                         @endif

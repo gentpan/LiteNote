@@ -244,6 +244,10 @@ final class Installer
                 ['k' => 'friends_rss_enabled', 'v' => '1',               'label' => '友链 RSS',  'group_name' => 'feature', 'sort' => 2],
                 ['k' => 'rss_full_text',      'v' => '1',                'label' => 'RSS 全文',  'group_name' => 'feature', 'sort' => 3],
                 ['k' => 'site_icp',           'v' => '',                 'label' => 'ICP 备案',  'group_name' => 'basic',   'sort' => 7],
+                ['k' => 'ai_provider',        'v' => 'deepseek',         'label' => 'AI 服务商', 'group_name' => 'ai',      'sort' => 1],
+                ['k' => 'deepseek_api_key',   'v' => '',                 'type' => 'password', 'label' => 'DeepSeek API Key', 'group_name' => 'ai', 'sort' => 2],
+                ['k' => 'deepseek_model',     'v' => 'deepseek-v4-flash','label' => 'DeepSeek 模型', 'group_name' => 'ai',   'sort' => 3],
+                ['k' => 'deepseek_base_url',  'v' => 'https://api.deepseek.com', 'label' => 'DeepSeek Base URL', 'group_name' => 'ai', 'sort' => 4],
             ];
             foreach ($settings as $s) {
                 $db->insert('settings', $s);
