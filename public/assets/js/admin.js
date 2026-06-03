@@ -38,4 +38,26 @@
     document.querySelectorAll('form').forEach(function(form) {
         form.addEventListener('submit', function() { isDirty = false; });
     });
+
+    // 后台 flash toast
+    document.querySelectorAll('.admin-toast').forEach(function(toast) {
+        var close = function() {
+            if (toast.classList.contains('is-leaving')) {
+                return;
+            }
+            toast.classList.add('is-leaving');
+            setTimeout(function() {
+                toast.remove();
+            }, 180);
+        };
+
+        var timer = setTimeout(close, 3600);
+        var closeBtn = toast.querySelector('.admin-toast-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function() {
+                clearTimeout(timer);
+                close();
+            });
+        }
+    });
 })();

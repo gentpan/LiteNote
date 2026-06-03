@@ -53,13 +53,29 @@
                 <span><i class="fa-regular fa-user"></i> {{ $admin['nickname'] ?? $admin['username'] ?? 'Admin' }}</span>
             </div>
         </header>
+        @php
+            $__toastSuccess = \App\Core\Session::getFlash('success');
+            $__toastError = \App\Core\Session::getFlash('error');
+        @endphp
+        @if($__toastSuccess || $__toastError)
+            <div class="admin-toast-stack" aria-live="polite" aria-atomic="true">
+                @if($__toastSuccess)
+                    <div class="admin-toast admin-toast-success" role="status">
+                        <i class="fa-solid fa-check"></i>
+                        <span>{{ $__toastSuccess }}</span>
+                        <button type="button" class="admin-toast-close" aria-label="关闭提示"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                @endif
+                @if($__toastError)
+                    <div class="admin-toast admin-toast-error" role="alert">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>{{ $__toastError }}</span>
+                        <button type="button" class="admin-toast-close" aria-label="关闭提示"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                @endif
+            </div>
+        @endif
         <main class="admin-content">
-            @if(\App\Core\Session::getFlash('success'))
-                <div class="alert alert-success">{{ \App\Core\Session::getFlash('success') }}</div>
-            @endif
-            @if(\App\Core\Session::getFlash('error'))
-                <div class="alert alert-error">{{ \App\Core\Session::getFlash('error') }}</div>
-            @endif
             @yield('content')
         </main>
     </div>

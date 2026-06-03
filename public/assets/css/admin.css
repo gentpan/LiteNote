@@ -738,6 +738,70 @@ i { font-style: normal; }
 .alert-success { background: var(--c-success-bg); color: var(--c-success); border-color: #6EE7B7; }
 .alert-error   { background: var(--c-danger-bg);  color: var(--c-danger);  border-color: #FCA5A5; }
 .alert-info    { background: var(--c-info-bg);    color: var(--c-info);    border-color: #7DD3FC; }
+.admin-toast-stack {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    z-index: 2000;
+    width: min(360px, calc(100vw - 32px));
+    display: grid;
+    gap: 10px;
+    pointer-events: none;
+}
+.admin-toast {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr) 28px;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 12px 12px 14px;
+    border-radius: var(--radius);
+    border: 1px solid;
+    background: #fff;
+    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.18), var(--shadow-sm);
+    font-size: 14px;
+    line-height: 1.5;
+    animation: admin-toast-in .22s ease-out;
+    pointer-events: auto;
+}
+.admin-toast span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.admin-toast-success {
+    color: var(--c-success);
+    border-color: #6EE7B7;
+}
+.admin-toast-error {
+    color: var(--c-danger);
+    border-color: #FCA5A5;
+}
+.admin-toast-close {
+    width: 28px;
+    height: 28px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    opacity: .68;
+    transition: background .18s, opacity .18s;
+}
+.admin-toast-close:hover {
+    background: var(--c-bg-soft);
+    opacity: 1;
+}
+.admin-toast.is-leaving {
+    animation: admin-toast-out .18s ease-in forwards;
+}
+@keyframes admin-toast-in {
+    from { opacity: 0; transform: translateY(-8px) translateX(12px); }
+    to { opacity: 1; transform: translateY(0) translateX(0); }
+}
+@keyframes admin-toast-out {
+    to { opacity: 0; transform: translateY(-6px) translateX(12px); }
+}
 
 .empty { color: var(--c-text-muted); padding: 24px; text-align: center; }
 .hidden { display: none; }
