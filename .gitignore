@@ -63,6 +63,8 @@ litenote.bak.*
 # 截图 / 临时
 mavis-uploads/
 *.png.tmp
+avatar-*.png
+nav-avatar-*.png
 
 # PHP Composer(暂未用,留位)
 vendor/
