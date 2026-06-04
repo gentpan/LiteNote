@@ -54,7 +54,17 @@ final class Post extends Model
         $whereSql = implode(' AND ', $where);
         $total = (int) self::db()->fetchColumn("SELECT COUNT(*) FROM posts p WHERE {$whereSql}", $params);
 
+        $published = PostStatus::Published->value;
         $sql = "SELECT p.*,
+                  (
+                    SELECT COUNT(*)
+                    FROM posts pn
+                    WHERE pn.status = '{$published}'
+                      AND (
+                        pn.published_at < p.published_at
+                        OR (pn.published_at = p.published_at AND pn.id <= p.id)
+                      )
+                  ) as article_number,
                   c.name as __category_name, c.slug as __category_slug
                 FROM posts p
                 LEFT JOIN categories c ON p.category_id = c.id
