@@ -48,6 +48,7 @@
     --font-serif: "Source Han Serif CN VF", "Source Han Serif SC", "Noto Serif CJK SC", "Songti SC", "SimSun", serif;
     --font-display: "快看世界体", "Source Han Serif CN VF", "Source Han Serif SC", "Songti SC", serif;
     --font-mono: "SF Mono", "Menlo", "Consolas", "JetBrains Mono", monospace;
+    --content-width: 720px;
 }
 
 /* FontAwesome icon base */
@@ -240,6 +241,16 @@ hr { margin: 28px 0; border: 0; border-top: 1px solid var(--c-border); }
 /* ===========================================
    Post Card
    =========================================== */
+.feed-list,
+.post-list,
+.shuoshuo-list,
+.subscribe-page {
+    width: min(100%, var(--content-width));
+    max-width: var(--content-width);
+    margin-left: auto;
+    margin-right: auto;
+}
+
 .post-list { display: flex; flex-direction: column; gap: 20px; }
 
 .post-card {
@@ -321,8 +332,6 @@ a.post-card-icon { border-bottom: none; }
 }
 
 .feed-list {
-    max-width: 720px;
-    margin: 0 auto;
     display: flex;
     flex-direction: column;
     gap: 18px;
@@ -856,7 +865,7 @@ button.feed-action:disabled {
 /* ===========================================
    Shuoshuo
    =========================================== */
-.shuoshuo-list { max-width: 720px; margin: 0 auto; }
+.shuoshuo-list { margin: 0 auto; }
 .shuoshuo-item {
     background: var(--c-card);
     padding: 20px 24px;
@@ -1048,6 +1057,8 @@ button.feed-action:disabled {
     background: var(--c-card);
     color: var(--c-text);
     box-shadow: var(--shadow-sm);
+    box-sizing: border-box;
+    width: 100%;
 }
 .subscribe-card:hover {
     border-color: var(--c-blue-light);
@@ -1076,14 +1087,41 @@ button.feed-action:disabled {
     color: var(--c-text-muted);
     font-style: normal;
 }
-.subscribe-feed-list li { align-items: flex-start; }
-.subscribe-feed-list a { font-weight: 600; }
-.subscribe-feed-list p {
-    flex-basis: 100%;
-    margin: 2px 0 0;
+.subscribe-feed-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin: 18px 0 0;
+}
+.subscribe-feed-card {
+    background: var(--c-card);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-lg);
+    padding: 22px 24px;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+.subscribe-feed-card:hover {
+    border-color: var(--c-blue-light);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+.subscribe-feed-title {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.45;
+}
+.subscribe-feed-title a {
+    color: var(--c-text);
+    border-bottom: none;
+    font-weight: 700;
+}
+.subscribe-feed-title a:hover { color: var(--c-blue); }
+.subscribe-feed-excerpt {
+    margin: 10px 0 0;
     color: var(--c-text-soft);
-    font-size: 13px;
-    line-height: 1.6;
+    font-size: 14px;
+    line-height: 1.7;
 }
 
 /* ===========================================
@@ -1342,17 +1380,16 @@ button.feed-action:disabled {
 /* ---------- Single Column Layout ---------- */
 .home-layout {
     display: block;
-    max-width: 720px;
+    max-width: var(--content-width);
     margin: 0 auto;
 }
 .container {
-    max-width: 800px;
+    max-width: calc(var(--content-width) + 40px);
     padding: 90px 20px 60px;     /* padding-top 90px 给 fixed nav 留位 */
 }
 
 /* ---------- Shuoshuo Card ---------- */
 .shuoshuo-list {
-    max-width: 720px;
     margin: 0 auto;
 }
 .shuoshuo-card {
