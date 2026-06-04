@@ -17,6 +17,7 @@ use App\Controllers\Admin\ShuoshuoController;
 use App\Controllers\Admin\StatController;
 use App\Controllers\Admin\SettingController;
 use App\Controllers\Admin\ProfileController;
+use App\Controllers\Admin\PasskeyController;
 use App\Middleware\AdminAuth;
 use App\Middleware\CsrfMiddleware;
 
@@ -95,5 +96,11 @@ $router->group('/admin', function ($r) {
     $r->post('/profile',               [ProfileController::class, 'update'], [\App\Middleware\CsrfMiddleware::class]);
     $r->post('/profile/avatar',        [ProfileController::class, 'uploadAvatar'], [\App\Middleware\CsrfMiddleware::class]);
     $r->post('/profile/password',      [ProfileController::class, 'password'],[\App\Middleware\CsrfMiddleware::class]);
+
+    // Passkey
+    $r->get('/passkey/register-options',  [PasskeyController::class, 'registerOptions']);
+    $r->post('/passkey/register',         [PasskeyController::class, 'register'], [\App\Middleware\CsrfMiddleware::class]);
+    $r->get('/passkey/login-options',     [PasskeyController::class, 'loginOptions']);
+    $r->post('/passkey/login',            [PasskeyController::class, 'login'], [\App\Middleware\CsrfMiddleware::class]);
 
 }, [AdminAuth::class]);
