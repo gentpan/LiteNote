@@ -349,6 +349,49 @@ a.post-card-icon { border-bottom: none; }
     box-shadow: var(--shadow-md);
     transform: translateY(-1px);
 }
+.feed-post-card {
+    display: flex;
+    align-items: stretch;
+    gap: 18px;
+}
+.feed-post-main {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.feed-post-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin: 0 0 10px;
+    color: var(--c-text-muted);
+    font-family: var(--font-mono);
+    font-size: 12px;
+}
+.feed-post-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+}
+.feed-post-type span:first-child {
+    color: var(--c-primary);
+    font-weight: 700;
+}
+.feed-post-dot { color: var(--c-text-faint); }
+.feed-post-type a {
+    color: var(--c-text-muted);
+    border-bottom: none;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.feed-post-type a:hover { color: var(--c-primary); }
+.feed-post-time {
+    flex: 0 0 auto;
+    text-align: right;
+}
 .feed-card-kicker {
     display: flex;
     align-items: center;
@@ -376,6 +419,51 @@ a.post-card-icon { border-bottom: none; }
     margin: 0;
     color: var(--c-text-soft);
     line-height: 1.8;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.feed-post-thumb {
+    flex: 0 0 96px;
+    width: 96px;
+    min-height: 96px;
+    align-self: stretch;
+    border: 1px solid var(--c-border-soft);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--c-card-soft);
+    box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.03);
+}
+.feed-post-thumb img {
+    width: 100%;
+    height: 100%;
+    min-height: 96px;
+    display: block;
+    object-fit: cover;
+    border-radius: 0;
+    transition: transform 0.25s ease;
+}
+.feed-post-card:hover .feed-post-thumb img { transform: scale(1.04); }
+@media (max-width: 560px) {
+    .feed-post-card {
+        gap: 12px;
+        padding: 20px;
+    }
+    .feed-post-meta {
+        gap: 8px;
+    }
+    .feed-post-title {
+        font-size: 19px;
+    }
+    .feed-post-thumb {
+        flex-basis: 76px;
+        width: 76px;
+        min-height: 76px;
+    }
+    .feed-post-thumb img {
+        min-height: 76px;
+    }
 }
 .feed-actions {
     display: flex;

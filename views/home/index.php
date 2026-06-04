@@ -12,21 +12,27 @@
             @if($feed['type'] === 'post')
                 @php $category = $item->getCategory(); @endphp
                 <article class="feed-card feed-post-card">
-                    <div class="feed-card-kicker">
-                        <span>文章</span>
-                        <time>{!! \App\Core\Helper::timeTag($item->published_at) !!}</time>
+                    <div class="feed-post-main">
+                        <div class="feed-post-meta">
+                            <div class="feed-post-type">
+                                <span>文章</span>
+                                @if($category)
+                                    <span class="feed-post-dot">·</span>
+                                    <a href="/category/{{ $category->slug }}">{{ $category->name }}</a>
+                                @endif
+                            </div>
+                            <span class="feed-post-time">{!! \App\Core\Helper::timeTag($item->published_at) !!}</span>
+                        </div>
+                        <h2 class="feed-post-title">
+                            <a href="/post/{{ $item->slug }}.html">{{ $item->title }}</a>
+                        </h2>
+                        <p class="feed-post-excerpt">{{ $item->summaryOrContent(180) }}</p>
                     </div>
-                    <h2 class="feed-post-title">
-                        <a href="/post/{{ $item->slug }}.html">{{ $item->title }}</a>
-                    </h2>
-                    <p class="feed-post-excerpt">{{ $item->summaryOrContent(140) }}</p>
-                    <div class="feed-actions">
-                        @if($category)
-                            <a href="/category/{{ $category->slug }}" class="feed-action"><i class="fa-solid fa-folder"></i>{{ $category->name }}</a>
-                        @endif
-                        <span class="feed-action"><i class="fa-regular fa-eye"></i>{{ $item->views }}</span>
-                        <span class="feed-action"><i class="fa-regular fa-comments"></i>{{ $item->comments_count }}</span>
-                    </div>
+                    @if($item->cover)
+                        <a class="feed-post-thumb" href="/post/{{ $item->slug }}.html" aria-label="{{ $item->title }}">
+                            <img src="{{ $item->cover }}" alt="{{ $item->title }}" loading="lazy" decoding="async">
+                        </a>
+                    @endif
                 </article>
             @else
                 @php
