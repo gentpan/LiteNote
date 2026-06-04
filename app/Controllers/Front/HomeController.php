@@ -8,7 +8,7 @@ use App\Core\View;
 use App\Models\Category;
 use App\Models\Comment;
 use App\Models\Post;
-use App\Models\Shuoshuo;
+use App\Models\Talk;
 use App\Services\Gravatar;
 use App\Services\Installer;
 
@@ -42,7 +42,7 @@ class HomeController
         }
 
         $posts = Post::paginatePublished(1, 8)['items'];
-        $shuoshuo = Shuoshuo::recentPublic(8);
+        $talk = Talk::recentPublic(8);
 
         $feedItems = [];
         foreach ($posts as $post) {
@@ -52,10 +52,10 @@ class HomeController
                 'item' => $post,
             ];
         }
-        foreach ($shuoshuo as $item) {
-            $item->setRelation('comments', Comment::forShuoshuo((int)$item->id));
+        foreach ($talk as $item) {
+            $item->setRelation('comments', Comment::forTalk((int)$item->id));
             $feedItems[] = [
-                'type' => 'shuoshuo',
+                'type' => 'talk',
                 'time' => strtotime((string)$item->created_at) ?: 0,
                 'item' => $item,
             ];
@@ -80,7 +80,7 @@ class HomeController
             ]);
         }
 
-        $perPage = (int) \App\Core\Config::get('pagination.front_per_page', 10);
+        $perPage = 5;
         $page = max(1, (int)($_GET['page'] ?? 1));
         ['items' => $posts, 'total' => $total] = Post::paginatePublished($page, $perPage);
 
@@ -89,7 +89,7 @@ class HomeController
             'total'     => $total,
             'page'      => $page,
             'perPage'   => $perPage,
-            'paginator' => Helper::paginate($page, $total, $perPage, Helper::url('/posts')),
+            'paginator' => Helper::loadMore($page, $total, $perPage, Helper::url('/posts')),
             'pageTitle' => '文章',
             'activeNav' => 'posts',
         ]);

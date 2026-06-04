@@ -139,7 +139,7 @@ final class Installer
             post_id INTEGER DEFAULT 0,
             page_id INTEGER DEFAULT 0,
             parent_id INTEGER DEFAULT 0,
-            shuoshuo_id INTEGER DEFAULT 0,
+            talk_id INTEGER DEFAULT 0,
             nickname VARCHAR(50) NOT NULL,
             email VARCHAR(100),
             website VARCHAR(255),
@@ -166,9 +166,9 @@ final class Installer
         )
         SQL);
 
-        // 说说
+        // 滔客
         $db->query(<<<SQL
-        CREATE TABLE IF NOT EXISTS shuoshuo (
+        CREATE TABLE IF NOT EXISTS talk (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             content TEXT NOT NULL,
             images TEXT,
@@ -213,7 +213,7 @@ final class Installer
         $db->query('CREATE INDEX IF NOT EXISTS idx_posts_category ON posts(category_id)');
         $db->query('CREATE INDEX IF NOT EXISTS idx_comments_post ON comments(post_id)');
         try {
-            $db->query('CREATE INDEX IF NOT EXISTS idx_comments_shuoshuo ON comments(shuoshuo_id)');
+            $db->query('CREATE INDEX IF NOT EXISTS idx_comments_talk ON comments(talk_id)');
         } catch (\Throwable) {
             // 老库会在 selfUpgrade() 加列后再建一次索引
         }
@@ -248,7 +248,7 @@ final class Installer
                 ['k' => 'theme',         'v' => 'default',              'label' => '主题',     'group_name' => 'basic',   'sort' => 6],
                 ['k' => 'comment_need_audit', 'v' => '1',                'label' => '评论需审核','group_name' => 'comment', 'sort' => 1],
                 ['k' => 'comment_captcha',    'v' => '0',                'label' => '评论验证码','group_name' => 'comment', 'sort' => 2],
-                ['k' => 'shuoshuo_enabled',   'v' => '1',                'label' => '开启说说',  'group_name' => 'feature', 'sort' => 1],
+                ['k' => 'talk_enabled',   'v' => '1',                'label' => '开启滔客',  'group_name' => 'feature', 'sort' => 1],
                 ['k' => 'friends_rss_enabled', 'v' => '1',               'label' => '友链 RSS',  'group_name' => 'feature', 'sort' => 2],
                 ['k' => 'rss_full_text',      'v' => '1',                'label' => 'RSS 全文',  'group_name' => 'feature', 'sort' => 3],
                 ['k' => 'site_icp',           'v' => '',                 'label' => 'ICP 备案',  'group_name' => 'basic',   'sort' => 7],
@@ -331,10 +331,18 @@ final class Installer
     {
         $upgrades = [
             ['users',    'socials', 'TEXT'],         // 2026-06: 个人资料社交链接
-            ['comments', 'shuoshuo_id', 'INTEGER DEFAULT 0'],
-            ['shuoshuo', 'music', 'TEXT'],
-            ['shuoshuo', 'likes_count', 'INTEGER DEFAULT 0'],
-            ['shuoshuo', 'comments_count', 'INTEGER DEFAULT 0'],
+            ['users',    'reset_token', 'VARCHAR(64)'],   // 2026-06: 密码找回 token(sha256)
+            ['users',    'reset_expires_at', 'DATETIME'], // 2026-06: 密码找回 token 过期时间
+            ['categories', 'icon', 'VARCHAR(64)'],          // 2026-06: 分类菜单图标(fontawesome)
+            ['categories', 'show_in_nav', 'INTEGER DEFAULT 1'], // 2026-06: 是否在导航菜单显示
+            ['categories', 'color', 'INTEGER'],             // 2026-06: 分类配色 0-5(空则按 id 取色)
+            ['comments', 'talk_id', 'INTEGER DEFAULT 0'],
+            ['talk', 'music', 'TEXT'],
+            ['talk', 'music_cover', 'VARCHAR(255)'],     // 2026-06: 音乐卡片封面
+            ['talk', 'music_title', 'VARCHAR(120)'],     // 2026-06: 音乐卡片标题
+            ['talk', 'music_artist', 'VARCHAR(120)'],    // 2026-06: 音乐卡片歌手
+            ['talk', 'likes_count', 'INTEGER DEFAULT 0'],
+            ['talk', 'comments_count', 'INTEGER DEFAULT 0'],
         ];
         foreach ($upgrades as [$table, $col, $type]) {
             try {
@@ -346,7 +354,7 @@ final class Installer
         }
 
         try {
-            $db->query('CREATE INDEX IF NOT EXISTS idx_comments_shuoshuo ON comments(shuoshuo_id)');
+            $db->query('CREATE INDEX IF NOT EXISTS idx_comments_talk ON comments(talk_id)');
         } catch (\Throwable) {
             // ignore
         }

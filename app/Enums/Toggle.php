@@ -10,7 +10,7 @@ namespace App\Enums;
  *   - is_top, is_recommend (Post)
  *   - is_nav              (Page)
  *   - is_enabled          (Link)
- *   - is_public           (Shuoshuo)
+ *   - is_public           (Talk)
  *
  * 设计:backed int,->value 即 0/1,保持与现有 schema 兼容。
  * 注意 MySQL 也有 boolean 别名 = tinyint(1),但当前表用 INTEGER,所以 int 最稳。

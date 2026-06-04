@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $pageTitle ?? '后台' }} - LiteNote Admin</title>
-    <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="https://static.bluecdn.com/libs/fontawesome/7.2.0/css/all.min.css">
     <link rel="stylesheet" href="/assets/css/admin.css?v={{ @filemtime(__DIR__ . '/../../public/assets/css/admin.css') ?: time() }}">
 </head>
 <body class="admin-body">
@@ -32,7 +32,7 @@
             <a href="/admin/posts"><i class="fa-regular fa-file-lines"></i> 文章</a>
             <a href="/admin/pages"><i class="fa-regular fa-bookmark"></i> 页面</a>
             <a href="/admin/categories"><i class="fa-solid fa-folder"></i> 分类</a>
-            <a href="/admin/shuoshuo"><i class="fa-regular fa-comments"></i> 说说</a>
+            <a href="/admin/talk"><i class="fa-regular fa-comments"></i> 滔客</a>
             <a href="/admin/comments"><i class="fa-regular fa-comment-dots"></i> 评论</a>
             <div class="menu-group">资源</div>
             <a href="/admin/attachments"><i class="fa-solid fa-paperclip"></i> 附件</a>

@@ -16,7 +16,7 @@ use App\Services\Gravatar;
 final class Comment extends Model
 {
     protected static string $table = 'comments';
-    protected static array $sortable = ['id', 'created_at', 'post_id', 'page_id', 'shuoshuo_id', 'status'];
+    protected static array $sortable = ['id', 'created_at', 'post_id', 'page_id', 'talk_id', 'status'];
 
     /**
      * 向后兼容 alias —— 旧代码可能引用了 Comment::STATUS_*
@@ -44,12 +44,12 @@ final class Comment extends Model
         );
     }
 
-    public static function forShuoshuo(int $shuoshuoId, string|CommentStatus $status = CommentStatus::Approved): array
+    public static function forTalk(int $talkId, string|CommentStatus $status = CommentStatus::Approved): array
     {
         $statusValue = $status instanceof CommentStatus ? $status->value : $status;
         return self::query(
-            'SELECT * FROM comments WHERE shuoshuo_id = ? AND status = ? ORDER BY id ASC',
-            [$shuoshuoId, $statusValue]
+            'SELECT * FROM comments WHERE talk_id = ? AND status = ? ORDER BY id ASC',
+            [$talkId, $statusValue]
         );
     }
 
@@ -57,12 +57,12 @@ final class Comment extends Model
     {
         $rows = self::db()->fetchAll(
             "SELECT c.*,
-                    COALESCE(p.title, pg.title, '说说 #' || s.id) AS target_title,
+                    COALESCE(p.title, pg.title, '滔客 #' || s.id) AS target_title,
                     COALESCE(p.slug, pg.slug, s.id) AS target_slug
              FROM comments c
              LEFT JOIN posts p ON c.post_id = p.id
              LEFT JOIN pages pg ON c.page_id = pg.id
-             LEFT JOIN shuoshuo s ON c.shuoshuo_id = s.id
+             LEFT JOIN talk s ON c.talk_id = s.id
              ORDER BY c.id DESC LIMIT {$limit}"
         );
         return $rows;
@@ -86,12 +86,12 @@ final class Comment extends Model
         );
     }
 
-    public static function countByShuoshuo(int $shuoshuoId, string|CommentStatus $status = CommentStatus::Approved): int
+    public static function countByTalk(int $talkId, string|CommentStatus $status = CommentStatus::Approved): int
     {
         $statusValue = $status instanceof CommentStatus ? $status->value : $status;
         return (int) self::db()->fetchColumn(
-            'SELECT COUNT(*) FROM comments WHERE shuoshuo_id = ? AND status = ?',
-            [$shuoshuoId, $statusValue]
+            'SELECT COUNT(*) FROM comments WHERE talk_id = ? AND status = ?',
+            [$talkId, $statusValue]
         );
     }
 
@@ -107,13 +107,13 @@ final class Comment extends Model
         self::db()->update('posts', ['comments_count' => $count], 'id = :id', [':id' => $postId]);
     }
 
-    public static function syncCountForShuoshuo(int $shuoshuoId): void
+    public static function syncCountForTalk(int $talkId): void
     {
-        if ($shuoshuoId <= 0) {
+        if ($talkId <= 0) {
             return;
         }
-        $count = self::countByShuoshuo($shuoshuoId, CommentStatus::Approved);
-        self::db()->update('shuoshuo', ['comments_count' => $count], 'id = :id', [':id' => $shuoshuoId]);
+        $count = self::countByTalk($talkId, CommentStatus::Approved);
+        self::db()->update('talk', ['comments_count' => $count], 'id = :id', [':id' => $talkId]);
     }
 
     public function parent(): ?self

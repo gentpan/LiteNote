@@ -85,16 +85,27 @@ class LinkController
 
     public function refresh(Request $request): never
     {
+        $isAjax = strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')) === 'xmlhttprequest';
         $id = (int) $request->input('id', 0);
         $link = Link::find($id);
         if (!$link || empty($link->rss_url)) {
+            if ($isAjax) {
+                Response::json(['code' => 1, 'msg' => '友链未配置 RSS']);
+            }
             Session::flash('error', '友链未配置 RSS');
             Response::redirect('/admin/links');
         }
-        // 删除缓存
+        // 删除缓存后重新抓取
         $key = md5($link->rss_url);
         @unlink(__DIR__ . '/../../../storage/cache/friend_' . $key . '.json');
-        FriendRssService::fetch($link->rss_url, 5, 60);
+        $items = @FriendRssService::fetch($link->rss_url, 5, 60);
+        if ($isAjax) {
+            Response::json([
+                'code'  => 0,
+                'msg'   => 'RSS 缓存已刷新',
+                'count' => count($items),
+            ]);
+        }
         Session::flash('success', 'RSS 缓存已刷新');
         Response::redirect('/admin/links');
     }

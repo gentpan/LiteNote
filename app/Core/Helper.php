@@ -202,4 +202,64 @@ final class Helper
         $sep = str_contains($base, '?') ? '&' : '?';
         return $base . $sep . http_build_query($params);
     }
+
+    /**
+     * 「加载更多」控件 HTML(替代分页)。JS 负责自动/手动加载。
+     */
+    public static function loadMore(int $current, int $total, int $perPage, string $baseUrl): string
+    {
+        $pages = (int) ceil($total / max(1, $perPage));
+        if ($total <= 0) {
+            return '';
+        }
+        if ($pages <= 1) {
+            return '<div class="load-more is-end"><div class="load-more-end"><i class="fa-regular fa-circle-check"></i> 没有更多内容</div></div>';
+        }
+        $current = max(1, min($current, $pages));
+        // 用相对路径,避免 ajax 跨域(host 不一致时)
+        $baseUrl = preg_replace('#^https?://[^/]+#i', '', $baseUrl) ?: $baseUrl;
+        return '<div class="load-more" data-base="' . htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') . '" data-page="' . $current . '" data-pages="' . $pages . '">'
+            . '<button type="button" class="load-more-btn" hidden>加载更多</button>'
+            . '<div class="load-more-loading" hidden><span class="load-more-spinner"></span><span>加载中…</span></div>'
+            . '<div class="load-more-end" hidden><i class="fa-regular fa-circle-check"></i> 没有更多内容</div>'
+            . '</div>';
+    }
+
+    /**
+     * 把扁平评论列表组织为「顶层评论 + 其下所有回复(按时间)」。
+     * @return array<int, array{comment: object, replies: array}>
+     */
+    public static function nestComments(array $comments): array
+    {
+        $byId = [];
+        foreach ($comments as $c) {
+            $byId[(int) $c->id] = $c;
+        }
+        $childrenOf = [];
+        $roots = [];
+        foreach ($comments as $c) {
+            $pid = (int) ($c->parent_id ?? 0);
+            if ($pid > 0 && isset($byId[$pid])) {
+                $childrenOf[$pid][] = $c;
+            } else {
+                $roots[] = $c;
+            }
+        }
+        $result = [];
+        foreach ($roots as $root) {
+            $replies = [];
+            $stack = [(int) $root->id];
+            while ($stack) {
+                $pid = array_shift($stack);
+                foreach ($childrenOf[$pid] ?? [] as $child) {
+                    $child->reply_to_name = (string) ($byId[$pid]->nickname ?? '');
+                    $replies[] = $child;
+                    $stack[] = (int) $child->id;
+                }
+            }
+            usort($replies, fn($a, $b) => (int) $a->id <=> (int) $b->id);
+            $result[] = ['comment' => $root, 'replies' => $replies];
+        }
+        return $result;
+    }
 }

@@ -3,24 +3,24 @@
 @section('content')
     <section class="subscribe-page">
         <h2 class="section-title">订阅</h2>
-        <p class="section-desc">这里展示友情链接的文章订阅更新，数据会缓存为 JSON 并保留最近 30 天；本站自己的文章 RSS 请使用 `/feed`。</p>
+        <p class="section-desc">订阅本站文章，或在这里追看友情链接博主的最新更新。</p>
 
         <div class="subscribe-actions">
-            <a class="subscribe-card" href="/feed">
+            <a class="subscribe-card" href="/rss.xml">
                 <i class="fa-solid fa-square-rss"></i>
                 <span>
                     <strong>本站 RSS</strong>
-                    <em>只输出 LiteNote 本站文章</em>
+                    <em>订阅本站最新文章更新</em>
                 </span>
             </a>
         </div>
 
         <h3 class="section-subtitle"><i class="fa-solid fa-rss"></i> 友情链接订阅更新</h3>
         @if(!empty($lastUpdated))
-            <p class="section-desc">后台每天自动抓取 4 次，页面只读取本地 JSON 缓存；上次更新：{!! \App\Core\Helper::timeTag(date('Y-m-d H:i:s', (int)$lastUpdated)) !!}</p>
+            <p class="section-desc">汇集友情链接博主的最新文章，最近更新：{!! \App\Core\Helper::timeTag(date('Y-m-d H:i:s', (int)$lastUpdated)) !!}</p>
         @endif
         @if(empty($rssItems))
-            <p class="empty">还没有抓取到友链订阅更新，后台任务会自动刷新。</p>
+            <p class="empty">暂时还没有友情链接的最新文章，过些时候再来看看吧。</p>
         @else
             <div class="subscribe-feed-list">
                 @foreach($rssItems as $item)

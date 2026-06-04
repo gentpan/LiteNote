@@ -9,6 +9,7 @@
     @if($keyword !== '')
         <p>关键字: <strong>{{ $keyword }}</strong>，共 {{ $total }} 条结果</p>
     @endif
+    <div class="js-list-items">
     @foreach($posts as $post)
         <article class="post-card">
             <h3 class="post-title">
@@ -17,5 +18,6 @@
             <p class="post-excerpt">{!! \App\Core\Helper::highlight($post->summaryOrContent(200), $keyword) !!}</p>
         </article>
     @endforeach
+    </div>
     {!! $paginator ?? '' !!}
 @endsection

@@ -1,11 +1,20 @@
 @extends('layouts.front')
 
 @section('content')
-    <h2 class="section-title">分类: {{ $category->name }}</h2>
-    <p class="section-desc">{{ $category->description }}</p>
+    <header class="category-hero cat-color-{{ $category->colorIndex() }}">
+        <div class="category-hero-ico"><i class="{{ $category->iconClass() }}"></i></div>
+        <div class="category-hero-body">
+            <h1 class="category-hero-name">{{ $category->name }}</h1>
+            @if($category->description)
+                <p class="category-hero-desc">{{ $category->description }}</p>
+            @endif
+            <div class="category-hero-meta"><i class="fa-regular fa-file-lines"></i> 共 {{ $total }} 篇文章</div>
+        </div>
+    </header>
     @if(empty($posts))
         <p class="empty">该分类下还没有文章</p>
     @endif
+    <div class="js-list-items">
     @foreach($posts as $post)
         <article class="post-card">
             <h3 class="post-title">
@@ -18,5 +27,6 @@
             <p class="post-excerpt">{{ $post->summaryOrContent(200) }}</p>
         </article>
     @endforeach
+    </div>
     {!! $paginator ?? '' !!}
 @endsection

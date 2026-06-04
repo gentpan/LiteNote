@@ -106,20 +106,26 @@ View::share('currentAdmin', $currentAdmin);
 //   - $author  : App\Models\User(站点主理人,id=1)
 //   - $socials : 解析后的社交链接数组
 //
-// 注意:模板渲染时实际传的是完整路径,如 "front.shuoshuo.index",
+// 注意:模板渲染时实际传的是完整路径,如 "front.talk.index",
 // pattern 必须用 "*.xxx.*" 才能跨 front/admin 前缀匹配。
-View::composer(['*layouts.front', '*layouts.admin', '*home.*', '*post.*', '*page.*', '*category.*', '*archive.*', '*search.*', '*shuoshuo.*', '*friend.*'], function (array $data): array {
+View::composer(['*layouts.front', '*layouts.admin', '*home.*', '*post.*', '*page.*', '*category.*', '*archive.*', '*search.*', '*talk.*', '*friend.*'], function (array $data): array {
     static $cached = null;
     try {
         if ($cached === null) {
             $author = \App\Models\User::find(1);
-            $cached = $author ? [
-                'author'  => $author,
-                'socials' => $author->getSocialLinks(),
-            ] : ['author' => null, 'socials' => []];
+            $navCategories = [];
+            foreach (\App\Models\Category::navList() as $cat) {
+                $navCategories[] = ['name' => $cat->name, 'slug' => $cat->slug, 'count' => $cat->postCount(), 'icon' => $cat->iconClass(), 'color' => $cat->colorIndex(), 'desc' => (string) ($cat->description ?? '')];
+            }
+            $cached = [
+                'author'        => $author,
+                'socials'       => $author ? $author->getSocialLinks() : [],
+                'navCategories' => $navCategories,
+            ];
         }
-        $data['author']  = $cached['author'];
-        $data['socials'] = $cached['socials'];
+        $data['author']        = $cached['author'];
+        $data['socials']       = $cached['socials'];
+        $data['navCategories'] = $cached['navCategories'];
     } catch (\Throwable) {
         // 数据库未就绪
     }
