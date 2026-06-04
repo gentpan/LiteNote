@@ -457,12 +457,7 @@ a.post-card-icon { border-bottom: none; }
         font-size: 19px;
     }
     .feed-post-thumb {
-        flex-basis: 76px;
-        width: 76px;
-        min-height: 76px;
-    }
-    .feed-post-thumb img {
-        min-height: 76px;
+        display: none;
     }
 }
 .feed-actions {
