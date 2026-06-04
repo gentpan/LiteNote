@@ -73,6 +73,15 @@ if (is_file(Config::get('database.sqlite'))) {
 }
 View::share('site', Config::get('site'));
 
+$currentAdmin = null;
+try {
+    $adminId = (int) Session::get('admin_user.id', 0);
+    $currentAdmin = $adminId > 0 ? \App\Models\User::find($adminId) : null;
+} catch (\Throwable) {
+    $currentAdmin = null;
+}
+View::share('currentAdmin', $currentAdmin);
+
 // 全局 View Composer:任意前台模板渲染时,自动注入 site author
 //   - $author  : App\Models\User(站点主理人,id=1)
 //   - $socials : 解析后的社交链接数组

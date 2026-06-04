@@ -54,4 +54,15 @@ return [
         'path'   => __DIR__ . '/../storage/cache',
         'ttl'    => 3600,
     ],
+
+    'mail' => [
+        'sendflare' => [
+            'enabled'   => (bool) getenv('SENDFLARE_API_TOKEN'),
+            'endpoint'  => getenv('SENDFLARE_ENDPOINT') ?: 'https://api.sendflare.com/v1/send',
+            'token'     => getenv('SENDFLARE_API_TOKEN') ?: '',
+            'from'      => getenv('SENDFLARE_FROM') ?: 'noreply@example.com',
+            'from_name' => getenv('SENDFLARE_FROM_NAME') ?: 'LiteNote',
+            'notify_to' => getenv('COMMENT_NOTIFY_TO') ?: '',
+        ],
+    ],
 ];

@@ -57,23 +57,28 @@
                 <ul class="comment-list">
                     @foreach($comments as $cmt)
                         <li class="comment-item">
-                            <img class="comment-avatar" src="{{ $cmt->getAvatarUrl(48) }}" alt="{{ $cmt->nickname }}" loading="lazy" width="48" height="48">
                             <div class="comment-body">
                                 <div class="comment-meta">
                                     <strong>{{ $cmt->nickname }}</strong>
                                     <span>· {!! \App\Core\Helper::timeTag($cmt->created_at) !!}</span>
+                                    <button type="button" class="comment-reply-btn" data-parent-id="{{ $cmt->id }}" data-nickname="{{ $cmt->nickname }}">回复</button>
                                 </div>
                                 <div class="comment-content">{{ $cmt->content }}</div>
                             </div>
                         </li>
                     @endforeach
                 </ul>
-                <form class="comment-form" method="post" action="/comment/submit">
+                @php
+                    $adminCommentName = !empty($currentAdmin) ? ($currentAdmin->nickname ?: $currentAdmin->username) : '';
+                    $adminCommentEmail = !empty($currentAdmin) ? (string)($currentAdmin->email ?? '') : '';
+                @endphp
+                <form class="comment-form" method="post" action="/comment/submit" data-comment-admin="{{ !empty($currentAdmin) ? '1' : '0' }}">
                     <input type="hidden" name="post_id" value="{{ $post->id }}">
+                    <input type="hidden" name="parent_id" value="0">
                     <input type="hidden" name="_csrf" value="{{ \App\Core\Session::csrfToken() }}">
                     <div class="form-row">
-                        <input type="text" name="nickname" placeholder="昵称 *" required>
-                        <input type="email" name="email" placeholder="邮箱(选填)">
+                        <input type="text" name="nickname" value="{{ $adminCommentName }}" placeholder="昵称 *" required @if(!empty($currentAdmin)) readonly @endif>
+                        <input type="email" name="email" value="{{ $adminCommentEmail }}" placeholder="邮箱 *" required @if(!empty($currentAdmin)) readonly @endif>
                         <input type="text" name="website" placeholder="网站(选填)">
                     </div>
                     <textarea name="content" rows="5" placeholder="说点什么... *" required></textarea>

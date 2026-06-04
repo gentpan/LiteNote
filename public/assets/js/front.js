@@ -13,10 +13,69 @@
         });
     });
 
+    var commentIdentityKey = 'litenote_comment_identity';
+
+    function loadCommentIdentity() {
+        try {
+            var raw = window.localStorage && localStorage.getItem(commentIdentityKey);
+            return raw ? JSON.parse(raw) : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function saveCommentIdentity(form) {
+        if (form.dataset.commentAdmin === '1') {
+            return;
+        }
+
+        var nick = form.querySelector('[name=nickname]');
+        var email = form.querySelector('[name=email]');
+        var website = form.querySelector('[name=website]');
+        var identity = {
+            nickname: nick ? nick.value.trim() : '',
+            email: email ? email.value.trim() : '',
+            website: website ? website.value.trim() : ''
+        };
+
+        if (!identity.nickname && !identity.email && !identity.website) {
+            return;
+        }
+
+        try {
+            localStorage.setItem(commentIdentityKey, JSON.stringify(identity));
+        } catch (e) {}
+    }
+
+    function fillCommentIdentity(form) {
+        if (form.dataset.commentAdmin === '1') {
+            return;
+        }
+
+        var identity = loadCommentIdentity();
+        if (!identity) {
+            return;
+        }
+
+        [
+            ['nickname', identity.nickname],
+            ['email', identity.email],
+            ['website', identity.website]
+        ].forEach(function(item) {
+            var input = form.querySelector('[name=' + item[0] + ']');
+            if (input && !input.value && item[1]) {
+                input.value = item[1];
+            }
+        });
+    }
+
     // 评论表单提交时的简单校验
     document.querySelectorAll('.comment-form').forEach(function(form) {
+        fillCommentIdentity(form);
+
         form.addEventListener('submit', function(e) {
             var nick = form.querySelector('[name=nickname]');
+            var email = form.querySelector('[name=email]');
             var content = form.querySelector('[name=content]');
             if (nick && !nick.value.trim()) {
                 e.preventDefault();
@@ -24,11 +83,49 @@
                 nick.focus();
                 return;
             }
+            if (email && !email.value.trim()) {
+                e.preventDefault();
+                alert('请输入邮箱');
+                email.focus();
+                return;
+            }
             if (content && content.value.trim().length < 2) {
                 e.preventDefault();
                 alert('评论内容太短了');
                 content.focus();
                 return;
+            }
+
+            saveCommentIdentity(form);
+        });
+    });
+
+    document.querySelectorAll('.comment-reply-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var scope = btn.closest('.comments') || btn.closest('.shuoshuo-comments') || document;
+            var form = scope.querySelector('.comment-form');
+            if (!form) {
+                return;
+            }
+
+            var parentInput = form.querySelector('[name=parent_id]');
+            var textarea = form.querySelector('[name=content]');
+            var nickname = (btn.dataset.nickname || '').trim();
+            var prefix = nickname ? '@' + nickname + ' ' : '';
+
+            if (parentInput) {
+                parentInput.value = btn.dataset.parentId || '0';
+            }
+
+            if (textarea && prefix && textarea.value.indexOf(prefix) !== 0) {
+                textarea.value = prefix + textarea.value.replace(/^@\S+\s*/, '');
+            }
+
+            form.classList.add('is-replying');
+            form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (textarea) {
+                textarea.focus();
+                textarea.setSelectionRange(textarea.value.length, textarea.value.length);
             }
         });
     });

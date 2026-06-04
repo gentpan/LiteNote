@@ -26,6 +26,7 @@ $router->get('/',                 [HomeController::class, 'index']);
 
 // 文章
 $router->get('/posts',            [HomeController::class, 'posts']);
+$router->get('/readers',          [HomeController::class, 'readers']);
 $router->get('/post/{slug}',      [PostController::class, 'show']);
 
 // 分类
@@ -36,6 +37,7 @@ $router->get('/page/{slug}',      [PageController::class, 'show']);
 
 // 说说
 $router->get('/talk',             [ShuoshuoController::class, 'index']);
+$router->post('/talk/publish',    [ShuoshuoController::class, 'publish']);
 $router->post('/talk/{id}/like',  [ShuoshuoController::class, 'like']);
 
 // 归档

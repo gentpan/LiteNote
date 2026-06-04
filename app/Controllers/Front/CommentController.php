@@ -11,6 +11,7 @@ use App\Models\Comment;
 use App\Models\Post;
 use App\Models\Setting;
 use App\Models\Shuoshuo;
+use App\Services\CommentMailer;
 
 /**
  * 评论提交（改进版）
@@ -43,7 +44,7 @@ class CommentController
         $validator = \App\Core\Validator::make($data, [
             'nickname' => 'required|string|min:1|max:50',
             'content'  => 'required|string|min:2|max:2000',
-            'email'    => 'email',
+            'email'    => 'required|email',
         ]);
         if (!$validator->validate()) {
             $this->backWithError($validator->firstError() ?? '校验失败');
@@ -58,6 +59,7 @@ class CommentController
         if (!$target) {
             $this->backWithError('评论目标不存在');
         }
+        $parentId = $this->normalizeParentId((int)$data['parent_id'], (int)$data['post_id'], (int)$data['shuoshuo_id']);
 
         $needAudit = (bool) Setting::get('comment_need_audit', true);
         $status = $needAudit ? CommentStatus::Pending->value : CommentStatus::Approved->value;
@@ -66,7 +68,7 @@ class CommentController
             'post_id'   => (int)$data['post_id'],
             'page_id'   => 0,
             'shuoshuo_id'=> (int)$data['shuoshuo_id'],
-            'parent_id' => (int)$data['parent_id'],
+            'parent_id' => $parentId,
             'nickname'  => htmlspecialchars(trim((string)$data['nickname']), ENT_QUOTES, 'UTF-8'),
             'email'     => trim((string)$data['email']),
             'website'   => trim((string)$data['website']),
@@ -81,6 +83,16 @@ class CommentController
             Comment::syncCountForPost((int)$data['post_id']);
             Comment::syncCountForShuoshuo((int)$data['shuoshuo_id']);
         }
+
+        $this->sendNotifications(
+            $cmt,
+            $target,
+            (int)$data['post_id'],
+            (int)$data['shuoshuo_id'],
+            $parentId,
+            $status,
+            $request
+        );
 
         Session::flash('comment_success', $needAudit ? '评论已提交，等待审核后显示' : '评论发布成功');
         $this->back();
@@ -104,6 +116,85 @@ class CommentController
             }
         }
         return null;
+    }
+
+    private function normalizeParentId(int $parentId, int $postId, int $shuoshuoId): int
+    {
+        if ($parentId <= 0) {
+            return 0;
+        }
+
+        $parent = Comment::find($parentId);
+        if (!$parent) {
+            return 0;
+        }
+
+        if ($postId > 0 && (int)$parent->post_id === $postId) {
+            return $parentId;
+        }
+
+        if ($shuoshuoId > 0 && (int)$parent->shuoshuo_id === $shuoshuoId) {
+            return $parentId;
+        }
+
+        return 0;
+    }
+
+    private function sendNotifications(
+        Comment $comment,
+        object $target,
+        int $postId,
+        int $shuoshuoId,
+        int $parentId,
+        string $status,
+        Request $request
+    ): void {
+        try {
+            $targetInfo = $this->targetInfo($target, $postId, $shuoshuoId, $request);
+            CommentMailer::notifyNewComment($comment, $targetInfo);
+
+            if ($status === CommentStatus::Approved->value && $parentId > 0) {
+                $parent = Comment::find($parentId);
+                if ($parent && (int)$parent->id !== (int)$comment->id) {
+                    CommentMailer::notifyReply($comment, $parent, $targetInfo);
+                }
+            }
+        } catch (\Throwable) {
+            // 邮件通知不能影响评论发布。
+        }
+    }
+
+    private function targetInfo(object $target, int $postId, int $shuoshuoId, Request $request): array
+    {
+        if ($postId > 0) {
+            $slug = (string)($target->slug ?? '');
+            return [
+                'title' => (string)($target->title ?? '文章'),
+                'url' => $this->absoluteUrl($slug !== '' ? '/post/' . $slug . '.html' : '/', $request),
+            ];
+        }
+
+        return [
+            'title' => '说说 #' . $shuoshuoId,
+            'url' => $this->absoluteUrl('/talk#shuoshuo-' . $shuoshuoId, $request),
+        ];
+    }
+
+    private function absoluteUrl(string $path, Request $request): string
+    {
+        if (preg_match('#^https?://#i', $path)) {
+            return $path;
+        }
+
+        $scheme = (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']))
+            ? (string)$_SERVER['HTTP_X_FORWARDED_PROTO']
+            : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http');
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        if ($host === '') {
+            return $path;
+        }
+
+        return $scheme . '://' . $host . $path;
     }
 
     private function backWithError(string $message): never

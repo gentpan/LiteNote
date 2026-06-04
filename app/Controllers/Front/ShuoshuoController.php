@@ -6,7 +6,9 @@ namespace App\Controllers\Front;
 use App\Core\Helper;
 use App\Core\Request;
 use App\Core\Response;
+use App\Core\Session;
 use App\Core\View;
+use App\Enums\Toggle;
 use App\Models\Comment;
 use App\Models\Shuoshuo;
 
@@ -42,5 +44,46 @@ class ShuoshuoController
 
         $count = Shuoshuo::like((int)$id);
         Response::json(['code' => 0, 'likes' => $count]);
+    }
+
+    public function publish(Request $request): never
+    {
+        if (!Session::has('admin_user.id')) {
+            Response::redirect('/admin/login');
+        }
+
+        if (!Session::verifyCsrf((string)$request->input('_csrf', ''))) {
+            Session::flash('talk_publish_error', '会话已过期，请刷新页面后重试');
+            $this->back();
+        }
+
+        $content = trim((string)$request->input('content', ''));
+        $images = trim((string)$request->input('images', ''));
+        $music = trim((string)$request->input('music', ''));
+        $mood = trim((string)$request->input('mood', ''));
+        $public = Toggle::fromInput($request->input('is_public', 1))->value;
+
+        if ($content === '') {
+            Session::flash('talk_publish_error', '说说内容不能为空');
+            $this->back();
+        }
+
+        $item = new Shuoshuo([
+            'content' => $content,
+            'images' => $images,
+            'music' => $music,
+            'mood' => $mood,
+            'is_public' => $public,
+        ]);
+        $item->save();
+
+        Session::flash('talk_publish_success', '说说已发布');
+        Response::redirect('/talk#shuoshuo-' . $item->id);
+    }
+
+    private function back(): never
+    {
+        $ref = $_SERVER['HTTP_REFERER'] ?? '/talk';
+        Response::redirect($ref);
     }
 }

@@ -32,6 +32,27 @@ final class Shuoshuo extends Model
         return array_filter(explode(',', $this->images));
     }
 
+    public function getKeywords(): array
+    {
+        $content = (string)($this->content ?? '');
+        preg_match_all('/#([\p{L}\p{N}_-]+)/u', $content, $matches);
+
+        $keywords = array_values(array_unique(array_filter(array_map('trim', $matches[1] ?? []))));
+        if (!empty($keywords)) {
+            return $keywords;
+        }
+
+        $mood = trim((string)($this->mood ?? ''));
+        return $mood !== '' ? [$mood] : ['日常'];
+    }
+
+    public function contentWithoutKeywords(): string
+    {
+        $content = (string)($this->content ?? '');
+        $content = preg_replace('/[ \t]*#[\p{L}\p{N}_-]+/u', '', $content) ?? $content;
+        return trim($content);
+    }
+
     public static function recentPublic(int $limit = 10): array
     {
         $rows = self::db()->fetchAll(

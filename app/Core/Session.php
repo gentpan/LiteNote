@@ -8,13 +8,27 @@ namespace App\Core;
  */
 final class Session
 {
+    private const DEFAULT_LIFETIME = 2592000;
+
     public static function start(): void
     {
         if (session_status() === PHP_SESSION_NONE) {
+            $lifetime = self::lifetime();
+            $secure = self::isSecureRequest();
+
             // 安全设置
             ini_set('session.use_strict_mode', '1');
             ini_set('session.cookie_httponly', '1');
             ini_set('session.cookie_samesite', 'Lax');
+            ini_set('session.gc_maxlifetime', (string)$lifetime);
+            session_set_cookie_params([
+                'lifetime' => $lifetime,
+                'path' => '/',
+                'domain' => '',
+                'secure' => $secure,
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ]);
             session_name('BLOGSID');
             session_start();
         }
@@ -116,6 +130,7 @@ final class Session
     public static function regenerate(): void
     {
         session_regenerate_id(true);
+        self::refreshCookie();
     }
 
     public static function destroy(): void
@@ -126,6 +141,23 @@ final class Session
             setcookie(session_name(), '', time() - 42000, $p['path'], $p['domain'], $p['secure'], $p['httponly']);
         }
         session_destroy();
+    }
+
+    public static function refreshCookie(): void
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE || headers_sent()) {
+            return;
+        }
+
+        $p = session_get_cookie_params();
+        setcookie(session_name(), session_id(), [
+            'expires' => time() + self::lifetime(),
+            'path' => $p['path'] ?: '/',
+            'domain' => $p['domain'] ?: '',
+            'secure' => (bool)$p['secure'],
+            'httponly' => true,
+            'samesite' => $p['samesite'] ?? 'Lax',
+        ]);
     }
 
     public static function csrfToken(): string
@@ -139,5 +171,17 @@ final class Session
     public static function verifyCsrf(?string $token): bool
     {
         return is_string($token) && hash_equals($_SESSION['_csrf'] ?? '', $token);
+    }
+
+    private static function lifetime(): int
+    {
+        $value = (int)(getenv('BLOG_SESSION_LIFETIME') ?: self::DEFAULT_LIFETIME);
+        return $value > 0 ? $value : self::DEFAULT_LIFETIME;
+    }
+
+    private static function isSecureRequest(): bool
+    {
+        $proto = strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''));
+        return $proto === 'https' || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
     }
 }

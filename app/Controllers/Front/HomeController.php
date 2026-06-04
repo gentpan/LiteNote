@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\Comment;
 use App\Models\Post;
 use App\Models\Shuoshuo;
+use App\Services\Gravatar;
 use App\Services\Installer;
 
 /**
@@ -91,6 +92,60 @@ class HomeController
             'paginator' => Helper::paginate($page, $total, $perPage, Helper::url('/posts')),
             'pageTitle' => '文章',
             'activeNav' => 'posts',
+        ]);
+    }
+
+    public function readers(): string
+    {
+        if (!Installer::isInstalled()) {
+            return View::render('install.prompt', [
+                'installUrl' => Helper::url('/install'),
+                'pageTitle'  => '需要安装',
+            ]);
+        }
+
+        $sort = ($_GET['sort'] ?? '') === 'random' ? 'random' : 'count';
+        $orderBy = $sort === 'random' ? 'RANDOM()' : 'comments_count DESC, last_commented_at DESC';
+        $rows = Comment::db()->fetchAll(
+            "SELECT
+                LOWER(TRIM(COALESCE(NULLIF(email, ''), nickname))) AS reader_key,
+                MAX(nickname) AS nickname,
+                MAX(email) AS email,
+                MAX(website) AS website,
+                COUNT(*) AS comments_count,
+                MAX(created_at) AS last_commented_at
+             FROM comments
+             WHERE status = 'approved' AND TRIM(nickname) <> ''
+             GROUP BY reader_key
+             ORDER BY {$orderBy}
+             LIMIT 80"
+        );
+
+        $readers = array_map(static function (array $row, int $index): array {
+            $count = max(1, (int)($row['comments_count'] ?? 0));
+            $website = trim((string)($row['website'] ?? ''));
+            if (!preg_match('/^https?:\/\//i', $website)) {
+                $website = '';
+            }
+            return [
+                'nickname' => $row['nickname'] ?: '读者',
+                'email' => (string)($row['email'] ?? ''),
+                'website' => $website,
+                'comments_count' => $count,
+                'last_commented_at' => $row['last_commented_at'] ?? null,
+                'avatar' => Gravatar::url((string)($row['email'] ?? ''), 160, 'identicon'),
+                'rank' => $index + 1,
+                'weight' => min(4, $count),
+                'tilt' => (($index % 7) - 3) * 0.35,
+                'delay' => ($index % 12) * 35,
+            ];
+        }, $rows, array_keys($rows));
+
+        return View::render('home.readers', [
+            'readers' => $readers,
+            'sort' => $sort,
+            'pageTitle' => '读者墙',
+            'activeNav' => 'readers',
         ]);
     }
 }
