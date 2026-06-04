@@ -361,7 +361,6 @@ a.post-card-icon { border-bottom: none; }
 .feed-post-meta {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 14px;
     margin: 0 0 10px;
     color: var(--c-text-muted);
@@ -389,8 +388,8 @@ a.post-card-icon { border-bottom: none; }
 }
 .feed-post-type a:hover { color: var(--c-primary); }
 .feed-post-time {
-    flex: 0 0 auto;
-    text-align: right;
+    color: var(--c-text-muted);
+    white-space: nowrap;
 }
 .feed-card-kicker {
     display: flex;
@@ -419,6 +418,7 @@ a.post-card-icon { border-bottom: none; }
     margin: 0;
     color: var(--c-text-soft);
     line-height: 1.8;
+    min-height: 5.4em;
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;

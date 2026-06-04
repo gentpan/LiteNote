@@ -20,8 +20,9 @@
                                     <span class="feed-post-dot">·</span>
                                     <a href="/category/{{ $category->slug }}">{{ $category->name }}</a>
                                 @endif
+                                <span class="feed-post-dot">·</span>
+                                <span class="feed-post-time">{!! \App\Core\Helper::timeTag($item->published_at) !!}</span>
                             </div>
-                            <span class="feed-post-time">{!! \App\Core\Helper::timeTag($item->published_at) !!}</span>
                         </div>
                         <h2 class="feed-post-title">
                             <a href="/post/{{ $item->slug }}.html">{{ $item->title }}</a>
