@@ -1,5 +1,9 @@
 @extends('layouts.front')
 
+@section('head')
+    <link rel="stylesheet" href="https://static.giantaccel.com/fonts/kuaikanshijieti/result.css">
+@endsection
+
 @section('content')
     <article class="post-detail">
         @if($post->cover)

@@ -8,6 +8,7 @@
     <meta name="keywords" content="{{ $site['keywords'] ?? '' }}">
     <link rel="alternate" type="application/rss+xml" title="{{ $site['title'] ?? 'LiteNote' }} RSS" href="/feed">
     <link rel="stylesheet" href="https://static.giantaccel.com/fonts/SourceHanSerifCN/result.css">
+    @yield('head')
     <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css">
     @php $theme = $site['theme'] ?? 'default'; @endphp
     <link rel="stylesheet" href="/assets/css/themes/{{ $theme === 'default' ? 'default' : $theme }}.css?v={{ @filemtime(__DIR__ . '/../../public/assets/css/themes/' . $theme . '.css') ?: time() }}">
