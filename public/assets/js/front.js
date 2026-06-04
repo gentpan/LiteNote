@@ -50,7 +50,7 @@
             var id = btn.dataset.id;
             var count = btn.querySelector('.like-count');
             btn.disabled = true;
-            fetch('/shuoshuo/' + encodeURIComponent(id) + '/like', {
+            fetch('/talk/' + encodeURIComponent(id) + '/like', {
                 method: 'POST',
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             })

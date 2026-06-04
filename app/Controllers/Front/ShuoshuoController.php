@@ -26,9 +26,9 @@ class ShuoshuoController
             'total' => $total,
             'page'  => $page,
             'perPage' => $perPage,
-            'paginator' => Helper::paginate($page, $total, $perPage, Helper::url('/shuoshuo')),
+            'paginator' => Helper::paginate($page, $total, $perPage, Helper::url('/talk')),
             'pageTitle' => '说说',
-            'activeNav' => 'shuoshuo',
+            'activeNav' => 'talk',
         ]);
     }
 
