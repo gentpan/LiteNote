@@ -44,10 +44,13 @@ class CommentController
         );
         $offset = ($page - 1) * $perPage;
         $rows = Comment::db()->fetchAll(
-            "SELECT c.*, COALESCE(p.title, pg.title) AS target_title, COALESCE(p.slug, pg.slug) AS target_slug
+            "SELECT c.*,
+                    COALESCE(p.title, pg.title, '说说 #' || s.id) AS target_title,
+                    COALESCE(p.slug, pg.slug, s.id) AS target_slug
              FROM comments c
              LEFT JOIN posts p ON c.post_id = p.id
              LEFT JOIN pages pg ON c.page_id = pg.id
+             LEFT JOIN shuoshuo s ON c.shuoshuo_id = s.id
              " . ($whereSql ? ' WHERE ' . $whereSql : '') . "
              ORDER BY c.id DESC LIMIT {$perPage} OFFSET {$offset}",
             $params
@@ -84,6 +87,7 @@ class CommentController
         if ($cmt) {
             $cmt->status = CommentStatus::Spam->value;
             $cmt->save();
+            $this->syncPostCommentCount($cmt);
         }
         Response::json(['code' => 0, 'msg' => '已标记垃圾']);
     }
@@ -105,9 +109,11 @@ class CommentController
     private function syncPostCommentCount(Comment $cmt): void
     {
         if (!$cmt->post_id) {
+            if ($cmt->shuoshuo_id) {
+                Comment::syncCountForShuoshuo((int)$cmt->shuoshuo_id);
+            }
             return;
         }
-        $count = Comment::countByPost((int)$cmt->post_id, CommentStatus::Approved);
-        Comment::db()->update('posts', ['comments_count' => $count], 'id = :id', [':id' => $cmt->post_id]);
+        Comment::syncCountForPost((int)$cmt->post_id);
     }
 }

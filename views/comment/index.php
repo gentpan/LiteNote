@@ -29,6 +29,8 @@
                         <a href="/post/{{ $c['target_slug'] }}.html" target="_blank"><i class="fa-regular fa-file-lines"></i> {{ $c['target_title'] }}</a>
                     @elseif($c['page_id'])
                         <a href="/page/{{ $c['target_slug'] }}.html" target="_blank"><i class="fa-regular fa-bookmark"></i> {{ $c['target_title'] }}</a>
+                    @elseif($c['shuoshuo_id'])
+                        <a href="/#shuoshuo-{{ $c['shuoshuo_id'] }}" target="_blank"><i class="fa-regular fa-comments"></i> {{ $c['target_title'] }}</a>
                     @else
                         <span class="muted">无</span>
                     @endif

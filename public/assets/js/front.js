@@ -33,6 +33,40 @@
         });
     });
 
+    document.querySelectorAll('.shuoshuo-comment-toggle').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var target = document.getElementById(btn.dataset.target || '');
+            if (target) {
+                target.classList.toggle('is-open');
+            }
+        });
+    });
+
+    document.querySelectorAll('.shuoshuo-like-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            if (btn.disabled) {
+                return;
+            }
+            var id = btn.dataset.id;
+            var count = btn.querySelector('.like-count');
+            btn.disabled = true;
+            fetch('/shuoshuo/' + encodeURIComponent(id) + '/like', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    if (data && data.code === 0 && count) {
+                        count.textContent = data.likes;
+                        btn.classList.add('is-liked');
+                    }
+                })
+                .catch(function() {
+                    btn.disabled = false;
+                });
+        });
+    });
+
     // 图片懒加载 + Tokinx ViewImage 灯箱
     (function() {
         var images = Array.prototype.slice.call(document.querySelectorAll('.post-cover img, .post-content img, .page-content img, .shuoshuo-images img'));

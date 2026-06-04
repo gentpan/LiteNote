@@ -139,6 +139,7 @@ final class Installer
             post_id INTEGER DEFAULT 0,
             page_id INTEGER DEFAULT 0,
             parent_id INTEGER DEFAULT 0,
+            shuoshuo_id INTEGER DEFAULT 0,
             nickname VARCHAR(50) NOT NULL,
             email VARCHAR(100),
             website VARCHAR(255),
@@ -173,6 +174,8 @@ final class Installer
             images TEXT,
             music TEXT,
             mood VARCHAR(20),
+            likes_count INTEGER DEFAULT 0,
+            comments_count INTEGER DEFAULT 0,
             is_public INTEGER DEFAULT 1,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
@@ -209,6 +212,11 @@ final class Installer
         $db->query('CREATE INDEX IF NOT EXISTS idx_posts_published_at ON posts(published_at)');
         $db->query('CREATE INDEX IF NOT EXISTS idx_posts_category ON posts(category_id)');
         $db->query('CREATE INDEX IF NOT EXISTS idx_comments_post ON comments(post_id)');
+        try {
+            $db->query('CREATE INDEX IF NOT EXISTS idx_comments_shuoshuo ON comments(shuoshuo_id)');
+        } catch (\Throwable) {
+            // 老库会在 selfUpgrade() 加列后再建一次索引
+        }
         $db->query('CREATE INDEX IF NOT EXISTS idx_comments_status ON comments(status)');
         $db->query('CREATE INDEX IF NOT EXISTS idx_stats_day ON stats(day)');
         $db->query('CREATE INDEX IF NOT EXISTS idx_stats_path ON stats(path)');
@@ -322,7 +330,11 @@ final class Installer
     private static function selfUpgrade(Database $db, array &$log): void
     {
         $upgrades = [
-            ['users',   'socials', 'TEXT'],         // 2026-06: 个人资料社交链接
+            ['users',    'socials', 'TEXT'],         // 2026-06: 个人资料社交链接
+            ['comments', 'shuoshuo_id', 'INTEGER DEFAULT 0'],
+            ['shuoshuo', 'music', 'TEXT'],
+            ['shuoshuo', 'likes_count', 'INTEGER DEFAULT 0'],
+            ['shuoshuo', 'comments_count', 'INTEGER DEFAULT 0'],
         ];
         foreach ($upgrades as [$table, $col, $type]) {
             try {
@@ -331,6 +343,12 @@ final class Installer
             } catch (\Throwable) {
                 // 列已存在,忽略
             }
+        }
+
+        try {
+            $db->query('CREATE INDEX IF NOT EXISTS idx_comments_shuoshuo ON comments(shuoshuo_id)');
+        } catch (\Throwable) {
+            // ignore
         }
 
         self::migratePostMarkdownFiles($db, $log);

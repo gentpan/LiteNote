@@ -15,6 +15,7 @@ use App\Enums\Toggle;
 final class Shuoshuo extends Model
 {
     protected static string $table = 'shuoshuo';
+    protected static array $sortable = ['id', 'created_at', 'likes_count', 'comments_count'];
 
     public static function paginate(int $page = 1, int $perPage = 20, string $orderBy = 'id DESC', ?string $whereSql = null, array $params = []): array
     {
@@ -29,6 +30,24 @@ final class Shuoshuo extends Model
     {
         if (empty($this->images)) return [];
         return array_filter(explode(',', $this->images));
+    }
+
+    public static function recentPublic(int $limit = 10): array
+    {
+        $rows = self::db()->fetchAll(
+            "SELECT * FROM shuoshuo WHERE is_public = ? ORDER BY created_at DESC, id DESC LIMIT {$limit}",
+            [Toggle::On->value]
+        );
+        return array_map(fn($row) => new self($row), $rows);
+    }
+
+    public static function like(int $id): int
+    {
+        if ($id <= 0) {
+            return 0;
+        }
+        self::db()->query('UPDATE shuoshuo SET likes_count = COALESCE(likes_count, 0) + 1 WHERE id = ?', [$id]);
+        return (int) self::db()->fetchColumn('SELECT COALESCE(likes_count, 0) FROM shuoshuo WHERE id = ?', [$id]);
     }
 
     /**

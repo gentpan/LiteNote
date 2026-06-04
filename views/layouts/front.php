@@ -23,11 +23,15 @@
                     <img class="nav-avatar-img" src="{{ $author->getAvatarUrl(40) }}" alt="{{ $author->nickname }}" width="32" height="32" loading="lazy">
                 </a>
             @endif
-            <a href="/" class="nav-item {{ ($pageTitle ?? null) === null ? 'active' : '' }}">
+            <a href="/" class="nav-item {{ ($activeNav ?? '') === 'home' ? 'active' : '' }}">
+                <i class="fa-regular fa-compass"></i>
+                <span>首页</span>
+            </a>
+            <a href="/posts" class="nav-item {{ ($activeNav ?? '') === 'posts' ? 'active' : '' }}">
                 <i class="fa-regular fa-file-lines"></i>
                 <span>文章</span>
             </a>
-            <a href="/shuoshuo" class="nav-item {{ ($pageTitle ?? '') === '说说' ? 'active' : '' }}">
+            <a href="/shuoshuo" class="nav-item {{ ($activeNav ?? '') === 'shuoshuo' ? 'active' : '' }}">
                 <i class="fa-regular fa-comments"></i>
                 <span>说说</span>
             </a>

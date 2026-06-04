@@ -6,8 +6,8 @@ namespace App\Controllers\Front;
 use App\Core\Helper;
 use App\Core\View;
 use App\Models\Category;
+use App\Models\Comment;
 use App\Models\Post;
-use App\Models\Page;
 use App\Models\Shuoshuo;
 use App\Services\Installer;
 
@@ -40,18 +40,57 @@ class HomeController
             ]);
         }
 
+        $posts = Post::paginatePublished(1, 8)['items'];
+        $shuoshuo = Shuoshuo::recentPublic(8);
+
+        $feedItems = [];
+        foreach ($posts as $post) {
+            $feedItems[] = [
+                'type' => 'post',
+                'time' => strtotime((string)$post->published_at) ?: 0,
+                'item' => $post,
+            ];
+        }
+        foreach ($shuoshuo as $item) {
+            $item->setRelation('comments', Comment::forShuoshuo((int)$item->id));
+            $feedItems[] = [
+                'type' => 'shuoshuo',
+                'time' => strtotime((string)$item->created_at) ?: 0,
+                'item' => $item,
+            ];
+        }
+
+        usort($feedItems, fn(array $a, array $b) => $b['time'] <=> $a['time']);
+        $feedItems = array_slice($feedItems, 0, 12);
+
+        return View::render('home.index', [
+            'feedItems' => $feedItems,
+            'pageTitle' => null,
+            'activeNav' => 'home',
+        ]);
+    }
+
+    public function posts(): string
+    {
+        if (!Installer::isInstalled()) {
+            return View::render('install.prompt', [
+                'installUrl' => Helper::url('/install'),
+                'pageTitle'  => '需要安装',
+            ]);
+        }
+
         $perPage = (int) \App\Core\Config::get('pagination.front_per_page', 10);
         $page = max(1, (int)($_GET['page'] ?? 1));
         ['items' => $posts, 'total' => $total] = Post::paginatePublished($page, $perPage);
 
-        return View::render('home.index', [
+        return View::render('home.posts', [
             'posts'     => $posts,
             'total'     => $total,
             'page'      => $page,
             'perPage'   => $perPage,
-            'paginator' => Helper::paginate($page, $total, $perPage, Helper::url('/')),
-            'recentShuoshuo' => Shuoshuo::paginate(1, 5)['items'],
-            'pageTitle' => null,
+            'paginator' => Helper::paginate($page, $total, $perPage, Helper::url('/posts')),
+            'pageTitle' => '文章',
+            'activeNav' => 'posts',
         ]);
     }
 }

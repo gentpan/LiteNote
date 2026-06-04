@@ -25,6 +25,7 @@ $router->get('/install/do',       [InstallController::class, 'install']);
 $router->get('/',                 [HomeController::class, 'index']);
 
 // 文章
+$router->get('/posts',            [HomeController::class, 'posts']);
 $router->get('/post/{slug}',      [PostController::class, 'show']);
 
 // 分类
@@ -35,6 +36,7 @@ $router->get('/page/{slug}',      [PageController::class, 'show']);
 
 // 说说
 $router->get('/shuoshuo',         [ShuoshuoController::class, 'index']);
+$router->post('/shuoshuo/{id}/like', [ShuoshuoController::class, 'like']);
 
 // 归档
 $router->get('/archives',         [ArchiveController::class, 'index']);
