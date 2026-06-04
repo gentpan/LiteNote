@@ -13,7 +13,7 @@ use App\Controllers\Admin\PageController;
 use App\Controllers\Admin\AttachmentController;
 use App\Controllers\Admin\LinkController;
 use App\Controllers\Admin\CommentController;
-use App\Controllers\Admin\ShuoshuoController;
+use App\Controllers\Admin\TalkController;
 use App\Controllers\Admin\StatController;
 use App\Controllers\Admin\SettingController;
 use App\Controllers\Admin\ProfileController;
@@ -25,6 +25,10 @@ use App\Middleware\CsrfMiddleware;
 $router->get('/admin/login',        [AuthController::class, 'loginForm']);
 $router->post('/admin/login',       [AuthController::class, 'login'], [CsrfMiddleware::class]);
 $router->get('/admin/logout',       [AuthController::class, 'logout']);
+$router->get('/admin/forgot',       [AuthController::class, 'forgotForm']);
+$router->post('/admin/forgot',      [AuthController::class, 'forgot'], [CsrfMiddleware::class]);
+$router->get('/admin/reset',        [AuthController::class, 'resetForm']);
+$router->post('/admin/reset',       [AuthController::class, 'reset'], [CsrfMiddleware::class]);
 
 // 受保护
 $router->group('/admin', function ($r) {
@@ -47,6 +51,7 @@ $router->group('/admin', function ($r) {
     // 分类
     $r->get('/categories',             [CategoryController::class, 'index']);
     $r->post('/categories/save',       [CategoryController::class, 'save'],   [\App\Middleware\CsrfMiddleware::class]);
+    $r->post('/categories/toggle',     [CategoryController::class, 'toggleNav'],[\App\Middleware\CsrfMiddleware::class]);
     $r->post('/categories/delete',     [CategoryController::class, 'destroy'],[\App\Middleware\CsrfMiddleware::class]);
 
     // 标签功能已彻底移除(2026-06):Tag 模型 / Controller / 表 / 路由 全部清理
@@ -76,13 +81,13 @@ $router->group('/admin', function ($r) {
     $r->post('/comments/spam',         [CommentController::class, 'spam'],   [\App\Middleware\CsrfMiddleware::class]);
     $r->post('/comments/delete',       [CommentController::class, 'destroy'],[\App\Middleware\CsrfMiddleware::class]);
 
-    // 说说
-    $r->get('/shuoshuo',               [ShuoshuoController::class, 'index']);
-    $r->get('/shuoshuo/create',        [ShuoshuoController::class, 'create']);
-    $r->post('/shuoshuo/create',       [ShuoshuoController::class, 'store'],  [\App\Middleware\CsrfMiddleware::class]);
-    $r->get('/shuoshuo/{id}/edit',     [ShuoshuoController::class, 'edit']);
-    $r->post('/shuoshuo/{id}/edit',    [ShuoshuoController::class, 'update'], [\App\Middleware\CsrfMiddleware::class]);
-    $r->post('/shuoshuo/delete',       [ShuoshuoController::class, 'destroy'],[\App\Middleware\CsrfMiddleware::class]);
+    // 滔客
+    $r->get('/talk',               [TalkController::class, 'index']);
+    $r->get('/talk/create',        [TalkController::class, 'create']);
+    $r->post('/talk/create',       [TalkController::class, 'store'],  [\App\Middleware\CsrfMiddleware::class]);
+    $r->get('/talk/{id}/edit',     [TalkController::class, 'edit']);
+    $r->post('/talk/{id}/edit',    [TalkController::class, 'update'], [\App\Middleware\CsrfMiddleware::class]);
+    $r->post('/talk/delete',       [TalkController::class, 'destroy'],[\App\Middleware\CsrfMiddleware::class]);
 
     // 统计
     $r->get('/stats',                  [StatController::class, 'index']);

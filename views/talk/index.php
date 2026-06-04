@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="admin-toolbar">
-        <a class="btn btn-primary" href="/admin/shuoshuo/create">+ 写说说</a>
+        <a class="btn btn-primary" href="/admin/talk/create">+ 写滔客</a>
     </div>
     <table class="admin-table">
         <thead>
@@ -14,11 +14,11 @@
                 <td>{{ $s->id }}</td>
                 <td><div class="comment-cell">{{ \App\Core\Helper::truncate($s->content, 100) }}</div></td>
                 <td>{{ $s->mood }}</td>
-                <td>{{ $s->is_public ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-xmark"></i>' }}</td>
+                <td>{!! $s->is_public ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-xmark"></i>' !!}</td>
                 <td>{!! \App\Core\Helper::timeTag($s->created_at) !!}</td>
                 <td>
-                    <a href="/admin/shuoshuo/{{ $s->id }}/edit">编辑</a>
-                    <form method="post" action="/admin/shuoshuo/delete" style="display:inline" onsubmit="return confirm('确定删除？')">
+                    <a href="/admin/talk/{{ $s->id }}/edit">编辑</a>
+                    <form method="post" action="/admin/talk/delete" style="display:inline" onsubmit="return confirm('确定删除？')">
                         <input type="hidden" name="_csrf" value="{{ $csrf }}">
                         <input type="hidden" name="id" value="{{ $s->id }}">
                         <button type="submit" class="link-btn link-danger">删除</button>

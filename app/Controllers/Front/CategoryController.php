@@ -35,7 +35,7 @@ class CategoryController
             \App\Core\Response::notFound("分类不存在: {$slug}");
         }
 
-        $perPage = (int) \App\Core\Config::get('pagination.front_per_page', 10);
+        $perPage = 5;
         $page = max(1, (int)($_GET['page'] ?? 1));
         ['items' => $posts, 'total' => $total] = Post::paginatePublished($page, $perPage, (int)$cat->id);
 
@@ -45,7 +45,7 @@ class CategoryController
             'total'     => $total,
             'page'      => $page,
             'perPage'   => $perPage,
-            'paginator' => Helper::paginate($page, $total, $perPage, Helper::url('/category/' . $slug)),
+            'paginator' => Helper::loadMore($page, $total, $perPage, Helper::url('/category/' . $slug)),
             'pageTitle' => $cat->name,
         ]);
     }

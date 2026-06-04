@@ -102,24 +102,9 @@ final class View
             }
         }
 
-        // 处理 @include
-        $source = preg_replace_callback(
-            '/@include\(\s*[\'"](.+?)[\'"]\s*\)/',
-            function ($m) use ($data) {
-                $incPath = self::resolvePath($m[1]);
-                if (!is_file($incPath)) {
-                    return '';
-                }
-                $incSource = (string) file_get_contents($incPath);
-                $incPhp = self::compile($incSource);
-                $incFile = self::getCacheFile($m[1], $incPhp);
-                extract($data, EXTR_SKIP);
-                ob_start();
-                include $incFile;
-                return (string) ob_get_clean();
-            },
-            $source
-        );
+        // 处理 @include —— 编译成「运行时 include」,使被包含模板能访问当前作用域
+        // (包括 @foreach 内的循环变量),并支持递归嵌套。
+        $source = self::resolveIncludes($source);
 
         $phpSource = self::compile($source);
         $compiledFile = self::getCacheFile($template, $phpSource, $path);
@@ -128,6 +113,31 @@ final class View
         ob_start();
         include $compiledFile;
         return (string) ob_get_clean();
+    }
+
+    /**
+     * 把 @include('x') 替换成运行时 `include '<编译缓存文件>'`。
+     * - 被包含模板在调用处的作用域内执行(能用 @foreach 循环变量、$currentAdmin 等)。
+     * - 递归解析嵌套 @include。
+     */
+    private static function resolveIncludes(string $source): string
+    {
+        return preg_replace_callback(
+            '/@include\(\s*[\'"](.+?)[\'"]\s*\)/',
+            function ($m) {
+                $name = $m[1];
+                $incPath = self::resolvePath($name);
+                if (!is_file($incPath)) {
+                    return '';
+                }
+                $incSource = (string) file_get_contents($incPath);
+                $incSource = self::resolveIncludes($incSource); // 递归处理嵌套 @include
+                $incPhp = self::compile($incSource);
+                $incFile = self::getCacheFile($name, $incPhp, $incPath);
+                return '<?php include ' . var_export($incFile, true) . '; ?>';
+            },
+            $source
+        );
     }
 
     private static function compile(string $source): string

@@ -69,3 +69,12 @@ nav-avatar-*.png
 # PHP Composer(暂未用,留位)
 vendor/
 composer.lock
+
+# 运行时缓存(RSS 抓取缓存 / 视图编译产物)
+storage/cache/
+
+# 文章正文 Markdown(运行时内容,随 DB 本地保留,不入库)
+storage/posts/*.md
+
+# Claude Code 本地配置 / 会话
+.claude/

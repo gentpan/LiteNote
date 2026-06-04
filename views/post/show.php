@@ -1,7 +1,7 @@
 @extends('layouts.front')
 
 @section('head')
-    <link rel="stylesheet" href="https://static.giantaccel.com/fonts/kuaikanshijieti/result.css">
+    <link rel="stylesheet" href="https://static.bluecdn.com/fonts/kuaikanshijieti/result.css">
 @endsection
 
 @section('content')
@@ -30,9 +30,17 @@
                 </header>
             @endif
 
-            <div class="post-content">
-                {!! $post->html() !!}
-            </div>
+            @php
+                // 标题已在特色图/页头显示,正文里去掉开头与标题重复的标题行
+                $__bodyMd = $post->markdown();
+                if ($__bodyMd !== '') {
+                    $__bodyMd = preg_replace('/\A\s*#{1,4}[ \t]+' . preg_quote(trim((string) $post->title), '/') . '[ \t]*(\R+|$)/u', '', $__bodyMd, 1);
+                    $__bodyHtml = \App\Core\Markdown::parse($__bodyMd);
+                } else {
+                    $__bodyHtml = (string) $post->content;
+                }
+            @endphp
+            <div class="post-content">{!! $__bodyHtml !!}</div>
             <footer class="post-footer-meta">
                 <p class="post-meta">
                     <span><i class="fa-regular fa-calendar"></i> {!! \App\Core\Helper::timeTag($post->published_at) !!}</span>
@@ -55,8 +63,9 @@
                     <div class="alert alert-error">{{ \App\Core\Session::getFlash('comment_error') }}</div>
                 @endif
                 <ul class="comment-list">
-                    @foreach($comments as $cmt)
-                        <li class="comment-item">
+                    @foreach(\App\Core\Helper::nestComments($comments) as $thread)
+                        @php $cmt = $thread['comment']; @endphp
+                        <li class="comment-item" data-id="{{ $cmt->id }}">
                             <div class="comment-body">
                                 <div class="comment-meta">
                                     <strong>{{ $cmt->nickname }}</strong>
@@ -65,6 +74,23 @@
                                 </div>
                                 <div class="comment-content">{{ $cmt->content }}</div>
                             </div>
+                            @if(!empty($thread['replies']))
+                                <ul class="comment-reply-list">
+                                    @foreach($thread['replies'] as $reply)
+                                        <li class="comment-item comment-reply" data-id="{{ $reply->id }}">
+                                            <div class="comment-body">
+                                                <div class="comment-meta">
+                                                    <strong>{{ $reply->nickname }}</strong>
+                                                    @if(!empty($reply->reply_to_name))<span class="reply-arrow">›</span><span class="reply-target">{{ $reply->reply_to_name }}</span>@endif
+                                                    <span>· {!! \App\Core\Helper::timeTag($reply->created_at) !!}</span>
+                                                    <button type="button" class="comment-reply-btn" data-parent-id="{{ $reply->id }}" data-nickname="{{ $reply->nickname }}">回复</button>
+                                                </div>
+                                                <div class="comment-content">{{ preg_replace('/^@\S+\s*/u', '', (string) $reply->content) }}</div>
+                                            </div>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            @endif
                         </li>
                     @endforeach
                 </ul>
@@ -76,13 +102,29 @@
                     <input type="hidden" name="post_id" value="{{ $post->id }}">
                     <input type="hidden" name="parent_id" value="0">
                     <input type="hidden" name="_csrf" value="{{ \App\Core\Session::csrfToken() }}">
-                    <div class="form-row">
-                        <input type="text" name="nickname" value="{{ $adminCommentName }}" placeholder="昵称 *" required @if(!empty($currentAdmin)) readonly @endif>
-                        <input type="email" name="email" value="{{ $adminCommentEmail }}" placeholder="邮箱 *" required @if(!empty($currentAdmin)) readonly @endif>
-                        <input type="text" name="website" placeholder="网站(选填)">
-                    </div>
+                    @if(!empty($currentAdmin))
+                        <div class="comment-admin-bar">
+                            <img class="comment-admin-avatar" src="{{ $currentAdmin->getAvatarUrl(80) }}" alt="{{ $adminCommentName }}">
+                            <div class="comment-admin-info">
+                                <span class="comment-admin-name">{{ $adminCommentName }}</span>
+                                @if($adminCommentEmail !== '')<span class="comment-admin-email">{{ $adminCommentEmail }}</span>@endif
+                            </div>
+                            <a class="comment-admin-logout" href="/admin/logout">注销</a>
+                        </div>
+                        <input type="hidden" name="nickname" value="{{ $adminCommentName }}">
+                        <input type="hidden" name="email" value="{{ $adminCommentEmail }}">
+                    @else
+                        <div class="form-row">
+                            <input type="text" name="nickname" placeholder="昵称 *" required>
+                            <input type="email" name="email" placeholder="邮箱 *" required>
+                            <input type="text" name="website" placeholder="网站(选填)">
+                        </div>
+                    @endif
                     <textarea name="content" rows="5" placeholder="说点什么... *" required></textarea>
-                    <button type="submit">提交评论</button>
+                    <div class="comment-actions">
+                        @include('partials.comment-captcha')
+                        <button type="submit">提交评论</button>
+                    </div>
                 </form>
             </section>
         </div>

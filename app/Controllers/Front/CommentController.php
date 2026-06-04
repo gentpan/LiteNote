@@ -10,7 +10,7 @@ use App\Enums\CommentStatus;
 use App\Models\Comment;
 use App\Models\Post;
 use App\Models\Setting;
-use App\Models\Shuoshuo;
+use App\Models\Talk;
 use App\Services\CommentMailer;
 
 /**
@@ -24,11 +24,15 @@ use App\Services\CommentMailer;
  */
 class CommentController
 {
+    private bool $isAjax = false;
+
     public function submit(Request $request): never
     {
+        $this->isAjax = strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')) === 'xmlhttprequest';
+
         $data = [
             'post_id'   => (int) $request->input('post_id', 0),
-            'shuoshuo_id'=> (int) $request->input('shuoshuo_id', 0),
+            'talk_id'=> (int) $request->input('talk_id', 0),
             'parent_id' => (int) $request->input('parent_id', 0),
             'nickname'  => $request->input('nickname', ''),
             'email'     => $request->input('email', ''),
@@ -39,6 +43,17 @@ class CommentController
 
         if (!Session::verifyCsrf($data['_csrf'])) {
             $this->backWithError('会话已过期，请刷新页面后重试');
+        }
+
+        // 评论验证码(开关开启且非登录管理员时校验,一次性使用)
+        $isAdmin = (int) Session::get('admin_user.id', 0) > 0;
+        if (!$isAdmin && (int) Setting::get('comment_captcha', 0) === 1) {
+            $captchaInput = strtolower(trim((string) $request->input('captcha', '')));
+            $captchaCode  = (string) Session::get('_captcha', '');
+            Session::forget('_captcha');
+            if ($captchaCode === '' || $captchaInput !== $captchaCode) {
+                $this->backWithError('验证码错误，请重新输入');
+            }
         }
 
         $validator = \App\Core\Validator::make($data, [
@@ -55,11 +70,11 @@ class CommentController
             $this->backWithError('评论包含过多链接，已被拦截');
         }
 
-        $target = $this->resolveTarget((int)$data['post_id'], (int)$data['shuoshuo_id']);
+        $target = $this->resolveTarget((int)$data['post_id'], (int)$data['talk_id']);
         if (!$target) {
             $this->backWithError('评论目标不存在');
         }
-        $parentId = $this->normalizeParentId((int)$data['parent_id'], (int)$data['post_id'], (int)$data['shuoshuo_id']);
+        $parentId = $this->normalizeParentId((int)$data['parent_id'], (int)$data['post_id'], (int)$data['talk_id']);
 
         $needAudit = (bool) Setting::get('comment_need_audit', true);
         $status = $needAudit ? CommentStatus::Pending->value : CommentStatus::Approved->value;
@@ -67,7 +82,7 @@ class CommentController
         $cmt = new Comment([
             'post_id'   => (int)$data['post_id'],
             'page_id'   => 0,
-            'shuoshuo_id'=> (int)$data['shuoshuo_id'],
+            'talk_id'=> (int)$data['talk_id'],
             'parent_id' => $parentId,
             'nickname'  => htmlspecialchars(trim((string)$data['nickname']), ENT_QUOTES, 'UTF-8'),
             'email'     => trim((string)$data['email']),
@@ -81,20 +96,38 @@ class CommentController
 
         if ($status === CommentStatus::Approved->value) {
             Comment::syncCountForPost((int)$data['post_id']);
-            Comment::syncCountForShuoshuo((int)$data['shuoshuo_id']);
+            Comment::syncCountForTalk((int)$data['talk_id']);
         }
 
         $this->sendNotifications(
             $cmt,
             $target,
             (int)$data['post_id'],
-            (int)$data['shuoshuo_id'],
+            (int)$data['talk_id'],
             $parentId,
             $status,
             $request
         );
 
-        Session::flash('comment_success', $needAudit ? '评论已提交，等待审核后显示' : '评论发布成功');
+        $successMsg = $needAudit ? '评论已提交，等待审核后显示' : '评论发布成功';
+
+        if ($this->isAjax) {
+            $resp = ['code' => 0, 'msg' => $successMsg, 'pending' => $needAudit];
+            if (!$needAudit) {
+                $resp['comment'] = [
+                    'id'       => (int) $cmt->id,
+                    'nickname' => trim((string) $data['nickname']),
+                    'content'  => $content,
+                    'time'     => \App\Core\Helper::timeTag(date('Y-m-d H:i:s')),
+                    'parent_id'=> $parentId,
+                    'post_id'  => (int) $data['post_id'],
+                    'talk_id'  => (int) $data['talk_id'],
+                ];
+            }
+            Response::json($resp);
+        }
+
+        Session::flash('comment_success', $successMsg);
         $this->back();
     }
 
@@ -104,21 +137,21 @@ class CommentController
         return $linkCount > 3;
     }
 
-    private function resolveTarget(int $postId, int $shuoshuoId): ?object
+    private function resolveTarget(int $postId, int $talkId): ?object
     {
         if ($postId) {
             return Post::find($postId);
         }
-        if ($shuoshuoId) {
-            $shuoshuo = Shuoshuo::find($shuoshuoId);
-            if ($shuoshuo && (int)$shuoshuo->is_public === 1) {
-                return $shuoshuo;
+        if ($talkId) {
+            $talk = Talk::find($talkId);
+            if ($talk && (int)$talk->is_public === 1) {
+                return $talk;
             }
         }
         return null;
     }
 
-    private function normalizeParentId(int $parentId, int $postId, int $shuoshuoId): int
+    private function normalizeParentId(int $parentId, int $postId, int $talkId): int
     {
         if ($parentId <= 0) {
             return 0;
@@ -133,7 +166,7 @@ class CommentController
             return $parentId;
         }
 
-        if ($shuoshuoId > 0 && (int)$parent->shuoshuo_id === $shuoshuoId) {
+        if ($talkId > 0 && (int)$parent->talk_id === $talkId) {
             return $parentId;
         }
 
@@ -144,13 +177,13 @@ class CommentController
         Comment $comment,
         object $target,
         int $postId,
-        int $shuoshuoId,
+        int $talkId,
         int $parentId,
         string $status,
         Request $request
     ): void {
         try {
-            $targetInfo = $this->targetInfo($target, $postId, $shuoshuoId, $request);
+            $targetInfo = $this->targetInfo($target, $postId, $talkId, $request);
             CommentMailer::notifyNewComment($comment, $targetInfo);
 
             if ($status === CommentStatus::Approved->value && $parentId > 0) {
@@ -164,7 +197,7 @@ class CommentController
         }
     }
 
-    private function targetInfo(object $target, int $postId, int $shuoshuoId, Request $request): array
+    private function targetInfo(object $target, int $postId, int $talkId, Request $request): array
     {
         if ($postId > 0) {
             $slug = (string)($target->slug ?? '');
@@ -175,8 +208,8 @@ class CommentController
         }
 
         return [
-            'title' => '说说 #' . $shuoshuoId,
-            'url' => $this->absoluteUrl('/talk#shuoshuo-' . $shuoshuoId, $request),
+            'title' => '滔客 #' . $talkId,
+            'url' => $this->absoluteUrl('/talk#talk-' . $talkId, $request),
         ];
     }
 
@@ -199,6 +232,9 @@ class CommentController
 
     private function backWithError(string $message): never
     {
+        if ($this->isAjax) {
+            Response::json(['code' => 1, 'msg' => $message]);
+        }
         Session::flash('comment_error', $message);
         $this->back();
     }

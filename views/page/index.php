@@ -14,7 +14,7 @@
                 <td>{{ $p->id }}</td>
                 <td><a href="/page/{{ $p->slug }}.html" target="_blank">{{ $p->title }}</a></td>
                 <td><code>{{ $p->slug }}</code></td>
-                <td>{{ $p->is_nav ? '<i class="fa-solid fa-check"></i>' : '-' }}</td>
+                <td>{!! $p->is_nav ? '<i class="fa-solid fa-check"></i>' : '-' !!}</td>
                 <td>{{ $p->sort }}</td>
                 <td>{{ $p->views }}</td>
                 <td>
