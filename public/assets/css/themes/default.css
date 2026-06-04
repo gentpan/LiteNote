@@ -465,6 +465,9 @@ hr { margin: 28px 0; border: 0; border-top: 1px solid var(--c-border); }
     font-family: var(--font-serif);
     font-weight: 700;
 }
+.post-detail.has-cover .post-content > h1:first-child {
+    display: none;
+}
 .post-content h1, .post-content h2, .post-content h3, .post-content h4 {
     margin-top: 1.6em;
     color: var(--c-text);

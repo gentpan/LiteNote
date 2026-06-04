@@ -5,7 +5,7 @@
 @endsection
 
 @section('content')
-    <article class="post-detail">
+    <article class="post-detail {{ $post->cover ? 'has-cover' : 'no-cover' }}">
         @if($post->cover)
             <header class="post-hero-card">
                 <div class="post-cover">
