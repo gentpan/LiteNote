@@ -384,6 +384,11 @@ hr { margin: 28px 0; border: 0; border-top: 1px solid var(--c-border); }
    Post Detail
    =========================================== */
 .post-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+.post-body-card {
     background: var(--c-card);
     padding: 36px 44px;
     border-radius: var(--radius-lg);
@@ -395,20 +400,30 @@ hr { margin: 28px 0; border: 0; border-top: 1px solid var(--c-border); }
 .post-hero-card {
     position: relative;
     overflow: hidden;
-    margin: 0 0 30px;
+    margin: 0;
     border-radius: var(--radius-lg);
     border: 1px solid var(--c-border);
     background: var(--c-card-soft);
     box-shadow: var(--shadow-xs);
 }
-.post-cover { margin: 0; text-align: center; }
+.post-cover {
+    margin: 0;
+    text-align: center;
+    line-height: 0;
+    aspect-ratio: 16 / 9;
+    min-height: 360px;
+}
 .post-cover img {
     display: block;
     width: 100%;
+    height: 100%;
+    object-fit: cover;
     border-radius: 0;
 }
 .post-hero-card .post-cover .image-loading-wrap {
     margin: 0;
+    width: 100%;
+    aspect-ratio: 16 / 9;
     min-height: 360px;
     border-radius: 0;
 }
@@ -992,12 +1007,14 @@ hr { margin: 28px 0; border: 0; border-top: 1px solid var(--c-border); }
    Mobile
    =========================================== */
 @media (max-width: 600px) {
-    .post-card, .post-detail, .page-detail, .widget, .shuoshuo-item, .install-done, .install-prompt {
+    .post-card, .post-body-card, .page-detail, .widget, .shuoshuo-item, .install-done, .install-prompt {
         padding: 18px 18px;
     }
+    .post-detail { gap: 20px; }
     .section-title { font-size: 18px; }
     .post-detail .post-title { font-size: 24px; }
-    .post-hero-card { margin: -2px 0 24px; }
+    .post-hero-card { margin: 0; }
+    .post-cover { min-height: 220px; }
     .post-hero-card .post-cover .image-loading-wrap { min-height: 220px; }
     .post-hero-title { padding: 58px 18px 18px; }
     .page-detail h1 { font-size: 22px; }
