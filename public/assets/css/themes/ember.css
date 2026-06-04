@@ -49,6 +49,7 @@
     --shadow-hover: 0 6px 24px rgba(230, 90, 76, 0.10), 0 2px 6px rgba(26, 26, 26, 0.04);
 
     --font-sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    --font-serif: "Source Han Serif CN VF", "Source Han Serif SC", "Noto Serif CJK SC", "Songti SC", "SimSun", serif;
     --font-mono: "JetBrains Mono", "SF Mono", "Menlo", "Consolas", monospace;
 }
 
@@ -440,6 +441,8 @@ hr { margin: 28px 0; border: 0; border-top: 1px solid var(--c-border); }
 .post-hero-title .post-title {
     margin: 0;
     color: #fff;
+    font-family: var(--font-serif);
+    font-weight: 700;
     text-shadow: 0 2px 16px rgba(0, 0, 0, .35);
 }
 .post-footer-meta {
@@ -451,10 +454,15 @@ hr { margin: 28px 0; border: 0; border-top: 1px solid var(--c-border); }
     margin-bottom: 0;
 }
 .post-content {
+    font-family: var(--font-serif);
     font-size: 16px;
     line-height: 1.9;
     color: var(--c-text);
     word-wrap: break-word;
+}
+.post-header .post-title {
+    font-family: var(--font-serif);
+    font-weight: 700;
 }
 .post-content h1, .post-content h2, .post-content h3, .post-content h4 {
     margin-top: 1.6em;
