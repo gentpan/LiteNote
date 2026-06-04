@@ -1430,15 +1430,24 @@ button.feed-action:disabled {
         left: 50%;
         right: auto;
         transform: translateX(-50%);
+        width: calc(100vw - 24px);
+        max-width: 360px;
     }
     .nav-pill {
+        width: 100%;
+        box-sizing: border-box;
+        justify-content: space-between;
+        gap: 2px;
         padding: 5px 6px;
         box-shadow:
             0 18px 42px rgba(74, 71, 68, 0.18),
             0 1px 0 rgba(255, 255, 255, 0.72) inset;
     }
     .nav-item {
-        padding: 7px 14px;
+        flex: 1 1 0;
+        justify-content: center;
+        min-width: 0;
+        padding: 7px 8px;
         font-size: 13px;
     }
     .nav-item span {
@@ -1447,8 +1456,8 @@ button.feed-action:disabled {
     .nav-item i {
         font-size: 18px;
     }
-    .nav-avatar { padding: 3px; }
-    .nav-avatar-img { width: 28px; height: 28px; }
+    .nav-avatar { flex: 0 0 40px; margin-right: 2px; padding: 3px; }
+    .nav-avatar-img { width: 26px; height: 26px; }
     .container {
         padding: 0 16px 100px;
     }
