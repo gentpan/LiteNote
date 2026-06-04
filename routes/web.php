@@ -17,7 +17,6 @@ use App\Controllers\Front\CommentController;
 use App\Controllers\Front\FeedController;
 use App\Controllers\Front\StatController;
 use App\Controllers\Front\InstallController;
-use App\Core\Response;
 
 $router->get('/install',          [InstallController::class, 'index']);
 $router->get('/install/do',       [InstallController::class, 'install']);
@@ -37,9 +36,7 @@ $router->get('/page/{slug}',      [PageController::class, 'show']);
 
 // 说说
 $router->get('/talk',             [ShuoshuoController::class, 'index']);
-$router->get('/shuoshuo',         fn() => Response::redirect('/talk', 301));
 $router->post('/talk/{id}/like',  [ShuoshuoController::class, 'like']);
-$router->post('/shuoshuo/{id}/like', [ShuoshuoController::class, 'like']);
 
 // 归档
 $router->get('/archives',         [ArchiveController::class, 'index']);
@@ -50,7 +47,6 @@ $router->get('/search',           [SearchController::class, 'index']);
 // 友链页
 $router->get('/friends',          [FriendController::class, 'index']);
 $router->get('/feeds',            [FriendController::class, 'subscribe']);
-$router->get('/subscribe',        fn() => Response::redirect('/feeds', 301));
 
 // 评论提交
 $router->post('/comment/submit',  [CommentController::class, 'submit']);
