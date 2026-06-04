@@ -3,14 +3,11 @@ declare(strict_types=1);
 
 namespace App\Controllers\Front;
 
-use App\Core\Helper;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
-use App\Core\View;
 use App\Enums\CommentStatus;
 use App\Models\Comment;
-use App\Models\Page;
 use App\Models\Post;
 use App\Models\Setting;
 use App\Models\Shuoshuo;
@@ -30,7 +27,6 @@ class CommentController
     {
         $data = [
             'post_id'   => (int) $request->input('post_id', 0),
-            'page_id'   => (int) $request->input('page_id', 0),
             'shuoshuo_id'=> (int) $request->input('shuoshuo_id', 0),
             'parent_id' => (int) $request->input('parent_id', 0),
             'nickname'  => $request->input('nickname', ''),
@@ -58,7 +54,7 @@ class CommentController
             $this->backWithError('评论包含过多链接，已被拦截');
         }
 
-        $target = $this->resolveTarget((int)$data['post_id'], (int)$data['page_id'], (int)$data['shuoshuo_id']);
+        $target = $this->resolveTarget((int)$data['post_id'], (int)$data['shuoshuo_id']);
         if (!$target) {
             $this->backWithError('评论目标不存在');
         }
@@ -68,7 +64,7 @@ class CommentController
 
         $cmt = new Comment([
             'post_id'   => (int)$data['post_id'],
-            'page_id'   => (int)$data['page_id'],
+            'page_id'   => 0,
             'shuoshuo_id'=> (int)$data['shuoshuo_id'],
             'parent_id' => (int)$data['parent_id'],
             'nickname'  => htmlspecialchars(trim((string)$data['nickname']), ENT_QUOTES, 'UTF-8'),
@@ -96,13 +92,10 @@ class CommentController
         return $linkCount > 3;
     }
 
-    private function resolveTarget(int $postId, int $pageId, int $shuoshuoId): ?object
+    private function resolveTarget(int $postId, int $shuoshuoId): ?object
     {
         if ($postId) {
             return Post::find($postId);
-        }
-        if ($pageId) {
-            return Page::find($pageId);
         }
         if ($shuoshuoId) {
             $shuoshuo = Shuoshuo::find($shuoshuoId);
