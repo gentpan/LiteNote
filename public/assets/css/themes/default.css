@@ -1245,18 +1245,23 @@ button.feed-action:disabled {
     left: 50%;
     transform: translateX(-50%);
     z-index: 1000;
+    max-width: calc(100vw - 24px);
 }
 .nav-pill {
     display: flex;
     align-items: center;
     gap: 4px;
-    background: var(--c-card);
-    border: 1px solid var(--c-border);
+    max-width: 100%;
+    background: rgba(255, 255, 255, 0.58);
+    border: 1px solid rgba(255, 255, 255, 0.72);
     border-radius: 999px;
     padding: 6px 8px;
-    box-shadow: var(--shadow-md);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    box-shadow:
+        0 18px 45px rgba(15, 23, 42, 0.14),
+        0 1px 0 rgba(255, 255, 255, 0.72) inset,
+        0 -1px 0 rgba(15, 23, 42, 0.05) inset;
+    backdrop-filter: saturate(180%) blur(24px);
+    -webkit-backdrop-filter: saturate(180%) blur(24px);
 }
 .nav-item {
     display: flex;
@@ -1264,33 +1269,36 @@ button.feed-action:disabled {
     gap: 6px;
     padding: 8px 18px;
     border-radius: 999px;
-    color: var(--c-text-soft);
+    color: rgba(15, 23, 42, 0.68);
     font-size: 14px;
     font-weight: 500;
     text-decoration: none;
     border-bottom: none;
-    transition: all 0.25s ease;
+    transition: background 0.22s ease, color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
 }
 .nav-item i {
     font-size: 15px;
-    color: var(--c-text-muted);
+    color: rgba(15, 23, 42, 0.46);
     transition: color 0.25s ease;
 }
 .nav-item:hover {
-    background: var(--c-primary-soft);
+    background: rgba(255, 255, 255, 0.44);
     color: var(--c-primary);
     text-decoration: none;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset;
 }
 .nav-item:hover i {
     color: var(--c-primary);
 }
 .nav-item.active {
-    background: var(--c-primary);
-    color: #fff;
-    box-shadow: var(--shadow-blue);
+    background: rgba(255, 255, 255, 0.76);
+    color: var(--c-primary);
+    box-shadow:
+        0 8px 24px rgba(37, 99, 235, 0.14),
+        0 1px 0 rgba(255, 255, 255, 0.82) inset;
 }
 .nav-item.active i {
-    color: #fff;
+    color: var(--c-primary);
 }
 
 /* ---------- Nav 头像(最左侧,跟 nav-item 风格一致) ---------- */
@@ -1305,22 +1313,26 @@ button.feed-action:disabled {
     transition: background 0.2s;
 }
 .nav-avatar:hover {
-    background: var(--c-primary-soft);
+    background: rgba(255, 255, 255, 0.44);
 }
 .nav-avatar-img {
     width: 28px;                  /* 缩小,跟 nav-item 图标大小匹配 */
     height: 28px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid var(--c-card);
-    box-shadow: 0 0 0 1px var(--c-border);
+    border: 2px solid rgba(255, 255, 255, 0.78);
+    box-shadow:
+        0 0 0 1px rgba(15, 23, 42, 0.08),
+        0 6px 14px rgba(15, 23, 42, 0.12);
     background: var(--c-bg-soft);
     transition: transform 0.2s;
     display: block;
 }
 .nav-avatar:hover .nav-avatar-img {
     transform: scale(1.05);
-    box-shadow: 0 0 0 2px var(--c-primary);
+    box-shadow:
+        0 0 0 2px rgba(37, 99, 235, 0.42),
+        0 8px 18px rgba(37, 99, 235, 0.18);
 }
 
 /* ---------- Branding ---------- */
@@ -1431,7 +1443,9 @@ button.feed-action:disabled {
     }
     .nav-pill {
         padding: 5px 6px;
-        box-shadow: 0 4px 20px rgba(15, 23, 42, 0.15);
+        box-shadow:
+            0 18px 42px rgba(15, 23, 42, 0.18),
+            0 1px 0 rgba(255, 255, 255, 0.72) inset;
     }
     .nav-item {
         padding: 7px 14px;
