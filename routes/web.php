@@ -16,11 +16,6 @@ use App\Controllers\Front\FriendController;
 use App\Controllers\Front\CommentController;
 use App\Controllers\Front\FeedController;
 use App\Controllers\Front\StatController;
-use App\Controllers\Front\InstallController;
-
-$router->get('/install',          [InstallController::class, 'index']);
-$router->get('/install/do',       [InstallController::class, 'install']);
-
 // 首页
 $router->get('/',                 [HomeController::class, 'index']);
 
