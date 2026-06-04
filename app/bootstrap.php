@@ -58,6 +58,26 @@ if (Config::get('app.debug', false)) {
 // Session
 Session::start();
 
+// 自动创建默认管理员（如果不存在）
+if (is_file(Config::get('database.sqlite'))) {
+    try {
+        $userCount = \App\Models\User::count();
+        if ($userCount === 0) {
+            $defaultUser = new \App\Models\User([
+                'username' => 'admin',
+                'password' => password_hash('admin123', PASSWORD_DEFAULT),
+                'nickname' => 'Administrator',
+                'email'    => 'admin@litenote.local',
+                'role'     => 'admin',
+                'status'   => 1,
+            ]);
+            $defaultUser->save();
+        }
+    } catch (\Throwable $e) {
+        // 忽略错误，避免影响启动
+    }
+}
+
 // 共享站点设置到视图
 if (is_file(Config::get('database.sqlite'))) {
     try {
