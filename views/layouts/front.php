@@ -19,14 +19,10 @@
     <nav class="site-nav-bar">
         <div class="nav-pill">
             @if(!empty($author))
-                <a href="/" class="nav-item nav-avatar" title="{{ $author->nickname ?: $author->username }}" aria-label="博主头像 · 跳到首页">
+                <a href="/" class="nav-item nav-avatar {{ ($activeNav ?? '') === 'home' ? 'active' : '' }}" title="{{ $author->nickname ?: $author->username }}" aria-label="博主头像 · 跳到首页">
                     <img class="nav-avatar-img" src="{{ $author->getAvatarUrl(40) }}" alt="{{ $author->nickname }}" width="32" height="32" loading="lazy">
                 </a>
             @endif
-            <a href="/" class="nav-item {{ ($activeNav ?? '') === 'home' ? 'active' : '' }}">
-                <i class="fa-regular fa-compass"></i>
-                <span>首页</span>
-            </a>
             <a href="/posts" class="nav-item {{ ($activeNav ?? '') === 'posts' ? 'active' : '' }}">
                 <i class="fa-regular fa-file-lines"></i>
                 <span>文章</span>
