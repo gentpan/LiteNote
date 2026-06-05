@@ -380,7 +380,7 @@ final class Installer
         file_put_contents(Config::get('database.sqlite') . '.installed', date('c'));
 
         // ====== 增量 schema 升级(对已存在的老库) ======
-        // 每次 install() 都尝试 ALTER,失败 swallow。SQLite/MySQL 都安全。
+        // 每次 install() 都尝试 ALTER,失败 swallow。SQLite 下安全且幂等。
         self::selfUpgrade($db, $log);
         \App\Models\Page::ensureSystemPages();
         $log[] = '系统页面导航初始化完成';

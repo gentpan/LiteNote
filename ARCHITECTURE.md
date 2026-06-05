@@ -12,12 +12,12 @@
 |---|---|
 | 语言 | PHP 8.5+(使用 readonly、enum-friendly 写法、first-class callable) |
 | 架构 | 自实现 MVC + Front Controller + 中间件 + 模板引擎 |
-| 数据库 | SQLite(默认)/ MySQL(可切换),PDO + 预处理语句 |
+| 数据库 | SQLite 单库,PDO + 预处理语句 |
 | 前端 | 原生 CSS + Vanilla JS + FontAwesome,**无构建工具** |
 | 依赖 | **零外部依赖**(无 Composer,无 npm) |
 | 模板 | 自实现编译型模板,支持 `@extends` / `@section` / `@yield` / `@include` / `{{ }}` / `{!! !!}` |
 | 安全 | CSRF(时序安全 `hash_equals`)、`htmlspecialchars` 默认转义、SQL 注入白名单防护 |
-| 主题 | Default(蓝灰工具型)+ Ember(米色文艺型),通过后台切换 |
+| 主题 | 前台 Ember 浅色 + 深色模式,后台科技蓝管理面板 |
 | 状态 | 已完成一轮重构(`REFACTORING.md`),N+1 已消除,关键重复代码已抽 trait |
 
 ---
@@ -315,7 +315,7 @@ LiteNote/
 |---|---|---|
 | `app/bootstrap.php` | 74 | 加载 Core、注册自动加载、初始化 Session、注入站点设置到 View |
 | `app/Core/Router.php` | 152 | 路由注册 / 匹配 / 中间件管道 / 404 |
-| `app/Core/Database.php` | 142 | PDO 单例、SQLite/MySQL 切换、事务、insert/update/delete 封装 |
+| `app/Core/Database.php` | 142 | SQLite PDO 单例、事务、insert/update/delete 封装 |
 | `app/Core/View.php` | 241 | 编译型模板引擎、布局继承、View Composer、缓存 |
 | `app/Models/Model.php` | 242 | ActiveRecord 基类、`guardOrderBy`、`paginate`、关系缓存 |
 | `app/Models/Post.php` | 210 | 文章 + 标签 + 分类 JOIN 预加载,消除 N+1 |
@@ -598,23 +598,17 @@ CREATE INDEX idx_stats_path ON stats(path);
 | stats | day, path | 按日/按路径聚合 |
 | 其他 UNIQUE | slug × 5, k, username | 唯一性保证 |
 
-### 3.4 SQLite vs MySQL 差异
+### 3.4 SQLite 单库设计
 
-LiteNote 通过 PDO 抽象,主要差异在 `config/config.php` 切换:
+LiteNote 固定使用 SQLite,无需独立数据库服务。生产部署时备份 `storage/database.sqlite` 即可完整保留业务数据:
 
 ```php
 'database' => [
-    'driver' => 'sqlite',  // 改 'mysql' 即可
     'sqlite' => __DIR__ . '/../storage/database.sqlite',
-    'mysql'  => [
-        'host' => '127.0.0.1', 'port' => 3306,
-        'database' => 'blog', 'username' => 'root', 'password' => '',
-        'charset' => 'utf8mb4',
-    ],
 ],
 ```
 
-> 注意: `Installer::install()` 使用 SQLite 方言(`AUTOINCREMENT`、`CREATE TABLE IF NOT EXISTS`)。MySQL 部署时需调整:把 `AUTOINCREMENT` 换成 `AUTO_INCREMENT`,并把 schema 拆为 MySQL 专用版本。
+`Installer::install()` 使用 SQLite 方言(`AUTOINCREMENT`、`CREATE TABLE IF NOT EXISTS`),升级时通过幂等 `ALTER TABLE` 补齐新增字段。
 
 ---
 
@@ -1207,20 +1201,10 @@ final class Database
 
     private function __construct()
     {
-        $driver = Config::get('database.driver', 'sqlite');
-        if ($driver === 'sqlite') {
-            $path = Config::get('database.sqlite');
-            if (!is_dir(dirname($path))) mkdir(dirname($path), 0775, true);
-            $this->pdo = new PDO('sqlite:' . $path);
-            $this->pdo->exec('PRAGMA foreign_keys = ON');
-        } elseif ($driver === 'mysql') {
-            $c = Config::get('database.mysql');
-            $dsn = sprintf('mysql:host=%s;port=%d;dbname=%s;charset=%s',
-                $c['host'], $c['port'], $c['database'], $c['charset']);
-            $this->pdo = new PDO($dsn, $c['username'], $c['password']);
-        } else {
-            throw new \RuntimeException("Unsupported DB driver: {$driver}");
-        }
+        $path = Config::get('database.sqlite');
+        if (!is_dir(dirname($path))) mkdir(dirname($path), 0775, true);
+        $this->pdo = new PDO('sqlite:' . $path);
+        $this->pdo->exec('PRAGMA foreign_keys = ON');
 
         $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $this->pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
@@ -2431,13 +2415,7 @@ return [
     ],
 
     'database' => [
-        'driver'    => 'sqlite',
-        'sqlite'    => __DIR__ . '/../storage/database.sqlite',
-        'mysql'     => [
-            'host' => '127.0.0.1', 'port' => 3306,
-            'database' => 'blog', 'username' => 'root', 'password' => '',
-            'charset' => 'utf8mb4',
-        ],
+        'sqlite' => __DIR__ . '/../storage/database.sqlite',
     ],
 
     'site' => [
@@ -2500,7 +2478,7 @@ php -S 127.0.0.1:5555 -t public router.php
 </VirtualHost>
 ```
 
-切到 MySQL: 修改 `config/config.php` 的 `driver` + `mysql` 配置;运行 MySQL 方言版的 `Installer::install()`(需把 `AUTOINCREMENT` 换 `AUTO_INCREMENT`)。
+生产环境保持 SQLite 单库即可;迁移时复制代码、`storage/database.sqlite` 和上传目录。
 
 ### 7.3 目录权限
 
@@ -2514,7 +2492,7 @@ chown -R www-data:www-data storage public/assets/uploads
 | 组件 | 版本 |
 |---|---|
 | PHP | 8.5+ (用了 readonly、nullsafe、first-class callable) |
-| PDO | 必需(SQLite 或 MySQL 驱动) |
+| PDO | 必需(SQLite 驱动) |
 | Apache | mod_rewrite(生产)/ PHP built-in server(开发) |
 | 内存 | ≥ 64 MB(模板编译缓存) |
 | 磁盘 | 50 MB(代码)+ 数据库 + 上传文件 |

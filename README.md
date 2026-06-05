@@ -6,7 +6,6 @@
 
 ![PHP](https://img.shields.io/badge/PHP-8.5-777BB4?logo=php&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-3.x-003B57?logo=sqlite&logoColor=white)
-![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?logo=mysql&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Status](https://img.shields.io/badge/status-stable-blue)
 ![Zero Dependency](https://img.shields.io/badge/dependencies-zero-orange)
@@ -50,7 +49,7 @@
 - **零 Composer 依赖** — 不需要 `composer install`,clone 就能跑
 - **自实现编译型模板引擎** — 布局继承 / View Composer / 运行时递归 `@include`(支持循环作用域)/ mtime 自动失效
 - **PHP 8.5 完整特性** — readonly class / enum / nullsafe / never return type
-- **SQLite / MySQL 双驱动** — 切换零代码
+- **SQLite 单库** — 无需数据库服务器,文件级备份与迁移简单
 
 ---
 
@@ -99,7 +98,7 @@ php -r 'require "app/bootstrap.php"; App\Services\Installer::install();'
 
 后台 → 文章 → 写文章 → 填标题/内容 → 保存。前台首页即可看到。
 
-> 数据库默认 SQLite,无需任何配置。生产环境切 MySQL:修改 `config/config.php` 的 `database.driver` 段。
+> 数据库固定使用 SQLite,无需额外数据库服务;默认文件位于 `storage/database.sqlite`。
 
 ---
 
@@ -112,6 +111,7 @@ php -r 'require "app/bootstrap.php"; App\Services\Installer::install();'
 | **ORM** | 自实现 ActiveRecord 基类 + 预加载 + 关系缓存 |
 | **模板引擎** | 自实现编译型,`@extends` / `@section` / `@yield` / 运行时递归 `@include`(循环作用域) |
 | **View Composer** | 自动注入共享数据(站点 author / settings) |
+| **数据库** | SQLite + PDO,单文件存储 |
 | **Markdown 解析** | 自实现(标题/列表/代码块/引用/链接/图片) |
 | **RSS 生成** | 自实现 RSS 2.0 XML 拼装 |
 | **CSRF** | 一次性 token + `hash_equals` 时序安全比较 |

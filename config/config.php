@@ -14,16 +14,7 @@ return [
     ],
 
     'database' => [
-        'driver'    => 'sqlite',  // sqlite | mysql
-        'sqlite'    => __DIR__ . '/../storage/database.sqlite',
-        'mysql'     => [
-            'host'     => '127.0.0.1',
-            'port'     => 3306,
-            'database' => 'blog',
-            'username' => 'root',
-            'password' => '',
-            'charset'  => 'utf8mb4',
-        ],
+        'sqlite' => __DIR__ . '/../storage/database.sqlite',
     ],
 
     'site' => [
