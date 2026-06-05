@@ -5,7 +5,7 @@
 > 在线演示:[litenote.io](https://litenote.io) · 中文界面
 
 ![PHP](https://img.shields.io/badge/PHP-8.5-777BB4?logo=php&logoColor=white)
-![Version](https://img.shields.io/badge/version-1.0.2-0052D9)
+![Version](https://img.shields.io/badge/version-1.0.0-0052D9)
 ![SQLite](https://img.shields.io/badge/SQLite-3.x-003B57?logo=sqlite&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Status](https://img.shields.io/badge/status-stable-blue)
@@ -56,15 +56,35 @@
 
 ## 🎨 主题
 
-LiteNote 现在采用单一前台主题:
+LiteNote 前台采用独立主题目录。`core/` 只负责框架能力,主题拥有自己的模板、函数、CSS、JS、图片和局部组件。
 
 | 区域 | 风格 | 主色 | 文件 |
 |---|---|---|---|
-| **前台浅色** | Ember 暖米 + 陶土红 | `#E65A4C` | `public/assets/css/main.css` |
-| **前台深色** | Codex Island 风格黑色磨砂 | `#619DFF` | `public/assets/css/main.css` |
-| **后台** | 腾讯云式黑白侧栏 + 科技蓝 | `#0052D9` | `public/assets/css/admin.css` |
+| **Ember** | 暖色黑胶播放器 + 内容流 | `#e9554f` | `themes/ember/assets/main.css` |
+| **Kami** | 暖米纸底 + 油墨蓝 | `#1B365D` | `themes/kami/assets/main.css` |
+| **后台** | 腾讯云式黑白侧栏 + 科技蓝 | `#0052D9` | `admin/assets/css/admin.css` |
 
-前台深色模式可在页面侧边悬浮按钮切换;后台不提供主题切换,适合单人博客长期维护。生产部署前如需压缩资源,可切换到同名 `.min.css` / `.min.js`。
+主题约定:
+
+```text
+themes/{theme}/
+├── index.php        # 首页 / 内容流
+├── single.php       # 文章详情
+├── page.php         # 独立页面
+├── header.php
+├── footer.php
+├── layout.php
+├── functions.php
+├── theme.json
+├── inc/             # 评论、卡片、播放器评论等功能片段
+├── pages/           # 音乐、X、动态、归档、搜索、友链等页面模板
+└── assets/
+    ├── main.css
+    ├── main.js
+    └── images/
+```
+
+后台不参与前台主题系统。当前系统默认主题是 `ember`。
 
 ---
 
@@ -74,7 +94,8 @@ LiteNote 现在采用单一前台主题:
 
 ```bash
 cd LiteNote
-php -S 127.0.0.1:5555 -t public router.php
+brew services start php
+caddy run --config Caddyfile
 ```
 
 ### 2. 初始化数据库
@@ -82,7 +103,7 @@ php -S 127.0.0.1:5555 -t public router.php
 首次运行需建表 + 写入默认数据(含默认管理员):
 
 ```bash
-php -r 'require "app/bootstrap.php"; App\Services\Installer::install();'
+php -r 'define("BASE_PATH", getcwd()); require "core/app/bootstrap.php"; App\Services\Installer::install();'
 ```
 
 > 数据库 schema 采用幂等自升级:每次 `Installer::install()` 会自动补齐新增字段,升级版本无需手动迁移。
@@ -95,11 +116,36 @@ php -r 'require "app/bootstrap.php"; App\Services\Installer::install();'
 默认账号:admin / admin123   ← 登录后立即修改
 ```
 
-### 4. 发布第一篇文章
+### 4. 配置环境变量
+
+AI 摘要、Umami 统计、邮件等凭据通过 `.env` 或服务器环境变量配置,不在后台设置页保存。
+
+```bash
+cp .env.example .env
+```
+
+常用键:
+
+```dotenv
+AI_PROVIDER=deepseek
+DEEPSEEK_API_KEY=
+DEEPSEEK_MODEL=deepseek-v4-flash
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+
+UMAMI_ENABLED=false
+UMAMI_BASE_URL=
+UMAMI_WEBSITE_ID=
+UMAMI_TOKEN=
+UMAMI_API_KEY=
+UMAMI_TIMEZONE=Asia/Shanghai
+UMAMI_SCRIPT_URL=
+```
+
+### 5. 发布第一篇文章
 
 后台 → 文章 → 写文章 → 填标题/内容 → 保存。前台首页即可看到。
 
-> 数据库固定使用 SQLite,无需额外数据库服务;默认文件位于 `storage/database.sqlite`。
+> 数据库固定使用 SQLite,无需额外数据库服务;默认文件位于 `runtime/storage/database.sqlite`。
 
 ---
 
@@ -140,43 +186,43 @@ function findUser(int $id): ?User {
 
 ```
 LiteNote/
-├── app/
-│   ├── Core/        # 框架核心(11 个类)
-│   ├── Models/      # 数据模型(11 个,1 基类 + 10 子类)
-│   ├── Controllers/ # 控制器(28 个,Front 14 + Admin 14)
-│   ├── Services/    # 业务服务(Installer / Gravatar / Umami / FriendRss / Mailer / Passkey / AiSummary / ImageUpload 等)
-│   ├── Middleware/  # 中间件(AdminAuth / CsrfMiddleware)
-│   ├── Enums/       # PHP enum(PostStatus / CommentStatus / Toggle)
-│   ├── Traits/      # 横切(HasSlug / HasFlashRedirect)
-│   └── bootstrap.php
-├── views/           # 模板(按模块分目录)
-├── routes/          # 路由定义(web.php + admin.php)
-├── public/          # Web 根目录
-│   ├── index.php
-│   ├── admin/index.php
-│   ├── demo-feeds/  # 演示友链 RSS 数据
-│   └── assets/
-│       ├── css/     # main.css / admin.css (+ main.min.css / admin.min.css)
-│       ├── js/      # main.js / admin.js (+ main.min.js / admin.min.js)
-│       └── images/  # 音乐播放器黑胶 / 唱臂等静态素材
-│       # FontAwesome 7 走 CDN(static.bluecdn.com),不再本地打包
-├── config/config.php
-├── router.php       # PHP 内置服务器入口(开发用)
-└── storage/         # 运行时(SQLite / 模板缓存 / 日志)
+├── admin/           # 后台入口、后台页面和后台资源
+│   ├── assets/      # 后台 css/js/images
+│   ├── pages/       # 后台页面模板
+│   └── parts/       # 后台布局与组件
+├── core/            # 框架核心、路由、数据库结构、系统页
+│   ├── app/
+│   │   ├── Core/        # Request / Response / Router / View / Config / Database
+│   │   ├── Controllers/ # Front / Admin / Api 控制器
+│   │   ├── Models/      # ActiveRecord 风格模型
+│   │   ├── Services/    # Installer / ThemeManager / RSS / Upload / Sync 等服务
+│   │   ├── Middleware/
+│   │   ├── Enums/
+│   │   └── bootstrap.php
+│   ├── database/    # 建表 / migration SQL,不是运行时数据库
+│   ├── routes/      # web.php / admin.php
+│   └── system/      # 系统兜底页面,目前只保留 404
+├── themes/          # 前台主题
+│   └── ember/
+│       ├── index.php
+│       ├── single.php
+│       ├── page.php
+│       ├── header.php
+│       ├── footer.php
+│       ├── functions.php
+│       ├── inc/
+│       ├── pages/
+│       └── assets/
+├── plugins/         # 插件目录(预留)
+├── uploads/         # 上传目录
+├── runtime/storage/ # SQLite、缓存、导入文件、文章正文
+├── config.php       # 根目录配置
+├── .env             # 本地密钥和第三方 API 配置
+├── .env.example
+├── index.php        # 根目录前台入口
+├── Caddyfile        # 本地 Caddy 开发配置
+└── .htaccess        # Web 服务器重写入口
 ```
-
----
-
-## 📚 文档
-
-| 文档 | 用途 |
-|---|---|
-| [CHANGELOG.md](./CHANGELOG.md) | 版本更新日志 |
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | 详细架构设计(请求生命周期 / 数据流 / ER 图 / 关键决策) |
-| [REFACTORING.md](./REFACTORING.md) | 早期代码审查 + 重构报告 |
-| [ENUM_REFACTOR.md](./ENUM_REFACTOR.md) | PHP enum 替代魔法字符串的改造 |
-| [GRAVATAR_TOGGLE.md](./GRAVATAR_TOGGLE.md) | Gravatar 头像接入 + iOS toggle 按钮 |
-| [DEPLOYMENT_2026-06-04.md](./DEPLOYMENT_2026-06-04.md) | 生产部署到 [litenote.io](https://litenote.io) 的完整记录 |
 
 ---
 
@@ -188,20 +234,20 @@ LiteNote 已经在 [litenote.io](https://litenote.io) 上线,生产环境:
 - **PHP**:8.5.2-FPM
 - **DB**:SQLite 3
 
-完整部署步骤见 [DEPLOYMENT_2026-06-04.md](./DEPLOYMENT_2026-06-04.md),核心要点:
+核心部署要点:
 ```bash
 # 同步代码与当前 SQLite 数据
-tar -czf - --exclude=./.git --exclude=./storage/cache --exclude=./storage/logs . \
+tar -czf - --exclude=./.git --exclude=./runtime/storage/cache --exclude=./runtime/storage/logs . \
   | ssh root@host "mkdir -p /var/www/litenote && tar -xzf - -C /var/www/litenote"
 
 # 触发 schema 自升级
-sudo -u www php -r 'require "app/bootstrap.php"; App\Services\Installer::install();'
+sudo -u www php -r 'define("BASE_PATH", getcwd()); require "core/app/bootstrap.php"; App\Services\Installer::install();'
 
 # 改 app.url 为生产域名
-sed -i "s|'url'\s*=>\s*'http://127.0.0.1:5555'|'url' => 'https://yourdomain.com'|" config/config.php
+sed -i "s|'url'\s*=>\s*'http://127.0.0.1:5555'|'url' => 'https://yourdomain.com'|" config.php
 ```
 
-`router.php` 只用于本地 `php -S` 开发服务器;线上建议在 nginx 中用 `try_files $uri $uri/ /index.php?$query_string;`,后台入口同理交给 `public/admin/index.php`。
+本地推荐使用 Caddy + PHP-FPM;线上站点目录指向项目根目录,nginx 使用 `try_files $uri $uri/ /index.php?$query_string;`,后台入口为 `/admin/`。
 
 ---
 
