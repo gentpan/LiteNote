@@ -6,6 +6,7 @@
 return [
     'app' => [
         'name'      => 'LiteNote',
+        'version'   => '1.0.2',
         'url'       => 'http://127.0.0.1:5555',
         'debug'     => true,
         'timezone'  => 'Asia/Shanghai',
