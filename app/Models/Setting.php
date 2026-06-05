@@ -22,6 +22,9 @@ final class Setting extends Model
         $rows = self::db()->fetchAll('SELECT * FROM settings ORDER BY group_name ASC, sort ASC, id ASC');
         $grouped = [];
         foreach ($rows as $r) {
+            if (($r['k'] ?? '') === 'theme') {
+                continue;
+            }
             $grouped[$r['group_name']][] = $r;
         }
         return $grouped;

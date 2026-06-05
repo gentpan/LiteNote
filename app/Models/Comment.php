@@ -16,7 +16,7 @@ use App\Services\Gravatar;
 final class Comment extends Model
 {
     protected static string $table = 'comments';
-    protected static array $sortable = ['id', 'created_at', 'post_id', 'page_id', 'talk_id', 'status'];
+    protected static array $sortable = ['id', 'created_at', 'post_id', 'page_id', 'talk_id', 'music_id', 'status'];
 
     /**
      * 向后兼容 alias —— 旧代码可能引用了 Comment::STATUS_*
@@ -53,16 +53,26 @@ final class Comment extends Model
         );
     }
 
+    public static function forMusic(int $musicId, string|CommentStatus $status = CommentStatus::Approved): array
+    {
+        $statusValue = $status instanceof CommentStatus ? $status->value : $status;
+        return self::query(
+            'SELECT * FROM comments WHERE music_id = ? AND status = ? ORDER BY id ASC',
+            [$musicId, $statusValue]
+        );
+    }
+
     public static function recent(int $limit = 10): array
     {
         $rows = self::db()->fetchAll(
             "SELECT c.*,
-                    COALESCE(p.title, pg.title, '滔客 #' || s.id) AS target_title,
-                    COALESCE(p.slug, pg.slug, s.id) AS target_slug
+                    COALESCE(p.title, pg.title, '滔客 #' || s.id, '音乐 #' || m.id) AS target_title,
+                    COALESCE(p.slug, pg.slug, s.id, m.id) AS target_slug
              FROM comments c
              LEFT JOIN posts p ON c.post_id = p.id
              LEFT JOIN pages pg ON c.page_id = pg.id
              LEFT JOIN talk s ON c.talk_id = s.id
+             LEFT JOIN music m ON c.music_id = m.id
              ORDER BY c.id DESC LIMIT {$limit}"
         );
         return $rows;
@@ -95,6 +105,15 @@ final class Comment extends Model
         );
     }
 
+    public static function countByMusic(int $musicId, string|CommentStatus $status = CommentStatus::Approved): int
+    {
+        $statusValue = $status instanceof CommentStatus ? $status->value : $status;
+        return (int) self::db()->fetchColumn(
+            'SELECT COUNT(*) FROM comments WHERE music_id = ? AND status = ?',
+            [$musicId, $statusValue]
+        );
+    }
+
     /**
      * 同步指定文章的已审核评论数到 posts 表。
      */
@@ -114,6 +133,15 @@ final class Comment extends Model
         }
         $count = self::countByTalk($talkId, CommentStatus::Approved);
         self::db()->update('talk', ['comments_count' => $count], 'id = :id', [':id' => $talkId]);
+    }
+
+    public static function syncCountForMusic(int $musicId): void
+    {
+        if ($musicId <= 0) {
+            return;
+        }
+        $count = self::countByMusic($musicId, CommentStatus::Approved);
+        self::db()->update('music', ['comments_count' => $count], 'id = :id', [':id' => $musicId]);
     }
 
     public function parent(): ?self

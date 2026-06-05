@@ -9,6 +9,7 @@ use App\Core\Session;
 use App\Core\View;
 use App\Models\User;
 use App\Services\ImageUploadService;
+use App\Services\PasskeyService;
 
 class ProfileController
 {
@@ -25,6 +26,7 @@ class ProfileController
         return View::render('profile.index', [
             'user' => $user,
             'csrf' => Session::csrfToken(),
+            'passkeyCount' => count((new PasskeyService())->credentialsForUser((int) $user->id)),
             'pageTitle' => '个人资料',
         ], 'layouts.admin');
     }

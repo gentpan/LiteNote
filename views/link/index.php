@@ -60,7 +60,7 @@
                 <td>
                     @if($l->rss_url)
                         @if(($rssStatus[$l->id] ?? false))
-                            <span class="status status-published"><i class="fa-solid fa-check"></i> 可用</span>
+                            <span class="status status-published"><span class="admin-check-icon" aria-hidden="true"><i class="fa-solid fa-check"></i></span> 可用</span>
                         @else
                             <span class="status status-draft"><i class="fa-solid fa-xmark"></i> 抓取失败</span>
                         @endif
@@ -70,10 +70,13 @@
                     @endif
                 </td>
                 <td>{{ $l->sort }}</td>
-                <td>{!! $l->is_enabled ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-xmark"></i>' !!}</td>
+                <td>{!! $l->is_enabled ? '<span class="admin-check-icon admin-check-icon-sm" aria-hidden="true"><i class="fa-solid fa-check"></i></span>' : '<i class="fa-solid fa-xmark"></i>' !!}</td>
                 <td>
-                    <div class="link-actions">
-                        <button type="button" class="btn btn-sm edit-link-btn"
+                    <div class="admin-action-bar">
+                        <button type="button"
+                            class="admin-action-btn admin-action-edit edit-link-btn"
+                            title="编辑"
+                            aria-label="编辑"
                             data-id="{{ $l->id }}"
                             data-name="{{ $l->name }}"
                             data-url="{{ $l->url }}"
@@ -82,17 +85,29 @@
                             data-rss="{{ $l->rss_url }}"
                             data-sort="{{ $l->sort }}"
                             data-enabled="{{ $l->is_enabled }}">
-                            <i class="fa-solid fa-pen"></i> 编辑
+                            <i class="fa-regular fa-pen-to-square"></i>
                         </button>
                         @if($l->rss_url)
-                        <button type="button" class="btn btn-sm refresh-rss-btn" data-id="{{ $l->id }}">
-                            <i class="fa-solid fa-rotate"></i> 刷新RSS
+                        <button type="button"
+                                class="admin-action-btn admin-action-refresh refresh-rss-btn"
+                                data-id="{{ $l->id }}"
+                                title="刷新 RSS"
+                                aria-label="刷新 RSS">
+                            <i class="fa-solid fa-rotate"></i>
                         </button>
                         @endif
-                        <form method="post" action="/admin/links/delete" style="display:inline" onsubmit="return confirm('确定删除这个友链？')">
+                        <form method="post" action="/admin/links/delete" style="display:inline"
+                              data-confirm="确定删除这个友链？此操作不可撤销。"
+                              data-confirm-title="删除友链"
+                              data-confirm-text="确认删除">
                             <input type="hidden" name="_csrf" value="{{ $csrf }}">
                             <input type="hidden" name="id" value="{{ $l->id }}">
-                            <button type="submit" class="btn btn-sm btn-danger"><i class="fa-solid fa-trash"></i> 删除</button>
+                            <button type="submit"
+                                    class="admin-action-btn admin-action-delete"
+                                    title="删除"
+                                    aria-label="删除">
+                                <i class="fa-regular fa-trash-can"></i>
+                            </button>
                         </form>
                     </div>
                 </td>
@@ -107,6 +122,19 @@
         var form = document.getElementById('new-link-form');
         var title = document.getElementById('link-form-title');
         var submitBtn = document.getElementById('link-submit-btn');
+        function linkLoadingSpinnerSvg() {
+            return '<span class="site-loading-spinner admin-loading-spinner" aria-hidden="true">'
+                + '<svg stroke="#0052d9" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">'
+                + '<g>'
+                + '<circle cx="12" cy="12" r="9.5" fill="none" stroke-width="2.35" stroke-linecap="round">'
+                + '<animate attributeName="stroke-dasharray" dur="1.5s" calcMode="spline" values="0 150;42 150;42 150;42 150" keyTimes="0;0.475;0.95;1" keySplines="0.42,0,0.58,1;0.42,0,0.58,1;0.42,0,0.58,1" repeatCount="indefinite"/>'
+                + '<animate attributeName="stroke-dashoffset" dur="1.5s" calcMode="spline" values="0;-16;-59;-59" keyTimes="0;0.475;0.95;1" keySplines="0.42,0,0.58,1;0.42,0,0.58,1;0.42,0,0.58,1" repeatCount="indefinite"/>'
+                + '</circle>'
+                + '<animateTransform attributeName="transform" type="rotate" dur="2s" values="0 12 12;360 12 12" repeatCount="indefinite"/>'
+                + '</g>'
+                + '</svg>'
+                + '</span>';
+        }
         var f = {
             id:      document.getElementById('link-id'),
             name:    document.getElementById('link-name'),
@@ -162,8 +190,11 @@
             btn.addEventListener('click', function () {
                 if (btn.disabled) return;
                 var original = btn.innerHTML;
+                var originalTitle = btn.getAttribute('title') || '刷新 RSS';
                 btn.disabled = true;
-                btn.innerHTML = '<i class="fa-solid fa-rotate fa-spin"></i> 刷新中…';
+                btn.setAttribute('title', '刷新中');
+                btn.setAttribute('aria-label', '刷新中');
+                btn.innerHTML = linkLoadingSpinnerSvg();
                 var fd = new FormData();
                 fd.append('_csrf', csrf);
                 fd.append('id', btn.dataset.id);
@@ -173,17 +204,23 @@
                     body: fd
                 }).then(function (r) { return r.json(); }).then(function (data) {
                     if (data && data.code === 0) {
-                        btn.innerHTML = '<i class="fa-solid fa-check"></i> 已刷新';
+                        btn.setAttribute('title', '已刷新');
+                        btn.setAttribute('aria-label', '已刷新');
+                        btn.innerHTML = '<span class="admin-check-icon" aria-hidden="true"><i class="fa-solid fa-check"></i></span>';
                         setTimeout(function () { location.reload(); }, 700);
                     } else {
                         btn.disabled = false;
+                        btn.setAttribute('title', originalTitle);
+                        btn.setAttribute('aria-label', originalTitle);
                         btn.innerHTML = original;
-                        alert((data && data.msg) || '刷新失败');
+                        window.adminToast && window.adminToast((data && data.msg) || '刷新失败', 'error');
                     }
                 }).catch(function () {
                     btn.disabled = false;
+                    btn.setAttribute('title', originalTitle);
+                    btn.setAttribute('aria-label', originalTitle);
                     btn.innerHTML = original;
-                    alert('网络错误，刷新失败');
+                    window.adminToast && window.adminToast('网络错误，刷新失败', 'error');
                 });
             });
         });

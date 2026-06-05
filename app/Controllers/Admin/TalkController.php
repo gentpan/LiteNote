@@ -9,6 +9,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
 use App\Enums\Toggle;
+use App\Models\Music;
 use App\Models\Talk;
 
 class TalkController
@@ -36,6 +37,7 @@ class TalkController
     {
         return View::render('talk.form', [
             'item' => null,
+            'musicOptions' => Music::publicOptions(120),
             'csrf' => Session::csrfToken(),
             'pageTitle' => '写滔客',
         ], 'layouts.admin');
@@ -51,6 +53,7 @@ class TalkController
         }
         return View::render('talk.form', [
             'item' => $item,
+            'musicOptions' => Music::publicOptions(120),
             'csrf' => Session::csrfToken(),
             'pageTitle' => '编辑滔客',
         ], 'layouts.admin');
@@ -70,11 +73,8 @@ class TalkController
     {
         $content = trim((string) $request->input('content', ''));
         $images  = trim((string) $request->input('images', ''));
-        $music   = trim((string) $request->input('music', ''));
-        $musicCover  = trim((string) $request->input('music_cover', ''));
-        $musicTitle  = trim((string) $request->input('music_title', ''));
-        $musicArtist = trim((string) $request->input('music_artist', ''));
         $mood    = trim((string) $request->input('mood', ''));
+        $musicId = $this->normalizeMusicId((int)$request->input('music_id', 0));
         $public  = Toggle::fromInput($request->input('is_public', 1))->value;
 
         if ($content === '') {
@@ -84,11 +84,8 @@ class TalkController
         $fields = [
             'content' => $content,
             'images'  => $images,
-            'music'   => $music,
-            'music_cover'  => $musicCover,
-            'music_title'  => $musicTitle,
-            'music_artist' => $musicArtist,
             'mood'    => $mood,
+            'music_id' => $musicId,
             'is_public' => $public,
         ];
         if ($id) {
@@ -113,5 +110,17 @@ class TalkController
         }
         Session::flash('success', '滔客已删除');
         Response::redirect('/admin/talk');
+    }
+
+    private function normalizeMusicId(int $musicId): int
+    {
+        if ($musicId <= 0) {
+            return 0;
+        }
+        $music = Music::find($musicId);
+        if (!$music || (int)$music->is_public !== Toggle::On->value) {
+            return 0;
+        }
+        return (int)$music->id;
     }
 }

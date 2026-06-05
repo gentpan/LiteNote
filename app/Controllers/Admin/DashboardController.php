@@ -8,23 +8,24 @@ use App\Core\View;
 use App\Enums\CommentStatus;
 use App\Models\Comment;
 use App\Models\Post;
-use App\Services\StatService;
+use App\Services\UmamiService;
 
 class DashboardController
 {
     public function index(): string
     {
         $pending = CommentStatus::Pending->value;
+        $umamiStats = UmamiService::dashboardStats();
         $stats = [
             'posts'    => Post::count(),
             'comments' => Post::db()->fetchColumn('SELECT COUNT(*) FROM comments') ?: 0,
             'pending'  => Comment::count(['status' => $pending]),
-            'today'    => StatService::today(),
-            'total'    => StatService::total(),
+            'today'    => $umamiStats['today'],
+            'total'    => $umamiStats['total'],
         ];
         $latestPosts    = Post::query("SELECT * FROM posts ORDER BY id DESC LIMIT 5");
         $pendingComments= Post::db()->fetchAll(
-            "SELECT c.*, COALESCE(p.title, pg.title) AS target_title
+            "SELECT c.*, p.slug AS target_slug, COALESCE(p.title, pg.title) AS target_title
              FROM comments c
              LEFT JOIN posts p ON c.post_id = p.id
              LEFT JOIN pages pg ON c.page_id = pg.id

@@ -8,6 +8,8 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Enums\CommentStatus;
 use App\Models\Comment;
+use App\Models\Music;
+use App\Models\Page;
 use App\Models\Post;
 use App\Models\Setting;
 use App\Models\Talk;
@@ -32,7 +34,9 @@ class CommentController
 
         $data = [
             'post_id'   => (int) $request->input('post_id', 0),
+            'page_id'   => (int) $request->input('page_id', 0),
             'talk_id'=> (int) $request->input('talk_id', 0),
+            'music_id'=> (int) $request->input('music_id', 0),
             'parent_id' => (int) $request->input('parent_id', 0),
             'nickname'  => $request->input('nickname', ''),
             'email'     => $request->input('email', ''),
@@ -70,19 +74,20 @@ class CommentController
             $this->backWithError('评论包含过多链接，已被拦截');
         }
 
-        $target = $this->resolveTarget((int)$data['post_id'], (int)$data['talk_id']);
+        $target = $this->resolveTarget((int)$data['post_id'], (int)$data['page_id'], (int)$data['talk_id'], (int)$data['music_id']);
         if (!$target) {
             $this->backWithError('评论目标不存在');
         }
-        $parentId = $this->normalizeParentId((int)$data['parent_id'], (int)$data['post_id'], (int)$data['talk_id']);
+        $parentId = $this->normalizeParentId((int)$data['parent_id'], (int)$data['post_id'], (int)$data['page_id'], (int)$data['talk_id'], (int)$data['music_id']);
 
         $needAudit = (bool) Setting::get('comment_need_audit', true);
         $status = $needAudit ? CommentStatus::Pending->value : CommentStatus::Approved->value;
 
         $cmt = new Comment([
             'post_id'   => (int)$data['post_id'],
-            'page_id'   => 0,
+            'page_id'   => (int)$data['page_id'],
             'talk_id'=> (int)$data['talk_id'],
+            'music_id'=> (int)$data['music_id'],
             'parent_id' => $parentId,
             'nickname'  => htmlspecialchars(trim((string)$data['nickname']), ENT_QUOTES, 'UTF-8'),
             'email'     => trim((string)$data['email']),
@@ -97,13 +102,16 @@ class CommentController
         if ($status === CommentStatus::Approved->value) {
             Comment::syncCountForPost((int)$data['post_id']);
             Comment::syncCountForTalk((int)$data['talk_id']);
+            Comment::syncCountForMusic((int)$data['music_id']);
         }
 
         $this->sendNotifications(
             $cmt,
             $target,
             (int)$data['post_id'],
+            (int)$data['page_id'],
             (int)$data['talk_id'],
+            (int)$data['music_id'],
             $parentId,
             $status,
             $request
@@ -121,7 +129,9 @@ class CommentController
                     'time'     => \App\Core\Helper::timeTag(date('Y-m-d H:i:s')),
                     'parent_id'=> $parentId,
                     'post_id'  => (int) $data['post_id'],
+                    'page_id'  => (int) $data['page_id'],
                     'talk_id'  => (int) $data['talk_id'],
+                    'music_id' => (int) $data['music_id'],
                 ];
             }
             Response::json($resp);
@@ -137,10 +147,13 @@ class CommentController
         return $linkCount > 3;
     }
 
-    private function resolveTarget(int $postId, int $talkId): ?object
+    private function resolveTarget(int $postId, int $pageId, int $talkId, int $musicId): ?object
     {
         if ($postId) {
             return Post::find($postId);
+        }
+        if ($pageId) {
+            return Page::find($pageId);
         }
         if ($talkId) {
             $talk = Talk::find($talkId);
@@ -148,10 +161,16 @@ class CommentController
                 return $talk;
             }
         }
+        if ($musicId) {
+            $music = Music::find($musicId);
+            if ($music && (int)$music->is_public === 1) {
+                return $music;
+            }
+        }
         return null;
     }
 
-    private function normalizeParentId(int $parentId, int $postId, int $talkId): int
+    private function normalizeParentId(int $parentId, int $postId, int $pageId, int $talkId, int $musicId): int
     {
         if ($parentId <= 0) {
             return 0;
@@ -166,7 +185,15 @@ class CommentController
             return $parentId;
         }
 
+        if ($pageId > 0 && (int)$parent->page_id === $pageId) {
+            return $parentId;
+        }
+
         if ($talkId > 0 && (int)$parent->talk_id === $talkId) {
+            return $parentId;
+        }
+
+        if ($musicId > 0 && (int)$parent->music_id === $musicId) {
             return $parentId;
         }
 
@@ -177,13 +204,15 @@ class CommentController
         Comment $comment,
         object $target,
         int $postId,
+        int $pageId,
         int $talkId,
+        int $musicId,
         int $parentId,
         string $status,
         Request $request
     ): void {
         try {
-            $targetInfo = $this->targetInfo($target, $postId, $talkId, $request);
+            $targetInfo = $this->targetInfo($target, $postId, $pageId, $talkId, $musicId, $request);
             CommentMailer::notifyNewComment($comment, $targetInfo);
 
             if ($status === CommentStatus::Approved->value && $parentId > 0) {
@@ -197,13 +226,27 @@ class CommentController
         }
     }
 
-    private function targetInfo(object $target, int $postId, int $talkId, Request $request): array
+    private function targetInfo(object $target, int $postId, int $pageId, int $talkId, int $musicId, Request $request): array
     {
         if ($postId > 0) {
             $slug = (string)($target->slug ?? '');
             return [
                 'title' => (string)($target->title ?? '文章'),
                 'url' => $this->absoluteUrl($slug !== '' ? '/post/' . $slug . '.html' : '/', $request),
+            ];
+        }
+
+        if ($pageId > 0) {
+            return [
+                'title' => '页面：' . (string)($target->title ?? ('#' . $pageId)),
+                'url' => $this->absoluteUrl((string)($target->getUrl() ?? '/'), $request),
+            ];
+        }
+
+        if ($musicId > 0) {
+            return [
+                'title' => '音乐：' . (string)($target->title ?? ('#' . $musicId)),
+                'url' => $this->absoluteUrl('/music#music-comments', $request),
             ];
         }
 

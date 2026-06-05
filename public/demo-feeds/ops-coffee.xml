@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+    <channel>
+        <title>运维咖啡吧</title>
+        <link>https://blog.ops-coffee.cn/</link>
+        <description>服务器、自动化与工程实践记录。</description>
+        <item>
+            <title>运维咖啡吧：第 1 条中文博客更新</title>
+            <link>https://blog.ops-coffee.cn/#demo-feed-1</link>
+            <guid>https://blog.ops-coffee.cn/#demo-feed-1</guid>
+            <pubDate>Mon, 01 Jun 2026 06:00:32 +0800</pubDate>
+            <description>这是一条 LiteNote 本地演示订阅内容，用于测试友链 RSS 聚合、订阅页和中文博客信息流。</description>
+        </item>
+        <item>
+            <title>运维咖啡吧：第 2 条中文博客更新</title>
+            <link>https://blog.ops-coffee.cn/#demo-feed-2</link>
+            <guid>https://blog.ops-coffee.cn/#demo-feed-2</guid>
+            <pubDate>Sun, 31 May 2026 06:00:32 +0800</pubDate>
+            <description>这是一条 LiteNote 本地演示订阅内容，用于测试友链 RSS 聚合、订阅页和中文博客信息流。</description>
+        </item>
+        <item>
+            <title>运维咖啡吧：第 3 条中文博客更新</title>
+            <link>https://blog.ops-coffee.cn/#demo-feed-3</link>
+            <guid>https://blog.ops-coffee.cn/#demo-feed-3</guid>
+            <pubDate>Sat, 30 May 2026 06:00:32 +0800</pubDate>
+            <description>这是一条 LiteNote 本地演示订阅内容，用于测试友链 RSS 聚合、订阅页和中文博客信息流。</description>
+        </item>
+        <item>
+            <title>运维咖啡吧：第 4 条中文博客更新</title>
+            <link>https://blog.ops-coffee.cn/#demo-feed-4</link>
+            <guid>https://blog.ops-coffee.cn/#demo-feed-4</guid>
+            <pubDate>Fri, 29 May 2026 06:00:32 +0800</pubDate>
+            <description>这是一条 LiteNote 本地演示订阅内容，用于测试友链 RSS 聚合、订阅页和中文博客信息流。</description>
+        </item>
+    </channel>
+</rss>

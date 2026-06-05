@@ -94,19 +94,27 @@
                 <td>{{ $counts[$c->id] ?? 0 }}</td>
                 <td>{{ $c->sort }}</td>
                 <td>
-                    <form method="post" action="/admin/categories/toggle" class="nav-toggle-form">
+                    <form method="post" action="/admin/categories/toggle" class="nav-toggle-form" data-ajax-toggle>
                         <input type="hidden" name="_csrf" value="{{ $csrf }}">
                         <input type="hidden" name="id" value="{{ $c->id }}">
                         <input type="hidden" name="show_in_nav" value="0">
                         <label class="cat-switch" title="{{ $c->show_in_nav ? '点击从菜单栏隐藏' : '点击在菜单栏显示' }}">
-                            <input type="checkbox" name="show_in_nav" value="1" {{ $c->show_in_nav ? 'checked' : '' }} onchange="this.form.submit()">
+                            <input type="checkbox"
+                                   name="show_in_nav"
+                                   value="1"
+                                   data-no-dirty
+                                   aria-label="菜单显示"
+                                   {{ $c->show_in_nav ? 'checked' : '' }}>
                             <span class="cat-switch-slider"></span>
                         </label>
                     </form>
                 </td>
                 <td>
-                    <div class="link-actions">
-                        <button type="button" class="btn btn-sm edit-cat-btn"
+                    <div class="admin-action-bar">
+                        <button type="button"
+                            class="admin-action-btn admin-action-edit edit-cat-btn"
+                            title="编辑"
+                            aria-label="编辑"
                             data-id="{{ $c->id }}"
                             data-name="{{ $c->name }}"
                             data-slug="{{ $c->slug }}"
@@ -114,12 +122,20 @@
                             data-sort="{{ $c->sort }}"
                             data-icon="{{ $c->icon }}"
                             data-color="{{ $c->color }}">
-                            <i class="fa-solid fa-pen"></i> 编辑
+                            <i class="fa-regular fa-pen-to-square"></i>
                         </button>
-                        <form method="post" action="/admin/categories/delete" style="display:inline" onsubmit="return confirm('确定删除？删除后该分类下文章将变为未分类。')">
+                        <form method="post" action="/admin/categories/delete"
+                              data-confirm="确定删除这个分类？删除后该分类下文章将变为未分类。"
+                              data-confirm-title="删除分类"
+                              data-confirm-text="确认删除">
                             <input type="hidden" name="_csrf" value="{{ $csrf }}">
                             <input type="hidden" name="id" value="{{ $c->id }}">
-                            <button type="submit" class="btn btn-sm btn-danger"><i class="fa-solid fa-trash"></i> 删除</button>
+                            <button type="submit"
+                                    class="admin-action-btn admin-action-delete"
+                                    title="删除"
+                                    aria-label="删除">
+                                <i class="fa-regular fa-trash-can"></i>
+                            </button>
                         </form>
                     </div>
                 </td>

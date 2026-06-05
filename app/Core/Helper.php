@@ -145,7 +145,10 @@ final class Helper
     {
         $ext = pathinfo($name, PATHINFO_EXTENSION);
         $base = pathinfo($name, PATHINFO_FILENAME);
-        $base = preg_replace('/[^\p{L}\p{N}_-]/u', '_', $base) ?? '';
+        $ascii = function_exists('iconv') ? @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $base) : false;
+        $base = is_string($ascii) && $ascii !== '' ? $ascii : $base;
+        $base = preg_replace('/[^A-Za-z0-9_-]+/', '_', $base) ?? '';
+        $base = trim($base, '._-');
         if ($base === '') $base = 'file';
         return $base . '_' . substr(md5(uniqid('', true)), 0, 6) . '.' . strtolower($ext);
     }

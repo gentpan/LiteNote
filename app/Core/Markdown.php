@@ -12,14 +12,11 @@ final class Markdown
 {
     public static function parse(string $text): string
     {
+        $htmlPlaceholders = [];
+        $text = str_replace(["\r\n", "\r"], "\n", $text);
+        $text = self::extractCodeBlocks($text, $htmlPlaceholders);
+        $text = self::extractInlineCode($text, $htmlPlaceholders);
         $text = self::escape($text);
-
-        // 代码块（先处理，避免内部被转义）
-        $text = preg_replace_callback(
-            '/```(\w*)\n(.*?)```/s',
-            fn($m) => '<pre><code class="language-' . $m[1] . '">' . htmlspecialchars($m[2], ENT_QUOTES, 'UTF-8') . '</code></pre>',
-            $text
-        );
 
         // 标题
         $text = preg_replace('/^###### (.*?)$/m', '<h6>$1</h6>', $text);
@@ -33,6 +30,10 @@ final class Markdown
         $text = preg_replace('/^\s*---\s*$/m', '<hr>', $text);
         $text = preg_replace('/^\s*\*\*\*\s*$/m', '<hr>', $text);
 
+        // 图片与链接先转成 HTML 占位符,避免 URL 中的 _、* 被强调语法破坏。
+        $text = self::extractImages($text, $htmlPlaceholders);
+        $text = self::extractLinks($text, $htmlPlaceholders);
+
         // 粗体 + 斜体
         $text = preg_replace('/\*\*\*(.+?)\*\*\*/s', '<strong><em>$1</em></strong>', $text);
         $text = preg_replace('/\*\*(.+?)\*\*/s', '<strong>$1</strong>', $text);
@@ -43,38 +44,6 @@ final class Markdown
 
         // 删除线
         $text = preg_replace('/~~(.+?)~~/s', '<del>$1</del>', $text);
-
-        // 图片
-        $text = preg_replace_callback(
-            '/!\[(.+?)\]\((.+?)(?:\s+&quot;(.+?)&quot;)?\)/',
-            function ($m) {
-                $alt = $m[1];
-                $src = $m[2];
-                $title = $m[3] ?? '';
-                if (!preg_match('/^(https?:|\/)/', $src)) {
-                    $src = '/' . ltrim($src, '/');
-                }
-                $titleAttr = $title ? ' title="' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '"' : '';
-                return '<img src="' . htmlspecialchars($src, ENT_QUOTES, 'UTF-8') . '" alt="' . htmlspecialchars($alt, ENT_QUOTES, 'UTF-8') . '"' . $titleAttr . ' loading="lazy" decoding="async">';
-            },
-            $text
-        );
-
-        // 链接
-        $text = preg_replace_callback(
-            '/\[(.+?)\]\((.+?)\)/',
-            function ($m) {
-                $url = $m[2];
-                if (!preg_match('/^https?:\/\//', $url) && !str_starts_with($url, '/') && !str_starts_with($url, '#')) {
-                    $url = '/' . ltrim($url, '/');
-                }
-                return '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="nofollow noopener">' . $m[1] . '</a>';
-            },
-            $text
-        );
-
-        // 行内代码
-        $text = preg_replace('/`([^`]+?)`/', '<code>$1</code>', $text);
 
         // 引用
         $text = preg_replace_callback(
@@ -110,6 +79,7 @@ final class Markdown
 
         // 表格
         $text = self::parseTable($text);
+        $text = self::restoreHtmlPlaceholders($text, $htmlPlaceholders);
 
         // 段落（双换行分割）
         $lines = explode("\n\n", $text);
@@ -126,6 +96,90 @@ final class Markdown
             $result[] = $line;
         }
         return implode("\n", $result);
+    }
+
+    private static function stashHtml(string $html, array &$placeholders): string
+    {
+        $key = '@@MDHTML' . count($placeholders) . '@@';
+        $placeholders[$key] = $html;
+        return $key;
+    }
+
+    private static function restoreHtmlPlaceholders(string $text, array $placeholders): string
+    {
+        return $placeholders === [] ? $text : strtr($text, $placeholders);
+    }
+
+    private static function extractCodeBlocks(string $text, array &$placeholders): string
+    {
+        return preg_replace_callback(
+            '/```([a-zA-Z0-9_-]*)\n(.*?)```/s',
+            static function (array $m) use (&$placeholders): string {
+                $lang = htmlspecialchars($m[1] ?? '', ENT_QUOTES, 'UTF-8');
+                $code = htmlspecialchars($m[2] ?? '', ENT_QUOTES, 'UTF-8');
+                return "\n" . self::stashHtml('<pre><code class="language-' . $lang . '">' . $code . '</code></pre>', $placeholders) . "\n";
+            },
+            $text
+        ) ?? $text;
+    }
+
+    private static function extractInlineCode(string $text, array &$placeholders): string
+    {
+        return preg_replace_callback(
+            '/`([^`\n]+?)`/',
+            static function (array $m) use (&$placeholders): string {
+                return self::stashHtml('<code>' . htmlspecialchars($m[1], ENT_QUOTES, 'UTF-8') . '</code>', $placeholders);
+            },
+            $text
+        ) ?? $text;
+    }
+
+    private static function extractImages(string $text, array &$placeholders): string
+    {
+        return preg_replace_callback(
+            '/!\[(.*?)\]\((.*?)\)/',
+            static function (array $m) use (&$placeholders): string {
+                [$src, $title] = self::splitLinkTarget($m[2]);
+                if (!preg_match('/^(https?:|\/)/', $src)) {
+                    $src = '/' . ltrim($src, '/');
+                }
+                $alt = html_entity_decode($m[1], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $titleAttr = $title !== '' ? ' title="' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '"' : '';
+                $html = '<img src="' . htmlspecialchars($src, ENT_QUOTES, 'UTF-8') . '" alt="' . htmlspecialchars($alt, ENT_QUOTES, 'UTF-8') . '"' . $titleAttr . ' loading="lazy" decoding="async">';
+                return self::stashHtml($html, $placeholders);
+            },
+            $text
+        ) ?? $text;
+    }
+
+    private static function extractLinks(string $text, array &$placeholders): string
+    {
+        return preg_replace_callback(
+            '/(?<!!)\[(.*?)\]\((.*?)\)/',
+            static function (array $m) use (&$placeholders): string {
+                [$url, $title] = self::splitLinkTarget($m[2]);
+                if (!preg_match('/^https?:\/\//', $url) && !str_starts_with($url, '/') && !str_starts_with($url, '#')) {
+                    $url = '/' . ltrim($url, '/');
+                }
+                $label = html_entity_decode($m[1], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $titleAttr = $title !== '' ? ' title="' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '"' : '';
+                $html = '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '"' . $titleAttr . ' target="_blank" rel="nofollow noopener">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>';
+                return self::stashHtml($html, $placeholders);
+            },
+            $text
+        ) ?? $text;
+    }
+
+    /**
+     * @return array{0:string,1:string}
+     */
+    private static function splitLinkTarget(string $raw): array
+    {
+        $raw = trim(html_entity_decode($raw, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        if (preg_match('/^(\S+)\s+["\'](.+)["\']$/', $raw, $m)) {
+            return [$m[1], $m[2]];
+        }
+        return [$raw, ''];
     }
 
     private static function parseTable(string $text): string

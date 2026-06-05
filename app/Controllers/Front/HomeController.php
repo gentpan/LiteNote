@@ -7,6 +7,7 @@ use App\Core\Helper;
 use App\Core\View;
 use App\Models\Category;
 use App\Models\Comment;
+use App\Models\Music;
 use App\Models\Post;
 use App\Models\Talk;
 use App\Services\Gravatar;
@@ -43,6 +44,7 @@ class HomeController
 
         $posts = Post::paginatePublished(1, 8)['items'];
         $talk = Talk::recentPublic(8);
+        $musicMap = Music::mapByIds(array_map(static fn(Talk $item): int => (int)($item->music_id ?? 0), $talk));
 
         $feedItems = [];
         foreach ($posts as $post) {
@@ -53,7 +55,13 @@ class HomeController
             ];
         }
         foreach ($talk as $item) {
-            $item->setRelation('comments', Comment::forTalk((int)$item->id));
+            $music = $musicMap[(int)($item->music_id ?? 0)] ?? null;
+            if ($music && (int)$music->is_public === 1) {
+                $item->setRelation('music', $music);
+                $item->setRelation('comments', Comment::forMusic((int)$music->id));
+            } else {
+                $item->setRelation('comments', Comment::forTalk((int)$item->id));
+            }
             $feedItems[] = [
                 'type' => 'talk',
                 'time' => strtotime((string)$item->created_at) ?: 0,

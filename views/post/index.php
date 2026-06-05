@@ -1,6 +1,9 @@
 @extends('layouts.admin')
 
 @section('content')
+    @php
+        $postStatusLabels = \App\Enums\PostStatus::options();
+    @endphp
     <div class="admin-toolbar">
         <a class="btn btn-primary" href="/admin/posts/create"><i class="fa-solid fa-pen"></i> 写新文章</a>
         <a class="btn" href="/admin/posts/import"><i class="fa-solid fa-file-import"></i> 导入 Markdown</a>
@@ -15,7 +18,12 @@
         </form>
     </div>
 
-    <form method="post" action="/admin/posts/bulk">
+    <form method="post" action="/admin/posts/bulk"
+          data-no-dirty-form
+          data-confirm="确定执行所选批量操作？"
+          data-confirm-title="确认执行操作"
+          data-confirm-tone="primary"
+          data-confirm-text="确认执行">
         <input type="hidden" name="_csrf" value="{{ $csrf }}">
         <div class="bulk-bar">
             <select name="bulk_action">
@@ -26,7 +34,7 @@
                 <option value="untop">取消置顶</option>
                 <option value="delete">删除</option>
             </select>
-            <button type="submit" onclick="return confirm('确定执行？')"><i class="fa-solid fa-check"></i> 应用</button>
+            <button type="submit"><i class="fa-solid fa-arrow-right"></i> 应用</button>
         </div>
         <table class="admin-table">
             <thead>
@@ -48,31 +56,67 @@
                     <td><input type="checkbox" name="ids[]" value="{{ $p->id }}"></td>
                     <td>{{ $p->id }}</td>
                     <td>
-                        @if($p->is_top)<span class="badge badge-top">顶</span>@endif
+                        @if($p->is_top)<span class="badge badge-top" data-post-badge="is_top">顶</span>@endif
+                        @if($p->is_recommend)<span class="badge badge-recommend" data-post-badge="is_recommend">荐</span>@endif
                         <a href="/post/{{ $p->slug }}.html" target="_blank">{{ $p->title }}</a>
                     </td>
                     <td>{{ $p->getCategory()?->name }}</td>
                     <td>{{ $p->views }}</td>
                     <td>{{ $p->comments_count }}</td>
-                    <td><span class="status status-{{ $p->status }}">{{ $p->status }}</span></td>
+                    <td><span class="status status-{{ $p->status }}">{{ $postStatusLabels[$p->status] ?? $p->status }}</span></td>
                     <td>{!! \App\Core\Helper::timeTag($p->published_at) !!}</td>
                     <td>
-                        <a href="/admin/posts/{{ $p->id }}/edit" class="link-btn"><i class="fa-solid fa-pen-to-square"></i> 编辑</a>
-                        <form method="post" action="/admin/posts/{{ $p->id }}/delete" style="display:inline" onsubmit="return confirm('确定删除？')">
-                            <input type="hidden" name="_csrf" value="{{ $csrf }}">
-                            <button type="submit" class="link-btn link-danger"><i class="fa-solid fa-trash"></i> 删除</button>
-                        </form>
+                        <div class="post-action-bar">
+                            <a href="/admin/posts/{{ $p->id }}/edit" class="post-action-btn post-action-edit" title="编辑" aria-label="编辑">
+                                <i class="fa-regular fa-pen-to-square"></i>
+                            </a>
+                            <button type="button"
+                                    class="post-action-btn post-action-top {{ $p->is_top ? 'is-active' : '' }}"
+                                    title="{{ $p->is_top ? '取消置顶' : '置顶' }}"
+                                    aria-label="{{ $p->is_top ? '取消置顶' : '置顶' }}"
+                                    data-post-toggle
+                                    data-field="is_top"
+                                    data-id="{{ $p->id }}"
+                                    data-active="{{ $p->is_top ? '1' : '0' }}"
+                                    data-action="/admin/posts/{{ $p->id }}/toggle"
+                                    data-csrf="{{ $csrf }}">
+                                <i class="fa-solid fa-thumbtack"></i>
+                            </button>
+                            <button type="button"
+                                    class="post-action-btn post-action-recommend {{ $p->is_recommend ? 'is-active' : '' }}"
+                                    title="{{ $p->is_recommend ? '取消推荐' : '推荐' }}"
+                                    aria-label="{{ $p->is_recommend ? '取消推荐' : '推荐' }}"
+                                    data-post-toggle
+                                    data-field="is_recommend"
+                                    data-id="{{ $p->id }}"
+                                    data-active="{{ $p->is_recommend ? '1' : '0' }}"
+                                    data-action="/admin/posts/{{ $p->id }}/toggle"
+                                    data-csrf="{{ $csrf }}">
+                                <i class="fa-solid fa-star"></i>
+                            </button>
+                            <button type="submit"
+                                    form="post-delete-form-{{ $p->id }}"
+                                    class="post-action-btn post-action-delete"
+                                    title="删除"
+                                    aria-label="删除">
+                                <i class="fa-regular fa-trash-can"></i>
+                            </button>
+                        </div>
                     </td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
     </form>
-    {!! $paginator ?? '' !!}
 
-    <script>
-    document.getElementById('check-all').addEventListener('change', function() {
-        document.querySelectorAll('input[name="ids[]"]').forEach(cb => cb.checked = this.checked);
-    });
-    </script>
+    @foreach($posts as $p)
+        <form id="post-delete-form-{{ $p->id }}" method="post" action="/admin/posts/{{ $p->id }}/delete" class="hidden"
+              data-no-dirty-form
+              data-confirm="确定删除这篇文章？删除后关联评论也会一并移除，此操作不可撤销。"
+              data-confirm-title="删除文章"
+              data-confirm-text="确认删除">
+            <input type="hidden" name="_csrf" value="{{ $csrf }}">
+        </form>
+    @endforeach
+    {!! $paginator ?? '' !!}
 @endsection

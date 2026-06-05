@@ -107,8 +107,11 @@ final class Installer
             slug VARCHAR(255) UNIQUE NOT NULL,
             content TEXT NOT NULL,
             markdown_content TEXT,
+            url VARCHAR(255),
+            icon VARCHAR(80),
             views INTEGER DEFAULT 0,
             is_nav INTEGER DEFAULT 0,
+            is_system INTEGER DEFAULT 0,
             sort INTEGER DEFAULT 0,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -140,6 +143,7 @@ final class Installer
             page_id INTEGER DEFAULT 0,
             parent_id INTEGER DEFAULT 0,
             talk_id INTEGER DEFAULT 0,
+            music_id INTEGER DEFAULT 0,
             nickname VARCHAR(50) NOT NULL,
             email VARCHAR(100),
             website VARCHAR(255),
@@ -172,12 +176,37 @@ final class Installer
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             content TEXT NOT NULL,
             images TEXT,
+            music_id INTEGER DEFAULT 0,
             music TEXT,
             mood VARCHAR(20),
             likes_count INTEGER DEFAULT 0,
             comments_count INTEGER DEFAULT 0,
             is_public INTEGER DEFAULT 1,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+        SQL);
+
+        // 音乐
+        $db->query(<<<SQL
+        CREATE TABLE IF NOT EXISTS music (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title VARCHAR(160) NOT NULL,
+            artist VARCHAR(120),
+            album VARCHAR(160),
+            audio_url TEXT NOT NULL,
+            cover_url TEXT,
+            lyrics TEXT,
+            description TEXT,
+            mood VARCHAR(60),
+            duration VARCHAR(20),
+            play_count INTEGER DEFAULT 0,
+            likes_count INTEGER DEFAULT 0,
+            comments_count INTEGER DEFAULT 0,
+            sort INTEGER DEFAULT 0,
+            is_public INTEGER DEFAULT 1,
+            published_at DATETIME,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
         SQL);
 
@@ -207,6 +236,20 @@ final class Installer
         )
         SQL);
 
+        // Passkey / WebAuthn 凭证
+        $db->query(<<<SQL
+        CREATE TABLE IF NOT EXISTS webauthn_credentials (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL DEFAULT 1,
+            credential_id TEXT NOT NULL UNIQUE,
+            public_key TEXT NOT NULL,
+            counter INTEGER DEFAULT 0,
+            device_name VARCHAR(100),
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            last_used_at DATETIME
+        )
+        SQL);
+
         // 索引
         $db->query('CREATE INDEX IF NOT EXISTS idx_posts_status ON posts(status)');
         $db->query('CREATE INDEX IF NOT EXISTS idx_posts_published_at ON posts(published_at)');
@@ -217,9 +260,22 @@ final class Installer
         } catch (\Throwable) {
             // 老库会在 selfUpgrade() 加列后再建一次索引
         }
+        try {
+            $db->query('CREATE INDEX IF NOT EXISTS idx_comments_music ON comments(music_id)');
+        } catch (\Throwable) {
+            // 老库会在 selfUpgrade() 加列后再建一次索引
+        }
+        try {
+            $db->query('CREATE INDEX IF NOT EXISTS idx_talk_music ON talk(music_id)');
+        } catch (\Throwable) {
+            // 老库会在 selfUpgrade() 加列后再建一次索引
+        }
         $db->query('CREATE INDEX IF NOT EXISTS idx_comments_status ON comments(status)');
         $db->query('CREATE INDEX IF NOT EXISTS idx_stats_day ON stats(day)');
         $db->query('CREATE INDEX IF NOT EXISTS idx_stats_path ON stats(path)');
+        $db->query('CREATE INDEX IF NOT EXISTS idx_music_public_sort ON music(is_public, sort, id)');
+        $db->query('CREATE INDEX IF NOT EXISTS idx_music_public_published ON music(is_public, published_at, sort, id)');
+        $db->query('CREATE INDEX IF NOT EXISTS idx_webauthn_user ON webauthn_credentials(user_id)');
 
         $log[] = '数据表创建完成';
 
@@ -245,7 +301,7 @@ final class Installer
                 ['k' => 'description',   'v' => '一个用 PHP 8.5 写的个人博客', 'label' => '站点描述', 'group_name' => 'basic',   'sort' => 3],
                 ['k' => 'keywords',      'v' => 'PHP,博客,个人',       'label' => '关键词',   'group_name' => 'basic',   'sort' => 4],
                 ['k' => 'beian',         'v' => '',                     'label' => '备案号',   'group_name' => 'basic',   'sort' => 5],
-                ['k' => 'theme',         'v' => 'default',              'label' => '主题',     'group_name' => 'basic',   'sort' => 6],
+                ['k' => 'site_avatar_url','v' => '',                     'label' => '站点头像地址', 'group_name' => 'basic', 'sort' => 8],
                 ['k' => 'comment_need_audit', 'v' => '1',                'label' => '评论需审核','group_name' => 'comment', 'sort' => 1],
                 ['k' => 'comment_captcha',    'v' => '0',                'label' => '评论验证码','group_name' => 'comment', 'sort' => 2],
                 ['k' => 'talk_enabled',   'v' => '1',                'label' => '开启滔客',  'group_name' => 'feature', 'sort' => 1],
@@ -256,6 +312,13 @@ final class Installer
                 ['k' => 'deepseek_api_key',   'v' => '',                 'type' => 'password', 'label' => 'DeepSeek API Key', 'group_name' => 'ai', 'sort' => 2],
                 ['k' => 'deepseek_model',     'v' => 'deepseek-v4-flash','label' => 'DeepSeek 模型', 'group_name' => 'ai',   'sort' => 3],
                 ['k' => 'deepseek_base_url',  'v' => 'https://api.deepseek.com', 'label' => 'DeepSeek Base URL', 'group_name' => 'ai', 'sort' => 4],
+                ['k' => 'umami_enabled',      'v' => '0', 'type' => 'bool', 'label' => '启用 Umami 统计', 'group_name' => 'analytics', 'sort' => 1],
+                ['k' => 'umami_base_url',     'v' => '',  'label' => 'Umami 地址', 'group_name' => 'analytics', 'sort' => 2],
+                ['k' => 'umami_website_id',   'v' => '',  'label' => 'Website ID', 'group_name' => 'analytics', 'sort' => 3],
+                ['k' => 'umami_token',        'v' => '',  'type' => 'password', 'label' => '访问令牌(Bearer Token)', 'group_name' => 'analytics', 'sort' => 4],
+                ['k' => 'umami_api_key',      'v' => '',  'type' => 'password', 'label' => 'Cloud API Key(可选)', 'group_name' => 'analytics', 'sort' => 5],
+                ['k' => 'umami_timezone',     'v' => 'Asia/Shanghai', 'label' => '统计时区', 'group_name' => 'analytics', 'sort' => 6],
+                ['k' => 'umami_script_url',   'v' => '', 'label' => '跟踪脚本 URL(可选)', 'group_name' => 'analytics', 'sort' => 7],
             ];
             foreach ($settings as $s) {
                 $db->insert('settings', $s);
@@ -319,6 +382,8 @@ final class Installer
         // ====== 增量 schema 升级(对已存在的老库) ======
         // 每次 install() 都尝试 ALTER,失败 swallow。SQLite/MySQL 都安全。
         self::selfUpgrade($db, $log);
+        \App\Models\Page::ensureSystemPages();
+        $log[] = '系统页面导航初始化完成';
 
         return $log;
     }
@@ -329,6 +394,8 @@ final class Installer
      */
     private static function selfUpgrade(Database $db, array &$log): void
     {
+        self::ensureMusicTable($db);
+
         $upgrades = [
             ['users',    'socials', 'TEXT'],         // 2026-06: 个人资料社交链接
             ['users',    'reset_token', 'VARCHAR(64)'],   // 2026-06: 密码找回 token(sha256)
@@ -336,7 +403,12 @@ final class Installer
             ['categories', 'icon', 'VARCHAR(64)'],          // 2026-06: 分类菜单图标(fontawesome)
             ['categories', 'show_in_nav', 'INTEGER DEFAULT 1'], // 2026-06: 是否在导航菜单显示
             ['categories', 'color', 'INTEGER'],             // 2026-06: 分类配色 0-5(空则按 id 取色)
+            ['pages', 'url', 'VARCHAR(255)'],
+            ['pages', 'icon', 'VARCHAR(80)'],
+            ['pages', 'is_system', 'INTEGER DEFAULT 0'],
             ['comments', 'talk_id', 'INTEGER DEFAULT 0'],
+            ['comments', 'music_id', 'INTEGER DEFAULT 0'],
+            ['talk', 'music_id', 'INTEGER DEFAULT 0'],
             ['talk', 'music', 'TEXT'],
             ['talk', 'music_cover', 'VARCHAR(255)'],     // 2026-06: 音乐卡片封面
             ['talk', 'music_title', 'VARCHAR(120)'],     // 2026-06: 音乐卡片标题
@@ -358,8 +430,245 @@ final class Installer
         } catch (\Throwable) {
             // ignore
         }
+        try {
+            $db->query('CREATE INDEX IF NOT EXISTS idx_comments_music ON comments(music_id)');
+        } catch (\Throwable) {
+            // ignore
+        }
+        try {
+            $db->query('CREATE INDEX IF NOT EXISTS idx_talk_music ON talk(music_id)');
+        } catch (\Throwable) {
+            // ignore
+        }
 
+        self::migrateTalkMusicToMusic($db, $log);
+        self::seedMusic($db, $log);
         self::migratePostMarkdownFiles($db, $log);
+        self::ensurePasskeyTable($db);
+    }
+
+    private static function ensurePasskeyTable(Database $db): void
+    {
+        $db->query(<<<SQL
+        CREATE TABLE IF NOT EXISTS webauthn_credentials (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL DEFAULT 1,
+            credential_id TEXT NOT NULL UNIQUE,
+            public_key TEXT NOT NULL,
+            counter INTEGER DEFAULT 0,
+            device_name VARCHAR(100),
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            last_used_at DATETIME
+        )
+        SQL);
+
+        try {
+            $db->query('CREATE INDEX IF NOT EXISTS idx_webauthn_user ON webauthn_credentials(user_id)');
+        } catch (\Throwable) {
+            // ignore
+        }
+    }
+
+    private static function ensureMusicTable(Database $db): void
+    {
+        $db->query(<<<SQL
+        CREATE TABLE IF NOT EXISTS music (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title VARCHAR(160) NOT NULL,
+            artist VARCHAR(120),
+            album VARCHAR(160),
+            audio_url TEXT NOT NULL,
+            cover_url TEXT,
+            lyrics TEXT,
+            description TEXT,
+            mood VARCHAR(60),
+            duration VARCHAR(20),
+            play_count INTEGER DEFAULT 0,
+            likes_count INTEGER DEFAULT 0,
+            comments_count INTEGER DEFAULT 0,
+            sort INTEGER DEFAULT 0,
+            is_public INTEGER DEFAULT 1,
+            published_at DATETIME,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+        SQL);
+
+        $columns = [
+            ['music', 'album', 'VARCHAR(160)'],
+            ['music', 'cover_url', 'TEXT'],
+            ['music', 'lyrics', 'TEXT'],
+            ['music', 'description', 'TEXT'],
+            ['music', 'mood', 'VARCHAR(60)'],
+            ['music', 'duration', 'VARCHAR(20)'],
+            ['music', 'play_count', 'INTEGER DEFAULT 0'],
+            ['music', 'likes_count', 'INTEGER DEFAULT 0'],
+            ['music', 'comments_count', 'INTEGER DEFAULT 0'],
+            ['music', 'sort', 'INTEGER DEFAULT 0'],
+            ['music', 'is_public', 'INTEGER DEFAULT 1'],
+            ['music', 'published_at', 'DATETIME'],
+            ['music', 'updated_at', 'DATETIME'],
+        ];
+        foreach ($columns as [$table, $col, $type]) {
+            try {
+                $db->query("ALTER TABLE {$table} ADD COLUMN {$col} {$type}");
+            } catch (\Throwable) {
+                // 已存在则忽略
+            }
+        }
+
+        try {
+            $db->query('CREATE INDEX IF NOT EXISTS idx_music_public_sort ON music(is_public, sort, id)');
+        } catch (\Throwable) {
+            // ignore
+        }
+        try {
+            $db->query(
+                "UPDATE music
+                 SET published_at = COALESCE(NULLIF(TRIM(published_at), ''), created_at, updated_at, CURRENT_TIMESTAMP)
+                 WHERE published_at IS NULL OR TRIM(published_at) = ''"
+            );
+        } catch (\Throwable) {
+            // ignore
+        }
+        try {
+            $db->query('CREATE INDEX IF NOT EXISTS idx_music_public_published ON music(is_public, published_at, sort, id)');
+        } catch (\Throwable) {
+            // ignore
+        }
+    }
+
+    private static function migrateTalkMusicToMusic(Database $db, array &$log): void
+    {
+        try {
+            $rows = $db->fetchAll(
+                "SELECT id, content, music, music_cover, music_title, music_artist, mood, is_public, created_at
+                 FROM talk
+                 WHERE music IS NOT NULL AND TRIM(music) <> ''"
+            );
+        } catch (\Throwable) {
+            return;
+        }
+
+        $count = 0;
+        foreach ($rows as $row) {
+            $audioUrl = trim((string)($row['music'] ?? ''));
+            if ($audioUrl === '') {
+                continue;
+            }
+            $path = (string)(parse_url($audioUrl, PHP_URL_PATH) ?? $audioUrl);
+            $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+            if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'avif'], true)) {
+                continue;
+            }
+            $exists = $db->fetchOne('SELECT id FROM music WHERE audio_url = ? LIMIT 1', [$audioUrl]);
+            if ($exists) {
+                try {
+                    $db->query('UPDATE talk SET music_id = ? WHERE id = ? AND COALESCE(music_id, 0) = 0', [(int)$exists['id'], (int)$row['id']]);
+                } catch (\Throwable) {
+                    // ignore
+                }
+                continue;
+            }
+
+            $title = trim((string)($row['music_title'] ?? ''));
+            if ($title === '') {
+                $title = pathinfo($path, PATHINFO_FILENAME) ?: '未命名音乐';
+            }
+
+            $musicId = $db->insert('music', [
+                'title'       => $title,
+                'artist'      => trim((string)($row['music_artist'] ?? '')),
+                'album'       => '',
+                'audio_url'   => $audioUrl,
+                'cover_url'   => trim((string)($row['music_cover'] ?? '')),
+                'lyrics'      => '',
+                'description' => '从说说音乐拆分导入。',
+                'mood'        => trim((string)($row['mood'] ?? '')),
+                'duration'    => '',
+                'play_count'  => 0,
+                'likes_count' => 0,
+                'sort'        => $count,
+                'is_public'   => (int)($row['is_public'] ?? 1),
+                'published_at' => (string)($row['created_at'] ?? date('Y-m-d H:i:s')),
+                'created_at'  => (string)($row['created_at'] ?? date('Y-m-d H:i:s')),
+                'updated_at'  => date('Y-m-d H:i:s'),
+            ]);
+            try {
+                $db->query('UPDATE talk SET music_id = ? WHERE id = ? AND COALESCE(music_id, 0) = 0', [(int)$musicId, (int)$row['id']]);
+            } catch (\Throwable) {
+                // ignore
+            }
+            $count++;
+        }
+
+        if ($count > 0) {
+            $log[] = "升级: 已将 {$count} 条说说音乐拆分到音乐模块";
+        }
+    }
+
+    private static function seedMusic(Database $db, array &$log): void
+    {
+        try {
+            $exists = $db->fetchOne('SELECT id FROM music LIMIT 1');
+        } catch (\Throwable) {
+            return;
+        }
+        if ($exists) {
+            return;
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $songs = [
+            [
+                'title' => '阴雨额度',
+                'artist' => 'LiteNote FM',
+                'album' => '慢速生活样本',
+                'audio_url' => 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+                'cover_url' => 'https://picsum.photos/seed/litenote-music-rain/640/640',
+                'lyrics' => "雨停在窗沿\n给今天留一点安静\n旧歌在房间里转弯\n把心事慢慢放轻",
+                'description' => '给阴天预留一点循环播放的空间。',
+                'mood' => '阴雨额度',
+                'duration' => '5:44',
+                'sort' => 0,
+            ],
+            [
+                'title' => '山路汤圆',
+                'artist' => 'Gentle Loop',
+                'album' => '夜行备忘录',
+                'audio_url' => 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+                'cover_url' => 'https://picsum.photos/seed/litenote-music-road/640/640',
+                'lyrics' => "山风经过耳机\n远处灯火一格一格亮起\n把路写成旋律\n也把疲惫留在身后",
+                'description' => '适合路上听的一首测试曲。',
+                'mood' => '路上',
+                'duration' => '6:12',
+                'sort' => 1,
+            ],
+            [
+                'title' => '低频热可可',
+                'artist' => 'Default Ember',
+                'album' => '室内温度',
+                'audio_url' => 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+                'cover_url' => 'https://picsum.photos/seed/litenote-music-cocoa/640/640',
+                'lyrics' => "杯口冒着白雾\n桌面摊开没写完的句子\n低频在墙角轻轻跳\n夜晚因此慢了下来",
+                'description' => '默认主题下的一点暖色声音。',
+                'mood' => '夜读',
+                'duration' => '4:58',
+                'sort' => 2,
+            ],
+        ];
+
+        foreach ($songs as $song) {
+            $db->insert('music', $song + [
+                'play_count' => 0,
+                'likes_count' => 0,
+                'is_public' => 1,
+                'published_at' => $now,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
+        $log[] = '示例音乐创建完成';
     }
 
     /**

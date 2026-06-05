@@ -16,6 +16,7 @@ class PageController
 {
     public function index(): string
     {
+        Page::ensureSystemPages();
         $pages = Page::query("SELECT * FROM pages ORDER BY sort ASC, id ASC");
         return View::render('page.index', [
             'pages' => $pages,
@@ -31,6 +32,7 @@ class PageController
 
     public function edit($request, array $params): string
     {
+        Page::ensureSystemPages();
         $id = (int)($params['id'] ?? 0);
         $page = Page::find($id);
         if (!$page) {
@@ -45,8 +47,72 @@ class PageController
         return View::render('page.form', [
             'page' => $page,
             'csrf' => Session::csrfToken(),
+            'editorMarkdown' => $this->markdownForEditor($page),
             'pageTitle' => $page ? '编辑页面' : '新建页面',
         ], 'layouts.admin');
+    }
+
+    private function markdownForEditor(?Page $page): string
+    {
+        if (!$page) {
+            return '';
+        }
+
+        $markdown = trim((string)($page->markdown_content ?? ''));
+        if ($markdown !== '') {
+            return $markdown;
+        }
+
+        $content = trim((string)($page->content ?? ''));
+        return $content === '' ? '' : $this->htmlToMarkdownFallback($content);
+    }
+
+    private function htmlToMarkdownFallback(string $html): string
+    {
+        $toText = static function (string $value): string {
+            return trim(html_entity_decode(strip_tags($value), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        };
+
+        $text = $html;
+        $text = preg_replace_callback(
+            '/<pre><code[^>]*>(.*?)<\/code><\/pre>/is',
+            static fn(array $m): string => "\n```\n" . trim(html_entity_decode($m[1], ENT_QUOTES | ENT_HTML5, 'UTF-8')) . "\n```\n",
+            $text
+        ) ?? $text;
+        $text = preg_replace_callback(
+            '/<h([1-6])[^>]*>(.*?)<\/h\1>/is',
+            static fn(array $m): string => "\n" . str_repeat('#', (int)$m[1]) . ' ' . $toText($m[2]) . "\n\n",
+            $text
+        ) ?? $text;
+        $text = preg_replace_callback(
+            '/<img[^>]+src=["\']([^"\']+)["\'][^>]*>/i',
+            static function (array $m): string {
+                $alt = '';
+                if (preg_match('/alt=["\']([^"\']*)["\']/i', $m[0], $altMatch)) {
+                    $alt = html_entity_decode($altMatch[1], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                }
+                return '![' . $alt . '](' . html_entity_decode($m[1], ENT_QUOTES | ENT_HTML5, 'UTF-8') . ')';
+            },
+            $text
+        ) ?? $text;
+        $text = preg_replace_callback(
+            '/<a[^>]+href=["\']([^"\']+)["\'][^>]*>(.*?)<\/a>/is',
+            static fn(array $m): string => '[' . $toText($m[2]) . '](' . html_entity_decode($m[1], ENT_QUOTES | ENT_HTML5, 'UTF-8') . ')',
+            $text
+        ) ?? $text;
+        $text = preg_replace('/<strong[^>]*>(.*?)<\/strong>/is', '**$1**', $text) ?? $text;
+        $text = preg_replace('/<em[^>]*>(.*?)<\/em>/is', '*$1*', $text) ?? $text;
+        $text = preg_replace('/<blockquote[^>]*>(.*?)<\/blockquote>/is', "\n> $1\n", $text) ?? $text;
+        $text = preg_replace('/<li[^>]*>(.*?)<\/li>/is', "\n- $1", $text) ?? $text;
+        $text = preg_replace('/<br\s*\/?>/i', "\n", $text) ?? $text;
+        $text = preg_replace('/<\/p>/i', "\n\n", $text) ?? $text;
+        $text = preg_replace('/<p[^>]*>/i', '', $text) ?? $text;
+        $text = strip_tags($text);
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = preg_replace("/[ \t]+\n/", "\n", $text) ?? $text;
+        $text = preg_replace("/\n{3,}/", "\n\n", $text) ?? $text;
+
+        return trim($text);
     }
 
     public function store(Request $request): never
@@ -61,6 +127,7 @@ class PageController
 
     private function save(Request $request, ?int $id): never
     {
+        Page::ensureSystemPages();
         $title   = trim((string) $request->input('title', ''));
         $slug    = trim((string) $request->input('slug', ''));
         $content = (string) $request->input('content', '');
@@ -72,6 +139,25 @@ class PageController
             Session::flash('error', '标题不能为空');
             Response::redirect($id ? "/admin/pages/{$id}/edit" : '/admin/pages/create');
         }
+
+        $existingPage = $id ? Page::find($id) : null;
+        if ($id && !$existingPage) {
+            Session::flash('error', '页面不存在');
+            Response::redirect('/admin/pages');
+        }
+
+        if ($existingPage && $existingPage->isSystem()) {
+            $existingPage->fill([
+                'title' => $title,
+                'is_nav' => $isNav,
+                'sort' => $sort,
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+            $existingPage->save();
+            Session::flash('success', '系统页面已更新');
+            Response::redirect('/admin/pages');
+        }
+
         if ($slug === '') $slug = Helper::slugify($title);
         $base = $slug;
         $i = 1;
@@ -113,10 +199,58 @@ class PageController
         Response::redirect('/admin/pages');
     }
 
+    /**
+     * 快速切换「在菜单栏显示」。
+     */
+    public function toggleNav(Request $request): never
+    {
+        Page::ensureSystemPages();
+        $id = (int) $request->input('id', 0);
+        $show = Toggle::fromInput($request->input('is_nav', 0))->value;
+        $page = $id > 0 ? Page::find($id) : null;
+
+        if (!$page) {
+            if ($request->isAjax()) {
+                Response::json(['code' => 1, 'msg' => '页面不存在'], 404);
+            }
+            Session::flash('error', '页面不存在');
+            Response::redirect('/admin/pages');
+        }
+
+        Page::db()->update(
+            'pages',
+            ['is_nav' => $show, 'updated_at' => date('Y-m-d H:i:s')],
+            'id = :id',
+            [':id' => $id]
+        );
+        $message = $show ? '已在菜单栏显示' : '已从菜单栏隐藏';
+
+        if ($request->isAjax()) {
+            Response::json([
+                'code' => 0,
+                'msg' => $message,
+                'data' => [
+                    'id' => $id,
+                    'is_nav' => $show,
+                    'show_in_nav' => $show,
+                ],
+            ]);
+        }
+
+        Session::flash('success', $message);
+        Response::redirect('/admin/pages');
+    }
+
     public function destroy(Request $request): never
     {
+        Page::ensureSystemPages();
         $id = (int) $request->input('id', 0);
         if ($id) {
+            $page = Page::find($id);
+            if ($page && $page->isSystem()) {
+                Session::flash('error', '系统页面不能删除，只能关闭菜单显示');
+                Response::redirect('/admin/pages');
+            }
             Page::db()->delete('pages', 'id = ?', [$id]);
         }
         Session::flash('success', '页面已删除');
