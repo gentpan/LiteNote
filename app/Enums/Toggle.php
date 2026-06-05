@@ -13,7 +13,7 @@ namespace App\Enums;
  *   - is_public           (Talk)
  *
  * 设计:backed int,->value 即 0/1,保持与现有 schema 兼容。
- * 注意 MySQL 也有 boolean 别名 = tinyint(1),但当前表用 INTEGER,所以 int 最稳。
+ * SQLite 没有独立 boolean 类型,用 INTEGER 0/1 最稳。
  */
 enum Toggle: int
 {

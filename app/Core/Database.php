@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace App\Core;
 
 use PDO;
-use PDOException;
 use PDOStatement;
 
 /**
@@ -20,26 +19,14 @@ final class Database
 
     private function __construct()
     {
-        $driver = Config::get('database.driver', 'sqlite');
-
-        if ($driver === 'sqlite') {
-            $path = Config::get('database.sqlite');
-            $dir  = dirname($path);
-            if (!is_dir($dir)) {
-                mkdir($dir, 0775, true);
-            }
-            $this->pdo = new PDO('sqlite:' . $path);
-            $this->pdo->exec('PRAGMA foreign_keys = ON');
-        } elseif ($driver === 'mysql') {
-            $c = Config::get('database.mysql');
-            $dsn = sprintf(
-                'mysql:host=%s;port=%d;dbname=%s;charset=%s',
-                $c['host'], $c['port'], $c['database'], $c['charset']
-            );
-            $this->pdo = new PDO($dsn, $c['username'], $c['password']);
-        } else {
-            throw new \RuntimeException("Unsupported DB driver: {$driver}");
+        $path = (string) Config::get('database.sqlite');
+        $dir  = dirname($path);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0775, true);
         }
+
+        $this->pdo = new PDO('sqlite:' . $path);
+        $this->pdo->exec('PRAGMA foreign_keys = ON');
 
         $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $this->pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);

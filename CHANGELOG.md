@@ -32,6 +32,7 @@
 - **RSS 改 `/rss.xml`**(`/feed` 301 跳转),并自动生成 `/llms.txt` 供 AI 索引。
 - **前台资源合并**:删除 `themes/default.css`、`themes/ember.css`、`front.js`、`markdown-editor.js`、`passkey.js`、`view-image.min.js`;前台统一使用 `main.css` / `main.js`,后台统一使用 `admin.css` / `admin.js`,并保留同名 min 文件。
 - **前台主题收敛**:删除蓝色 Default 主题,Ember 作为唯一默认浅色主题;后台保留 `#0052D9` 科技蓝风格,不再提供主题切换。
+- **数据库收敛**:移除残留 MySQL 配置与连接分支,项目固定使用 SQLite。
 - **路由清理**:文章详情固定为 `/post/{slug}.html`;自定义页面使用 `/{slug}`;移除 `/page/{slug}.html` 及旧页面地址兼容。
 - **导航栏**:深色玻璃磨砂胶囊 nav,滚动后变为通栏磨砂条;整体式下拉抽屉;页脚图标无背景,RSS 图标点击复制本站 RSS 地址。
 - **后台 UI 重构**:后台统一直角卡片/按钮、黑白侧边栏、`#0052D9` 科技蓝、FontAwesome 图标、头像下拉菜单、中文状态徽章、统一操作按钮与确认弹窗。
