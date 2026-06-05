@@ -1,0 +1,267 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Models;
+
+final class ActivityIntegration
+{
+    private array $attributes = [];
+
+    public const PROVIDERS = [
+        'github' => [
+            'label' => 'GitHub',
+            'icon' => 'fa-brands fa-github',
+            'description' => '同步公开 Events：Star、Push、PR、Issue、Create。',
+            'default_interval_minutes' => 240,
+            'token_label' => 'GitHub Token',
+            'token_hint' => '公开事件可不填；填 token 可提高限额。',
+            'refresh_label' => '',
+            'fields' => [
+                'username' => ['label' => '用户名', 'placeholder' => 'gentpan'],
+                'limit' => ['label' => '同步条数', 'placeholder' => '30'],
+            ],
+        ],
+        'wakatime' => [
+            'label' => 'WakaTime',
+            'icon' => 'fa-solid fa-keyboard',
+            'description' => '同步每日编码时长、项目、语言和编辑器统计。',
+            'default_interval_minutes' => 240,
+            'token_label' => 'API Key',
+            'token_hint' => 'WakaTime Settings 里的 API Key。',
+            'refresh_label' => '',
+            'fields' => [
+                'username' => ['label' => '用户', 'placeholder' => 'current'],
+                'days' => ['label' => '同步天数', 'placeholder' => '7'],
+            ],
+        ],
+        'spotify' => [
+            'label' => 'Spotify',
+            'icon' => 'fa-brands fa-spotify',
+            'description' => '同步最近播放，可选同步收藏歌曲。',
+            'default_interval_minutes' => 60,
+            'token_label' => 'Access Token',
+            'token_hint' => '如果填写 refresh token，access token 可留空或过期后自动刷新。',
+            'refresh_label' => 'Refresh Token',
+            'fields' => [
+                'client_id' => ['label' => 'Client ID', 'placeholder' => 'Spotify app client id'],
+                'client_secret' => ['label' => 'Client Secret', 'placeholder' => 'Spotify app client secret', 'secret' => true],
+                'limit' => ['label' => '同步条数', 'placeholder' => '20'],
+                'sync_saved' => ['label' => '同步收藏歌曲', 'placeholder' => '1 / 0'],
+            ],
+        ],
+        'neodb' => [
+            'label' => 'NeoDB',
+            'icon' => 'fa-solid fa-clapperboard',
+            'description' => '同步电影、书影音标记和短评。',
+            'default_interval_minutes' => 240,
+            'token_label' => 'Access Token',
+            'token_hint' => 'NeoDB API Token。',
+            'refresh_label' => '',
+            'fields' => [
+                'base_url' => ['label' => '站点地址', 'placeholder' => 'https://neodb.social'],
+                'category' => ['label' => '分类', 'placeholder' => 'movie / tv / music / book'],
+                'shelf_type' => ['label' => '状态', 'placeholder' => 'complete / progress / wishlist'],
+                'limit' => ['label' => '同步条数', 'placeholder' => '30'],
+            ],
+        ],
+        'openai' => [
+            'label' => 'OpenAI',
+            'icon' => 'fa-solid fa-robot',
+            'description' => '同步 Organization Usage，生成每日模型 Token 记录。',
+            'default_interval_minutes' => 240,
+            'token_label' => 'Admin Key',
+            'token_hint' => '需要 OpenAI Platform 管理员 Key。',
+            'refresh_label' => '',
+            'fields' => [
+                'days' => ['label' => '同步天数', 'placeholder' => '7'],
+                'public_usage' => ['label' => '公开用量', 'placeholder' => '1 公开 / 0 只统计'],
+            ],
+        ],
+        'anthropic' => [
+            'label' => 'Claude / Anthropic',
+            'icon' => 'fa-solid fa-brain',
+            'description' => '同步 Anthropic Admin Usage，生成每日 Claude Token 记录。',
+            'default_interval_minutes' => 240,
+            'token_label' => 'Admin API Key',
+            'token_hint' => '需要 sk-ant-admin 开头的 Anthropic Admin Key。',
+            'refresh_label' => '',
+            'fields' => [
+                'days' => ['label' => '同步天数', 'placeholder' => '7'],
+                'public_usage' => ['label' => '公开用量', 'placeholder' => '1 公开 / 0 只统计'],
+            ],
+        ],
+        'x' => [
+            'label' => 'X',
+            'icon' => 'fa-brands fa-x-twitter',
+            'description' => '同步自己的公开 X；也可只填固定 Tweet URLs。',
+            'default_interval_minutes' => 60,
+            'token_label' => 'Bearer Token',
+            'token_hint' => '用于拉取用户最近推文；不填时只处理 Tweet URLs。',
+            'refresh_label' => '',
+            'fields' => [
+                'username' => ['label' => '用户名', 'placeholder' => 'gentpan'],
+                'limit' => ['label' => '每页条数', 'placeholder' => '100'],
+                'pages' => ['label' => '同步页数', 'placeholder' => '10，填 0 表示直到没有下一页'],
+                'tweet_urls' => ['label' => 'Tweet URLs', 'placeholder' => '每行一个 X 链接', 'textarea' => true],
+            ],
+        ],
+        'bilibili' => [
+            'label' => 'Bilibili',
+            'icon' => 'fa-brands fa-bilibili',
+            'description' => '只同步公开 RSS/JSON Feed，不读取私有 cookie。',
+            'default_interval_minutes' => 240,
+            'token_label' => '',
+            'token_hint' => '',
+            'refresh_label' => '',
+            'fields' => [
+                'feed_url' => ['label' => '公开 Feed 地址', 'placeholder' => 'RSSHub 或公开 JSON Feed URL'],
+            ],
+        ],
+    ];
+
+    public function __construct(array $attributes = [])
+    {
+        $this->attributes = $attributes;
+    }
+
+    public function __get(string $name): mixed
+    {
+        return $this->attributes[$name] ?? null;
+    }
+
+    public function toArray(): array
+    {
+        return $this->attributes;
+    }
+
+    public static function all(): array
+    {
+        $rows = Activity::db()->fetchAll('SELECT * FROM activity_integrations ORDER BY provider ASC');
+        return array_map(static fn(array $row): self => new self($row), $rows);
+    }
+
+    public static function configured(): array
+    {
+        $byProvider = [];
+        foreach (self::all() as $item) {
+            $byProvider[(string)$item->provider] = $item;
+        }
+
+        $out = [];
+        foreach (self::PROVIDERS as $provider => $definition) {
+            $out[$provider] = [
+                'provider' => $provider,
+                'definition' => $definition,
+                'integration' => $byProvider[$provider] ?? new self([
+                    'provider' => $provider,
+                    'status' => 'inactive',
+                    'metadata' => '{}',
+                ]),
+            ];
+        }
+        return $out;
+    }
+
+    public static function findByProvider(string $provider): ?self
+    {
+        $row = Activity::db()->fetchOne('SELECT * FROM activity_integrations WHERE provider = ? LIMIT 1', [$provider]);
+        return $row ? new self($row) : null;
+    }
+
+    public static function saveProvider(string $provider, array $data): self
+    {
+        $now = date('Y-m-d H:i:s');
+        $existing = self::findByProvider($provider);
+        $payload = [
+            'provider' => $provider,
+            'access_token' => (string)($data['access_token'] ?? ''),
+            'refresh_token' => (string)($data['refresh_token'] ?? ''),
+            'expires_at' => trim((string)($data['expires_at'] ?? '')) ?: null,
+            'status' => in_array((string)($data['status'] ?? 'active'), ['active', 'inactive'], true) ? (string)$data['status'] : 'active',
+            'metadata' => json_encode((array)($data['metadata'] ?? []), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'updated_at' => $now,
+        ];
+
+        if ($existing) {
+            if ($payload['access_token'] === '') {
+                $payload['access_token'] = (string)($existing->access_token ?? '');
+            }
+            if ($payload['refresh_token'] === '') {
+                $payload['refresh_token'] = (string)($existing->refresh_token ?? '');
+            }
+            Activity::db()->update('activity_integrations', $payload, 'provider = :provider', [':provider' => $provider]);
+        } else {
+            $payload['created_at'] = $now;
+            Activity::db()->insert('activity_integrations', $payload);
+        }
+
+        return self::findByProvider($provider) ?: new self($payload);
+    }
+
+    public function metadata(): array
+    {
+        $data = json_decode((string)($this->metadata ?? ''), true);
+        return is_array($data) ? $data : [];
+    }
+
+    public static function defaultIntervalMinutes(string $provider): int
+    {
+        return max(0, (int)(self::PROVIDERS[$provider]['default_interval_minutes'] ?? 240));
+    }
+
+    public function syncIntervalMinutes(): int
+    {
+        $provider = (string)($this->provider ?? '');
+        $meta = $this->metadata();
+        $value = $meta['sync_interval_minutes'] ?? self::defaultIntervalMinutes($provider);
+        return max(0, min(1440, (int)$value));
+    }
+
+    public function nextSyncAt(): ?string
+    {
+        $lastSyncedAt = trim((string)($this->last_synced_at ?? ''));
+        if ($lastSyncedAt === '') {
+            return null;
+        }
+
+        $interval = $this->syncIntervalMinutes();
+        if ($interval <= 0) {
+            return $lastSyncedAt;
+        }
+
+        $timestamp = strtotime($lastSyncedAt);
+        if ($timestamp === false) {
+            return null;
+        }
+        return date('Y-m-d H:i:s', $timestamp + ($interval * 60));
+    }
+
+    public function isSyncDue(): bool
+    {
+        if ((string)($this->status ?? 'inactive') !== 'active') {
+            return false;
+        }
+
+        $lastSyncedAt = trim((string)($this->last_synced_at ?? ''));
+        if ($lastSyncedAt === '') {
+            return true;
+        }
+
+        $interval = $this->syncIntervalMinutes();
+        if ($interval <= 0) {
+            return true;
+        }
+
+        $nextSyncAt = $this->nextSyncAt();
+        return $nextSyncAt === null || strtotime($nextSyncAt) <= time();
+    }
+
+    public function updateSyncStatus(string $status, ?string $lastSyncedAt = null): void
+    {
+        Activity::db()->update('activity_integrations', [
+            'status' => $status,
+            'last_synced_at' => $lastSyncedAt,
+            'updated_at' => date('Y-m-d H:i:s'),
+        ], 'provider = :provider', [':provider' => (string)$this->provider]);
+    }
+}

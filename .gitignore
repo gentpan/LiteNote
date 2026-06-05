@@ -4,22 +4,27 @@
 # ============================================
 
 # 运行时 SQLite 数据库(必须本地保留,绝不提交)
-storage/database.sqlite
-storage/database.sqlite-journal
-storage/database.sqlite-shm
-storage/database.sqlite-wal
-storage/database.sqlite.installed
+runtime/storage/database.sqlite
+runtime/storage/database.sqlite-journal
+runtime/storage/database.sqlite-shm
+runtime/storage/database.sqlite-wal
+runtime/storage/database.sqlite.installed
+runtime/storage/database.sqlite.bak*
+runtime/storage/activity.sqlite
+runtime/storage/activity.sqlite-journal
+runtime/storage/activity.sqlite-shm
+runtime/storage/activity.sqlite-wal
 
 # 编译后的模板缓存(view 引擎产物,改源模板自动失效)
-storage/cache/views/*.php
+runtime/storage/cache/views/*.php
 
 # 运行时日志
-storage/logs/*.log
-storage/logs/*.txt
+runtime/storage/logs/*.log
+runtime/storage/logs/*.txt
 
 # 用户上传文件(头像/附件,生产用)
-public/assets/uploads/*
-!public/assets/uploads/.gitkeep
+uploads/*
+!uploads/.gitkeep
 
 # macOS 系统文件
 .DS_Store
@@ -43,6 +48,7 @@ public/assets/uploads/*
 # 环境变量 / 凭据(永远不提交)
 .env
 .env.*
+!.env.example
 config.local.php
 *.pem
 *.key
@@ -71,10 +77,10 @@ vendor/
 composer.lock
 
 # 运行时缓存(RSS 抓取缓存 / 视图编译产物)
-storage/cache/
+runtime/storage/cache/
 
 # 文章正文 Markdown(运行时内容,随 DB 本地保留,不入库)
-storage/posts/*.md
+runtime/storage/posts/*.md
 
 # Claude Code 本地配置 / 会话
 .claude/

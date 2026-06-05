@@ -1,0 +1,83 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Core;
+
+final class FileCache
+{
+    private string $basePath;
+
+    public function __construct(?string $basePath = null)
+    {
+        $this->basePath = rtrim($basePath ?: (string)Config::get('cache.path', dirname(__DIR__, 3) . '/runtime/storage/cache'), '/');
+        if (!is_dir($this->basePath)) {
+            @mkdir($this->basePath, 0775, true);
+        }
+    }
+
+    public function get(string $key, mixed $default = null, ?int $ttl = null): mixed
+    {
+        $path = $this->path($key);
+        if (!is_file($path)) {
+            return $default;
+        }
+
+        if ($ttl !== null && $ttl > 0 && filemtime($path) + $ttl < time()) {
+            return $default;
+        }
+
+        $payload = json_decode((string)file_get_contents($path), true);
+        return is_array($payload) && array_key_exists('value', $payload) ? $payload['value'] : $default;
+    }
+
+    public function set(string $key, mixed $value): void
+    {
+        $path = $this->path($key);
+        $dir = dirname($path);
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0775, true);
+        }
+
+        file_put_contents(
+            $path,
+            json_encode([
+                'created_at' => date('Y-m-d H:i:s'),
+                'value' => $value,
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT),
+            LOCK_EX
+        );
+    }
+
+    public function remember(string $key, int $ttl, callable $callback): mixed
+    {
+        $cached = $this->get($key, null, $ttl);
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $value = $callback();
+        $this->set($key, $value);
+        return $value;
+    }
+
+    public function forget(string $key): void
+    {
+        $path = $this->path($key);
+        if (is_file($path)) {
+            @unlink($path);
+        }
+    }
+
+    public function age(string $key): ?int
+    {
+        $path = $this->path($key);
+        return is_file($path) ? max(0, time() - (int)filemtime($path)) : null;
+    }
+
+    public function path(string $key): string
+    {
+        $safe = trim($key, '/');
+        $safe = preg_replace('/[^a-zA-Z0-9_.\/-]+/', '_', $safe) ?: 'cache';
+        return $this->basePath . '/' . $safe . '.json';
+    }
+}

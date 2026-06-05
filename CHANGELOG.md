@@ -1,102 +1,25 @@
-# 更新日志
+# Changelog
 
-本项目所有重要变更记录于此。
-格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/);本项目暂未采用语义化版本号,按日期归档。
+All notable changes to LiteNote are documented here.
 
----
+## [1.0.0] - 2026-06-06
 
-## [1.0.2] - 2026-06-05
+### Added
+- Reintroduced LiteNote as a clean PHP 8.5 + SQLite personal publishing system.
+- Added a root-level application layout with `index.php`, `config.php`, `.env`, `themes/`, `plugins/`, `uploads/`, and `runtime/`.
+- Added independent front-end themes. Each theme owns its templates, `functions.php`, `inc/`, `pages/`, and `assets/main.css` / `assets/main.js`.
+- Added Ember as the default built-in theme and Kami as an optional editorial theme.
+- Added Caddy local development configuration via `Caddyfile`.
+- Added X card support, music publishing, talk posts, activity sync, RSS, comments, and admin management pages.
 
-「滔客」改名 + 评论验证码 + 找回密码 + 独立音乐系统 + 前后台视觉统一 + 路由清理 + 生产部署。
+### Changed
+- Reset the public project version to `1.0.0`.
+- Removed the legacy `public/`, `views/`, `routes/`, `storage/`, `content/`, and `router.php` layout.
+- Moved framework code into `core/`, admin UI into `admin/`, theme files into root `themes/`, plugins into root `plugins/`, uploads into root `uploads/`, and runtime data into `runtime/storage/`.
+- Moved configuration to root `config.php`; environment secrets remain in root `.env`.
+- Removed the web installer pages. Schema creation and upgrades now use the CLI `Installer::install()` service.
+- Removed the old `default` theme. Ember is now the system default theme.
 
-### 新增
-- **找回密码**:后台登录页新增「忘记密码」,配置邮件服务后可发送重置链接到管理员邮箱(token 1 小时有效、一次性、sha256 存储);新增通用 `Mailer` 服务(SendFlare),未配置时自动降级提示。
-- **评论图片验证码**:`/captcha` 生成验证码图片;开关在后台设置,管理员评论自动跳过。
-- **评论 AJAX 提交**:提交评论不再刷新/折叠,新评论即时插入,回复嵌套在父评论下。
-- **独立音乐系统**:新增前台 `/music`、后台音乐管理、音乐模型与控制器;支持音频地址、封面、歌名、歌手、专辑、发布时间、LRC 歌词文本,按发布时间自动整合歌单。
-- **黑胶音乐播放器**:新增 1:1 风格黑胶卡片、唱臂、进度条、上一首/播放/下一首、播放计数、歌词预览、歌曲评论区。
-- **音乐与滔客数据共享**:滔客可关联音乐,音乐页播放同一首歌时共享点赞与评论数据;喜欢按钮一次性生效,心形变为红色实心。
-- **分类增强**:每个分类可设 FontAwesome 图标、配色(6 色,可手动选或自动)、描述,以及「是否在导航显示」开关。
-- **彩色分类下拉**:文章菜单改为双列卡片(图标圆 + 名称 + 描述),每个分类独立颜色;移除「全部文章」(已有归档页)。
-- **分类页 Hero**:分类页顶部展示 图标 + 名称 + 描述 + 文章数,配色与下拉菜单一致。
-- **管理员评论态**:登录后评论框显示头像 + 信息 + 注销,隐藏昵称/邮箱/网站输入。
-- **首页发布滔客**:发布表单抽成可复用 partial,首页与滔客页均可发布。
-- **前台深色模式**:新增 Codex Island 风格深色主题,侧边悬浮胶囊按钮切换,浅色 Ember 主题保留为默认。
-- **Umami 统计接入**:后台统计页改为读取自建/云端 Umami API,支持脚本地址、Website ID、Bearer Token/API Key、时区配置。
-- **页面导航管理**:页面管理中纳入订阅、音乐、滔客等系统页,用 toggle 控制是否显示在前台菜单。
-- **加载更多**:全站分页改为「首屏自动 + 后续手动」,带 loading 与「没有更多内容」提示。
-
-### 变更
-- **说说 → 滔客**:代码、路由、视图、模型、数据库表(`shuoshuo`→`talk`、`comments.shuoshuo_id`→`talk_id`、设置键)全部更名。
-- **FontAwesome 7 走 CDN**(`static.bluecdn.com`),移除本地打包文件;站内 `static.giantaccel.com` 统一改 `static.bluecdn.com`。
-- **RSS 改 `/rss.xml`**(`/feed` 301 跳转),并自动生成 `/llms.txt` 供 AI 索引。
-- **前台资源合并**:删除 `themes/default.css`、`themes/ember.css`、`front.js`、`markdown-editor.js`、`passkey.js`、`view-image.min.js`;前台统一使用 `main.css` / `main.js`,后台统一使用 `admin.css` / `admin.js`,并保留同名 min 文件。
-- **前台主题收敛**:删除蓝色 Default 主题,Ember 作为唯一默认浅色主题;后台保留 `#0052D9` 科技蓝风格,不再提供主题切换。
-- **数据库收敛**:移除残留 MySQL 配置与连接分支,项目固定使用 SQLite。
-- **路由清理**:文章详情固定为 `/post/{slug}.html`;自定义页面使用 `/{slug}`;移除 `/page/{slug}.html` 及旧页面地址兼容。
-- **导航栏**:深色玻璃磨砂胶囊 nav,滚动后变为通栏磨砂条;整体式下拉抽屉;页脚图标无背景,RSS 图标点击复制本站 RSS 地址。
-- **后台 UI 重构**:后台统一直角卡片/按钮、黑白侧边栏、`#0052D9` 科技蓝、FontAwesome 图标、头像下拉菜单、中文状态徽章、统一操作按钮与确认弹窗。
-- **归档页重构**:Hero、统计、热力图、分类、年份列表合并到同一个 800px 内容卡片;热力图无横向滚动并补齐 5 个色位图例;分类两列显示。
-- **文章详情重构**:特色图、正文、评论合并为一个内容卡片;评论头像使用 Gravatar,评论列表单列展示,回复收进父评论下。
-- **友情链接页重构**:所有友链合并为一个列表卡片,每行 favicon + 站点名称 + 描述;页底增加本站名称、描述、网址、RSS 等一键复制信息;友链页独立支持评论。
-- **订阅页调整**:友情链接最近更新(RSS 聚合)移动到订阅页,友链页不再显示订阅入口。
-- **模板引擎 `@include`**:改为运行时递归包含,支持在 `@foreach` 循环作用域内使用(首页卡片拆分为独立 partial)。
-- **前台卡片圆角**:全站文章、滔客、评论等内容卡片收敛到 6-8px;菜单栏保持胶囊风格。
-- **Toast 与 loading**:前后台统一 RSS 复制成功同款 toast;全站 loading 圆圈使用同一 SVG 样式。
-
-### 修复
-- 加载更多三种状态(按钮/加载中/到底)同时显示 —— `display:inline-flex` 覆盖了 `hidden`,改为真正隐藏。
-- 文章卡片相互粘连 —— `.post-card` 增加间距;导航栏与首张卡片间距过近 —— 增大 `.container` 顶部留白。
-- 验证码图片被 PHP 8.5 `imagedestroy()` Deprecated 警告污染 —— 清理输出缓冲。
-- Passkey 登录接口在未绑定时返回 HTML 导致前端 JSON 解析失败 —— 改为稳定 JSON 响应。
-- 后台文章编辑、列表 toggle、筛选应用按钮触发浏览器离站确认 —— 清理误判的 dirty 状态与无关确认。
-- Markdown 编辑器本地导入按钮错位、预览渲染、上传图片不可显示 —— 统一编辑器 partial 与上传预览处理。
-- 首页滔客评论、文章评论回复、音乐评论、登录用户信息卡片等多处布局错位。
-- 后台分类、页面、评论、滔客、友情链接等列表操作按钮样式不一致。
-- 图片灯箱过小、同一条滔客多图底部工具栏缺失 —— 合并并修正 ViewImage。
-- 归档热力图尺寸、宽度、色阶图例与移动端适配。
-
-### 部署
-- 已同步代码与 SQLite 数据到 `litenote.io`,生产使用 nginx 伪静态 `try_files` 分发到 `public/index.php`/`public/admin/index.php`;`router.php` 明确为本地 `php -S` 开发入口。
-
----
-
-## [2026-06-04]
-
-Passkey 登录、玻璃态导航、混合首页信息流、安装与默认管理员。
-
-### 新增
-- **Passkey(WebAuthn)免密登录**:后台登录支持 Passkey 注册与登录。
-- **混合首页信息流**:文章 + 滔客统一时间线,编号卡片、特色图卡片。
-- **首次运行自动创建默认管理员**(`admin` / `admin123`)。
-- **iOS 玻璃态导航**:顶部胶囊导航(桌面)/ 底部导航(移动)。
-
-### 变更
-- 文章封面与正文拆成独立卡片;标题移到封面卡;封面文章正文隐藏重复标题。
-- 文章封面标题用「快看世界体」,正文用「思源宋体」。
-- 前台滔客 / feeds 路由更名;移除旧 slug 重定向。
-- 统一内容宽度与订阅页卡片;移动端隐藏首页文章缩略图。
-- 移除 `/install` 路由(改用 CLI `Installer::install()` 建表)。
-
-### 修复
-- 评论表单溢出、评论框间距、移动端玻璃导航宽度等。
-
----
-
-## [2026-06-03]
-
-AI 摘要、图片灯箱与淡入、友链 RSS、个人资料头像。
-
-### 新增
-- **文章图片上传 + AI 摘要**(DeepSeek 设置)。
-- **图片灯箱 + 懒加载 + 加载淡入**(模糊到清晰);Markdown 图片异步解码。
-- **友链 RSS 订阅页**,友链订阅 JSON 通过 cron 缓存 30 天。
-- **个人资料头像上传**。
-- **后台 flash 消息 toast 提示**;相对时间 + 完整时间戳 tooltip。
-
-### 修复
-- Markdown 图片渲染、设置分组标签渲染;RSS 链接使用当前域名。
-
----
-
-> 更早的提交见 `git log`。生产部署记录见 [DEPLOYMENT_2026-06-04.md](./DEPLOYMENT_2026-06-04.md)。
+### Removed
+- Removed outdated release history from the changelog. This is the new baseline release.
+- Removed old demo feeds and PHP built-in-server router support.

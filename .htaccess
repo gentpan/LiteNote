@@ -1,0 +1,35 @@
+Options -Indexes
+RewriteEngine On
+
+# Block private application directories when the document root is the project root.
+RewriteRule ^(core|runtime)(/|$) - [F,L]
+RewriteRule ^(config\.php|Caddyfile|README\.md|CHANGELOG\.md)$ - [F,L]
+RewriteRule ^\.(?!well-known/) - [F,L]
+
+# Let real public assets be served by Apache.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Everything else goes through the root front controller.
+RewriteRule ^ index.php [QSA,L]
+
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+<FilesMatch "\.(sqlite|sqlite3|md|log|ini|sh|env)$">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpeg "access plus 30 days"
+    ExpiresByType image/png "access plus 30 days"
+    ExpiresByType image/gif "access plus 30 days"
+    ExpiresByType image/webp "access plus 30 days"
+    ExpiresByType text/css "access plus 7 days"
+    ExpiresByType application/javascript "access plus 7 days"
+</IfModule>
