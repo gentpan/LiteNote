@@ -5,6 +5,7 @@
 > 在线演示:[litenote.io](https://litenote.io) · 中文界面
 
 ![PHP](https://img.shields.io/badge/PHP-8.5-777BB4?logo=php&logoColor=white)
+![Version](https://img.shields.io/badge/version-1.0.2-0052D9)
 ![SQLite](https://img.shields.io/badge/SQLite-3.x-003B57?logo=sqlite&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Status](https://img.shields.io/badge/status-stable-blue)
