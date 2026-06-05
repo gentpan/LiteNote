@@ -198,8 +198,8 @@ class PostController
             'cover'            => $cover,
             'category_id'      => (int)$request->input('category_id', 0),
             'user_id'          => Session::get('admin_user.id', 1),
-            'is_top'           => Toggle::fromInput($request->input('is_top', 0))->value,
-            'is_recommend'     => Toggle::fromInput($request->input('is_recommend', 0))->value,
+            'is_top'           => Toggle::Off->value,
+            'is_recommend'     => Toggle::Off->value,
             'status'           => $status,
             'published_at'     => $publishedAt,
             'created_at'       => $now,
@@ -226,8 +226,6 @@ class PostController
             'cover'    => $request->input('cover', ''),
             'category_id' => $request->input('category_id', 0),
             'status'   => $request->input('status', PostStatus::Published->value),
-            'is_top'   => $request->input('is_top', 0),
-            'is_recommend' => $request->input('is_recommend', 0),
             'tags'     => $request->input('tags', ''),
         ];
 
@@ -265,8 +263,6 @@ class PostController
                 'markdown_content' => '',
                 'cover'            => trim((string)$data['cover']),
                 'category_id'      => (int)$data['category_id'],
-                'is_top'           => Toggle::fromInput($data['is_top'])->value,
-                'is_recommend'     => Toggle::fromInput($data['is_recommend'])->value,
                 'status'           => $data['status'],
                 'updated_at'       => $now,
             ]);
@@ -283,8 +279,8 @@ class PostController
                 'cover'            => trim((string)$data['cover']),
                 'category_id'      => (int)$data['category_id'],
                 'user_id'          => Session::get('admin_user.id', 1),
-                'is_top'           => Toggle::fromInput($data['is_top'])->value,
-                'is_recommend'     => Toggle::fromInput($data['is_recommend'])->value,
+                'is_top'           => Toggle::Off->value,
+                'is_recommend'     => Toggle::Off->value,
                 'status'           => $data['status'],
                 'published_at'     => $now,
                 'created_at'       => $now,
@@ -296,6 +292,39 @@ class PostController
 
         $this->flashSuccess($id ? '文章已更新' : '文章已发布');
         $this->redirect('/admin/posts');
+    }
+
+    public function toggleFlag(Request $request, array $params): never
+    {
+        $id = (int)($params['id'] ?? 0);
+        $field = (string)$request->input('field', '');
+        $allowed = [
+            'is_top' => ['on' => '已置顶', 'off' => '已取消置顶'],
+            'is_recommend' => ['on' => '已推荐', 'off' => '已取消推荐'],
+        ];
+
+        if (!isset($allowed[$field])) {
+            Response::json(['code' => 1, 'msg' => '非法操作'], 400);
+        }
+
+        $post = $id > 0 ? Post::find($id) : null;
+        if (!$post) {
+            Response::json(['code' => 1, 'msg' => '文章不存在'], 404);
+        }
+
+        $current = (int)($post->{$field} ?? 0);
+        $next = $current === Toggle::On->value ? Toggle::Off->value : Toggle::On->value;
+        Post::db()->update('posts', [$field => $next, 'updated_at' => date('Y-m-d H:i:s')], 'id = :id', [':id' => $id]);
+
+        Response::json([
+            'code' => 0,
+            'msg' => $next === Toggle::On->value ? $allowed[$field]['on'] : $allowed[$field]['off'],
+            'data' => [
+                'id' => $id,
+                'field' => $field,
+                'value' => $next,
+            ],
+        ]);
     }
 
     public function destroy(Request $request, array $params): never

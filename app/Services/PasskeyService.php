@@ -12,42 +12,95 @@ class PasskeyService
     public function __construct()
     {
         $this->db = Database::getInstance();
+        $this->ensureTable();
+    }
+
+    private function ensureTable(): void
+    {
+        $this->db->query(<<<SQL
+        CREATE TABLE IF NOT EXISTS webauthn_credentials (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL DEFAULT 1,
+            credential_id TEXT NOT NULL UNIQUE,
+            public_key TEXT NOT NULL,
+            counter INTEGER DEFAULT 0,
+            device_name VARCHAR(100),
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            last_used_at DATETIME
+        )
+        SQL);
+
+        $this->db->query('CREATE INDEX IF NOT EXISTS idx_webauthn_user ON webauthn_credentials(user_id)');
     }
 
     public function hasCredential(int $userId = 1): bool
     {
-        $stmt = $this->db->prepare("SELECT COUNT(*) FROM webauthn_credentials WHERE user_id = ?");
-        $stmt->execute([$userId]);
-        return (int)$stmt->fetchColumn() > 0;
+        return (int) $this->db->fetchColumn(
+            'SELECT COUNT(*) FROM webauthn_credentials WHERE user_id = ?',
+            [$userId]
+        ) > 0;
+    }
+
+    public function allCredentials(): array
+    {
+        return $this->db->fetchAll(
+            'SELECT * FROM webauthn_credentials ORDER BY last_used_at DESC, created_at DESC'
+        );
+    }
+
+    public function credentialsForUser(int $userId): array
+    {
+        return $this->db->fetchAll(
+            'SELECT * FROM webauthn_credentials WHERE user_id = ? ORDER BY last_used_at DESC, created_at DESC',
+            [$userId]
+        );
     }
 
     public function saveCredential(array $data): bool
     {
-        $stmt = $this->db->prepare("
-            INSERT INTO webauthn_credentials 
-            (user_id, credential_id, public_key, counter, device_name, created_at) 
-            VALUES (?, ?, ?, ?, ?, datetime('now'))
-        ");
-        
-        return $stmt->execute([
-            $data['user_id'] ?? 1,
-            $data['credential_id'],
-            $data['public_key'],
-            $data['counter'] ?? 0,
-            $data['device_name'] ?? '未知设备'
-        ]);
+        $credentialId = (string) $data['credential_id'];
+        $payload = [
+            'user_id' => $data['user_id'] ?? 1,
+            'public_key' => $data['public_key'],
+            'counter' => $data['counter'] ?? 0,
+            'device_name' => $data['device_name'] ?? '未知设备',
+        ];
+
+        if ($this->getCredentialById($credentialId)) {
+            $this->db->update(
+                'webauthn_credentials',
+                $payload,
+                'credential_id = :credential_id',
+                ['credential_id' => $credentialId]
+            );
+            return true;
+        }
+
+        $payload['credential_id'] = $credentialId;
+        $payload['created_at'] = date('Y-m-d H:i:s');
+        $this->db->insert('webauthn_credentials', $payload);
+        return true;
     }
 
     public function getCredentialById(string $credentialId): ?array
     {
-        $stmt = $this->db->prepare("SELECT * FROM webauthn_credentials WHERE credential_id = ?");
-        $stmt->execute([$credentialId]);
-        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+        return $this->db->fetchOne(
+            'SELECT * FROM webauthn_credentials WHERE credential_id = ?',
+            [$credentialId]
+        );
     }
 
     public function updateCounter(string $credentialId, int $newCounter): bool
     {
-        $stmt = $this->db->prepare("UPDATE webauthn_credentials SET counter = ?, last_used_at = datetime('now') WHERE credential_id = ?");
-        return $stmt->execute([$newCounter, $credentialId]);
+        $this->db->update(
+            'webauthn_credentials',
+            [
+                'counter' => $newCounter,
+                'last_used_at' => date('Y-m-d H:i:s'),
+            ],
+            'credential_id = :credential_id',
+            ['credential_id' => $credentialId]
+        );
+        return true;
     }
 }

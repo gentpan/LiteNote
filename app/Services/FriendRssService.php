@@ -33,19 +33,22 @@ final class FriendRssService
 
         $items = [];
         try {
-            $ctx = stream_context_create([
-                'http' => [
-                    'timeout' => 8,
-                    'user_agent' => 'LiteNote-FriendRss/1.0',
-                    'ignore_errors' => true,
-                ],
-                'https' => [
-                    'timeout' => 8,
-                    'user_agent' => 'LiteNote-FriendRss/1.0',
-                    'ignore_errors' => true,
-                ],
-            ]);
-            $content = @file_get_contents($rssUrl, false, $ctx);
+            $content = self::localDemoFeed($rssUrl);
+            if ($content === null) {
+                $ctx = stream_context_create([
+                    'http' => [
+                        'timeout' => 8,
+                        'user_agent' => 'LiteNote-FriendRss/1.0',
+                        'ignore_errors' => true,
+                    ],
+                    'https' => [
+                        'timeout' => 8,
+                        'user_agent' => 'LiteNote-FriendRss/1.0',
+                        'ignore_errors' => true,
+                    ],
+                ]);
+                $content = @file_get_contents($rssUrl, false, $ctx);
+            }
             if ($content !== false && $content !== '') {
                 $items = self::parseRss($content, $limit);
             }
@@ -229,5 +232,28 @@ final class FriendRssService
         if (!is_dir(self::CACHE_DIR)) {
             @mkdir(self::CACHE_DIR, 0775, true);
         }
+    }
+
+    private static function localDemoFeed(string $rssUrl): ?string
+    {
+        $parts = parse_url($rssUrl);
+        $host = strtolower((string)($parts['host'] ?? ''));
+        $path = (string)($parts['path'] ?? '');
+        if (!in_array($host, ['127.0.0.1', 'localhost'], true) || !str_starts_with($path, '/demo-feeds/')) {
+            return null;
+        }
+
+        $file = basename($path);
+        if ($file === '' || $file !== basename($file)) {
+            return null;
+        }
+
+        $fullPath = dirname(__DIR__, 2) . '/public/demo-feeds/' . $file;
+        if (!is_file($fullPath)) {
+            return null;
+        }
+
+        $content = @file_get_contents($fullPath);
+        return $content === false ? null : $content;
     }
 }

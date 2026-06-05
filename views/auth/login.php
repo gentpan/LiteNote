@@ -5,10 +5,10 @@
         <h1><i class="fa-regular fa-note-sticky"></i> LiteNote 后台</h1>
         <p class="subtitle">请登录</p>
         @if($error)
-            <div class="alert alert-error">{{ $error }}</div>
+            <div hidden data-toast-type="error" data-toast-message="{{ $error }}"></div>
         @endif
         @if(\App\Core\Session::hasFlash('reset_success'))
-            <div class="alert alert-success">{{ \App\Core\Session::getFlash('reset_success') }}</div>
+            <div hidden data-toast-type="success" data-toast-message="{{ \App\Core\Session::getFlash('reset_success') }}"></div>
         @endif
         <form method="post" action="/admin/login">
             <input type="hidden" name="_csrf" value="{{ $csrf }}">
@@ -31,19 +31,20 @@
             <a href="/admin/forgot">忘记密码?</a>
         </p>
 
-        <script src="/assets/js/passkey.js"></script>
         <script>
-        document.getElementById('passkey-login-btn').addEventListener('click', async () => {
-            try {
-                const result = await loginWithPasskey();
-                if (result.success) {
-                    window.location.href = '/admin';
-                } else {
-                    alert('Passkey 登录失败');
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('passkey-login-btn').addEventListener('click', async () => {
+                try {
+                    const result = await loginWithPasskey();
+                    if (result.success) {
+                        window.location.href = '/admin';
+                    } else {
+                        window.adminToast && window.adminToast(result.message || 'Passkey 登录失败', 'error');
+                    }
+                } catch (e) {
+                    window.adminToast && window.adminToast('Passkey 登录失败: ' + e.message, 'error');
                 }
-            } catch (e) {
-                alert('Passkey 登录失败: ' + e.message);
-            }
+            });
         });
         </script>
     </div>

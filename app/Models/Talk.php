@@ -8,9 +8,8 @@ use App\Enums\Toggle;
 /**
  * Talk 模型（改进版）
  * 变更点：
- * 1. 增加 music 字段支持
- * 2. 增加 getMusicEmbed() 解析网易云/QQ音乐/通用链接
- * 3. 默认查询条件改用 Toggle enum
+ * 1. 默认查询条件改用 Toggle enum
+ * 2. 保留旧 music 字段解析方法，便于历史数据迁移和兼容
  */
 final class Talk extends Model
 {
@@ -111,44 +110,44 @@ final class Talk extends Model
             }
         }
 
-        // 通用音频直链（mp3/m4a/wav/ogg/flac/aac）→ 自定义卡片播放器(封面+标题+进度)
+        $cover  = trim((string)($this->music_cover ?? ''));
+        $title  = trim((string)($this->music_title ?? ''));
+        $artist = trim((string)($this->music_artist ?? ''));
+        $urlE   = htmlspecialchars($url, ENT_QUOTES, 'UTF-8');
+
+        $coverClass = $cover !== '' ? 'music-card-cover has-cover' : 'music-card-cover';
+        $coverStyle = $cover !== '' ? ' style="background-image:url(\'' . htmlspecialchars($cover, ENT_QUOTES, 'UTF-8') . '\')"' : '';
+
+        // 通用音频 URL → 自定义胶囊播放器。即使 URL 没有音频后缀，也交给浏览器尝试播放；
+        // 这样签名音频地址或 CDN 动态地址不会被误判成普通外链。
         $path = (string)(parse_url($url, PHP_URL_PATH) ?? $url);
         $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-        if (in_array($ext, ['mp3', 'm4a', 'wav', 'ogg', 'flac', 'aac'], true)) {
-            $cover  = trim((string)($this->music_cover ?? ''));
-            $title  = trim((string)($this->music_title ?? '')) ?: (pathinfo($path, PATHINFO_FILENAME) ?: '未命名音频');
-            $artist = trim((string)($this->music_artist ?? ''));
-
-            $urlE    = htmlspecialchars($url, ENT_QUOTES, 'UTF-8');
-            $titleE  = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
-            $artistE = htmlspecialchars($artist, ENT_QUOTES, 'UTF-8');
-            $coverClass = $cover !== '' ? 'music-card-cover has-cover' : 'music-card-cover';
-            $coverStyle = $cover !== '' ? ' style="background-image:url(\'' . htmlspecialchars($cover, ENT_QUOTES, 'UTF-8') . '\')"' : '';
-
-            $html = '<div class="music-card" data-audio="' . $urlE . '">'
-                . '<div class="' . $coverClass . '"' . $coverStyle . '>'
-                . '<button type="button" class="music-card-btn" aria-label="播放/暂停"><i class="fa-solid fa-play"></i></button>'
-                . '</div>'
-                . '<div class="music-card-info">'
-                . '<div class="music-card-title">' . $titleE . '</div>'
-                . ($artist !== '' ? '<div class="music-card-artist">' . $artistE . '</div>' : '')
-                . '<div class="music-card-progress">'
-                . '<span class="music-card-cur">0:00</span>'
-                . '<div class="music-card-track"><div class="music-card-played"></div></div>'
-                . '<span class="music-card-dur">0:00</span>'
-                . '</div>'
-                . '</div>'
-                . '<audio preload="none" src="' . $urlE . '"></audio>'
-                . '</div>';
-
-            return ['type' => 'card', 'url' => $url, 'html' => $html];
+        $title  = $title !== '' ? $title : (pathinfo($path, PATHINFO_FILENAME) ?: '未命名音乐');
+        if ($title === '') {
+            $title = '未命名音乐';
         }
+        $titleE  = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
+        $subtitle = $artist !== '' ? $artist : '点击播放音乐';
+        $subtitleE = htmlspecialchars($subtitle, ENT_QUOTES, 'UTF-8');
 
-        // 未知格式，作为外链展示
-        return [
-            'type' => 'link',
-            'url'  => $url,
-            'html' => '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="nofollow noopener" class="music-link"><i class="fa-solid fa-music"></i> 收听音乐</a>',
-        ];
+        $html = '<div class="music-card music-card-pill" data-audio="' . $urlE . '" role="button" tabindex="0" aria-label="播放音乐：' . $titleE . '">'
+            . '<span class="' . $coverClass . '"' . $coverStyle . '></span>'
+            . '<span class="music-card-info">'
+            . '<span class="music-card-line">'
+            . '<span class="music-card-title">' . $titleE . '</span>'
+            . '<span class="music-card-track" aria-hidden="true"><span class="music-card-played"></span></span>'
+            . '</span>'
+            . '<span class="music-card-artist">' . $subtitleE . '</span>'
+            . '</span>'
+            . '<span class="music-card-controls">'
+            . '<button type="button" class="music-card-control music-card-skip" data-music-skip="-15" aria-label="后退 15 秒"><i class="fa-solid fa-backward-step"></i></button>'
+            . '<button type="button" class="music-card-control music-card-btn" aria-label="播放/暂停"><i class="fa-solid fa-play"></i></button>'
+            . '<button type="button" class="music-card-control music-card-skip" data-music-skip="15" aria-label="前进 15 秒"><i class="fa-solid fa-forward-step"></i></button>'
+            . '</span>'
+            . '<span class="music-card-time"><span class="music-card-cur">0:00</span><span>/</span><span class="music-card-dur">0:00</span></span>'
+            . '<audio preload="none" src="' . $urlE . '"></audio>'
+            . '</div>';
+
+        return ['type' => in_array($ext, ['mp3', 'm4a', 'wav', 'ogg', 'flac', 'aac'], true) ? 'card' : 'audio', 'url' => $url, 'html' => $html];
     }
 }

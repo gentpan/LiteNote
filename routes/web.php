@@ -10,6 +10,7 @@ use App\Controllers\Front\PostController;
 use App\Controllers\Front\PageController;
 use App\Controllers\Front\CategoryController;
 use App\Controllers\Front\TalkController;
+use App\Controllers\Front\MusicController;
 use App\Controllers\Front\ArchiveController;
 use App\Controllers\Front\SearchController;
 use App\Controllers\Front\FriendController;
@@ -23,18 +24,20 @@ $router->get('/',                 [HomeController::class, 'index']);
 // 文章
 $router->get('/posts',            [HomeController::class, 'posts']);
 $router->get('/readers',          [HomeController::class, 'readers']);
-$router->get('/post/{slug}',      [PostController::class, 'show']);
+$router->get('/post/{slug}.html', [PostController::class, 'show']);
 
 // 分类
 $router->get('/category/{slug}',  [CategoryController::class, 'show']);
-
-// 页面
-$router->get('/page/{slug}',      [PageController::class, 'show']);
 
 // 滔客
 $router->get('/talk',             [TalkController::class, 'index']);
 $router->post('/talk/publish',    [TalkController::class, 'publish']);
 $router->post('/talk/{id}/like',  [TalkController::class, 'like']);
+
+// 音乐
+$router->get('/music',            [MusicController::class, 'index']);
+$router->post('/music/{id}/like', [MusicController::class, 'like']);
+$router->post('/music/{id}/play', [MusicController::class, 'play']);
 
 // 归档
 $router->get('/archives',         [ArchiveController::class, 'index']);
@@ -61,3 +64,6 @@ $router->get('/llms.txt',         [FeedController::class, 'llms']);
 
 // 统计图
 $router->get('/api/stats',        [StatController::class, 'summary']);
+
+// 自定义页面短链接,必须放在最后,避免覆盖上面的固定路由。
+$router->get('/{slug}',           [PageController::class, 'show']);

@@ -1,13 +1,14 @@
 @extends('layouts.admin')
 
 @section('content')
-    <form method="post" action="/admin/settings/save" class="admin-form">
+    <form method="post" action="/admin/settings/save" class="admin-form" data-dirty-watch>
         <input type="hidden" name="_csrf" value="{{ $csrf }}">
         @foreach($grouped as $group => $items)
             <h3 class="settings-group-title">
                 @php
                     $groupLabels = [
                         'ai' => 'AI 设置',
+                        'analytics' => '统计设置',
                         'basic' => '基础设置',
                         'comment' => '评论设置',
                         'feature' => '功能开关',

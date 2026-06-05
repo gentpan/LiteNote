@@ -8,12 +8,15 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
 use App\Models\Setting;
+use App\Services\UmamiService;
 
 class SettingController
 {
     public function index(): string
     {
+        $this->ensureSiteSettings();
         $this->ensureAiSettings();
+        UmamiService::ensureSettings();
         $grouped = Setting::grouped();
         return View::render('setting.index', [
             'grouped' => $grouped,
@@ -26,6 +29,9 @@ class SettingController
     {
         $data = (array) $request->input('settings', []);
         foreach ($data as $k => $v) {
+            if ($k === 'theme') {
+                continue;
+            }
             Setting::set($k, $v);
         }
         // 刷新共享 view 和 config
@@ -38,6 +44,20 @@ class SettingController
         \App\Core\View::share('site', \App\Core\Config::get('site'));
         Session::flash('success', '设置已保存');
         Response::redirect('/admin/settings');
+    }
+
+    private function ensureSiteSettings(): void
+    {
+        Setting::ensureDefaults([
+            [
+                'k' => 'site_avatar_url',
+                'v' => '',
+                'type' => 'string',
+                'label' => '站点头像地址',
+                'group_name' => 'basic',
+                'sort' => 8,
+            ],
+        ]);
     }
 
     private function ensureAiSettings(): void

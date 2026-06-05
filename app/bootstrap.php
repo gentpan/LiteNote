@@ -108,7 +108,7 @@ View::share('currentAdmin', $currentAdmin);
 //
 // 注意:模板渲染时实际传的是完整路径,如 "front.talk.index",
 // pattern 必须用 "*.xxx.*" 才能跨 front/admin 前缀匹配。
-View::composer(['*layouts.front', '*layouts.admin', '*home.*', '*post.*', '*page.*', '*category.*', '*archive.*', '*search.*', '*talk.*', '*friend.*'], function (array $data): array {
+View::composer(['*layouts.front', '*layouts.admin', '*home.*', '*post.*', '*page.*', '*category.*', '*archive.*', '*search.*', '*talk.*', '*music.*', '*friend.*'], function (array $data): array {
     static $cached = null;
     try {
         if ($cached === null) {
@@ -117,15 +117,27 @@ View::composer(['*layouts.front', '*layouts.admin', '*home.*', '*post.*', '*page
             foreach (\App\Models\Category::navList() as $cat) {
                 $navCategories[] = ['name' => $cat->name, 'slug' => $cat->slug, 'count' => $cat->postCount(), 'icon' => $cat->iconClass(), 'color' => $cat->colorIndex(), 'desc' => (string) ($cat->description ?? '')];
             }
+            $navItems = [];
+            foreach (\App\Models\Page::navItems() as $page) {
+                $navItems[] = [
+                    'title' => (string) $page->title,
+                    'slug' => (string) $page->slug,
+                    'url' => $page->getUrl(),
+                    'icon' => $page->iconClass(),
+                    'is_system' => $page->isSystem() ? 1 : 0,
+                ];
+            }
             $cached = [
                 'author'        => $author,
                 'socials'       => $author ? $author->getSocialLinks() : [],
                 'navCategories' => $navCategories,
+                'navItems'      => $navItems,
             ];
         }
         $data['author']        = $cached['author'];
         $data['socials']       = $cached['socials'];
         $data['navCategories'] = $cached['navCategories'];
+        $data['navItems']      = $cached['navItems'];
     } catch (\Throwable) {
         // 数据库未就绪
     }

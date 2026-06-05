@@ -10,9 +10,12 @@
         <div class="js-list-items">
         @foreach($list as $s)
             @php
+                $music = $s->getRelation('music');
+                $isMusicTalk = !empty($music);
                 $comments = $s->getRelation('comments') ?: [];
                 $keywords = $s->getKeywords();
                 $displayContent = $s->contentWithoutKeywords();
+                $commentCount = count($comments);
             @endphp
             <article class="talk-card" id="talk-{{ $s->id }}">
                 <div class="talk-content">{{ $displayContent }}</div>
@@ -26,13 +29,8 @@
                     </div>
                 @endif
 
-                @php $music = $s->getMusicEmbed(); @endphp
-                @if($music)
-                    <div class="talk-music">
-                        <div class="music-player">
-                            {!! $music['html'] !!}
-                        </div>
-                    </div>
+                @if($isMusicTalk)
+                    @include('partials.music-share-card')
                 @endif
 
                 <div class="talk-meta">
@@ -46,14 +44,27 @@
                         <span class="time">{!! \App\Core\Helper::timeTag($s->created_at) !!}</span>
                     </div>
                     <div class="talk-meta-actions">
-                        <button type="button" class="feed-action talk-like-btn" data-id="{{ $s->id }}">
-                            <i class="fa-regular fa-thumbs-up"></i><span class="like-count">{{ (int)($s->likes_count ?? 0) }}</span>
-                        </button>
-                        <button type="button" class="feed-action talk-comment-toggle" data-target="talk-comments-{{ $s->id }}">
-                            <i class="fa-regular fa-comment"></i><span>{{ (int)($s->comments_count ?? count($comments)) }}</span>
-                        </button>
+                        @if($isMusicTalk)
+                            <button type="button" class="feed-action music-share-like-btn" data-music-id="{{ $music->id }}" aria-label="喜欢这首音乐">
+                                <i class="fa-regular fa-heart"></i><span data-music-like-count>{{ (int)($music->likes_count ?? 0) }}</span>
+                            </button>
+                            <button type="button" class="feed-action talk-comment-toggle" data-target="talk-comments-{{ $s->id }}" data-music-id="{{ $music->id }}" aria-label="查看这首音乐的评论">
+                                <i class="fa-regular fa-comment"></i><span data-music-comment-count>{{ $commentCount }}</span>
+                            </button>
+                        @else
+                            <button type="button" class="feed-action talk-like-btn" data-id="{{ $s->id }}">
+                                <i class="fa-regular fa-thumbs-up"></i><span class="like-count">{{ (int)($s->likes_count ?? 0) }}</span>
+                            </button>
+                            <button type="button" class="feed-action talk-comment-toggle" data-target="talk-comments-{{ $s->id }}">
+                                <i class="fa-regular fa-comment"></i><span>{{ (int)($s->comments_count ?? count($comments)) }}</span>
+                            </button>
+                        @endif
                     </div>
                 </div>
+                @if($isMusicTalk)
+                    @php $item = $s; @endphp
+                    @include('partials.music-share-comments')
+                @else
                 <div class="talk-comments" id="talk-comments-{{ $s->id }}">
                     @if(!empty($comments))
                         <ul class="talk-comment-list">
@@ -114,6 +125,7 @@
                         </div>
                     </form>
                 </div>
+                @endif
             </article>
         @endforeach
         </div>

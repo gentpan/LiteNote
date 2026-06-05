@@ -4,22 +4,17 @@ declare(strict_types=1);
 namespace App\Controllers\Admin;
 
 use App\Core\View;
-use App\Services\StatService;
+use App\Services\UmamiService;
 
 class StatController
 {
     public function index(): string
     {
-        $today = StatService::today();
-        $total = StatService::total();
-        $last7 = StatService::last7Days();
-        $topPosts = StatService::topPosts(10);
+        $days = max(1, min(180, (int)($_GET['days'] ?? 7)));
+        $report = UmamiService::report($days);
         return View::render('stat.index', [
-            'today'    => $today,
-            'total'    => $total,
-            'last7'    => $last7,
-            'topPosts' => $topPosts,
-            'pageTitle' => '访问统计',
+            'report' => $report,
+            'pageTitle' => 'Umami 统计',
         ], 'layouts.admin');
     }
 }

@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
 @section('content')
-    <form method="post" action="/admin/posts/import" class="admin-form" enctype="multipart/form-data">
+    <form method="post" action="/admin/posts/import" class="admin-form" enctype="multipart/form-data" data-dirty-watch>
         <input type="hidden" name="_csrf" value="{{ $csrf }}">
 
         <div class="import-panel">
@@ -78,8 +78,6 @@
         </div>
 
         <div class="form-row compact-flags">
-            <label><input type="checkbox" name="is_top" value="1"> 置顶</label>
-            <label><input type="checkbox" name="is_recommend" value="1"> 推荐</label>
             <label><input type="checkbox" name="delete_source" value="1"> 导入后删除服务器源文件</label>
         </div>
 
@@ -91,5 +89,4 @@
     <div class="markdown-editor hidden"
          data-upload-url="/admin/posts/upload-image"
          data-csrf="{{ $csrf }}"></div>
-    <script src="/assets/js/markdown-editor.js?v=20260603b"></script>
 @endsection

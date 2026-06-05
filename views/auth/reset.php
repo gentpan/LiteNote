@@ -6,11 +6,11 @@
         <p class="subtitle">设置一个新的登录密码</p>
 
         @if($error)
-            <div class="alert alert-error">{{ $error }}</div>
+            <div hidden data-toast-type="error" data-toast-message="{{ $error }}"></div>
         @endif
 
         @if(!$valid)
-            <div class="alert alert-error">重置链接无效或已过期,请重新申请。</div>
+            <div hidden data-toast-type="error" data-toast-message="重置链接无效或已过期,请重新申请。"></div>
             <p class="login-foot">
                 <a href="/admin/forgot"><i class="fa-solid fa-rotate-right"></i> 重新申请</a>
             </p>
@@ -27,7 +27,7 @@
                     <input type="password" name="password_confirm" minlength="6" required>
                 </div>
                 <button type="submit" class="btn btn-primary btn-block">
-                    <i class="fa-solid fa-check"></i> 确认重置
+                    <span class="admin-check-icon" aria-hidden="true"><i class="fa-solid fa-check"></i></span> 确认重置
                 </button>
             </form>
             <p class="login-foot">

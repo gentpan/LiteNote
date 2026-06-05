@@ -142,7 +142,12 @@ final class Post extends Model
     {
         $published = PostStatus::Published->value;
         return self::db()->fetchAll(
-            "SELECT id, title, slug, published_at FROM posts WHERE status='{$published}' ORDER BY published_at DESC"
+            "SELECT p.id, p.title, p.slug, p.summary, p.category_id, p.views, p.comments_count, p.published_at,
+                    c.name AS category_name, c.slug AS category_slug, c.icon AS category_icon, c.color AS category_color
+             FROM posts p
+             LEFT JOIN categories c ON p.category_id = c.id
+             WHERE p.status='{$published}'
+             ORDER BY p.published_at DESC, p.id DESC"
         );
     }
 

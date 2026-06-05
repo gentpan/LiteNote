@@ -84,16 +84,37 @@ class CategoryController
     }
 
     /**
-     * 快速切换「在菜单栏显示」(列表内联 toggle 自动提交)。
+     * 快速切换「在菜单栏显示」。
      */
     public function toggleNav(Request $request): never
     {
         $id   = (int) $request->input('id', 0);
         $show = Toggle::fromInput($request->input('show_in_nav', 0))->value;
-        if ($id) {
-            Category::db()->update('categories', ['show_in_nav' => $show], 'id = :id', [':id' => $id]);
+        $cat = $id > 0 ? Category::find($id) : null;
+
+        if (!$cat) {
+            if ($request->isAjax()) {
+                Response::json(['code' => 1, 'msg' => '分类不存在'], 404);
+            }
+            Session::flash('error', '分类不存在');
+            Response::redirect('/admin/categories');
         }
-        Session::flash('success', $show ? '已在菜单栏显示' : '已从菜单栏隐藏');
+
+        Category::db()->update('categories', ['show_in_nav' => $show], 'id = :id', [':id' => $id]);
+        $message = $show ? '已在菜单栏显示' : '已从菜单栏隐藏';
+
+        if ($request->isAjax()) {
+            Response::json([
+                'code' => 0,
+                'msg' => $message,
+                'data' => [
+                    'id' => $id,
+                    'show_in_nav' => $show,
+                ],
+            ]);
+        }
+
+        Session::flash('success', $message);
         Response::redirect('/admin/categories');
     }
 

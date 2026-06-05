@@ -32,7 +32,6 @@ return [
         'description' => '一个用 PHP 8.5 写的小博客',
         'keywords'    => 'PHP,博客,个人',
         'beian'       => '',
-        'theme'       => 'default',
         'comment_need_audit' => true,
         'comment_captcha'    => false,
     ],

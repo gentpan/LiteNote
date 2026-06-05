@@ -60,10 +60,10 @@
             .then(r => r.json())
             .then(d => {
                 if (d.code === 0) {
-                    alert('上传成功');
-                    location.reload();
+                    window.adminToast && window.adminToast('上传成功', 'success');
+                    setTimeout(() => location.reload(), 500);
                 } else {
-                    alert('上传失败: ' + d.msg);
+                    window.adminToast && window.adminToast('上传失败: ' + d.msg, 'error');
                 }
             });
     }
@@ -79,16 +79,25 @@
     });
     document.querySelectorAll('.delete-att').forEach(btn => {
         btn.addEventListener('click', function() {
-            if (!confirm('确定删除？')) return;
-            const fd = new FormData();
-            fd.append('_csrf', csrf);
-            fd.append('id', this.dataset.id);
-            fetch('/admin/attachments/delete', { method: 'POST', body: fd })
-                .then(r => r.json())
-                .then(d => {
-                    if (d.code === 0) location.reload();
-                    else alert('删除失败');
-                });
+            const id = this.dataset.id;
+            if (!window.adminConfirm) return;
+            window.adminConfirm({
+                title: '删除附件',
+                message: '确定删除这个附件？文件记录和本地文件都会被移除，此操作不可撤销。',
+                confirmText: '确认删除',
+                tone: 'danger'
+            }).then(ok => {
+                if (!ok) return;
+                const fd = new FormData();
+                fd.append('_csrf', csrf);
+                fd.append('id', id);
+                fetch('/admin/attachments/delete', { method: 'POST', body: fd })
+                    .then(r => r.json())
+                    .then(d => {
+                        if (d.code === 0) location.reload();
+                        else window.adminToast && window.adminToast('删除失败', 'error');
+                    });
+            });
         });
     });
     </script>

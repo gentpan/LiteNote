@@ -14,6 +14,7 @@ use App\Controllers\Admin\AttachmentController;
 use App\Controllers\Admin\LinkController;
 use App\Controllers\Admin\CommentController;
 use App\Controllers\Admin\TalkController;
+use App\Controllers\Admin\MusicController;
 use App\Controllers\Admin\StatController;
 use App\Controllers\Admin\SettingController;
 use App\Controllers\Admin\ProfileController;
@@ -29,6 +30,8 @@ $router->get('/admin/forgot',       [AuthController::class, 'forgotForm']);
 $router->post('/admin/forgot',      [AuthController::class, 'forgot'], [CsrfMiddleware::class]);
 $router->get('/admin/reset',        [AuthController::class, 'resetForm']);
 $router->post('/admin/reset',       [AuthController::class, 'reset'], [CsrfMiddleware::class]);
+$router->get('/admin/passkey/login-options', [PasskeyController::class, 'loginOptions']);
+$router->post('/admin/passkey/login',        [PasskeyController::class, 'login'], [CsrfMiddleware::class]);
 
 // 受保护
 $router->group('/admin', function ($r) {
@@ -45,6 +48,7 @@ $router->group('/admin', function ($r) {
     $r->post('/posts/summary',         [PostController::class, 'generateSummary'], [\App\Middleware\CsrfMiddleware::class]);
     $r->get('/posts/{id}/edit',        [PostController::class, 'edit']);
     $r->post('/posts/{id}/edit',       [PostController::class, 'update'], [\App\Middleware\CsrfMiddleware::class]);
+    $r->post('/posts/{id}/toggle',     [PostController::class, 'toggleFlag'], [\App\Middleware\CsrfMiddleware::class]);
     $r->post('/posts/{id}/delete',     [PostController::class, 'destroy'],[\App\Middleware\CsrfMiddleware::class]);
     $r->post('/posts/bulk',            [PostController::class, 'bulk'],   [\App\Middleware\CsrfMiddleware::class]);
 
@@ -60,6 +64,7 @@ $router->group('/admin', function ($r) {
     $r->get('/pages',                  [PageController::class, 'index']);
     $r->get('/pages/create',           [PageController::class, 'create']);
     $r->post('/pages/create',          [PageController::class, 'store'],  [\App\Middleware\CsrfMiddleware::class]);
+    $r->post('/pages/toggle',          [PageController::class, 'toggleNav'], [\App\Middleware\CsrfMiddleware::class]);
     $r->get('/pages/{id}/edit',        [PageController::class, 'edit']);
     $r->post('/pages/{id}/edit',       [PageController::class, 'update'], [\App\Middleware\CsrfMiddleware::class]);
     $r->post('/pages/delete',          [PageController::class, 'destroy'],[\App\Middleware\CsrfMiddleware::class]);
@@ -89,6 +94,14 @@ $router->group('/admin', function ($r) {
     $r->post('/talk/{id}/edit',    [TalkController::class, 'update'], [\App\Middleware\CsrfMiddleware::class]);
     $r->post('/talk/delete',       [TalkController::class, 'destroy'],[\App\Middleware\CsrfMiddleware::class]);
 
+    // 音乐
+    $r->get('/music',              [MusicController::class, 'index']);
+    $r->get('/music/create',       [MusicController::class, 'create']);
+    $r->post('/music/create',      [MusicController::class, 'store'],  [\App\Middleware\CsrfMiddleware::class]);
+    $r->get('/music/{id}/edit',    [MusicController::class, 'edit']);
+    $r->post('/music/{id}/edit',   [MusicController::class, 'update'], [\App\Middleware\CsrfMiddleware::class]);
+    $r->post('/music/delete',      [MusicController::class, 'destroy'],[\App\Middleware\CsrfMiddleware::class]);
+
     // 统计
     $r->get('/stats',                  [StatController::class, 'index']);
 
@@ -105,7 +118,5 @@ $router->group('/admin', function ($r) {
     // Passkey
     $r->get('/passkey/register-options',  [PasskeyController::class, 'registerOptions']);
     $r->post('/passkey/register',         [PasskeyController::class, 'register'], [\App\Middleware\CsrfMiddleware::class]);
-    $r->get('/passkey/login-options',     [PasskeyController::class, 'loginOptions']);
-    $r->post('/passkey/login',            [PasskeyController::class, 'login'], [\App\Middleware\CsrfMiddleware::class]);
 
 }, [AdminAuth::class]);

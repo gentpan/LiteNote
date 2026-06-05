@@ -15,7 +15,7 @@
             </a>
         </div>
 
-        <h3 class="section-subtitle"><i class="fa-solid fa-rss"></i> 友情链接订阅更新</h3>
+        <h3 class="section-subtitle"><i class="fa-solid fa-rss"></i> 友情链接最近更新（来自 RSS 聚合）</h3>
         @if(!empty($lastUpdated))
             <p class="section-desc">汇集友情链接博主的最新文章，最近更新：{!! \App\Core\Helper::timeTag(date('Y-m-d H:i:s', (int)$lastUpdated)) !!}</p>
         @endif

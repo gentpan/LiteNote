@@ -6,14 +6,14 @@
         <p class="subtitle">通过邮箱重置后台密码</p>
 
         @if($error)
-            <div class="alert alert-error">{{ $error }}</div>
+            <div hidden data-toast-type="error" data-toast-message="{{ $error }}"></div>
         @endif
         @if($success)
-            <div class="alert alert-success">{{ $success }}</div>
+            <div hidden data-toast-type="success" data-toast-message="{{ $success }}"></div>
         @endif
 
         @if(!$mailEnabled)
-            <div class="alert alert-error">后台尚未配置邮件发送服务,暂时无法通过邮箱找回密码。请使用 Passkey 登录,或在服务器上手动重置。</div>
+            <div hidden data-toast-type="error" data-toast-message="后台尚未配置邮件发送服务,暂时无法通过邮箱找回密码。请使用 Passkey 登录,或在服务器上手动重置。"></div>
         @endif
 
         <form method="post" action="/admin/forgot">

@@ -2,7 +2,7 @@
 
 @section('content')
     <h3>个人资料</h3>
-    <form method="post" action="/admin/profile" class="admin-form">
+    <form method="post" action="/admin/profile" class="admin-form" data-dirty-watch>
         <input type="hidden" name="_csrf" value="{{ $csrf }}">
 
         <div class="profile-header">
@@ -220,8 +220,51 @@
     })();
     </script>
 
+    <h3 class="settings-group-title"><i class="fa-solid fa-key"></i> Passkey 登录</h3>
+    <div class="settings-section">
+        <p class="muted small">
+            当前已绑定 {{ (int)($passkeyCount ?? 0) }} 个 Passkey。绑定后可在后台登录页直接使用系统 Passkey 登录。
+        </p>
+        <div class="form-row">
+            <div class="form-group">
+                <label>设备名称</label>
+                <input type="text" id="passkeyDeviceName" value="我的设备" data-no-dirty>
+            </div>
+            <div class="form-group passkey-bind-action">
+                <label>&nbsp;</label>
+                <button type="button" class="btn btn-primary" id="passkeyRegisterBtn">
+                    <i class="fa-solid fa-fingerprint"></i> 绑定 Passkey
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        var btn = document.getElementById('passkeyRegisterBtn');
+        var nameInput = document.getElementById('passkeyDeviceName');
+        if (!btn) return;
+        btn.addEventListener('click', function () {
+            var original = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 绑定中';
+            registerPasskey((nameInput && nameInput.value.trim()) || '我的设备')
+                .then(function (res) {
+                    window.adminToast && window.adminToast(res.message || 'Passkey 已绑定', 'success');
+                })
+                .catch(function (err) {
+                    window.adminToast && window.adminToast(err.message || 'Passkey 绑定失败', 'error');
+                })
+                .finally(function () {
+                    btn.disabled = false;
+                    btn.innerHTML = original;
+                });
+        });
+    })();
+    </script>
+
     <h3>修改密码</h3>
-    <form method="post" action="/admin/profile/password" class="admin-form">
+    <form method="post" action="/admin/profile/password" class="admin-form" data-dirty-watch>
         <input type="hidden" name="_csrf" value="{{ $csrf }}">
         <div class="form-group">
             <label>原密码</label>

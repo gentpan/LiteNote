@@ -10,6 +10,7 @@ use App\Core\Session;
 use App\Core\View;
 use App\Enums\Toggle;
 use App\Models\Comment;
+use App\Models\Music;
 use App\Models\Talk;
 
 class TalkController
@@ -19,9 +20,7 @@ class TalkController
         $perPage = 10;
         $page = max(1, (int)($_GET['page'] ?? 1));
         ['items' => $list, 'total' => $total] = Talk::paginate($page, $perPage);
-        foreach ($list as $item) {
-            $item->setRelation('comments', Comment::forTalk((int)$item->id));
-        }
+        $this->attachTalkRelations($list);
 
         return View::render('front.talk.index', [
             'list' => $list,
@@ -29,6 +28,7 @@ class TalkController
             'page'  => $page,
             'perPage' => $perPage,
             'paginator' => Helper::loadMore($page, $total, $perPage, Helper::url('/talk')),
+            'musicOptions' => Music::publicOptions(80),
             'pageTitle' => '滔客',
             'activeNav' => 'talk',
         ]);
@@ -42,8 +42,21 @@ class TalkController
             Response::json(['code' => 1, 'msg' => '滔客不存在'], 404);
         }
 
+        $liked = Session::get('liked_talk', []);
+        $liked = is_array($liked) ? $liked : [];
+        if (!empty($liked[$id])) {
+            Response::json([
+                'code' => 2,
+                'msg' => '已经点赞过了',
+                'likes' => (int)($item->likes_count ?? 0),
+                'liked' => true,
+            ]);
+        }
+
         $count = Talk::like((int)$id);
-        Response::json(['code' => 0, 'likes' => $count]);
+        $liked[$id] = 1;
+        Session::set('liked_talk', $liked);
+        Response::json(['code' => 0, 'likes' => $count, 'liked' => true]);
     }
 
     public function publish(Request $request): never
@@ -59,12 +72,9 @@ class TalkController
 
         $content = trim((string)$request->input('content', ''));
         $images = trim((string)$request->input('images', ''));
-        $music = trim((string)$request->input('music', ''));
-        $musicCover = trim((string)$request->input('music_cover', ''));
-        $musicTitle = trim((string)$request->input('music_title', ''));
-        $musicArtist = trim((string)$request->input('music_artist', ''));
         $mood = trim((string)$request->input('mood', ''));
-        $public = Toggle::fromInput($request->input('is_public', 1))->value;
+        $musicId = $this->normalizeMusicId((int)$request->input('music_id', 0));
+        $public = Toggle::fromInput($request->input('is_public', 0))->value;
 
         if ($content === '') {
             Session::flash('talk_publish_error', '滔客内容不能为空');
@@ -74,11 +84,8 @@ class TalkController
         $item = new Talk([
             'content' => $content,
             'images' => $images,
-            'music' => $music,
-            'music_cover' => $musicCover,
-            'music_title' => $musicTitle,
-            'music_artist' => $musicArtist,
             'mood' => $mood,
+            'music_id' => $musicId,
             'is_public' => $public,
         ]);
         $item->save();
@@ -91,5 +98,34 @@ class TalkController
     {
         $ref = $_SERVER['HTTP_REFERER'] ?? '/talk';
         Response::redirect($ref);
+    }
+
+    /**
+     * @param Talk[] $list
+     */
+    private function attachTalkRelations(array $list): void
+    {
+        $musicMap = Music::mapByIds(array_map(static fn(Talk $item): int => (int)($item->music_id ?? 0), $list));
+        foreach ($list as $item) {
+            $music = $musicMap[(int)($item->music_id ?? 0)] ?? null;
+            if ($music && (int)$music->is_public === Toggle::On->value) {
+                $item->setRelation('music', $music);
+                $item->setRelation('comments', Comment::forMusic((int)$music->id));
+                continue;
+            }
+            $item->setRelation('comments', Comment::forTalk((int)$item->id));
+        }
+    }
+
+    private function normalizeMusicId(int $musicId): int
+    {
+        if ($musicId <= 0) {
+            return 0;
+        }
+        $music = Music::find($musicId);
+        if (!$music || (int)$music->is_public !== Toggle::On->value) {
+            return 0;
+        }
+        return (int)$music->id;
     }
 }

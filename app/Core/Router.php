@@ -105,9 +105,6 @@ final class Router
 
     private function normalizePath(string $path): string
     {
-        if (str_ends_with($path, '.html')) {
-            $path = substr($path, 0, -5);
-        }
         return $path === '' ? '/' : $path;
     }
 
@@ -135,7 +132,17 @@ final class Router
 
     private function match(string $routePath, string $actualPath): ?array
     {
-        $regex = preg_replace('#\{([a-zA-Z_][a-zA-Z0-9_]*)\}#', '(?P<$1>[^/]+)', $routePath);
+        $regex = '';
+        $offset = 0;
+        preg_match_all('#\{([a-zA-Z_][a-zA-Z0-9_]*)\}#', $routePath, $placeholders, PREG_OFFSET_CAPTURE);
+        foreach ($placeholders[0] as $index => $placeholder) {
+            [$token, $position] = $placeholder;
+            $name = $placeholders[1][$index][0];
+            $regex .= preg_quote(substr($routePath, $offset, $position - $offset), '#');
+            $regex .= '(?P<' . $name . '>[^/]+)';
+            $offset = $position + strlen($token);
+        }
+        $regex .= preg_quote(substr($routePath, $offset), '#');
         $regex = '#^' . $regex . '$#';
 
         if (preg_match($regex, $actualPath, $matches)) {
