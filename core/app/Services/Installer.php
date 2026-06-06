@@ -169,9 +169,14 @@ final class Installer
             logo VARCHAR(255),
             description VARCHAR(255),
             rss_url VARCHAR(255),
+            contact_email VARCHAR(255),
+            request_type VARCHAR(20) DEFAULT 'admin',
+            previous_url VARCHAR(255),
             sort INTEGER DEFAULT 0,
             is_enabled INTEGER DEFAULT 1,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            submitted_at DATETIME,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME
         )
         SQL);
 
@@ -213,6 +218,7 @@ final class Installer
             audio_url TEXT NOT NULL,
             cover_url TEXT,
             lyrics TEXT,
+            lyrics_url TEXT,
             description TEXT,
             mood VARCHAR(60),
             duration VARCHAR(20),
@@ -335,16 +341,8 @@ final class Installer
                 ['k' => 'keywords',      'v' => 'PHP,博客,个人',       'label' => '关键词',   'group_name' => 'basic',   'sort' => 4],
                 ['k' => 'beian',         'v' => '',                     'label' => '备案号',   'group_name' => 'basic',   'sort' => 5],
                 ['k' => 'site_avatar_url','v' => '',                     'label' => '站点头像地址', 'group_name' => 'basic', 'sort' => 8],
-                ['k' => 'comment_enabled',       'v' => '1', 'type' => 'bool', 'label' => '全站评论开关', 'group_name' => 'comment', 'sort' => 1],
-                ['k' => 'comment_post_enabled',  'v' => '1', 'type' => 'bool', 'label' => '文章评论开关', 'group_name' => 'comment', 'sort' => 2],
-                ['k' => 'comment_page_enabled',  'v' => '1', 'type' => 'bool', 'label' => '页面评论开关', 'group_name' => 'comment', 'sort' => 3],
-                ['k' => 'comment_talk_enabled',  'v' => '1', 'type' => 'bool', 'label' => '说说评论开关', 'group_name' => 'comment', 'sort' => 4],
-                ['k' => 'comment_music_enabled', 'v' => '1', 'type' => 'bool', 'label' => '音乐评论开关', 'group_name' => 'comment', 'sort' => 5],
                 ['k' => 'comment_need_audit',    'v' => '1', 'type' => 'bool', 'label' => '评论需要审核', 'group_name' => 'comment', 'sort' => 6],
                 ['k' => 'comment_captcha',       'v' => '0', 'type' => 'bool', 'label' => '启用验证码', 'group_name' => 'comment', 'sort' => 7],
-                ['k' => 'comment_email_required','v' => '1', 'type' => 'bool', 'label' => '评论者邮箱必填', 'group_name' => 'comment', 'sort' => 8],
-                ['k' => 'comment_replies_enabled','v' => '1', 'type' => 'bool', 'label' => '允许回复评论', 'group_name' => 'comment', 'sort' => 9],
-                ['k' => 'comment_close_old_days','v' => '0', 'type' => 'number', 'label' => '关闭旧文章评论天数', 'group_name' => 'comment', 'sort' => 10],
                 ['k' => 'home_feed_mode',        'v' => 'mixed', 'type' => 'select', 'label' => '首页展示模式', 'group_name' => 'reading', 'sort' => 1],
                 ['k' => 'home_total_limit',      'v' => '12', 'type' => 'number', 'label' => '首页总数量', 'group_name' => 'reading', 'sort' => 2],
                 ['k' => 'home_post_limit',       'v' => '8', 'type' => 'number', 'label' => '首页文章读取数', 'group_name' => 'reading', 'sort' => 3],
@@ -600,6 +598,7 @@ final class Installer
             ['music', 'album', 'VARCHAR(160)'],
             ['music', 'cover_url', 'TEXT'],
             ['music', 'lyrics', 'TEXT'],
+            ['music', 'lyrics_url', 'TEXT'],
             ['music', 'description', 'TEXT'],
             ['music', 'mood', 'VARCHAR(60)'],
             ['music', 'duration', 'VARCHAR(20)'],

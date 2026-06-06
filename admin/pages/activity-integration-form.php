@@ -39,6 +39,14 @@
             <span class="field-hint">单位：分钟。240 分钟等于每天 6 次，60 分钟等于每小时一次，0 表示每次计划任务都执行。</span>
         </div>
 
+        @if($provider === 'x_bookmarks')
+            <div class="form-group">
+                <label>X 账号授权</label>
+                <a class="btn btn-primary" href="/admin/oauth/x/start"><i class="fa-brands fa-x-twitter"></i> 授权 X 账号</a>
+                <span class="field-hint">会跳转到 X 登录授权，成功后自动保存 access token 和 refresh token。</span>
+            </div>
+        @endif
+
         @if(!empty($definition['token_label']))
             <div class="form-group">
                 <label>{{ $definition['token_label'] }}</label>

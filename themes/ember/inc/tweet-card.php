@@ -3,6 +3,7 @@
     $tweet = $tweet ?? $s ?? null;
     $tweetData = $tweet ? $tweet->tweetData() : [];
     $tweetUrl = $tweet ? $tweet->tweetUrl() : '';
+    $tweetId = $tweet ? $tweet->tweetId() : '';
     $handle = $tweet ? $tweet->tweetHandle() : '';
     $authorName = trim((string)($tweetData['author_name'] ?? $tweet->tweet_author_name ?? ''));
     $avatar = trim((string)($tweetData['author_avatar'] ?? $tweet->tweet_author_avatar ?? ''));
@@ -11,8 +12,21 @@
     if ($body === $tweetUrl || str_starts_with($body, 'X 原帖 ')) {
         $body = '';
     }
-    $body = preg_replace("~[ \t]*\R[ \t]*\R+~u", "\n", $body) ?? $body;
     $images = !empty($tweetData['images']) && is_array($tweetData['images']) ? $tweetData['images'] : ($tweet ? $tweet->getImages() : []);
+    $stripTweetMediaLinks = static function (string $text): string {
+        $text = preg_replace('~https?://(?:x\.com|twitter\.com)/[^\s<]+/status(?:es)?/[0-9]+/(?:photo|video)/[0-9]+~iu', '', $text) ?? $text;
+        $text = preg_replace('~https?://pic\.x\.com/[A-Za-z0-9_]+~iu', '', $text) ?? $text;
+        $text = preg_replace('~https?://pbs\.twimg\.com/[^\s<]+~iu', '', $text) ?? $text;
+        $text = preg_replace("~[ \t]+\R~u", "\n", $text) ?? $text;
+        $text = preg_replace("~\R{3,}~u", "\n\n", $text) ?? $text;
+        return trim($text);
+    };
+    if (!empty($images) && $body !== '') {
+        $body = $stripTweetMediaLinks($body);
+    }
+    if ($body !== '') {
+        $body = preg_replace("~[ \t]*\R[ \t]*\R+~u", "\n", $body) ?? $body;
+    }
     $isVerified = !empty($tweetData['author_verified']) || (int)($tweet->tweet_author_verified ?? 0) === 1;
     $likesCount = (int)($tweetData['likes_count'] ?? $tweet->tweet_likes_count ?? 0);
     $repostsCount = (int)($tweetData['reposts_count'] ?? $tweet->tweet_reposts_count ?? 0);
@@ -20,16 +34,11 @@
     $viewsCount = (int)($tweetData['views_count'] ?? 0);
     $tweetShowReplies = !empty($tweetShowReplies);
     $tweetHideViews = !empty($tweetHideViews);
-    $formatTweetTime = static function (string $value): string {
-        try {
-            $timezone = new \DateTimeZone((string)\App\Core\Config::get('app.timezone', 'Asia/Shanghai'));
-            return (new \DateTimeImmutable($value))->setTimezone($timezone)->format('H:i · Y-m-d');
-        } catch (\Throwable) {
-            return \App\Core\Helper::formatDate($value, 'H:i · Y-m-d');
-        }
-    };
+    $tweetLocalActions = !empty($tweetLocalActions);
+    $localLikeCount = (int)($tweet->likes_count ?? 0);
+    $localCommentCount = (int)($tweet->comments_count ?? 0);
     $linkifyTweetLine = static function (string $text): string {
-        $parts = preg_split("{(https?://[A-Za-z0-9._~:/?#\\[\\]@!$&'()*+,;=%-]+)}u", $text, -1, PREG_SPLIT_DELIM_CAPTURE);
+        $parts = preg_split('~(https?://[^\s<]+)~u', $text, -1, PREG_SPLIT_DELIM_CAPTURE);
         if (!is_array($parts)) {
             return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
         }
@@ -54,19 +63,20 @@
         if (!is_array($lines)) {
             $lines = [$text];
         }
-        $html = '';
+        $html = [];
         foreach ($lines as $line) {
-            if (trim($line) === '') {
+            $line = trim($line);
+            if ($line === '') {
                 continue;
             }
-            $html .= '<span class="tweet-line">' . $linkifyTweetLine($line) . '</span>';
+            $html[] = $linkifyTweetLine($line);
         }
-        return $html;
+        return implode('<br>', $html);
     };
 @endphp
 @if($tweet)
-    <div class="tweet-card ember-tweet-card">
-        <div class="tweet-card-head">
+    <div class="home-card-inner home-card--x-inner tweet-card">
+        <div class="home-card-header tweet-card-head">
             <div class="tweet-author">
                 @if($avatar !== '')
                     <img class="tweet-avatar" src="{{ $avatar }}" alt="{{ $authorName ?: $handle ?: 'X' }}" loading="lazy" width="38" height="38">
@@ -91,49 +101,63 @@
         </div>
 
         @if($body !== '')
-            <div class="tweet-body">{!! $linkifyTweetBody($body) !!}</div>
+            <div class="home-card-body tweet-body">{!! $linkifyTweetBody($body) !!}</div>
         @elseif($tweetUrl !== '')
-            <a class="tweet-body tweet-body-link" href="{{ $tweetUrl }}" target="_blank" rel="noopener noreferrer">
+            <a class="home-card-body tweet-body tweet-body-link" href="{{ $tweetUrl }}" target="_blank" rel="noopener noreferrer">
                 <i class="fa-brands fa-x-twitter"></i>
                 <span>查看 X 原帖</span>
             </a>
         @endif
 
         @if(!empty($images))
-            <div class="tweet-media tweet-media-count-{{ min(count($images), 4) }}">
+            <div class="home-card-media {{ $tweetLocalActions ? 'talk-images' : 'tweet-media' }} {{ $tweetLocalActions ? 'talk-images-count-' . min(count($images), 10) : 'tweet-media-count-' . min(count($images), 4) }}">
                 @foreach(array_slice($images, 0, 4) as $idx => $img)
-                    <img src="{{ trim($img) }}" alt="" loading="lazy">
+                    <img src="{{ trim($img) }}" alt="" loading="lazy" decoding="async">
                 @endforeach
             </div>
         @endif
 
-        <div class="tweet-footer">
-            @if($postedAt !== '')
-                <time datetime="{{ $postedAt }}">{{ $formatTweetTime($postedAt) }}</time>
-            @else
-                <time datetime="{{ $tweet->publishedAt() }}">{{ $formatTweetTime($tweet->publishedAt()) }}</time>
-            @endif
-            <span class="tweet-footer-spacer"></span>
-            @if($tweetUrl !== '')
-                @if($tweetShowReplies)
-                    <a href="{{ $tweetUrl }}" target="_blank" rel="noopener noreferrer" class="tweet-action" aria-label="在 X 打开评论">
-                        <i class="fa-regular fa-comment"></i><span>{{ $repliesCount }}</span>
+        <footer class="tweet-footer home-card-footer home-card-meta-bar">
+            <div class="home-card-meta tweet-footer-meta">
+                @if($postedAt !== '')
+                    <time datetime="{{ $postedAt }}">{{ \App\Core\Helper::formatDate($postedAt, 'H:i · Y-m-d') }}</time>
+                @else
+                    <time datetime="{{ $tweet->publishedAt() }}">{{ \App\Core\Helper::formatDate($tweet->publishedAt(), 'H:i · Y-m-d') }}</time>
+                @endif
+            </div>
+            <div class="home-card-actions tweet-footer-actions">
+                @if($tweetLocalActions)
+                    <button type="button" class="home-action talk-like-btn" data-id="{{ $tweet->id }}" aria-label="点赞">
+                        <i class="fa-regular fa-thumbs-up"></i><span class="like-count">{{ $localLikeCount }}</span>
+                    </button>
+                    <button type="button" class="home-action talk-comment-toggle" data-target="talk-comments-{{ $tweet->id }}">
+                        <i class="fa-regular fa-comment"></i><span>{{ $localCommentCount }}</span>
+                    </button>
+                @elseif($tweetUrl !== '')
+                    @if($tweetShowReplies)
+                        <a href="{{ $tweetUrl }}" target="_blank" rel="noopener noreferrer" class="tweet-action" aria-label="在 X 打开评论">
+                            <i class="fa-regular fa-comment"></i><span>{{ $repliesCount }}</span>
+                        </a>
+                    @endif
+                    <a href="{{ $tweetUrl }}" target="_blank" rel="noopener noreferrer" class="tweet-action" aria-label="在 X 打开并转发">
+                        <i class="fa-solid fa-retweet"></i><span>{{ $repostsCount }}</span>
                     </a>
+                    @if($likesCount > 0)
+                        <a href="{{ $tweetUrl }}" target="_blank" rel="noopener noreferrer" class="tweet-action tweet-like" aria-label="在 X 打开并点赞">
+                            <i class="fa-solid fa-heart"></i><span>{{ $likesCount }}</span>
+                        </a>
+                    @endif
+                    @if(!$tweetHideViews)
+                        <span class="tweet-action" aria-label="浏览数">
+                            <i class="fa-regular fa-eye"></i><span>{{ $viewsCount }}</span>
+                        </span>
+                    @endif
                 @endif
-                <a href="{{ $tweetUrl }}" target="_blank" rel="noopener noreferrer" class="tweet-action" aria-label="在 X 打开并转发">
-                    <i class="fa-solid fa-retweet"></i><span>{{ $repostsCount }}</span>
-                </a>
-                @if($likesCount > 0)
-                    <a href="{{ $tweetUrl }}" target="_blank" rel="noopener noreferrer" class="tweet-action tweet-like" aria-label="在 X 打开并点赞">
-                        <i class="fa-solid fa-heart"></i><span>{{ $likesCount }}</span>
-                    </a>
-                @endif
-                @if(!$tweetHideViews)
-                    <span class="tweet-action" aria-label="浏览数">
-                        <i class="fa-regular fa-eye"></i><span>{{ $viewsCount }}</span>
-                    </span>
-                @endif
-            @endif
-        </div>
+            </div>
+        </footer>
+        @if($tweetLocalActions)
+            @php $talkItem = $tweet; @endphp
+            @include('partials.talk-local-engagement')
+        @endif
     </div>
 @endif

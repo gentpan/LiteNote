@@ -6,7 +6,7 @@ namespace App\Core;
 final class StaticAssetServer
 {
     private const ALLOWED_ROOTS = ['admin', 'themes', 'plugins', 'uploads'];
-    private const ALLOWED_EXTENSIONS = ['css', 'js', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'ico', 'xml', 'json', 'webmanifest', 'txt', 'woff', 'woff2', 'ttf', 'otf', 'map'];
+    private const ALLOWED_EXTENSIONS = ['css', 'js', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'ico', 'xml', 'json', 'webmanifest', 'txt', 'lrc', 'woff', 'woff2', 'ttf', 'otf', 'map'];
     private const MIME_MAP = [
         'css' => 'text/css; charset=utf-8',
         'js' => 'application/javascript; charset=utf-8',
@@ -16,6 +16,7 @@ final class StaticAssetServer
         'json' => 'application/json; charset=utf-8',
         'webmanifest' => 'application/manifest+json; charset=utf-8',
         'txt' => 'text/plain; charset=utf-8',
+        'lrc' => 'text/plain; charset=utf-8',
         'map' => 'application/json; charset=utf-8',
         'woff' => 'font/woff',
         'woff2' => 'font/woff2',

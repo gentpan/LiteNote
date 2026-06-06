@@ -35,11 +35,13 @@ $router->get('/category/{slug}',  [CategoryController::class, 'show']);
 $router->get('/activity',         [ActivityController::class, 'index']);
 $router->get('/talk',             [TalkController::class, 'index']);
 $router->get('/x',                [TalkController::class, 'x']);
+$router->get('/xmarks',           [TalkController::class, 'xmarks']);
 $router->post('/talk/publish',    [TalkController::class, 'publish']);
 $router->post('/talk/{id}/like',  [TalkController::class, 'like']);
 
 // 音乐
 $router->get('/music',            [MusicController::class, 'index']);
+$router->get('/music/lyrics/meting', [MusicController::class, 'metingLyrics']);
 $router->post('/music/{id}/like', [MusicController::class, 'like']);
 $router->post('/music/{id}/play', [MusicController::class, 'play']);
 
@@ -52,6 +54,8 @@ $router->get('/search',           [SearchController::class, 'index']);
 // 友链页
 $router->get('/links',            [FriendController::class, 'links']);
 $router->get('/subscribe',        [FriendController::class, 'subscribe']);
+$router->post('/links/apply',     [FriendController::class, 'apply']);
+$router->post('/links/modify',    [FriendController::class, 'modify']);
 
 // 评论提交
 $router->post('/comment/submit',  [CommentController::class, 'submit']);

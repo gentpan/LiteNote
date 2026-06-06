@@ -71,7 +71,7 @@ class SettingController
     {
         $data = (array) $request->input('settings', []);
         foreach ($data as $k => $v) {
-            if (in_array($k, ['theme', 'site_theme'], true)) {
+            if (Setting::isHiddenKey((string)$k)) {
                 continue;
             }
             Setting::set($k, $this->sanitizeSetting((string)$k, $v));
@@ -147,7 +147,6 @@ class SettingController
             'home_total_limit' => (string)max(1, min(60, (int)$value)),
             'home_post_limit', 'home_talk_limit' => (string)max(0, min(60, (int)$value)),
             'post_list_per_page' => (string)max(1, min(50, (int)$value)),
-            'comment_close_old_days' => (string)max(0, min(3650, (int)$value)),
             'permalink_mode' => in_array($value, ['default', 'simple', 'category', 'numeric'], true) ? $value : 'default',
             'permalink_numeric_source' => in_array($value, ['id', 'six'], true) ? $value : 'six',
             'permalink_numeric_suffix' => in_array($value, ['', '.html'], true) ? $value : '.html',

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\Post;
+use App\Models\Page;
 use App\Models\Setting;
 
 final class CommentSettingsService
@@ -13,52 +13,40 @@ final class CommentSettingsService
     public const TYPE_TALK = 'talk';
     public const TYPE_MUSIC = 'music';
 
+    private const DEFAULTS = [
+        'enabled' => true,
+        'post_enabled' => true,
+        'page_enabled' => false,
+        'talk_enabled' => true,
+        'music_enabled' => true,
+        'need_audit' => true,
+        'captcha' => false,
+        'email_required' => true,
+        'replies_enabled' => true,
+        'close_old_days' => 0,
+    ];
+
     public static function ensureDefaults(): void
     {
         Setting::ensureDefaults([
-            ['k' => 'comment_enabled', 'v' => '1', 'type' => 'bool', 'label' => '全站评论开关', 'group_name' => 'comment', 'sort' => 1],
-            ['k' => 'comment_post_enabled', 'v' => '1', 'type' => 'bool', 'label' => '文章评论开关', 'group_name' => 'comment', 'sort' => 2],
-            ['k' => 'comment_page_enabled', 'v' => '1', 'type' => 'bool', 'label' => '页面评论开关', 'group_name' => 'comment', 'sort' => 3],
-            ['k' => 'comment_talk_enabled', 'v' => '1', 'type' => 'bool', 'label' => '说说评论开关', 'group_name' => 'comment', 'sort' => 4],
-            ['k' => 'comment_music_enabled', 'v' => '1', 'type' => 'bool', 'label' => '音乐评论开关', 'group_name' => 'comment', 'sort' => 5],
             ['k' => 'comment_need_audit', 'v' => '1', 'type' => 'bool', 'label' => '评论需要审核', 'group_name' => 'comment', 'sort' => 6],
             ['k' => 'comment_captcha', 'v' => '0', 'type' => 'bool', 'label' => '启用验证码', 'group_name' => 'comment', 'sort' => 7],
-            ['k' => 'comment_email_required', 'v' => '1', 'type' => 'bool', 'label' => '评论者邮箱必填', 'group_name' => 'comment', 'sort' => 8],
-            ['k' => 'comment_replies_enabled', 'v' => '1', 'type' => 'bool', 'label' => '允许回复评论', 'group_name' => 'comment', 'sort' => 9],
-            ['k' => 'comment_close_old_days', 'v' => '0', 'type' => 'number', 'label' => '关闭旧文章评论天数', 'group_name' => 'comment', 'sort' => 10],
         ]);
     }
 
     public static function settings(): array
     {
+        $settings = self::DEFAULTS;
+
         try {
             self::ensureDefaults();
-            return [
-                'enabled' => self::bool('comment_enabled', true),
-                'post_enabled' => self::bool('comment_post_enabled', true),
-                'page_enabled' => self::bool('comment_page_enabled', true),
-                'talk_enabled' => self::bool('comment_talk_enabled', true),
-                'music_enabled' => self::bool('comment_music_enabled', true),
-                'need_audit' => self::bool('comment_need_audit', true),
-                'captcha' => self::bool('comment_captcha', false),
-                'email_required' => self::bool('comment_email_required', true),
-                'replies_enabled' => self::bool('comment_replies_enabled', true),
-                'close_old_days' => max(0, min(3650, (int) Setting::get('comment_close_old_days', 0))),
-            ];
+            $settings['need_audit'] = self::bool('comment_need_audit', true);
+            $settings['captcha'] = self::bool('comment_captcha', false);
         } catch (\Throwable) {
-            return [
-                'enabled' => true,
-                'post_enabled' => true,
-                'page_enabled' => true,
-                'talk_enabled' => true,
-                'music_enabled' => true,
-                'need_audit' => true,
-                'captcha' => false,
-                'email_required' => true,
-                'replies_enabled' => true,
-                'close_old_days' => 0,
-            ];
+            return $settings;
         }
+
+        return $settings;
     }
 
     public static function captchaEnabled(): bool
@@ -102,19 +90,13 @@ final class CommentSettingsService
             return false;
         }
 
+        if ($type === self::TYPE_PAGE && $target instanceof Page && (string)($target->slug ?? '') === 'friends') {
+            return true;
+        }
+
         $key = $type . '_enabled';
         if (array_key_exists($key, $settings) && !$settings[$key]) {
             return false;
-        }
-
-        if ($type === self::TYPE_POST && $target instanceof Post) {
-            $days = (int)$settings['close_old_days'];
-            if ($days > 0) {
-                $publishedAt = strtotime((string)($target->published_at ?? ''));
-                if ($publishedAt > 0 && $publishedAt < strtotime('-' . $days . ' days')) {
-                    return false;
-                }
-            }
         }
 
         return true;

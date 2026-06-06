@@ -13,6 +13,20 @@
     }
     $body = preg_replace("~[ \t]*\R[ \t]*\R+~u", "\n", $body) ?? $body;
     $images = !empty($tweetData['images']) && is_array($tweetData['images']) ? $tweetData['images'] : ($tweet ? $tweet->getImages() : []);
+    $stripTweetMediaLinks = static function (string $text): string {
+        $text = preg_replace('~https?://(?:x\.com|twitter\.com)/[^\s<]+/status(?:es)?/[0-9]+/(?:photo|video)/[0-9]+~iu', '', $text) ?? $text;
+        $text = preg_replace('~https?://pic\.x\.com/[A-Za-z0-9_]+~iu', '', $text) ?? $text;
+        $text = preg_replace('~https?://pbs\.twimg\.com/[^\s<]+~iu', '', $text) ?? $text;
+        $text = preg_replace("~[ \t]+\R~u", "\n", $text) ?? $text;
+        $text = preg_replace("~\R{3,}~u", "\n\n", $text) ?? $text;
+        return trim($text);
+    };
+    if (!empty($images) && $body !== '') {
+        $body = $stripTweetMediaLinks($body);
+    }
+    if ($body !== '') {
+        $body = preg_replace("~[ \t]*\R[ \t]*\R+~u", "\n", $body) ?? $body;
+    }
     $isVerified = !empty($tweetData['author_verified']) || (int)($tweet->tweet_author_verified ?? 0) === 1;
     $likesCount = (int)($tweetData['likes_count'] ?? $tweet->tweet_likes_count ?? 0);
     $repostsCount = (int)($tweetData['reposts_count'] ?? $tweet->tweet_reposts_count ?? 0);
@@ -20,6 +34,9 @@
     $viewsCount = (int)($tweetData['views_count'] ?? 0);
     $tweetShowReplies = !empty($tweetShowReplies);
     $tweetHideViews = !empty($tweetHideViews);
+    $tweetLocalActions = !empty($tweetLocalActions);
+    $localLikeCount = (int)($tweet->likes_count ?? 0);
+    $localCommentCount = (int)($tweet->comments_count ?? 0);
     $formatTweetTime = static function (string $value): string {
         try {
             $timezone = new \DateTimeZone((string)\App\Core\Config::get('app.timezone', 'Asia/Shanghai'));
@@ -100,9 +117,9 @@
         @endif
 
         @if(!empty($images))
-            <div class="tweet-media tweet-media-count-{{ min(count($images), 4) }}">
+            <div class="{{ $tweetLocalActions ? 'talk-images' : 'tweet-media' }} {{ $tweetLocalActions ? 'talk-images-count-' . min(count($images), 10) : 'tweet-media-count-' . min(count($images), 4) }}">
                 @foreach(array_slice($images, 0, 4) as $idx => $img)
-                    <img src="{{ trim($img) }}" alt="" loading="lazy">
+                    <img src="{{ trim($img) }}" alt="" loading="lazy" decoding="async">
                 @endforeach
             </div>
         @endif
@@ -114,7 +131,14 @@
                 <time datetime="{{ $tweet->publishedAt() }}">{{ $formatTweetTime($tweet->publishedAt()) }}</time>
             @endif
             <span class="tweet-footer-spacer"></span>
-            @if($tweetUrl !== '')
+            @if($tweetLocalActions)
+                <button type="button" class="feed-action talk-like-btn" data-id="{{ $tweet->id }}" aria-label="点赞">
+                    <i class="fa-regular fa-thumbs-up"></i><span class="like-count">{{ $localLikeCount }}</span>
+                </button>
+                <button type="button" class="feed-action talk-comment-toggle" data-target="talk-comments-{{ $tweet->id }}">
+                    <i class="fa-regular fa-comment"></i><span>{{ $localCommentCount }}</span>
+                </button>
+            @elseif($tweetUrl !== '')
                 @if($tweetShowReplies)
                     <a href="{{ $tweetUrl }}" target="_blank" rel="noopener noreferrer" class="tweet-action" aria-label="在 X 打开评论">
                         <i class="fa-regular fa-comment"></i><span>{{ $repliesCount }}</span>
@@ -135,5 +159,9 @@
                 @endif
             @endif
         </div>
+        @if($tweetLocalActions)
+            @php $talkItem = $tweet; @endphp
+            @include('partials.talk-local-engagement')
+        @endif
     </div>
 @endif

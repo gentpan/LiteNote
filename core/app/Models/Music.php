@@ -35,6 +35,11 @@ final class Music extends Model
             // 已存在则忽略
         }
         try {
+            $db->query('ALTER TABLE music ADD COLUMN lyrics_url TEXT');
+        } catch (\Throwable) {
+            // 已存在则忽略
+        }
+        try {
             $db->query(
                 "UPDATE music
                  SET published_at = COALESCE(NULLIF(TRIM(published_at), ''), created_at, updated_at, CURRENT_TIMESTAMP)
@@ -134,7 +139,7 @@ final class Music extends Model
 
     public function lyricsLines(int $limit = 4): array
     {
-        $lyrics = trim(self::normalizeLyricsText((string)($this->lyrics ?? '')));
+        $lyrics = trim(self::plainLyricsText((string)($this->lyrics ?? '')));
         if ($lyrics === '') {
             return [];
         }
@@ -145,6 +150,11 @@ final class Music extends Model
     }
 
     public static function normalizeLyricsText(string $lyrics): string
+    {
+        return trim(str_replace(["\r\n", "\r"], "\n", $lyrics));
+    }
+
+    public static function plainLyricsText(string $lyrics): string
     {
         $lyrics = trim(str_replace(["\r\n", "\r"], "\n", $lyrics));
         if ($lyrics === '' || !preg_match('/\[\d{1,2}:\d{2}(?:[\.:]\d{1,3})?\]/', $lyrics)) {

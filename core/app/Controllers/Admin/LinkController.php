@@ -10,11 +10,13 @@ use App\Core\View;
 use App\Enums\Toggle;
 use App\Models\Link;
 use App\Services\FriendRssService;
+use App\Services\LinkMailer;
 
 class LinkController
 {
     public function index(): string
     {
+        Link::ensureRequestColumns();
         $links = Link::all('sort ASC, id ASC');
         $rssStatus = [];
         foreach ($links as $l) {
@@ -47,33 +49,89 @@ class LinkController
         $logo = trim((string) $request->input('logo', ''));
         $desc = trim((string) $request->input('description', ''));
         $rss  = trim((string) $request->input('rss_url', ''));
+        $contactEmail = trim((string) $request->input('contact_email', ''));
+        $requestType = trim((string) $request->input('request_type', 'admin'));
+        $previousUrl = trim((string) $request->input('previous_url', ''));
         $sort = (int) $request->input('sort', 0);
         $enabled = Toggle::fromInput($request->input('is_enabled', 1))->value;
+        $requestType = in_array($requestType, ['admin', 'apply', 'modify'], true) ? $requestType : 'admin';
 
         if ($name === '' || $url === '') {
             Session::flash('error', '名称和 URL 不能为空');
             Response::redirect('/admin/links');
         }
 
+        if ($contactEmail !== '' && !filter_var($contactEmail, FILTER_VALIDATE_EMAIL)) {
+            Session::flash('error', '联系邮箱格式不正确');
+            Response::redirect('/admin/links');
+        }
+
+        Link::ensureRequestColumns();
+        $wasEnabled = false;
+        $link = null;
+        $appliedModifyRequest = false;
         if ($id) {
             $link = Link::find($id);
             if ($link) {
-                $link->fill([
-                    'name' => $name, 'url' => $url, 'logo' => $logo,
-                    'description' => $desc, 'rss_url' => $rss,
-                    'sort' => $sort, 'is_enabled' => $enabled,
-                ]);
-                $link->save();
+                $wasEnabled = (int)$link->is_enabled === Toggle::On->value;
+                $target = null;
+                if ($requestType === 'modify' && $enabled === Toggle::On->value && $previousUrl !== '') {
+                    $target = Link::findEnabledByUrl($previousUrl);
+                    if ($target && (int)$target->id === (int)$link->id) {
+                        $target = null;
+                    }
+                }
+
+                if ($target) {
+                    $target->fill([
+                        'name' => $name, 'url' => $url, 'logo' => $logo,
+                        'description' => $desc, 'rss_url' => $rss,
+                        'contact_email' => $contactEmail,
+                        'request_type' => 'admin',
+                        'previous_url' => '',
+                        'sort' => $sort ?: (int)$target->sort,
+                        'is_enabled' => Toggle::On->value,
+                        'updated_at' => date('Y-m-d H:i:s'),
+                    ]);
+                    $target->save();
+                    Link::db()->delete('links', 'id = ?', [$id]);
+                    $link = $target;
+                    $appliedModifyRequest = true;
+                } else {
+                    $link->fill([
+                        'name' => $name, 'url' => $url, 'logo' => $logo,
+                        'description' => $desc, 'rss_url' => $rss,
+                        'contact_email' => $contactEmail,
+                        'request_type' => $requestType,
+                        'previous_url' => $previousUrl,
+                        'sort' => $sort, 'is_enabled' => $enabled,
+                        'updated_at' => date('Y-m-d H:i:s'),
+                    ]);
+                    $link->save();
+                }
             }
         } else {
             $link = new Link([
                 'name' => $name, 'url' => $url, 'logo' => $logo,
                 'description' => $desc, 'rss_url' => $rss,
+                'contact_email' => $contactEmail,
+                'request_type' => $requestType,
+                'previous_url' => $previousUrl,
                 'sort' => $sort, 'is_enabled' => $enabled,
+                'submitted_at' => $requestType === 'admin' ? null : date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s'),
             ]);
             $link->save();
         }
-        Session::flash('success', $id ? '友链已更新' : '友链已添加');
+
+        if ($link && $enabled === Toggle::On->value && !$wasEnabled && $contactEmail !== '') {
+            try {
+                LinkMailer::notifyApproved($link, $contactEmail);
+            } catch (\Throwable) {
+            }
+        }
+
+        Session::flash('success', $appliedModifyRequest ? '友链修改已应用' : ($id ? '友链已更新' : '友链已添加'));
         Response::redirect('/admin/links');
     }
 

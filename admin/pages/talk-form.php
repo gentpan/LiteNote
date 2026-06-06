@@ -52,10 +52,6 @@
                     <label>分享文案</label>
                     <textarea name="content" rows="3" placeholder="选填，留空会自动生成分享文案">{{ $item->content ?? '' }}</textarea>
                 </div>
-                <div class="form-group">
-                    <label>心情</label>
-                    <input type="text" name="mood" value="{{ $item->mood ?? '' }}" placeholder="例如：夜听">
-                </div>
             </div>
         @else
             <div class="admin-form-section">

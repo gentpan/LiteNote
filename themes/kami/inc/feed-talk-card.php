@@ -15,7 +15,13 @@
     </div>
     <div class="kami-feed-body">
         @if($isTweetTalk)
-            @php $tweet = $item; @endphp
+            @php
+                $tweet = $item;
+                $talkItem = $item;
+                $tweetLocalActions = true;
+                $tweetShowReplies = false;
+                $tweetHideViews = true;
+            @endphp
             @include('partials.tweet-card')
         @else
             <div class="talk-content kami-talk-content">{{ $displayContent }}</div>
@@ -34,11 +40,15 @@
 
             <div class="feed-actions">
                 <div class="feed-talk-meta">
-                    <span class="feed-talk-keywords">
-                        @foreach($keywords as $keyword)
-                            <span>#{{ $keyword }}</span>
-                        @endforeach
-                    </span>
+                    @if($isMusicTalk)
+                        <span class="feed-talk-music-label"><i class="fa-solid fa-music"></i> 音乐</span>
+                    @else
+                        <span class="feed-talk-keywords">
+                            @foreach($keywords as $keyword)
+                                <span>#{{ $keyword }}</span>
+                            @endforeach
+                        </span>
+                    @endif
                     <span class="feed-talk-dot">·</span>
                     <span>{!! \App\Core\Helper::timeTag($item->publishedAt()) !!}</span>
                 </div>

@@ -11,6 +11,7 @@ use App\Core\View;
 use App\Enums\Toggle;
 use App\Models\Comment;
 use App\Models\Music;
+use App\Services\MetingService;
 
 class MusicController
 {
@@ -69,5 +70,17 @@ class MusicController
 
         $count = Music::recordPlay($id);
         Response::json(['code' => 0, 'plays' => $count]);
+    }
+
+    public function metingLyrics(Request $request): never
+    {
+        try {
+            $provider = trim((string)$request->input('provider', 'netease'));
+            $id = trim((string)$request->input('id', ''));
+            $lyrics = (new MetingService())->lyricText($provider, $id);
+            Response::text($lyrics, 200, 'text/plain; charset=utf-8');
+        } catch (\Throwable) {
+            Response::text('', 404, 'text/plain; charset=utf-8');
+        }
     }
 }

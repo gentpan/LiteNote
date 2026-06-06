@@ -14,7 +14,7 @@
                             $socialKey = strtolower((string)($s['key'] ?? ''));
                             $socialUrl = (string)($s['url'] ?? '');
                             if ($socialKey === 'x' || $socialKey === 'twitter') {
-                                $socialUrl = '/x';
+                                $socialUrl = '/xmarks';
                             } elseif ($socialKey === 'github') {
                                 $socialUrl = 'https://xifeng.dev';
                             }
@@ -39,4 +39,3 @@
     <script src="{{ $themeJs }}?v={{ \App\Services\ThemeManager::assetVersion($themeJs) }}"></script>
 </body>
 </html>
-

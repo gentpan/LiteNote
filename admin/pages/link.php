@@ -50,6 +50,24 @@
         </div>
         <div class="form-row">
             <div class="form-group">
+                <label>来源</label>
+                <select name="request_type" id="link-request-type">
+                    <option value="admin">后台添加</option>
+                    <option value="apply">申请链接</option>
+                    <option value="modify">修改链接</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>联系邮箱</label>
+                <input type="email" name="contact_email" id="link-contact-email">
+            </div>
+            <div class="form-group flex-2">
+                <label>原链接（修改申请）</label>
+                <input type="url" name="previous_url" id="link-previous-url" placeholder="https://old.example.com">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
                 <label>Logo URL</label>
                 <input type="text" name="logo" id="link-logo">
             </div>
@@ -80,6 +98,7 @@
                 </th>
                 <th>ID</th>
                 <th>名称</th>
+                <th>来源/联系</th>
                 <th>URL</th>
                 <th>RSS</th>
                 <th>排序</th>
@@ -89,13 +108,32 @@
         </thead>
         <tbody>
             @foreach($links as $l)
-                @php $status = $rssStatus[$l->id] ?? null; @endphp
+                @php
+                    $status = $rssStatus[$l->id] ?? null;
+                    $requestType = (string)($l->request_type ?? 'admin');
+                    $requestLabel = ['apply' => '申请', 'modify' => '修改', 'admin' => '后台'][$requestType] ?? '后台';
+                    $contactEmail = trim((string)($l->contact_email ?? ''));
+                    $previousUrl = trim((string)($l->previous_url ?? ''));
+                    $submittedAt = trim((string)($l->submitted_at ?? ''));
+                @endphp
                 <tr data-link-row="{{ $l->id }}" data-link-name="{{ $l->name }}">
                     <td class="admin-select-col">
                         <input type="checkbox" class="link-row-check" value="{{ $l->id }}" aria-label="选择 {{ $l->name }}">
                     </td>
                     <td>{{ $l->id }}</td>
                     <td>{{ $l->name }}</td>
+                    <td class="link-request-cell">
+                        <span class="status {{ $requestType === 'admin' ? 'status-published' : 'status-draft' }}">{{ $requestLabel }}</span>
+                        @if($contactEmail !== '')
+                            <small>{{ $contactEmail }}</small>
+                        @endif
+                        @if($previousUrl !== '')
+                            <code>原: {{ $previousUrl }}</code>
+                        @endif
+                        @if($submittedAt !== '')
+                            <small>{{ \App\Core\Helper::formatDate($submittedAt, 'Y-m-d H:i') }}</small>
+                        @endif
+                    </td>
                     <td><a href="{{ $l->url }}" target="_blank" rel="nofollow noopener">{{ $l->url }}</a></td>
                     <td data-rss-status class="link-rss-cell">
                         @if($l->rss_url)
@@ -128,6 +166,9 @@
                                 data-logo="{{ $l->logo }}"
                                 data-description="{{ $l->description }}"
                                 data-rss="{{ $l->rss_url }}"
+                                data-contact-email="{{ $contactEmail }}"
+                                data-request-type="{{ $requestType }}"
+                                data-previous-url="{{ $previousUrl }}"
                                 data-sort="{{ $l->sort }}"
                                 data-enabled="{{ $l->is_enabled }}">
                                 <i class="fa-regular fa-pen-to-square"></i>
@@ -234,6 +275,9 @@
             logo:    document.getElementById('link-logo'),
             rss:     document.getElementById('link-rss'),
             desc:    document.getElementById('link-desc'),
+            requestType: document.getElementById('link-request-type'),
+            contactEmail: document.getElementById('link-contact-email'),
+            previousUrl: document.getElementById('link-previous-url'),
             enabled: document.getElementById('link-enabled')
         };
 
@@ -244,6 +288,7 @@
         function resetForm() {
             f.id.value = ''; f.name.value = ''; f.url.value = ''; f.sort.value = '0';
             f.logo.value = ''; f.rss.value = ''; f.desc.value = ''; f.enabled.checked = true;
+            f.requestType.value = 'admin'; f.contactEmail.value = ''; f.previousUrl.value = '';
             setFormTitle('添加友链', 'fa-solid fa-link');
             submitBtn.textContent = '保存';
         }
@@ -380,6 +425,9 @@
                 f.logo.value = d.logo || '';
                 f.rss.value = d.rss || '';
                 f.desc.value = d.description || '';
+                f.requestType.value = d.requestType || 'admin';
+                f.contactEmail.value = d.contactEmail || '';
+                f.previousUrl.value = d.previousUrl || '';
                 f.enabled.checked = d.enabled === '1';
                 setFormTitle('编辑友链', 'fa-regular fa-pen-to-square');
                 submitBtn.textContent = '更新';

@@ -148,11 +148,10 @@ class CommentController
                 'msg' => $successMsg,
                 'pending' => $needAudit,
                 'avatar_url' => $cmt->getAvatarUrl(80),
-            ];
-            if (!$needAudit) {
-                $resp['comment'] = [
+                'comment' => [
                     'id'       => (int) $cmt->id,
                     'nickname' => trim((string) $data['nickname']),
+                    'website'  => trim((string) $data['website']),
                     'content'  => $content,
                     'time'     => \App\Core\Helper::timeTag(date('Y-m-d H:i:s')),
                     'avatar_url' => $cmt->getAvatarUrl(80),
@@ -162,8 +161,9 @@ class CommentController
                     'page_id'  => (int) $data['page_id'],
                     'talk_id'  => (int) $data['talk_id'],
                     'music_id' => (int) $data['music_id'],
-                ];
-            }
+                    'pending'  => $needAudit,
+                ],
+            ];
             Response::json($resp);
         }
 

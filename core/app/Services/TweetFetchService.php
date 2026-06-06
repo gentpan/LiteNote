@@ -134,7 +134,7 @@ final class TweetFetchService
         $query = http_build_query([
             'tweet.fields' => 'created_at,public_metrics,attachments,entities',
             'expansions' => 'author_id,attachments.media_keys',
-            'user.fields' => 'name,username,profile_image_url,verified',
+            'user.fields' => 'name,username,profile_image_url,public_metrics,verified',
             'media.fields' => 'url,preview_image_url,type',
         ]);
         $json = $this->httpGet(
@@ -260,6 +260,7 @@ final class TweetFetchService
         $includes = is_array($payload['includes'] ?? null) ? $payload['includes'] : [];
         $users = is_array($includes['users'] ?? null) ? $includes['users'] : [];
         $user = is_array($users[0] ?? null) ? $users[0] : [];
+        $userMetrics = is_array($user['public_metrics'] ?? null) ? $user['public_metrics'] : [];
         $metrics = is_array($tweet['public_metrics'] ?? null) ? $tweet['public_metrics'] : [];
         $media = is_array($includes['media'] ?? null) ? $includes['media'] : [];
         $images = [];
@@ -302,6 +303,9 @@ final class TweetFetchService
             'author_handle' => (string)($user['username'] ?? ''),
             'author_avatar' => (string)($user['profile_image_url'] ?? ''),
             'author_verified' => !empty($user['verified']),
+            'author_followers_count' => (int)($userMetrics['followers_count'] ?? 0),
+            'author_following_count' => (int)($userMetrics['following_count'] ?? 0),
+            'author_posts_count' => (int)($userMetrics['tweet_count'] ?? 0),
             'posted_at' => $postedAt,
             'likes_count' => (int)($metrics['like_count'] ?? 0),
             'reposts_count' => (int)($metrics['retweet_count'] ?? 0),

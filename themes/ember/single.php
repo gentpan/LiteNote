@@ -64,7 +64,8 @@
                                 <img class="comment-avatar" src="{{ $cmt->getAvatarUrl(44) }}" alt="{{ $cmt->nickname }}" loading="lazy" width="32" height="32">
                                 <div class="comment-body">
                                     <div class="comment-meta">
-                                        <strong>{{ $cmt->nickname }}</strong>
+                                        @php $commentAuthor = $cmt; @endphp
+                                    @include('partials.comment-author-link')
                                         <span>· {!! \App\Core\Helper::timeTag($cmt->created_at) !!}</span>
                                         <button type="button" class="comment-reply-btn" data-parent-id="{{ $cmt->id }}" data-nickname="{{ $cmt->nickname }}">回复</button>
                                     </div>
@@ -77,7 +78,8 @@
                                                 <img class="comment-avatar" src="{{ $reply->getAvatarUrl(40) }}" alt="{{ $reply->nickname }}" loading="lazy" width="28" height="28">
                                                 <div class="comment-body">
                                                     <div class="comment-meta">
-                                                        <strong>{{ $reply->nickname }}</strong>
+                                                        @php $commentAuthor = $reply; @endphp
+                                                    @include('partials.comment-author-link')
                                                         @if(!empty($reply->reply_to_name))<span class="reply-arrow">›</span><span class="reply-target">{{ $reply->reply_to_name }}</span>@endif
                                                         <span>· {!! \App\Core\Helper::timeTag($reply->created_at) !!}</span>
                                                         <button type="button" class="comment-reply-btn" data-parent-id="{{ $reply->id }}" data-nickname="{{ $reply->nickname }}">回复</button>
@@ -100,18 +102,10 @@
                         <input type="hidden" name="parent_id" value="0">
                         <input type="hidden" name="_csrf" value="{{ \App\Core\Session::csrfToken() }}">
                         @if(!empty($currentAdmin))
-                            <div class="comment-admin-bar">
-                                <img class="comment-admin-avatar" src="{{ $currentAdmin->getAvatarUrl(80) }}" alt="{{ $adminCommentName }}">
-                                <div class="comment-admin-info">
-                                    <span class="comment-admin-name">{{ $adminCommentName }}</span>
-                                    @if($adminCommentEmail !== '')<span class="comment-admin-email">{{ $adminCommentEmail }}</span>@endif
-                                </div>
-                                <a class="comment-admin-logout" href="/admin/logout">注销</a>
-                            </div>
                             <input type="hidden" name="nickname" value="{{ $adminCommentName }}">
                             <input type="hidden" name="email" value="{{ $adminCommentEmail }}">
                         @else
-                            <div class="form-row">
+                            <div class="form-row comment-profile-fields">
                                 <input type="text" name="nickname" placeholder="昵称 *" required>
                                 <input type="email" name="email" placeholder="邮箱{{ \App\Services\CommentSettingsService::emailRequired() ? ' *' : '（选填）' }}" {{ \App\Services\CommentSettingsService::emailRequired() ? 'required' : '' }}>
                                 <input type="text" name="website" placeholder="网站(选填)">
@@ -119,6 +113,15 @@
                         @endif
                         <textarea name="content" rows="5" placeholder="说点什么... *" required></textarea>
                         <div class="comment-actions">
+                            @if(!empty($currentAdmin))
+                                <button type="button" class="comment-profile-toggle comment-profile-toggle-admin" aria-label="当前登录头像">
+                                    <img class="comment-admin-avatar" src="{{ $currentAdmin->getAvatarUrl(80) }}" alt="{{ $adminCommentName }}">
+                                </button>
+                            @else
+                                <button type="button" class="comment-profile-toggle" data-comment-profile-toggle aria-label="切换评论资料" hidden>
+                                    <img class="comment-admin-avatar" src="{{ \App\Services\Gravatar::url('', 80) }}" alt="" data-comment-profile-avatar data-comment-avatar-default="{{ \App\Services\Gravatar::url('', 80) }}">
+                                </button>
+                            @endif
                             @include('partials.comment-captcha')
                             <button type="submit">提交评论</button>
                         </div>

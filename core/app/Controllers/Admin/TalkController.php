@@ -86,7 +86,7 @@ class TalkController
         $postType = $this->normalizePostType((string)$request->input('post_type', 'talk'));
         $content = $postType === 'tweet' ? '' : trim((string) $request->input('content', ''));
         $images  = $postType === 'tweet' ? '' : trim((string) $request->input('images', ''));
-        $mood    = $postType === 'tweet' ? 'X' : trim((string) $request->input('mood', ''));
+        $mood    = $postType === 'tweet' ? 'X' : ($postType === 'music' ? '' : trim((string) $request->input('mood', '')));
         $musicId = $postType === 'music' ? $this->normalizeMusicId((int)$request->input('music_id', 0)) : 0;
         $public  = $postType === 'talk' ? Toggle::fromInput($request->input('is_public', 0))->value : Toggle::On->value;
         $tweetUrl = trim((string)$request->input('tweet_url', ''));
@@ -126,6 +126,13 @@ class TalkController
                 $content = 'X 原帖 ' . ($tweetUrl ?: $tweetId);
             }
             $images = implode(',', array_slice($tweetData['images'] ?? [], 0, 4));
+            unset(
+                $tweetData['likes_count'],
+                $tweetData['reposts_count'],
+                $tweetData['replies_count'],
+                $tweetData['quotes_count'],
+                $tweetData['views_count']
+            );
         } elseif ($postType === 'music' && $content === '') {
             $content = '分享一首音乐';
         }
@@ -147,8 +154,8 @@ class TalkController
             'tweet_author_avatar' => $postType === 'tweet' ? (string)($tweetData['author_avatar'] ?? '') : '',
             'tweet_author_verified' => $postType === 'tweet' && !empty($tweetData['author_verified']) ? 1 : 0,
             'tweet_posted_at' => $postType === 'tweet' ? ($tweetData['posted_at'] ?? null) : null,
-            'tweet_likes_count' => $postType === 'tweet' ? (int)($tweetData['likes_count'] ?? 0) : 0,
-            'tweet_reposts_count' => $postType === 'tweet' ? (int)($tweetData['reposts_count'] ?? 0) : 0,
+            'tweet_likes_count' => 0,
+            'tweet_reposts_count' => 0,
             'tweet_data' => $postType === 'tweet' ? json_encode($tweetData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : '',
             'published_at' => $publishedAt !== '' ? $publishedAt : date('Y-m-d H:i:s'),
         ];

@@ -82,15 +82,8 @@
                             $val = (string)$item['v'];
                             $type = (string)($item['type'] ?? 'string');
                             $toggleKeys = [
-                                'comment_enabled',
-                                'comment_post_enabled',
-                                'comment_page_enabled',
-                                'comment_talk_enabled',
-                                'comment_music_enabled',
                                 'comment_need_audit',
                                 'comment_captcha',
-                                'comment_email_required',
-                                'comment_replies_enabled',
                             ];
                             $isToggle = $type === 'bool' || in_array((string)$item['k'], $toggleKeys, true);
                             $selectOptions = [
@@ -117,7 +110,6 @@
                             $fieldHints = [
                                 'home_fixed_posts' => '填写文章 ID 或 slug，使用英文逗号、中文逗号或换行分隔，最多 3 个。',
                                 'home_fixed_talks' => '填写说说 ID，使用英文逗号、中文逗号或换行分隔，最多 3 个。',
-                                'comment_close_old_days' => '0 表示不自动关闭；例如 180 表示文章发布超过 180 天后关闭评论。',
                                 'permalink_numeric_prefix' => '可为空，或填写 post、archive 等。只允许字母、数字、下划线和短横线。',
                                 'permalink_mode' => '简短模式会优先匹配页面，再匹配文章；保存后如有冲突会提示。',
                             ];

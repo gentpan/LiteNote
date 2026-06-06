@@ -7,7 +7,6 @@
         $musicTitle = trim((string)($music->title ?? '未命名音乐'));
         $musicArtist = trim((string)($music->artist ?? '未知歌手'));
         $musicAlbum = trim((string)($music->album ?? ''));
-        $musicMood = trim((string)($music->mood ?? ''));
         $musicCover = trim((string)($music->cover_url ?? ''));
         $musicAudio = trim((string)($music->audio_url ?? ''));
         $musicSubtitle = $musicArtist . ($musicAlbum !== '' ? ' · ' . $musicAlbum : '');
@@ -16,7 +15,6 @@
     <div class="talk-music-share" data-music-id="{{ $music->id }}">
         <div class="talk-music-share-head">
             <span class="talk-music-share-type"><i class="fa-solid fa-music"></i> 音乐说说</span>
-            @if($musicMood !== '')<span class="talk-music-share-mood">#{{ $musicMood }}</span>@endif
         </div>
         <div class="music-card talk-music-player" data-audio="{{ $musicAudio }}" role="button" tabindex="0" aria-label="播放音乐：{{ $musicTitle }}">
             <span class="music-card-cover {{ $musicCover !== '' ? 'has-cover' : '' }}" @if($musicCoverStyle !== '') style="{!! $musicCoverStyle !!}" @endif>

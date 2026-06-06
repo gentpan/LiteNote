@@ -52,7 +52,7 @@ return [
         'path'    => __DIR__ . '/uploads',
         'url'     => '/uploads',
         'max_size' => 50 * 1024 * 1024,  // 50MB
-        'allowed_ext' => ['jpg','jpeg','png','gif','webp','mp3','m4a','wav','ogg','flac','aac','pdf','zip','txt','md'],
+        'allowed_ext' => ['jpg','jpeg','png','gif','webp','mp3','m4a','wav','ogg','flac','aac','lrc','pdf','zip','txt','md'],
     ],
 
     'pagination' => [
@@ -109,5 +109,12 @@ return [
             'model'    => $env('DEEPSEEK_MODEL', 'deepseek-v4-flash'),
             'base_url' => $env('DEEPSEEK_BASE_URL', 'https://api.deepseek.com'),
         ],
+    ],
+
+    'meting' => [
+        'base_url' => rtrim($env('METING_BASE_URL', 'https://api.meting.io'), '/'),
+        'token' => $env('METING_TOKEN'),
+        'quality' => $env('METING_QUALITY', 'exhigh'),
+        'timeout' => (int)$env('METING_TIMEOUT', '12'),
     ],
 ];
