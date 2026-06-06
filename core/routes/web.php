@@ -17,8 +17,8 @@ use App\Controllers\Front\FriendController;
 use App\Controllers\Front\CommentController;
 use App\Controllers\Front\CaptchaController;
 use App\Controllers\Front\FeedController;
-use App\Controllers\Front\StatController;
 use App\Controllers\Front\ActivityController;
+use App\Controllers\Front\MailController;
 use App\Controllers\Api\ActivityApiController;
 // 首页
 $router->get('/',                 [HomeController::class, 'index']);
@@ -50,8 +50,8 @@ $router->get('/archives',         [ArchiveController::class, 'index']);
 $router->get('/search',           [SearchController::class, 'index']);
 
 // 友链页
-$router->get('/friends',          [FriendController::class, 'index']);
-$router->get('/feeds',            [FriendController::class, 'subscribe']);
+$router->get('/links',            [FriendController::class, 'links']);
+$router->get('/subscribe',        [FriendController::class, 'subscribe']);
 
 // 评论提交
 $router->post('/comment/submit',  [CommentController::class, 'submit']);
@@ -63,15 +63,17 @@ $router->get('/captcha',          [CaptchaController::class, 'image']);
 $router->get('/rss.xml',          [FeedController::class, 'feed']);
 $router->get('/feed',             [FeedController::class, 'feedRedirect']);
 
+// 邮件退订
+$router->get('/mail/unsubscribe', [MailController::class, 'unsubscribe']);
+
 // llms.txt（AI / 大模型收录索引）
 $router->get('/llms.txt',         [FeedController::class, 'llms']);
 
-// 统计图
-$router->get('/api/stats',        [StatController::class, 'summary']);
 $router->get('/api/v1/activity/feed', [ActivityApiController::class, 'feed']);
 $router->get('/api/v1/activity/summary', [ActivityApiController::class, 'summary']);
 $router->get('/api/v1/activity/stats/today', [ActivityApiController::class, 'today']);
 $router->get('/api/v1/activity/stats/{date}', [ActivityApiController::class, 'stat']);
 
 // 自定义页面短链接,必须放在最后,避免覆盖上面的固定路由。
+$router->get('/{category}/{slug}', [PostController::class, 'show']);
 $router->get('/{slug}',           [PageController::class, 'show']);

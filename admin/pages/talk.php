@@ -6,7 +6,7 @@
         <a class="btn" href="/admin/talk/create?type=tweet"><i class="fa-brands fa-x-twitter"></i> 分享 X</a>
         <a class="btn" href="/admin/talk/create?type=music"><i class="fa-solid fa-music"></i> 分享音乐</a>
     </div>
-    <table class="admin-table">
+    <table class="admin-table admin-action-table">
         <thead>
             <tr><th>ID</th><th>类型</th><th>内容</th><th>心情</th><th>公开</th><th>时间</th><th>操作</th></tr>
         </thead>

@@ -1,8 +1,8 @@
 @extends('layouts.admin')
 
 @section('content')
-    <h3>个人资料</h3>
-    <form method="post" action="/admin/profile" class="admin-form" data-dirty-watch>
+    <div class="settings-page-shell profile-page-shell">
+    <form method="post" action="/admin/profile" class="admin-form profile-form" data-dirty-watch>
         <input type="hidden" name="_csrf" value="{{ $csrf }}">
 
         <div class="profile-header">
@@ -13,7 +13,7 @@
             <div class="profile-avatar-tools">
                 <p class="muted small">支持上传头像或直接填写头像 URL。留空时使用 Gravatar 头像。</p>
                 <div class="avatar-upload-row">
-                    <input type="file" id="avatarUploadInput" accept="image/jpeg,image/png,image/gif,image/webp">
+                    <input type="file" id="avatarUploadInput" accept="image/jpeg,image/png,image/gif,image/webp" hidden>
                     <button type="button" class="btn" id="avatarUploadBtn">
                         <i class="fa-solid fa-upload"></i> 上传头像
                     </button>
@@ -92,8 +92,11 @@
         if (!input || !btn || !avatarInput || !preview) return;
 
         btn.addEventListener('click', function () {
+            input.click();
+        });
+
+        input.addEventListener('change', function () {
             if (!input.files || !input.files[0]) {
-                status.textContent = '请先选择图片';
                 return;
             }
             var fd = new FormData();
@@ -122,6 +125,7 @@
                 })
                 .finally(function () {
                     btn.disabled = false;
+                    input.value = '';
                 });
         });
     })();
@@ -143,13 +147,13 @@
             wrap.className = 'social-row';
             wrap.innerHTML = ''
                 + '<div class="social-row-grid">'
+                +   '<div class="social-row-preview">' + renderIcon(data.icon) + '</div>'
                 +   '<input type="text" name="socials[' + idx + '][key]"   placeholder="平台 key(github / x / email …)" value="' + escapeAttr(data.key) + '" class="input-key">'
                 +   '<input type="text" name="socials[' + idx + '][url]"   placeholder="https://…" value="' + escapeAttr(data.url) + '" class="input-url">'
                 +   '<input type="text" name="socials[' + idx + '][icon]"  placeholder="fa-brands fa-github" value="' + escapeAttr(data.icon) + '" class="input-icon">'
                 +   '<input type="text" name="socials[' + idx + '][label]" placeholder="显示名(选填)" value="' + escapeAttr(data.label) + '" class="input-label">'
                 +   '<button type="button" class="btn-icon btn-remove" title="删除" aria-label="删除"><i class="fa-solid fa-trash"></i></button>'
-                + '</div>'
-                + '<div class="social-row-preview">' + renderIcon(data.icon) + '</div>';
+                + '</div>';
             wrap.querySelector('.btn-remove').addEventListener('click', function () {
                 wrap.remove();
                 reindex();
@@ -220,8 +224,8 @@
     })();
     </script>
 
-    <h3 class="settings-group-title"><i class="fa-solid fa-key"></i> Passkey 登录</h3>
-    <div class="settings-section">
+    <h3 class="settings-group-title profile-section-title"><i class="fa-solid fa-key"></i> Passkey 登录</h3>
+    <div class="settings-section profile-settings-section">
         <p class="muted small">
             当前已绑定 {{ (int)($passkeyCount ?? 0) }} 个 Passkey。绑定后可在后台登录页直接使用系统 Passkey 登录。
         </p>
@@ -263,8 +267,8 @@
     })();
     </script>
 
-    <h3>修改密码</h3>
-    <form method="post" action="/admin/profile/password" class="admin-form" data-dirty-watch>
+    <h3 class="settings-group-title profile-section-title"><i class="fa-solid fa-lock"></i> 修改密码</h3>
+    <form method="post" action="/admin/profile/password" class="admin-form profile-form" data-dirty-watch>
         <input type="hidden" name="_csrf" value="{{ $csrf }}">
         <div class="form-group">
             <label>原密码</label>
@@ -282,4 +286,5 @@
         </div>
         <button type="submit" class="btn btn-primary">修改密码</button>
     </form>
+    </div>
 @endsection

@@ -43,13 +43,7 @@
         };
 
         var timer = setTimeout(close, 3600);
-        var closeBtn = toast.querySelector('.admin-toast-close');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', function() {
-                clearTimeout(timer);
-                close();
-            });
-        }
+        toast._adminToastTimer = timer;
     }
 
     function showToast(message, type) {
@@ -70,8 +64,7 @@
             + (isError
                 ? '<i class="fa-solid fa-triangle-exclamation"></i>'
                 : '<i class="fa-solid fa-circle-check" aria-hidden="true"></i>')
-            + '<span class="admin-toast-message"></span>'
-            + '<button type="button" class="admin-toast-close" aria-label="\u{5173}\u{95ED}\u{63D0}\u{793A}"><i class="fa-solid fa-xmark"></i></button>';
+            + '<span class="admin-toast-message"></span>';
         toast.querySelector('.admin-toast-message').textContent = message || (isError ? '\u{64CD}\u{4F5C}\u{5931}\u{8D25}' : '\u{64CD}\u{4F5C}\u{6210}\u{529F}');
         stack.appendChild(toast);
         bindToast(toast);
@@ -95,15 +88,13 @@
             + '<div class="admin-upload-toast-body">'
             + '  <div class="admin-upload-toast-head"><span class="admin-upload-toast-title"></span><strong class="admin-upload-toast-percent">0%</strong></div>'
             + '  <div class="admin-upload-toast-bar"><span></span></div>'
-            + '</div>'
-            + '<button type="button" class="admin-toast-close" aria-label="\u{5173}\u{95ED}\u{63D0}\u{793A}"><i class="fa-solid fa-xmark"></i></button>';
+            + '</div>';
         toast.querySelector('.admin-upload-toast-title').textContent = filename ? '\u{4E0A}\u{4F20} ' + filename : '\u{6B63}\u{5728}\u{4E0A}\u{4F20}';
         stack.appendChild(toast);
 
         var bar = toast.querySelector('.admin-upload-toast-bar span');
         var percent = toast.querySelector('.admin-upload-toast-percent');
         var icon = toast.querySelector('.admin-upload-toast-icon');
-        var closeBtn = toast.querySelector('.admin-toast-close');
 
         function close(delay) {
             setTimeout(function() {
@@ -112,8 +103,6 @@
                 setTimeout(function() { toast.remove(); }, 180);
             }, delay || 0);
         }
-
-        closeBtn.addEventListener('click', function() { close(0); });
 
         return {
             progress: function(value) {

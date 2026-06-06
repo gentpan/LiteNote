@@ -2,7 +2,7 @@
     <section class="admin-modal admin-category-dialog" role="dialog" aria-modal="true" aria-labelledby="category-dialog-title">
         <div class="admin-modal-head">
             <div>
-                <h3 id="category-dialog-title">分类管理</h3>
+                <h3 id="category-dialog-title"><i class="fa-regular fa-folder-open"></i> 分类管理</h3>
                 <p>维护文章分类、导航展示和分类配色。</p>
             </div>
             <button type="button" class="admin-modal-close" data-category-dialog-close aria-label="关闭"><i class="fa-solid fa-xmark"></i></button>
@@ -14,7 +14,7 @@
             </div>
 
             <form id="cat-form" method="post" action="/admin/categories/save" class="admin-form category-dialog-form hidden" data-dirty-watch>
-                <h3 id="cat-form-title" class="admin-form-title">新建分类</h3>
+                <h3 id="cat-form-title" class="admin-form-title"><i class="fa-solid fa-folder-plus"></i> 新建分类</h3>
                 <input type="hidden" name="_csrf" value="{{ $csrf }}">
                 <input type="hidden" name="id" id="cat-id" value="">
                 <div class="form-row">
@@ -77,7 +77,7 @@
                 </div>
             </form>
 
-            <table class="admin-table category-dialog-table">
+            <table class="admin-table admin-action-table category-dialog-table">
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -194,12 +194,18 @@
         });
     }
 
+    function setFormTitle(text, icon) {
+        title.innerHTML = '<i class="' + (icon || 'fa-regular fa-folder') + '"></i> ' + String(text || '').replace(/[&<>"']/g, function (ch) {
+            return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'}[ch];
+        });
+    }
+
     function resetForm() {
         f.id.value = ''; f.name.value = ''; f.slug.value = ''; f.sort.value = '0';
         f.icon.value = ''; f.desc.value = '';
         setPreview('');
         setColor('');
-        title.textContent = '新建分类';
+        setFormTitle('新建分类', 'fa-solid fa-folder-plus');
         submitBtn.textContent = '保存';
     }
 
@@ -256,7 +262,7 @@
             f.desc.value = d.description || '';
             setPreview(d.icon || '');
             setColor(d.color || '');
-            title.textContent = '编辑分类';
+            setFormTitle('编辑分类', 'fa-regular fa-pen-to-square');
             submitBtn.textContent = '更新';
             form.classList.remove('hidden');
             form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });

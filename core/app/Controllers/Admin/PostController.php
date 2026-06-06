@@ -17,6 +17,7 @@ use App\Models\Post;
 use App\Services\AiSummaryService;
 use App\Services\ActivityService;
 use App\Services\ImageUploadService;
+use App\Services\PostMailer;
 use App\Services\PostContentStorage;
 use App\Traits\HasFlashRedirect;
 use App\Traits\HasSlug;
@@ -216,6 +217,9 @@ class PostController
         $post->save();
         PostContentStorage::write($slug, $body);
         (new ActivityService())->recordPost($post, 'published_post');
+        if ($status === PostStatus::Published->value) {
+            PostMailer::notifyPublished($post);
+        }
 
         if ((string)$request->input('delete_source', '') === '1') {
             $this->deleteImportSource((string)$request->input('import_file', ''));
@@ -264,6 +268,7 @@ class PostController
                 $this->redirect('/admin/posts');
             }
             $oldSlug = (string)$post->slug;
+            $oldStatus = (string)($post->status ?? '');
             $post->fill([
                 'title'            => trim((string)$data['title']),
                 'slug'             => $slug,
@@ -279,6 +284,9 @@ class PostController
             PostContentStorage::rename($oldSlug, $slug);
             PostContentStorage::write($slug, $markdown);
             (new ActivityService())->recordPost($post, 'updated_post');
+            if ($oldStatus !== PostStatus::Published->value && $data['status'] === PostStatus::Published->value) {
+                PostMailer::notifyPublished($post);
+            }
         } else {
             $post = new Post([
                 'title'            => trim((string)$data['title']),
@@ -299,6 +307,9 @@ class PostController
             $post->save();
             PostContentStorage::write($slug, $markdown);
             (new ActivityService())->recordPost($post, 'published_post');
+            if ($data['status'] === PostStatus::Published->value) {
+                PostMailer::notifyPublished($post);
+            }
         }
 
         $this->flashSuccess($id ? '文章已更新' : '文章已发布');
@@ -397,10 +408,18 @@ class PostController
                 $this->flashSuccess('已删除 ' . count($ids) . ' 篇文章');
                 break;
             case 'publish':
+                $notifyPosts = Post::query(
+                    "SELECT * FROM posts WHERE status <> '" . PostStatus::Published->value . "' AND id IN ({$placeholders})",
+                    $ids
+                );
                 $db->query(
                     "UPDATE posts SET status='" . PostStatus::Published->value . "' WHERE id IN ({$placeholders})",
                     $ids
                 );
+                foreach ($notifyPosts as $post) {
+                    $post->status = PostStatus::Published->value;
+                    PostMailer::notifyPublished($post);
+                }
                 $this->flashSuccess('已发布 ' . count($ids) . ' 篇文章');
                 break;
             case 'draft':

@@ -21,8 +21,17 @@ final class Setting extends Model
     {
         $rows = self::db()->fetchAll('SELECT * FROM settings ORDER BY group_name ASC, sort ASC, id ASC');
         $grouped = [];
+        $hidden = [
+            'theme',
+            'site_theme',
+            'site_favicon_mode',
+            'site_favicon_source',
+            'site_favicon_error',
+            'site_favicon_updated_at',
+            'site_favicon_version',
+        ];
         foreach ($rows as $r) {
-            if (($r['k'] ?? '') === 'theme') {
+            if (in_array(($r['k'] ?? ''), $hidden, true)) {
                 continue;
             }
             $grouped[$r['group_name']][] = $r;

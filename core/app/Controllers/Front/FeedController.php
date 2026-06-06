@@ -28,7 +28,7 @@ class FeedController
             $post = new Post($r);
             $items[] = [
                 'title'       => $post->title,
-                'link'        => $baseUrl . '/post/' . $post->slug . '.html',
+                'link'        => $baseUrl . $post->getUrl(),
                 'description' => $post->summaryOrContent(300),
                 'content'     => $post->html(),
                 'pubDate'     => strtotime((string)$post->published_at) ?: time(),
@@ -83,7 +83,7 @@ class FeedController
         $lines[] = '';
         foreach ($rows as $r) {
             $post = new Post($r);
-            $url = $baseUrl . '/post/' . $post->slug . '.html';
+            $url = $baseUrl . $post->getUrl();
             $summary = trim((string) $post->summaryOrContent(120));
             $summary = preg_replace('/\s+/u', ' ', $summary);
             $lines[] = '- [' . $post->title . '](' . $url . ')' . ($summary !== '' ? ': ' . $summary : '');

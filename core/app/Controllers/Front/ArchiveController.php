@@ -7,12 +7,21 @@ use App\Core\Helper;
 use App\Core\View;
 use App\Models\Category;
 use App\Models\Post;
+use App\Services\PermalinkService;
 
 class ArchiveController
 {
     public function index(): string
     {
         $posts = Post::archives();
+        foreach ($posts as &$post) {
+            $post['url'] = PermalinkService::postUrlFromParts(
+                (int)($post['id'] ?? 0),
+                (string)($post['slug'] ?? ''),
+                (string)($post['category_slug'] ?? '')
+            );
+        }
+        unset($post);
 
         $stats = $this->buildStats($posts);
         $heatmap = $this->buildHeatmap($posts);

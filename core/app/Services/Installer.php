@@ -240,19 +240,6 @@ final class Installer
         )
         SQL);
 
-        // 统计
-        $db->query(<<<SQL
-        CREATE TABLE IF NOT EXISTS stats (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            path VARCHAR(255) NOT NULL,
-            ip VARCHAR(45),
-            ua VARCHAR(255),
-            referer VARCHAR(500),
-            day VARCHAR(10) NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-        SQL);
-
         // Passkey / WebAuthn 凭证
         $db->query(<<<SQL
         CREATE TABLE IF NOT EXISTS webauthn_credentials (
@@ -264,6 +251,34 @@ final class Installer
             device_name VARCHAR(100),
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             last_used_at DATETIME
+        )
+        SQL);
+
+        // 邮件日志
+        $db->query(<<<SQL
+        CREATE TABLE IF NOT EXISTS mail_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            provider VARCHAR(40),
+            mail_type VARCHAR(60),
+            recipient VARCHAR(160),
+            subject VARCHAR(255),
+            status VARCHAR(24),
+            error TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+        SQL);
+
+        // 邮件退订
+        $db->query(<<<SQL
+        CREATE TABLE IF NOT EXISTS mail_unsubscribes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email VARCHAR(160) NOT NULL,
+            mail_type VARCHAR(60) NOT NULL DEFAULT 'all',
+            token VARCHAR(80) NOT NULL,
+            ip VARCHAR(45),
+            ua VARCHAR(255),
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(email, mail_type)
         )
         SQL);
 
@@ -288,11 +303,12 @@ final class Installer
             // 老库会在 selfUpgrade() 加列后再建一次索引
         }
         $db->query('CREATE INDEX IF NOT EXISTS idx_comments_status ON comments(status)');
-        $db->query('CREATE INDEX IF NOT EXISTS idx_stats_day ON stats(day)');
-        $db->query('CREATE INDEX IF NOT EXISTS idx_stats_path ON stats(path)');
         $db->query('CREATE INDEX IF NOT EXISTS idx_music_public_sort ON music(is_public, sort, id)');
         $db->query('CREATE INDEX IF NOT EXISTS idx_music_public_published ON music(is_public, published_at, sort, id)');
         $db->query('CREATE INDEX IF NOT EXISTS idx_webauthn_user ON webauthn_credentials(user_id)');
+        $db->query('CREATE INDEX IF NOT EXISTS idx_mail_logs_created ON mail_logs(created_at)');
+        $db->query('CREATE INDEX IF NOT EXISTS idx_mail_logs_status ON mail_logs(status)');
+        $db->query('CREATE INDEX IF NOT EXISTS idx_mail_unsub_email ON mail_unsubscribes(email)');
 
         $log[] = '数据表创建完成';
 
@@ -319,9 +335,32 @@ final class Installer
                 ['k' => 'keywords',      'v' => 'PHP,博客,个人',       'label' => '关键词',   'group_name' => 'basic',   'sort' => 4],
                 ['k' => 'beian',         'v' => '',                     'label' => '备案号',   'group_name' => 'basic',   'sort' => 5],
                 ['k' => 'site_avatar_url','v' => '',                     'label' => '站点头像地址', 'group_name' => 'basic', 'sort' => 8],
-                ['k' => 'comment_need_audit', 'v' => '1',                'label' => '评论需审核','group_name' => 'comment', 'sort' => 1],
-                ['k' => 'comment_captcha',    'v' => '0',                'label' => '评论验证码','group_name' => 'comment', 'sort' => 2],
+                ['k' => 'comment_enabled',       'v' => '1', 'type' => 'bool', 'label' => '全站评论开关', 'group_name' => 'comment', 'sort' => 1],
+                ['k' => 'comment_post_enabled',  'v' => '1', 'type' => 'bool', 'label' => '文章评论开关', 'group_name' => 'comment', 'sort' => 2],
+                ['k' => 'comment_page_enabled',  'v' => '1', 'type' => 'bool', 'label' => '页面评论开关', 'group_name' => 'comment', 'sort' => 3],
+                ['k' => 'comment_talk_enabled',  'v' => '1', 'type' => 'bool', 'label' => '说说评论开关', 'group_name' => 'comment', 'sort' => 4],
+                ['k' => 'comment_music_enabled', 'v' => '1', 'type' => 'bool', 'label' => '音乐评论开关', 'group_name' => 'comment', 'sort' => 5],
+                ['k' => 'comment_need_audit',    'v' => '1', 'type' => 'bool', 'label' => '评论需要审核', 'group_name' => 'comment', 'sort' => 6],
+                ['k' => 'comment_captcha',       'v' => '0', 'type' => 'bool', 'label' => '启用验证码', 'group_name' => 'comment', 'sort' => 7],
+                ['k' => 'comment_email_required','v' => '1', 'type' => 'bool', 'label' => '评论者邮箱必填', 'group_name' => 'comment', 'sort' => 8],
+                ['k' => 'comment_replies_enabled','v' => '1', 'type' => 'bool', 'label' => '允许回复评论', 'group_name' => 'comment', 'sort' => 9],
+                ['k' => 'comment_close_old_days','v' => '0', 'type' => 'number', 'label' => '关闭旧文章评论天数', 'group_name' => 'comment', 'sort' => 10],
+                ['k' => 'home_feed_mode',        'v' => 'mixed', 'type' => 'select', 'label' => '首页展示模式', 'group_name' => 'reading', 'sort' => 1],
+                ['k' => 'home_total_limit',      'v' => '12', 'type' => 'number', 'label' => '首页总数量', 'group_name' => 'reading', 'sort' => 2],
+                ['k' => 'home_post_limit',       'v' => '8', 'type' => 'number', 'label' => '首页文章读取数', 'group_name' => 'reading', 'sort' => 3],
+                ['k' => 'home_talk_limit',       'v' => '8', 'type' => 'number', 'label' => '首页说说读取数', 'group_name' => 'reading', 'sort' => 4],
+                ['k' => 'home_fixed_posts',      'v' => '', 'type' => 'textarea', 'label' => '固定显示文章', 'group_name' => 'reading', 'sort' => 5],
+                ['k' => 'home_fixed_talks',      'v' => '', 'type' => 'textarea', 'label' => '固定显示说说', 'group_name' => 'reading', 'sort' => 6],
+                ['k' => 'post_list_per_page',    'v' => '5', 'type' => 'number', 'label' => '文章列表每页数量', 'group_name' => 'reading', 'sort' => 7],
+                ['k' => 'permalink_mode', 'v' => 'default', 'type' => 'select', 'label' => '文章链接模式', 'group_name' => 'permalink', 'sort' => 1],
+                ['k' => 'permalink_numeric_prefix', 'v' => 'post', 'label' => '数字链接前缀', 'group_name' => 'permalink', 'sort' => 10],
+                ['k' => 'permalink_numeric_source', 'v' => 'six', 'type' => 'select', 'label' => '数字来源', 'group_name' => 'permalink', 'sort' => 11],
+                ['k' => 'permalink_numeric_suffix', 'v' => '.html', 'type' => 'select', 'label' => '数字链接后缀', 'group_name' => 'permalink', 'sort' => 12],
                 ['k' => 'site_icp',           'v' => '',                 'label' => 'ICP 备案',  'group_name' => 'basic',   'sort' => 7],
+                ['k' => 'mail_enabled',       'v' => '0',                'type' => 'bool', 'label' => '启用邮件', 'group_name' => 'mail', 'sort' => 1],
+                ['k' => 'mail_driver',        'v' => 'sendflare',         'label' => '邮件驱动', 'group_name' => 'mail', 'sort' => 2],
+                ['k' => 'mail_from',          'v' => 'noreply@example.com','label' => '发件邮箱', 'group_name' => 'mail', 'sort' => 3],
+                ['k' => 'mail_from_name',     'v' => 'LiteNote',          'label' => '发件名称', 'group_name' => 'mail', 'sort' => 4],
             ];
             foreach ($settings as $s) {
                 $db->insert('settings', $s);
@@ -472,6 +511,7 @@ final class Installer
         self::seedMusic($db, $log);
         self::migratePostMarkdownFiles($db, $log);
         self::ensurePasskeyTable($db);
+        self::ensureMailTables($db);
     }
 
     private static function ensurePasskeyTable(Database $db): void
@@ -491,6 +531,41 @@ final class Installer
 
         try {
             $db->query('CREATE INDEX IF NOT EXISTS idx_webauthn_user ON webauthn_credentials(user_id)');
+        } catch (\Throwable) {
+            // ignore
+        }
+    }
+
+    private static function ensureMailTables(Database $db): void
+    {
+        $db->query(<<<SQL
+        CREATE TABLE IF NOT EXISTS mail_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            provider VARCHAR(40),
+            mail_type VARCHAR(60),
+            recipient VARCHAR(160),
+            subject VARCHAR(255),
+            status VARCHAR(24),
+            error TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+        SQL);
+        $db->query(<<<SQL
+        CREATE TABLE IF NOT EXISTS mail_unsubscribes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email VARCHAR(160) NOT NULL,
+            mail_type VARCHAR(60) NOT NULL DEFAULT 'all',
+            token VARCHAR(80) NOT NULL,
+            ip VARCHAR(45),
+            ua VARCHAR(255),
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(email, mail_type)
+        )
+        SQL);
+        try {
+            $db->query('CREATE INDEX IF NOT EXISTS idx_mail_logs_created ON mail_logs(created_at)');
+            $db->query('CREATE INDEX IF NOT EXISTS idx_mail_logs_status ON mail_logs(status)');
+            $db->query('CREATE INDEX IF NOT EXISTS idx_mail_unsub_email ON mail_unsubscribes(email)');
         } catch (\Throwable) {
             // ignore
         }

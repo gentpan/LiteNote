@@ -6,9 +6,9 @@ namespace App\Core;
 final class TemplateMap
 {
     private const ADMIN_PREFIXES = [
-        'activity.', 'attachment.', 'auth.', 'comment.', 'dashboard.', 'link.',
-        'music.', 'page.form', 'page.index', 'post.form', 'post.import',
-        'post.index', 'profile.', 'setting.', 'stat.', 'talk.',
+        'activity.', 'attachment.', 'auth.', 'comment.', 'dashboard.', 'link.', 'mail.',
+        'music.', 'page.form', 'page.index', 'plugin.', 'post.form', 'post.import',
+        'post.index', 'profile.', 'setting.', 'stat.', 'talk.', 'theme.',
     ];
 
     private const SITE_PREFIXES = [

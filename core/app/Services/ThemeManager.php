@@ -7,12 +7,11 @@ final class ThemeManager
 {
     private const THEME_ROOT = '/themes';
     private const VIEW_THEME_DIR = '/themes';
+    private const PROTECTED_THEMES = ['ember'];
 
     public static function all(): array
     {
-        $themes = self::customThemes();
-
-        return $themes;
+        return self::customThemes();
     }
 
     public static function keys(): array
@@ -92,6 +91,44 @@ final class ThemeManager
         return isset(self::all()[$key]) ? $key : 'ember';
     }
 
+    public static function activate(string $key): void
+    {
+        if (!preg_match('/^[a-z0-9_-]+$/', $key) || !isset(self::all()[$key])) {
+            throw new \RuntimeException('主题不存在');
+        }
+        \App\Models\Setting::set('site_theme', $key);
+        \App\Core\Config::set('site.site_theme', $key);
+        \App\Core\View::share('site_theme', $key);
+        \App\Core\View::share('site', \App\Core\Config::get('site'));
+    }
+
+    public static function delete(string $key): void
+    {
+        if (!preg_match('/^[a-z0-9_-]+$/', $key)) {
+            throw new \RuntimeException('主题标识不合法');
+        }
+        if ($key === self::activeKey()) {
+            throw new \RuntimeException('当前启用的主题不能删除');
+        }
+        if (in_array($key, self::PROTECTED_THEMES, true)) {
+            throw new \RuntimeException('默认主题不能删除');
+        }
+
+        $theme = self::all()[$key] ?? null;
+        if (!$theme) {
+            throw new \RuntimeException('主题不存在');
+        }
+
+        $root = realpath(self::themeDirectory());
+        $dir = self::themeDirectory() . '/' . $key;
+        $realDir = realpath($dir);
+        if (!is_string($root) || !is_string($realDir) || !is_dir($dir) || !str_starts_with($realDir, $root . DIRECTORY_SEPARATOR)) {
+            throw new \RuntimeException('主题目录不存在');
+        }
+
+        self::deleteDirectory($realDir);
+    }
+
     private static function customThemes(): array
     {
         $root = self::themeDirectory();
@@ -120,13 +157,76 @@ final class ThemeManager
                 'key' => $key,
                 'name' => (string)($manifest['name'] ?? ucfirst($key)),
                 'description' => (string)($manifest['description'] ?? ''),
+                'version' => (string)($manifest['version'] ?? ''),
+                'author' => (string)($manifest['author'] ?? ''),
                 'builtin' => false,
+                'protected' => in_array($key, self::PROTECTED_THEMES, true),
+                'active' => $key === self::activeKeyRaw(),
+                'screenshot' => self::screenshotUrl($key, $manifest),
                 'stylesheet' => self::THEME_ROOT . '/' . rawurlencode($key) . '/assets/main.css',
             ];
         }
 
         ksort($out);
         return $out;
+    }
+
+    private static function activeKeyRaw(): string
+    {
+        try {
+            return (string)\App\Models\Setting::get('site_theme', 'ember');
+        } catch (\Throwable) {
+            return 'ember';
+        }
+    }
+
+    private static function screenshotUrl(string $key, array $manifest): string
+    {
+        $candidates = [];
+        $declared = trim((string)($manifest['screenshot'] ?? ''));
+        if ($declared !== '') {
+            $candidates[] = ltrim($declared, '/');
+        }
+        foreach (['screenshot.png', 'screenshot.jpg', 'screenshot.jpeg', 'screenshot.webp', 'screenshot.gif', 'screenshot.svg'] as $name) {
+            $candidates[] = $name;
+        }
+
+        $dir = self::themeDirectory() . '/' . $key;
+        foreach ($candidates as $candidate) {
+            if ($candidate === '' || str_contains($candidate, '..')) {
+                continue;
+            }
+            $path = $dir . '/' . $candidate;
+            if (is_file($path)) {
+                return self::THEME_ROOT . '/' . rawurlencode($key) . '/' . str_replace('%2F', '/', rawurlencode($candidate));
+            }
+        }
+
+        return '';
+    }
+
+    private static function deleteDirectory(string $dir): void
+    {
+        $items = scandir($dir);
+        if ($items === false) {
+            throw new \RuntimeException('无法读取主题目录');
+        }
+        foreach ($items as $item) {
+            if ($item === '.' || $item === '..') {
+                continue;
+            }
+            $path = $dir . '/' . $item;
+            if (is_dir($path) && !is_link($path)) {
+                self::deleteDirectory($path);
+            } else {
+                if (!@unlink($path)) {
+                    throw new \RuntimeException('无法删除主题文件: ' . $item);
+                }
+            }
+        }
+        if (!@rmdir($dir)) {
+            throw new \RuntimeException('无法删除主题目录');
+        }
     }
 
     private static function viewThemeDirectory(): string

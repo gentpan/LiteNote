@@ -105,7 +105,7 @@
                                         $__categoryIcon = (string)($p['category_icon'] ?? '');
                                         $__categoryIcon = preg_match('/^[a-zA-Z0-9 _-]+$/', $__categoryIcon) ? $__categoryIcon : 'fa-regular fa-file-lines';
                                     @endphp
-                                    <a class="archive-post-row" href="/post/{{ $p['slug'] }}.html">
+                                    <a class="archive-post-row" href="{{ $p['url'] ?? '#' }}">
                                         <time>{{ substr($__date, 5, 5) }}</time>
                                         <i class="{{ $__categoryIcon }}"></i>
                                         <span class="archive-post-title">{{ $p['title'] }}</span>

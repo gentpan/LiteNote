@@ -1,5 +1,8 @@
 {
   "name": "Kami",
   "description": "Warm parchment canvas, ink blue accent, editorial reading layout.",
+  "version": "1.0.2",
+  "author": "LiteNote",
+  "screenshot": "screenshot.svg",
   "stylesheet": "/themes/kami/assets/main.css"
 }

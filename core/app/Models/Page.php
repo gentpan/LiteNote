@@ -30,6 +30,12 @@ final class Page extends Model
                 'icon' => 'fa-regular fa-comments',
                 'sort' => 20,
             ],
+            'x' => [
+                'title' => 'X',
+                'url' => '/x',
+                'icon' => 'fa-brands fa-x-twitter',
+                'sort' => 25,
+            ],
             'music' => [
                 'title' => '音乐',
                 'url' => '/music',
@@ -44,13 +50,13 @@ final class Page extends Model
             ],
             'friends' => [
                 'title' => '友链',
-                'url' => '/friends',
+                'url' => '/links',
                 'icon' => 'fa-solid fa-link',
                 'sort' => 50,
             ],
             'feeds' => [
                 'title' => '订阅',
-                'url' => '/feeds',
+                'url' => '/subscribe',
                 'icon' => 'fa-solid fa-square-rss',
                 'sort' => 60,
             ],

@@ -18,7 +18,7 @@
     @foreach($posts as $post)
         <article class="post-card">
             <h3 class="post-title">
-                <a href="/post/{{ $post->slug }}.html">{{ $post->title }}</a>
+                <a href="{{ $post->getUrl() }}">{{ $post->title }}</a>
             </h3>
             <p class="post-meta">
                 <span><i class="fa-regular fa-calendar"></i> {!! \App\Core\Helper::timeTag($post->published_at) !!}</span>

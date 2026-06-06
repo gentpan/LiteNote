@@ -9,13 +9,14 @@ use App\Enums\PostStatus;
 use App\Models\Post;
 use App\Models\Category;
 use App\Models\Comment;
+use App\Services\PermalinkService;
 
 class PostController
 {
     public function show($request, array $params): string
     {
         $slug = $params['slug'] ?? '';
-        $post = Post::findBySlug($slug);
+        $post = PermalinkService::resolve((string)$request->path) ?: PermalinkService::resolveLegacyDefault($slug);
         if (!$post || $post->status !== PostStatus::Published->value) {
             return $this->notFound($slug);
         }

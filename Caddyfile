@@ -1,31 +1,33 @@
 http://127.0.0.1:5555 {
-    root * .
-    encode zstd gzip
+	root * .
+	encode zstd gzip
 
-    @private {
-        path /core/* /runtime/* /.env* /config.php /Caddyfile
-        path /README.md /CHANGELOG.md
-    }
-    respond @private 404
+	@private {
+		path /core/* /runtime/* /.env* /config.php /Caddyfile
+		path /README.md /CHANGELOG.md
+	}
+	handle @private {
+		respond 404
+	}
 
-    @publicAssets {
-        path /admin/assets/* /themes/* /plugins/* /uploads/*
-    }
-    handle @publicAssets {
-        file_server
-    }
+	@publicAssets {
+		path /admin/assets/* /themes/* /plugins/* /uploads/*
+	}
+	handle @publicAssets {
+		file_server
+	}
 
-    @admin {
-        path /admin /admin/*
-    }
-    handle @admin {
-        rewrite * /admin/index.php
-        php_fastcgi 127.0.0.1:9000
-    }
+	@admin {
+		path /admin /admin/*
+	}
+	handle @admin {
+		rewrite * /admin/index.php
+		php_fastcgi 127.0.0.1:9000
+	}
 
-    handle {
-        try_files {path} /index.php
-        php_fastcgi 127.0.0.1:9000
-        file_server
-    }
+	handle {
+		try_files {path} /index.php
+		php_fastcgi 127.0.0.1:9000
+		file_server
+	}
 }

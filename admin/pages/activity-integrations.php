@@ -7,7 +7,7 @@
         <span class="muted">一行一个平台，后台只保存 API 信息，前台只读取同步后的本地动态数据。</span>
     </div>
 
-    <table class="admin-table activity-integration-table">
+    <table class="admin-table admin-action-table activity-integration-table">
         <thead>
             <tr>
                 <th>平台</th>
@@ -79,7 +79,7 @@
     </table>
 
     <section class="admin-form activity-sync-log">
-        <h3 class="admin-form-title">同步日志</h3>
+        <h3 class="admin-form-title"><i class="fa-solid fa-clock-rotate-left"></i> 同步日志</h3>
         <table class="admin-table">
             <thead>
                 <tr>
