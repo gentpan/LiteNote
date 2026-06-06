@@ -15,11 +15,13 @@ use App\Controllers\Admin\LinkController;
 use App\Controllers\Admin\CommentController;
 use App\Controllers\Admin\TalkController;
 use App\Controllers\Admin\MusicController;
-use App\Controllers\Admin\StatController;
 use App\Controllers\Admin\SettingController;
 use App\Controllers\Admin\ProfileController;
 use App\Controllers\Admin\PasskeyController;
 use App\Controllers\Admin\ActivityController;
+use App\Controllers\Admin\MailController;
+use App\Controllers\Admin\ThemeController;
+use App\Controllers\Admin\PluginController;
 use App\Middleware\AdminAuth;
 use App\Middleware\CsrfMiddleware;
 
@@ -76,11 +78,19 @@ $router->group('/admin', function ($r) {
     $r->post('/attachments/upload',    [AttachmentController::class, 'upload'], [\App\Middleware\CsrfMiddleware::class]);
     $r->post('/attachments/delete',    [AttachmentController::class, 'destroy'],[\App\Middleware\CsrfMiddleware::class]);
 
+    // 主题 / 插件
+    $r->get('/themes',                 [ThemeController::class, 'index']);
+    $r->post('/themes/activate',       [ThemeController::class, 'activate'], [\App\Middleware\CsrfMiddleware::class]);
+    $r->post('/themes/delete',         [ThemeController::class, 'delete'],   [\App\Middleware\CsrfMiddleware::class]);
+    $r->get('/plugins',                [PluginController::class, 'index']);
+
     // 友情链接
     $r->get('/links',                  [LinkController::class, 'index']);
     $r->post('/links/save',            [LinkController::class, 'save'],    [\App\Middleware\CsrfMiddleware::class]);
     $r->post('/links/delete',          [LinkController::class, 'destroy'], [\App\Middleware\CsrfMiddleware::class]);
+    $r->post('/links/bulk-delete',     [LinkController::class, 'bulkDelete'], [\App\Middleware\CsrfMiddleware::class]);
     $r->post('/links/refresh',         [LinkController::class, 'refresh'], [\App\Middleware\CsrfMiddleware::class]);
+    $r->post('/links/refresh-aggregate', [LinkController::class, 'refreshAggregate'], [\App\Middleware\CsrfMiddleware::class]);
 
     // 评论
     $r->get('/comments',               [CommentController::class, 'index']);
@@ -114,12 +124,21 @@ $router->group('/admin', function ($r) {
     $r->post('/music/{id}/edit',   [MusicController::class, 'update'], [\App\Middleware\CsrfMiddleware::class]);
     $r->post('/music/delete',      [MusicController::class, 'destroy'],[\App\Middleware\CsrfMiddleware::class]);
 
-    // 统计
-    $r->get('/stats',                  [StatController::class, 'index']);
-
     // 设置
     $r->get('/settings',               [SettingController::class, 'index']);
+    $r->get('/settings/reading',       [SettingController::class, 'reading']);
+    $r->get('/settings/comments',      [SettingController::class, 'comments']);
+    $r->get('/settings/permalinks',    [SettingController::class, 'permalinks']);
     $r->post('/settings/save',         [SettingController::class, 'save'],   [\App\Middleware\CsrfMiddleware::class]);
+    $r->post('/settings/favicon',      [SettingController::class, 'uploadFavicon'], [\App\Middleware\CsrfMiddleware::class]);
+    $r->get('/settings/mail',          [MailController::class, 'index']);
+    $r->post('/settings/mail/save',    [MailController::class, 'save'],      [\App\Middleware\CsrfMiddleware::class]);
+    $r->post('/settings/mail/test',    [MailController::class, 'test'],      [\App\Middleware\CsrfMiddleware::class]);
+    $r->get('/mail',                   static function (): never {
+        \App\Core\Response::redirect('/admin/settings/mail');
+    });
+    $r->post('/mail/save',             [MailController::class, 'save'],      [\App\Middleware\CsrfMiddleware::class]);
+    $r->post('/mail/test',             [MailController::class, 'test'],      [\App\Middleware\CsrfMiddleware::class]);
 
     // 个人资料
     $r->get('/profile',                [ProfileController::class, 'index']);

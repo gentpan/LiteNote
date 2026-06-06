@@ -1387,6 +1387,67 @@
         });
     }
 
+    function runWhenIdle(fn) {
+        if ('requestIdleCallback' in window) {
+            window.requestIdleCallback(fn, { timeout: 900 });
+            return;
+        }
+        window.setTimeout(function() {
+            fn({ timeRemaining: function() { return 16; }, didTimeout: true });
+        }, 80);
+    }
+
+    function bindDeferredFavicons(root) {
+        root = root || document;
+        var queue = Array.prototype.slice.call(root.querySelectorAll('img[data-favicon-src]')).filter(function(img) {
+            if (img.dataset.faviconDeferredReady === '1') {
+                return false;
+            }
+            img.dataset.faviconDeferredReady = '1';
+            return true;
+        });
+
+        if (!queue.length) {
+            return;
+        }
+
+        function loadIcon(img) {
+            var src = img.getAttribute('data-favicon-src');
+            if (!src || !img.isConnected) {
+                return;
+            }
+
+            var probe = new Image();
+            probe.decoding = 'async';
+            probe.referrerPolicy = 'no-referrer';
+            probe.onload = function() {
+                img.src = src;
+                img.classList.remove('is-deferred');
+                img.classList.add('is-loaded');
+                img.removeAttribute('data-favicon-src');
+            };
+            probe.onerror = function() {
+                img.classList.remove('is-deferred');
+                img.classList.add('is-failed');
+                img.removeAttribute('data-favicon-src');
+            };
+            probe.src = src;
+        }
+
+        function pump(deadline) {
+            var budget = deadline && typeof deadline.timeRemaining === 'function' ? deadline.timeRemaining() : 16;
+            while (queue.length && (budget > 4 || (deadline && deadline.didTimeout))) {
+                loadIcon(queue.shift());
+                budget = deadline && typeof deadline.timeRemaining === 'function' ? deadline.timeRemaining() : budget - 4;
+            }
+            if (queue.length) {
+                runWhenIdle(pump);
+            }
+        }
+
+        runWhenIdle(pump);
+    }
+
     // \u{7EDF}\u{4E00}\u{7ED1}\u{5B9A}\u{52A8}\u{6001}\u{4EA4}\u{4E92}(\u{521D}\u{59CB} + \u{52A0}\u{8F7D}\u{66F4}\u{591A}\u{540E}\u{7684}\u{65B0}\u{5185}\u{5BB9},\u{5E26}\u{53BB}\u{91CD}\u{5B88}\u{536B})
     function bindDynamic(root) {
         root = root || document;
@@ -1402,6 +1463,7 @@
         root.querySelectorAll('.front-publish-form').forEach(bindPublishForm);
         root.querySelectorAll('.footer-rss-copy, [data-copy-text]').forEach(bindCopyButton);
         hydrateStoredLikeStates(root);
+        bindDeferredFavicons(root);
         bindImages(root);
     }
     bindDynamic(document);

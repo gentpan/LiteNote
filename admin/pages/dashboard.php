@@ -6,9 +6,6 @@
             ['label' => '文章总数', 'value' => $stats['posts'] ?? 0, 'icon' => 'fa-regular fa-file-lines', 'tone' => 'blue'],
             ['label' => '评论总数', 'value' => $stats['comments'] ?? 0, 'icon' => 'fa-regular fa-comment-dots', 'tone' => 'green'],
             ['label' => '待审核评论', 'value' => $stats['pending'] ?? 0, 'icon' => 'fa-solid fa-shield-halved', 'tone' => 'amber'],
-            ['label' => '今日 PV', 'value' => $stats['today']['pv'] ?? 0, 'icon' => 'fa-regular fa-eye', 'tone' => 'blue'],
-            ['label' => '今日 UV', 'value' => $stats['today']['uv'] ?? 0, 'icon' => 'fa-regular fa-user', 'tone' => 'cyan'],
-            ['label' => '近 30 日 PV', 'value' => $stats['total']['pv'] ?? 0, 'icon' => 'fa-solid fa-chart-line', 'tone' => 'violet'],
         ];
         $quickActions = [
             ['label' => '写文章', 'href' => '/admin/posts/create', 'icon' => 'fa-regular fa-pen-to-square'],
@@ -62,7 +59,7 @@
                         @foreach($latestPosts as $p)
                         <tr>
                             <td>
-                                <a class="dashboard-post-link" href="/post/{{ $p->slug }}.html" target="_blank">
+                                <a class="dashboard-post-link" href="{{ $p->getUrl() }}" target="_blank">
                                     <i class="fa-regular fa-file-lines"></i>
                                     <span>{{ $p->title }}</span>
                                 </a>
@@ -88,7 +85,7 @@
                     <div class="pending-comment-head">
                         <span><i class="fa-regular fa-user"></i> <strong>{{ $c['nickname'] }}</strong></span>
                         @if($c['post_id'])
-                            <a href="/post/{{ $c['target_slug'] }}.html" target="_blank"><i class="fa-regular fa-file-lines"></i> {{ $c['target_title'] }}</a>
+                            <a href="{{ \App\Services\PermalinkService::postUrlFromParts((int)($c['target_post_id'] ?? $c['post_id']), (string)$c['target_slug'], (string)($c['target_category_slug'] ?? '')) }}" target="_blank"><i class="fa-regular fa-file-lines"></i> {{ $c['target_title'] }}</a>
                         @else
                             <span><i class="fa-regular fa-bookmark"></i> 页面 {{ $c['target_title'] }}</span>
                         @endif

@@ -60,7 +60,7 @@
         @else
             <div class="form-row comment-profile-fields">
                 <input type="text" name="nickname" placeholder="昵称 *" required>
-                <input type="email" name="email" placeholder="邮箱 *" required>
+                <input type="email" name="email" placeholder="邮箱{{ \App\Services\CommentSettingsService::emailRequired() ? ' *' : '（选填）' }}" {{ \App\Services\CommentSettingsService::emailRequired() ? 'required' : '' }}>
                 <input type="text" name="website" placeholder="网站(选填)">
             </div>
         @endif

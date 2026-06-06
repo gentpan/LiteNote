@@ -24,7 +24,7 @@
                         $category = $post->getCategory();
                     @endphp
                     <article class="post-feature-card">
-                        <a class="post-feature-cover" href="/post/{{ $post->slug }}.html" aria-label="{{ $post->title }}">
+                        <a class="post-feature-cover" href="{{ $post->getUrl() }}" aria-label="{{ $post->title }}">
                             @if($post->cover)
                                 <img src="{{ $post->cover }}" alt="{{ $post->title }}" loading="lazy" decoding="async">
                             @else
@@ -42,7 +42,7 @@
                             </p>
                             <h3 class="post-feature-title">
                                 @if($post->is_top)<span class="badge badge-top">置顶</span>@endif
-                                <a href="/post/{{ $post->slug }}.html">{{ $post->title }}</a>
+                                <a href="{{ $post->getUrl() }}">{{ $post->title }}</a>
                             </h3>
                             <p class="post-feature-excerpt">{{ $post->summaryOrContent(96) }}</p>
                         </div>
@@ -61,7 +61,7 @@
                 $category = $post->getCategory();
             @endphp
             <article class="post-compact-row">
-                <a class="post-compact-link" href="/post/{{ $post->slug }}.html">
+                <a class="post-compact-link" href="{{ $post->getUrl() }}">
                     <span class="post-compact-number">{{ $postNumberText }}</span>
                     <span class="post-compact-title">
                         @if($post->is_top)<span class="badge badge-top">置顶</span>@endif

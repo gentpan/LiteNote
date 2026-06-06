@@ -7,7 +7,7 @@ namespace App\Services;
  * 友链 RSS 抓取服务
  * - 抓取友链的 RSS feed
  * - 解析最新文章
- * - 用于 /friends 页显示
+ * - 用于 /links 页显示
  */
 final class FriendRssService
 {
@@ -19,6 +19,23 @@ final class FriendRssService
      */
     public static function fetch(string $rssUrl, int $limit = 5, int $cacheTtl = 21600, bool $force = false): array
     {
+        return self::fetchResult($rssUrl, $limit, $cacheTtl, $force)['items'];
+    }
+
+    /**
+     * 抓取并返回诊断信息,用于后台显示失败原因。
+     * @return array{ok:bool, items:array<int, array{title:string,link:string,pubDate:string,description:string}>, error:string, from_cache:bool, http_code:int|null}
+     */
+    public static function fetchResult(string $rssUrl, int $limit = 5, int $cacheTtl = 21600, bool $force = false): array
+    {
+        $rssUrl = trim($rssUrl);
+        if ($rssUrl === '') {
+            return self::result(false, [], 'RSS 地址为空');
+        }
+        if (!filter_var($rssUrl, FILTER_VALIDATE_URL) || !preg_match('~^https?://~i', $rssUrl)) {
+            return self::result(false, [], 'RSS 地址格式无效');
+        }
+
         $key = md5($rssUrl);
         $cacheFile = self::cacheDir() . '/friend_' . $key . '.json';
         self::ensureCacheDir();
@@ -26,7 +43,9 @@ final class FriendRssService
         // 缓存命中
         if (!$force && is_file($cacheFile) && (time() - filemtime($cacheFile)) < $cacheTtl) {
             $data = json_decode((string)file_get_contents($cacheFile), true);
-            if (is_array($data)) return $data;
+            if (is_array($data)) {
+                return self::result(count($data) > 0, $data, count($data) > 0 ? '' : '缓存中没有解析到文章', true);
+            }
         }
 
         $items = [];
@@ -44,15 +63,56 @@ final class FriendRssService
                 ],
             ]);
             $content = @file_get_contents($rssUrl, false, $ctx);
-            if ($content !== false && $content !== '') {
-                $items = self::parseRss($content, $limit);
+            $httpCode = self::httpStatusCode($http_response_header ?? []);
+            if ($content === false) {
+                return self::result(false, [], '无法连接或请求超时', false, $httpCode);
             }
-        } catch (\Throwable) {
-            // 网络错误
+            if ($httpCode !== null && ($httpCode < 200 || $httpCode >= 400)) {
+                return self::result(false, [], 'HTTP 状态码 ' . $httpCode, false, $httpCode);
+            }
+            if (trim($content) === '') {
+                return self::result(false, [], 'RSS 响应为空', false, $httpCode);
+            }
+            $items = self::parseRss($content, $limit);
+            if (!$items) {
+                $errors = libxml_get_errors();
+                libxml_clear_errors();
+                $reason = $errors ? trim($errors[0]->message) : '没有解析到文章条目';
+                return self::result(false, [], $reason, false, $httpCode);
+            }
+        } catch (\Throwable $e) {
+            return self::result(false, [], $e->getMessage() ?: 'RSS 抓取失败');
         }
 
         @file_put_contents($cacheFile, json_encode($items, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
-        return $items;
+        return self::result(true, $items, '', false, $httpCode ?? null);
+    }
+
+    /**
+     * 只读取已有 RSS 缓存,不发起任何外部请求。
+     * 后台列表页使用它避免进入页面时被慢 RSS 拖住。
+     */
+    public static function cachedResult(string $rssUrl): array
+    {
+        $rssUrl = trim($rssUrl);
+        if ($rssUrl === '') {
+            return self::result(false, [], 'RSS 地址为空', true);
+        }
+        if (!filter_var($rssUrl, FILTER_VALIDATE_URL) || !preg_match('~^https?://~i', $rssUrl)) {
+            return self::result(false, [], 'RSS 地址格式无效', true);
+        }
+
+        $cacheFile = self::cacheDir() . '/friend_' . md5($rssUrl) . '.json';
+        if (!is_file($cacheFile)) {
+            return self::result(false, [], '还没有刷新缓存，请点击刷新 RSS', true);
+        }
+
+        $data = json_decode((string)file_get_contents($cacheFile), true);
+        if (!is_array($data)) {
+            return self::result(false, [], 'RSS 缓存文件无效，请重新刷新', true);
+        }
+
+        return self::result(count($data) > 0, $data, count($data) > 0 ? '' : '缓存中没有解析到文章', true);
     }
 
     /**
@@ -63,6 +123,7 @@ final class FriendRssService
         // 去除 BOM
         $xml = preg_replace('/^\xEF\xBB\xBF/', '', $xml);
         libxml_use_internal_errors(true);
+        libxml_clear_errors();
         $doc = new \SimpleXMLElement($xml);
         $items = [];
 
@@ -100,6 +161,27 @@ final class FriendRssService
         return $items;
     }
 
+    private static function result(bool $ok, array $items, string $error = '', bool $fromCache = false, ?int $httpCode = null): array
+    {
+        return [
+            'ok' => $ok,
+            'items' => $items,
+            'error' => $error,
+            'from_cache' => $fromCache,
+            'http_code' => $httpCode,
+        ];
+    }
+
+    private static function httpStatusCode(array $headers): ?int
+    {
+        foreach ($headers as $header) {
+            if (preg_match('~^HTTP/\S+\s+(\d{3})~i', (string)$header, $match)) {
+                return (int)$match[1];
+            }
+        }
+        return null;
+    }
+
     public static function aggregate(int $perFriend = 3, int $totalLimit = 30): array
     {
         $payload = self::readAggregateCache();
@@ -110,7 +192,7 @@ final class FriendRssService
         return array_slice($items, 0, $totalLimit);
     }
 
-    public static function refreshAggregate(int $perFriend = 5, int $totalLimit = 50): array
+    public static function refreshAggregate(int $perFriend = 5, int $totalLimit = 50, bool $force = true): array
     {
         $payload = self::readAggregateCache();
         $merged = [];
@@ -120,7 +202,7 @@ final class FriendRssService
 
         $links = \App\Models\Link::withRss();
         foreach ($links as $link) {
-            $items = self::fetch((string)$link->rss_url, $perFriend, 21600, true);
+            $items = self::fetch((string)$link->rss_url, $perFriend, 21600, $force);
             foreach ($items as $item) {
                 $item['friend_name'] = $link->name;
                 $item['friend_url']  = $link->url;

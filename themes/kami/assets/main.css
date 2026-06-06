@@ -407,6 +407,15 @@ html[data-site-theme="kami"] a:hover {
     color: var(--c-primary-light);
 }
 
+html[data-site-theme="kami"] .friend-logo.is-deferred {
+    opacity: .72;
+}
+
+html[data-site-theme="kami"] .friend-logo.is-loaded {
+    opacity: 1;
+    transition: opacity .18s ease;
+}
+
 html[data-site-theme="kami"] .archive-category-card,
 html[data-site-theme="kami"] .archive-hero,
 html[data-site-theme="kami"] .archive-panel,

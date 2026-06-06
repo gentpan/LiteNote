@@ -16,12 +16,16 @@ class LinkController
     public function index(): string
     {
         $links = Link::all('sort ASC, id ASC');
-        // 检测 RSS 可用性
         $rssStatus = [];
         foreach ($links as $l) {
             if (!empty($l->rss_url)) {
-                $items = @FriendRssService::fetch($l->rss_url, 1, 60);
-                $rssStatus[$l->id] = count($items) > 0;
+                $result = FriendRssService::cachedResult((string)$l->rss_url);
+                $rssStatus[$l->id] = [
+                    'ok' => $result['ok'],
+                    'count' => count($result['items']),
+                    'error' => $result['error'],
+                    'from_cache' => $result['from_cache'],
+                ];
             } else {
                 $rssStatus[$l->id] = null;
             }
@@ -83,6 +87,34 @@ class LinkController
         Response::redirect('/admin/links');
     }
 
+    public function bulkDelete(Request $request): never
+    {
+        $ids = $this->idsFromRequest($request);
+        if (!$ids) {
+            if ($request->isAjax()) {
+                Response::json(['code' => 1, 'msg' => '请选择要删除的友链'], 422);
+            }
+            Session::flash('error', '请选择要删除的友链');
+            Response::redirect('/admin/links');
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $deleted = Link::db()->delete('links', 'id IN (' . $placeholders . ')', $ids);
+        $message = '已删除 ' . $deleted . ' 条友链';
+
+        if ($request->isAjax()) {
+            Response::json([
+                'code' => 0,
+                'msg' => $message,
+                'deleted' => $deleted,
+                'ids' => $ids,
+            ]);
+        }
+
+        Session::flash('success', $message);
+        Response::redirect('/admin/links');
+    }
+
     public function refresh(Request $request): never
     {
         $isAjax = strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')) === 'xmlhttprequest';
@@ -90,7 +122,7 @@ class LinkController
         $link = Link::find($id);
         if (!$link || empty($link->rss_url)) {
             if ($isAjax) {
-                Response::json(['code' => 1, 'msg' => '友链未配置 RSS']);
+                Response::json(['code' => 1, 'msg' => '友链未配置 RSS'], 422);
             }
             Session::flash('error', '友链未配置 RSS');
             Response::redirect('/admin/links');
@@ -98,15 +130,58 @@ class LinkController
         // 删除缓存后重新抓取
         $key = md5($link->rss_url);
         @unlink(BASE_PATH . '/runtime/storage/cache/friend_' . $key . '.json');
-        $items = @FriendRssService::fetch($link->rss_url, 5, 60);
+        $result = FriendRssService::fetchResult((string)$link->rss_url, 5, 60, true);
+        $items = $result['items'];
+        $ok = $result['ok'];
+        $message = $ok ? 'RSS 缓存已刷新' : ('RSS 刷新失败：' . ($result['error'] ?: '未知错误'));
         if ($isAjax) {
             Response::json([
-                'code'  => 0,
-                'msg'   => 'RSS 缓存已刷新',
+                'code'  => $ok ? 0 : 1,
+                'msg'   => $message,
+                'error' => $result['error'],
+                'count' => count($items),
+                'id' => (int)$link->id,
+                'name' => (string)$link->name,
+                'rss_url' => (string)$link->rss_url,
+            ], $ok ? 200 : 422);
+        }
+        Session::flash($ok ? 'success' : 'error', $message);
+        Response::redirect('/admin/links');
+    }
+
+    public function refreshAggregate(Request $request): never
+    {
+        try {
+            $items = FriendRssService::refreshAggregate(5, 50, false);
+            Response::json([
+                'code' => 0,
+                'msg' => '订阅聚合缓存已更新',
                 'count' => count($items),
             ]);
+        } catch (\Throwable $e) {
+            Response::json([
+                'code' => 1,
+                'msg' => '订阅聚合缓存更新失败：' . ($e->getMessage() ?: '未知错误'),
+            ], 500);
         }
-        Session::flash('success', 'RSS 缓存已刷新');
-        Response::redirect('/admin/links');
+    }
+
+    /**
+     * @return int[]
+     */
+    private function idsFromRequest(Request $request): array
+    {
+        $raw = $request->input('ids', []);
+        if (!is_array($raw)) {
+            $raw = preg_split('/\s*,\s*/', (string)$raw) ?: [];
+        }
+        $ids = [];
+        foreach ($raw as $id) {
+            $id = (int)$id;
+            if ($id > 0) {
+                $ids[$id] = $id;
+            }
+        }
+        return array_values($ids);
     }
 }

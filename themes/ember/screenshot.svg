@@ -1,0 +1,32 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ember theme screenshot">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f6f1ea"/>
+      <stop offset="1" stop-color="#ece5db"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f05a50"/>
+      <stop offset="1" stop-color="#d66f3d"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="900" fill="url(#bg)"/>
+  <rect x="145" y="66" width="910" height="74" rx="37" fill="#15131b"/>
+  <circle cx="197" cy="103" r="24" fill="#f7f3ee"/>
+  <rect x="270" y="88" width="96" height="24" rx="12" fill="#8f8b86"/>
+  <rect x="402" y="88" width="76" height="24" rx="12" fill="#8f8b86"/>
+  <rect x="514" y="88" width="66" height="24" rx="12" fill="#8f8b86"/>
+  <rect x="882" y="79" width="126" height="42" rx="21" fill="url(#accent)"/>
+  <rect x="145" y="195" width="910" height="250" rx="8" fill="#fffaf4" stroke="#ded4c8"/>
+  <rect x="202" y="254" width="230" height="132" rx="6" fill="#cfc4b4"/>
+  <rect x="475" y="250" width="402" height="30" rx="15" fill="#1c1a1d"/>
+  <rect x="475" y="304" width="458" height="22" rx="11" fill="#706b66"/>
+  <rect x="475" y="346" width="340" height="22" rx="11" fill="#9b948b"/>
+  <rect x="145" y="485" width="910" height="118" rx="8" fill="#fffaf4" stroke="#ded4c8"/>
+  <circle cx="207" cy="544" r="25" fill="#f05a50"/>
+  <rect x="258" y="520" width="322" height="24" rx="12" fill="#1c1a1d"/>
+  <rect x="258" y="560" width="542" height="18" rx="9" fill="#8f8880"/>
+  <rect x="145" y="630" width="910" height="118" rx="8" fill="#fffaf4" stroke="#ded4c8"/>
+  <circle cx="207" cy="689" r="25" fill="#d66f3d"/>
+  <rect x="258" y="665" width="375" height="24" rx="12" fill="#1c1a1d"/>
+  <rect x="258" y="705" width="490" height="18" rx="9" fill="#8f8880"/>
+</svg>

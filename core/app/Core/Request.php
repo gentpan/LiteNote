@@ -40,7 +40,7 @@ final class Request
         $this->query = $parts[1] ?? '';
 
         // 如果是 JSON 请求
-        $contentType = $_SERVER['HTTP_CONTENT_TYPE'] ?? '';
+        $contentType = $_SERVER['CONTENT_TYPE'] ?? ($_SERVER['HTTP_CONTENT_TYPE'] ?? '');
         if (str_contains($contentType, 'application/json') && $this->body !== '') {
             $decoded = json_decode($this->body, true);
             if (is_array($decoded)) {

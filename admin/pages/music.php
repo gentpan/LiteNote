@@ -5,7 +5,7 @@
         <a class="btn btn-primary" href="/admin/music/create"><i class="fa-solid fa-music"></i> 添加音乐</a>
     </div>
 
-    <table class="admin-table">
+    <table class="admin-table admin-action-table">
         <thead>
             <tr>
                 <th>ID</th>

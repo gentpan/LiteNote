@@ -1,7 +1,7 @@
 @php $category = $item->getCategory(); @endphp
 <article class="feed-card feed-post-card {{ $item->cover ? 'has-cover' : '' }}">
     @if($item->cover)
-        <a class="feed-post-cover" href="/post/{{ $item->slug }}.html" aria-label="{{ $item->title }}">
+        <a class="feed-post-cover" href="{{ $item->getUrl() }}" aria-label="{{ $item->title }}">
             <img src="{{ $item->cover }}" alt="{{ $item->title }}" loading="lazy" decoding="async">
         </a>
     @endif
@@ -18,7 +18,7 @@
             </div>
         </div>
         <h2 class="feed-post-title">
-            <a href="/post/{{ $item->slug }}.html">{{ $item->title }}</a>
+            <a href="{{ $item->getUrl() }}">{{ $item->title }}</a>
         </h2>
         <p class="feed-post-excerpt">{{ $item->summaryOrContent(180) }}</p>
     </div>

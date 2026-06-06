@@ -6,12 +6,10 @@ namespace App\Controllers\Front;
 use App\Core\Helper;
 use App\Core\View;
 use App\Models\Category;
-use App\Models\Comment;
-use App\Models\Music;
 use App\Models\Post;
-use App\Models\Talk;
 use App\Services\Gravatar;
 use App\Services\ActivitySummaryService;
+use App\Services\ReadingSettingsService;
 
 /**
  * 首页（改进版）
@@ -34,38 +32,8 @@ class HomeController
 
     public function index(): string
     {
-        $posts = Post::paginatePublished(1, 8)['items'];
-        $talk = Talk::recentPublic(8);
-        $musicMap = Music::mapByIds(array_map(static fn(Talk $item): int => (int)($item->music_id ?? 0), $talk));
-
-        $feedItems = [];
-        foreach ($posts as $post) {
-            $feedItems[] = [
-                'type' => 'post',
-                'time' => strtotime((string)$post->published_at) ?: 0,
-                'item' => $post,
-            ];
-        }
-        foreach ($talk as $item) {
-            $music = $musicMap[(int)($item->music_id ?? 0)] ?? null;
-            if ($music && (int)$music->is_public === 1) {
-                $item->setRelation('music', $music);
-                $item->setRelation('comments', Comment::forMusic((int)$music->id));
-            } else {
-                $item->setRelation('comments', Comment::forTalk((int)$item->id));
-            }
-            $feedItems[] = [
-                'type' => 'talk',
-                'time' => strtotime($item->publishedAt()) ?: 0,
-                'item' => $item,
-            ];
-        }
-
-        usort($feedItems, fn(array $a, array $b) => $b['time'] <=> $a['time']);
-        $feedItems = array_slice($feedItems, 0, 12);
-
         return View::render('home.index', [
-            'feedItems' => $feedItems,
+            'feedItems' => ReadingSettingsService::homeFeedItems(),
             'activitySummary' => (new ActivitySummaryService())->summary(),
             'pageTitle' => null,
             'activeNav' => 'home',
@@ -74,7 +42,7 @@ class HomeController
 
     public function posts(): string
     {
-        $perPage = 5;
+        $perPage = ReadingSettingsService::postsPerPage();
         $page = max(1, (int)($_GET['page'] ?? 1));
         ['items' => $posts, 'total' => $total] = Post::paginatePublished($page, $perPage);
 

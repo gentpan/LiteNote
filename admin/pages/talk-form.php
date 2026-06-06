@@ -28,7 +28,7 @@
 
         @if($formType === 'tweet')
             <div class="admin-form-section">
-                <h3>分享 X</h3>
+                <h3><i class="fa-brands fa-x-twitter"></i> 分享 X</h3>
                 <div class="form-group">
                     <label>X 链接 *</label>
                     <input type="url" name="tweet_url" value="{{ $item->tweet_url ?? '' }}" required placeholder="https://x.com/user/status/1994155465488670828">
@@ -37,7 +37,7 @@
             </div>
         @elseif($formType === 'music')
             <div class="admin-form-section">
-                <h3>分享音乐</h3>
+                <h3><i class="fa-solid fa-music"></i> 分享音乐</h3>
                 <div class="form-group">
                     <label>选择音乐 *</label>
                     <select name="music_id" required>
@@ -59,7 +59,7 @@
             </div>
         @else
             <div class="admin-form-section">
-                <h3>写滔客</h3>
+                <h3><i class="fa-regular fa-pen-to-square"></i> 写滔客</h3>
                 <div class="form-group">
                     <label>内容 *</label>
                     <textarea name="content" rows="5" required placeholder="写点什么...">{{ $item->content ?? '' }}</textarea>

@@ -6,7 +6,7 @@
         <a class="btn" href="/activity" target="_blank"><i class="fa-solid fa-arrow-up-right-from-square"></i> 查看前台</a>
     </div>
 
-    <table class="admin-table">
+    <table class="admin-table admin-action-table">
         <thead>
             <tr>
                 <th>ID</th>

@@ -1,5 +1,8 @@
 {
   "name": "Ember",
   "description": "LiteNote original warm ember frontend restored from the previous version.",
+  "version": "1.0.2",
+  "author": "LiteNote",
+  "screenshot": "screenshot.svg",
   "stylesheet": "/themes/ember/assets/main.css"
 }

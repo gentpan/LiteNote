@@ -7,6 +7,7 @@ use App\Core\Helper;
 use App\Core\Markdown;
 use App\Enums\PostStatus;
 use App\Enums\Toggle;
+use App\Services\PermalinkService;
 use App\Services\PostContentStorage;
 use App\Traits\HasSlug;
 
@@ -184,7 +185,7 @@ final class Post extends Model
 
     public function getUrl(): string
     {
-        return Helper::url('/post/' . $this->slug . '.html');
+        return PermalinkService::postUrl($this);
     }
 
     public function summaryOrContent(int $length = 200): string

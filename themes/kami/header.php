@@ -10,6 +10,7 @@
     <title>{{ $pageTitle ?? $site['title'] ?? 'LiteNote' }} - {{ $site['title'] ?? 'LiteNote' }}</title>
     <meta name="description" content="{{ $site['description'] ?? '' }}">
     <meta name="keywords" content="{{ $site['keywords'] ?? '' }}">
+    {!! \App\Services\FaviconService::headHtml($site ?? []) !!}
     <link rel="alternate" type="application/rss+xml" title="{{ $site['title'] ?? 'LiteNote' }} RSS" href="/rss.xml">
     @yield('head')
     <link rel="stylesheet" href="https://static.bluecdn.com/libs/fontawesome/7.2.0/css/all.min.css">
@@ -33,10 +34,6 @@
         })();
     </script>
     <link rel="stylesheet" href="{{ $themeCss }}?v={{ \App\Services\ThemeManager::assetVersion($themeCss) }}">
-    @php $umami = \App\Services\UmamiService::trackingScript(); @endphp
-    @if($umami)
-        <script defer src="{{ $umami['src'] }}" data-website-id="{{ $umami['websiteId'] }}"></script>
-    @endif
 </head>
 <body>
     @php
@@ -47,8 +44,8 @@
                 ['title' => '滔客', 'slug' => 'talk', 'url' => '/talk'],
                 ['title' => '音乐', 'slug' => 'music', 'url' => '/music'],
                 ['title' => '归档', 'slug' => 'archives', 'url' => '/archives'],
-                ['title' => '友链', 'slug' => 'friends', 'url' => '/friends'],
-                ['title' => '订阅', 'slug' => 'feeds', 'url' => '/feeds'],
+                ['title' => '友链', 'slug' => 'friends', 'url' => '/links'],
+                ['title' => '订阅', 'slug' => 'feeds', 'url' => '/subscribe'],
             ];
         }
     @endphp

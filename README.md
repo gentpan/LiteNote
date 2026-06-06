@@ -19,9 +19,8 @@ LiteNote 是一个基于 PHP 8.5 和 SQLite 的轻量级个人发布系统，适
 - X 卡片：服务端抓取 X 内容，缓存文本、作者、媒体和互动数据，前端直接渲染。
 - 评论系统：AJAX 提交、审核、验证码、嵌套回复、头像、IP 归属地。
 - 页面与导航：自定义页面、归档、搜索、友链、订阅、RSS、`llms.txt`。
-- 后台管理：文章、页面、分类、评论、音乐、友链、附件、设置、统计、动态同步。
+- 后台管理：文章、页面、分类、评论、音乐、友链、附件、设置、动态同步。
 - 登录安全：Passkey 登录、邮箱找回密码、CSRF 防护、评论反垃圾。
-- 数据统计：支持接入 Umami，查看访问量、来源、设备、趋势等数据。
 
 ## 技术栈
 
@@ -36,7 +35,6 @@ LiteNote 是一个基于 PHP 8.5 和 SQLite 的轻量级个人发布系统，适
 | 前端 | 原生 CSS + Vanilla JavaScript |
 | 图标 | FontAwesome CDN |
 | 邮件 | SendFlare API |
-| 统计 | Umami API |
 | 存储 | 本地文件系统，保存上传文件、缓存媒体、Markdown 正文和 SQLite 数据 |
 
 ## 项目优势
@@ -72,11 +70,11 @@ LiteNote/
 - GD 扩展，推荐用于验证码和图片处理
 - Web Server，将请求转发到 `index.php`
 
-## 初始化
+## 本地运行
 
 ```bash
 cp .env.example .env
-php -r 'define("BASE_PATH", getcwd()); require "core/app/bootstrap.php"; App\Services\Installer::install();'
+php -S 127.0.0.1:5555 index.php
 ```
 
 默认后台账号：
@@ -94,7 +92,6 @@ admin / admin123
 常用集成：
 
 - DeepSeek 或兼容 AI 服务，用于文章摘要。
-- Umami，用于访问统计。
 - SendFlare，用于找回密码和评论通知邮件。
 - X API Bearer Token，用于服务端抓取 X 内容。
 

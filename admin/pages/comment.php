@@ -10,7 +10,7 @@
         <a class="btn" href="/admin/comments?status=approved">已通过</a>
         <a class="btn" href="/admin/comments?status=spam">垃圾</a>
     </div>
-    <table class="admin-table">
+    <table class="admin-table admin-action-table admin-action-table-medium">
         <thead>
             <tr><th>ID</th><th>用户</th><th>目标</th><th>内容</th><th>状态</th><th>时间</th><th>操作</th></tr>
         </thead>
@@ -49,7 +49,7 @@
                 </td>
                 <td>
                     @if($c['post_id'])
-                        <a href="/post/{{ $c['target_slug'] }}.html" target="_blank"><i class="fa-regular fa-file-lines"></i> {{ $c['target_title'] }}</a>
+                        <a href="{{ \App\Services\PermalinkService::postUrlFromParts((int)($c['target_post_id'] ?? $c['post_id']), (string)$c['target_slug'], (string)($c['target_category_slug'] ?? '')) }}" target="_blank"><i class="fa-regular fa-file-lines"></i> {{ $c['target_title'] }}</a>
                     @elseif($c['page_id'])
                         <a href="/{{ $c['target_slug'] }}" target="_blank"><i class="fa-regular fa-bookmark"></i> {{ $c['target_title'] }}</a>
                     @elseif($c['talk_id'])

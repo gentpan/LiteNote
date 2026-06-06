@@ -1,0 +1,31 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Kami theme screenshot">
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f2ecdf"/>
+      <stop offset="1" stop-color="#e6ddcc"/>
+    </linearGradient>
+    <linearGradient id="ink" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#151a22"/>
+      <stop offset="1" stop-color="#2d3748"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="900" fill="url(#paper)"/>
+  <rect x="112" y="72" width="976" height="84" rx="42" fill="#11131a"/>
+  <circle cx="175" cy="114" r="27" fill="#ece7da"/>
+  <rect x="252" y="101" width="112" height="25" rx="13" fill="#cbc4b6"/>
+  <rect x="405" y="101" width="88" height="25" rx="13" fill="#cbc4b6"/>
+  <rect x="533" y="101" width="72" height="25" rx="13" fill="#cbc4b6"/>
+  <rect x="906" y="88" width="132" height="52" rx="26" fill="#ef5b52"/>
+  <rect x="158" y="220" width="884" height="170" rx="8" fill="#faf6ed" stroke="#d9d0bf"/>
+  <rect x="214" y="273" width="184" height="64" rx="5" fill="url(#ink)"/>
+  <rect x="444" y="260" width="360" height="32" rx="16" fill="#151a22"/>
+  <rect x="444" y="315" width="455" height="21" rx="11" fill="#6e675e"/>
+  <rect x="158" y="430" width="884" height="300" rx="8" fill="#faf6ed" stroke="#d9d0bf"/>
+  <rect x="216" y="490" width="112" height="18" rx="9" fill="#ef5b52"/>
+  <rect x="216" y="536" width="572" height="31" rx="16" fill="#16191f"/>
+  <rect x="216" y="596" width="640" height="18" rx="9" fill="#81796d"/>
+  <rect x="216" y="636" width="512" height="18" rx="9" fill="#a1988a"/>
+  <rect x="216" y="676" width="420" height="18" rx="9" fill="#c3b9aa"/>
+  <circle cx="918" cy="602" r="62" fill="#ef5b52" opacity=".15"/>
+  <circle cx="918" cy="602" r="28" fill="#ef5b52"/>
+</svg>

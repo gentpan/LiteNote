@@ -7,6 +7,7 @@
         $siteCopyItems = $siteCopyItems ?? [];
         $adminCommentName = !empty($currentAdmin) ? ($currentAdmin->nickname ?: $currentAdmin->username) : '';
         $adminCommentEmail = !empty($currentAdmin) ? (string)($currentAdmin->email ?? '') : '';
+        $friendIconPlaceholder = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%226%22 fill=%22%23f3f4f6%22/%3E%3Cpath d=%22M10 16h12M16 10v12%22 stroke=%22%239ca3af%22 stroke-width=%222.4%22 stroke-linecap=%22round%22/%3E%3C/svg%3E';
     @endphp
 
     <section class="friend-page">
@@ -31,10 +32,19 @@
                         @php
                             $friendHost = parse_url((string)$l->url, PHP_URL_HOST) ?: (string)$l->url;
                             $friendHost = preg_replace('/^www\./i', '', $friendHost) ?: $friendHost;
-                            $friendIcon = 'https://favicon.im/' . $friendHost;
+                            $friendLogo = trim((string)($l->logo ?? ''));
+                            $friendIcon = $friendLogo !== '' ? $friendLogo : 'https://favicon.im/' . rawurlencode($friendHost);
+                            $deferFriendIcon = $friendLogo === '';
                         @endphp
                         <a class="friend-row" href="{{ $l->url }}" target="_blank" rel="nofollow noopener">
-                            <img src="{{ $friendIcon }}" alt="{{ $friendHost }} favicon" class="friend-logo" loading="lazy">
+                            <img src="{{ $deferFriendIcon ? $friendIconPlaceholder : $friendIcon }}"
+                                 @if($deferFriendIcon) data-favicon-src="{{ $friendIcon }}" @endif
+                                 alt="{{ $friendHost }} favicon"
+                                 class="friend-logo {{ $deferFriendIcon ? 'is-deferred' : '' }}"
+                                 loading="lazy"
+                                 decoding="async"
+                                 fetchpriority="low"
+                                 referrerpolicy="no-referrer">
                             <span class="friend-info">
                                 <strong>{{ $l->name }}</strong>
                                 @if($l->description)
@@ -136,7 +146,7 @@
                     @else
                         <div class="form-row">
                             <input type="text" name="nickname" placeholder="昵称 *" required>
-                            <input type="email" name="email" placeholder="邮箱 *" required>
+                            <input type="email" name="email" placeholder="邮箱{{ \App\Services\CommentSettingsService::emailRequired() ? ' *' : '（选填）' }}" {{ \App\Services\CommentSettingsService::emailRequired() ? 'required' : '' }}>
                             <input type="text" name="website" placeholder="网站(选填)">
                         </div>
                     @endif

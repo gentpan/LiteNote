@@ -87,6 +87,59 @@
         toast(node.getAttribute('data-toast-message') || '');
     });
 
+    function runWhenIdle(fn) {
+        if ('requestIdleCallback' in window) {
+            window.requestIdleCallback(fn, { timeout: 900 });
+            return;
+        }
+        window.setTimeout(function() {
+            fn({ timeRemaining: function() { return 16; }, didTimeout: true });
+        }, 80);
+    }
+
+    function bindDeferredFavicons() {
+        var queue = Array.prototype.slice.call(document.querySelectorAll('img[data-favicon-src]')).filter(function(img) {
+            if (img.dataset.faviconDeferredReady === '1') {
+                return false;
+            }
+            img.dataset.faviconDeferredReady = '1';
+            return true;
+        });
+        if (!queue.length) return;
+
+        function loadIcon(img) {
+            var src = img.getAttribute('data-favicon-src');
+            if (!src || !img.isConnected) return;
+            var probe = new Image();
+            probe.decoding = 'async';
+            probe.referrerPolicy = 'no-referrer';
+            probe.onload = function() {
+                img.src = src;
+                img.classList.remove('is-deferred');
+                img.classList.add('is-loaded');
+                img.removeAttribute('data-favicon-src');
+            };
+            probe.onerror = function() {
+                img.classList.remove('is-deferred');
+                img.classList.add('is-failed');
+                img.removeAttribute('data-favicon-src');
+            };
+            probe.src = src;
+        }
+
+        function pump(deadline) {
+            var budget = deadline && typeof deadline.timeRemaining === 'function' ? deadline.timeRemaining() : 16;
+            while (queue.length && (budget > 4 || (deadline && deadline.didTimeout))) {
+                loadIcon(queue.shift());
+                budget = deadline && typeof deadline.timeRemaining === 'function' ? deadline.timeRemaining() : budget - 4;
+            }
+            if (queue.length) runWhenIdle(pump);
+        }
+
+        runWhenIdle(pump);
+    }
+    bindDeferredFavicons();
+
     function toast(message) {
         if (!message) return;
         var item = document.createElement('div');

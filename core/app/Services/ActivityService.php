@@ -136,7 +136,7 @@ final class ActivityService
             'source' => 'litenote',
             'external_id' => 'post:' . $action . ':' . (int)$post->id,
             'title' => ($action === 'updated_post' ? '更新文章：' : '发布文章：') . (string)$post->title,
-            'url' => '/post/' . (string)$post->slug . '.html',
+            'url' => $post->getUrl(),
             'icon' => self::typeIcon('blog'),
             'happened_at' => $action === 'updated_post' ? date('Y-m-d H:i:s') : $publishedAt,
             'metadata' => [

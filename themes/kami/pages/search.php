@@ -13,7 +13,7 @@
     @foreach($posts as $post)
         <article class="post-card">
             <h3 class="post-title">
-                <a href="/post/{{ $post->slug }}.html">{!! \App\Core\Helper::highlight($post->title, $keyword) !!}</a>
+                <a href="{{ $post->getUrl() }}">{!! \App\Core\Helper::highlight($post->title, $keyword) !!}</a>
             </h3>
             <p class="post-excerpt">{!! \App\Core\Helper::highlight($post->summaryOrContent(200), $keyword) !!}</p>
         </article>

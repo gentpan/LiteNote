@@ -67,13 +67,33 @@ return [
     ],
 
     'mail' => [
+        'enabled' => $envBool('MAIL_ENABLED', $env('SENDFLARE_API_TOKEN') !== ''),
+        'driver' => $env('MAIL_DRIVER', 'sendflare'), // sendflare | resend | cloudflare | smtp
+        'from' => $env('MAIL_FROM', $env('SENDFLARE_FROM', 'noreply@example.com')),
+        'from_name' => $env('MAIL_FROM_NAME', $env('SENDFLARE_FROM_NAME', 'LiteNote')),
+        'notify_to' => $env('MAIL_NOTIFY_TO', $env('COMMENT_NOTIFY_TO')),
+        'post_recipients' => $env('MAIL_POST_RECIPIENTS'),
         'sendflare' => [
             'enabled'   => $env('SENDFLARE_API_TOKEN') !== '',
             'endpoint'  => $env('SENDFLARE_ENDPOINT', 'https://api.sendflare.com/v1/send'),
             'token'     => $env('SENDFLARE_API_TOKEN'),
-            'from'      => $env('SENDFLARE_FROM', 'noreply@example.com'),
-            'from_name' => $env('SENDFLARE_FROM_NAME', 'LiteNote'),
-            'notify_to' => $env('COMMENT_NOTIFY_TO'),
+            'from'      => $env('SENDFLARE_FROM', $env('MAIL_FROM', 'noreply@example.com')),
+            'from_name' => $env('SENDFLARE_FROM_NAME', $env('MAIL_FROM_NAME', 'LiteNote')),
+            'notify_to' => $env('COMMENT_NOTIFY_TO', $env('MAIL_NOTIFY_TO')),
+        ],
+        'resend' => [
+            'api_key' => $env('RESEND_API_KEY'),
+        ],
+        'cloudflare' => [
+            'account_id' => $env('CLOUDFLARE_EMAIL_ACCOUNT_ID'),
+            'api_token' => $env('CLOUDFLARE_EMAIL_API_TOKEN'),
+        ],
+        'smtp' => [
+            'host' => $env('SMTP_HOST'),
+            'port' => (int)$env('SMTP_PORT', '587'),
+            'secure' => $env('SMTP_SECURE', 'tls'),
+            'username' => $env('SMTP_USERNAME'),
+            'password' => $env('SMTP_PASSWORD'),
         ],
     ],
 
@@ -88,18 +108,6 @@ return [
             'api_key'  => $env('DEEPSEEK_API_KEY'),
             'model'    => $env('DEEPSEEK_MODEL', 'deepseek-v4-flash'),
             'base_url' => $env('DEEPSEEK_BASE_URL', 'https://api.deepseek.com'),
-        ],
-    ],
-
-    'analytics' => [
-        'umami' => [
-            'enabled'    => $envBool('UMAMI_ENABLED', false),
-            'base_url'   => $env('UMAMI_BASE_URL'),
-            'website_id' => $env('UMAMI_WEBSITE_ID'),
-            'token'      => $env('UMAMI_TOKEN'),
-            'api_key'    => $env('UMAMI_API_KEY'),
-            'timezone'   => $env('UMAMI_TIMEZONE', 'Asia/Shanghai'),
-            'script_url' => $env('UMAMI_SCRIPT_URL'),
         ],
     ],
 ];

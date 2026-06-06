@@ -28,7 +28,7 @@
           data-confirm-tone="primary"
           data-confirm-text="确认执行">
         <input type="hidden" name="_csrf" value="{{ $csrf }}">
-        <table class="admin-table">
+        <table class="admin-table admin-action-table admin-action-table-wide">
             <thead>
                 <tr>
                     <th><input type="checkbox" id="check-all"></th>
@@ -50,7 +50,7 @@
                     <td>
                         @if($p->is_top)<span class="badge badge-top" data-post-badge="is_top">顶</span>@endif
                         @if($p->is_recommend)<span class="badge badge-recommend" data-post-badge="is_recommend">荐</span>@endif
-                        <a href="/post/{{ $p->slug }}.html" target="_blank">{{ $p->title }}</a>
+                        <a href="{{ $p->getUrl() }}" target="_blank">{{ $p->title }}</a>
                     </td>
                     <td>{{ $p->getCategory()?->name }}</td>
                     <td>{{ $p->views }}</td>

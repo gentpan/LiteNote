@@ -11,9 +11,9 @@ use App\Models\Comment;
 use App\Models\Music;
 use App\Models\Page;
 use App\Models\Post;
-use App\Models\Setting;
 use App\Models\Talk;
 use App\Services\CommentMailer;
+use App\Services\CommentSettingsService;
 use App\Services\IpGeoService;
 
 /**
@@ -50,9 +50,22 @@ class CommentController
             $this->backWithError('会话已过期，请刷新页面后重试');
         }
 
+        $target = $this->resolveTarget((int)$data['post_id'], (int)$data['page_id'], (int)$data['talk_id'], (int)$data['music_id']);
+        if (!$target) {
+            $this->backWithError('评论目标不存在');
+        }
+
+        $targetType = CommentSettingsService::typeFromIds((int)$data['post_id'], (int)$data['page_id'], (int)$data['talk_id'], (int)$data['music_id']);
+        if (!CommentSettingsService::enabledFor($targetType, $target)) {
+            $this->backWithError('当前内容已关闭评论');
+        }
+        if ((int)$data['parent_id'] > 0 && !CommentSettingsService::repliesEnabled()) {
+            $this->backWithError('当前不允许回复评论');
+        }
+
         // 评论验证码(开关开启且非登录管理员时校验,一次性使用)
         $isAdmin = (int) Session::get('admin_user.id', 0) > 0;
-        if (!$isAdmin && (int) Setting::get('comment_captcha', 0) === 1) {
+        if (!$isAdmin && CommentSettingsService::captchaEnabled()) {
             $captchaInput = strtolower(trim((string) $request->input('captcha', '')));
             $captchaCode  = (string) Session::get('_captcha', '');
             Session::forget('_captcha');
@@ -61,11 +74,17 @@ class CommentController
             }
         }
 
-        $validator = \App\Core\Validator::make($data, [
+        $rules = [
             'nickname' => 'required|string|min:1|max:50',
             'content'  => 'required|string|min:2|max:2000',
-            'email'    => 'required|email',
-        ]);
+        ];
+        if (CommentSettingsService::emailRequired()) {
+            $rules['email'] = 'required|email';
+        } elseif (trim((string)$data['email']) !== '') {
+            $rules['email'] = 'email';
+        }
+
+        $validator = \App\Core\Validator::make($data, $rules);
         if (!$validator->validate()) {
             $this->backWithError($validator->firstError() ?? '校验失败');
         }
@@ -75,13 +94,9 @@ class CommentController
             $this->backWithError('评论包含过多链接，已被拦截');
         }
 
-        $target = $this->resolveTarget((int)$data['post_id'], (int)$data['page_id'], (int)$data['talk_id'], (int)$data['music_id']);
-        if (!$target) {
-            $this->backWithError('评论目标不存在');
-        }
         $parentId = $this->normalizeParentId((int)$data['parent_id'], (int)$data['post_id'], (int)$data['page_id'], (int)$data['talk_id'], (int)$data['music_id']);
 
-        $needAudit = (bool) Setting::get('comment_need_audit', true);
+        $needAudit = CommentSettingsService::needAudit();
         $status = $needAudit ? CommentStatus::Pending->value : CommentStatus::Approved->value;
         Comment::ensureGeoColumns();
         $geo = IpGeoService::lookup($request->ip);
@@ -244,10 +259,9 @@ class CommentController
     private function targetInfo(object $target, int $postId, int $pageId, int $talkId, int $musicId, Request $request): array
     {
         if ($postId > 0) {
-            $slug = (string)($target->slug ?? '');
             return [
                 'title' => (string)($target->title ?? '文章'),
-                'url' => $this->absoluteUrl($slug !== '' ? '/post/' . $slug . '.html' : '/', $request),
+                'url' => $this->absoluteUrl(method_exists($target, 'getUrl') ? (string)$target->getUrl() : '/', $request),
             ];
         }
 
