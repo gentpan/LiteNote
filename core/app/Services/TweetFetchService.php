@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Core\Config;
+use App\Core\Http;
 use App\Models\Talk;
 
 final class TweetFetchService
@@ -177,32 +178,16 @@ final class TweetFetchService
 
     private function httpGet(string $url, int $timeout, array $headers = []): string
     {
-        $headers = array_merge(['Accept-Language: zh-CN,zh;q=0.9,en;q=0.8'], $headers);
-        if (function_exists('curl_init')) {
-            $ch = curl_init($url);
-            curl_setopt_array($ch, [
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_CONNECTTIMEOUT => $timeout,
-                CURLOPT_TIMEOUT => $timeout,
-                CURLOPT_USERAGENT => 'LiteNote TweetFetcher/1.0',
-                CURLOPT_HTTPHEADER => $headers,
-            ]);
-            $body = curl_exec($ch);
-            $status = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-            unset($ch);
-            return is_string($body) && $status >= 200 && $status < 400 ? $body : '';
-        }
-
-        $context = stream_context_create([
-            'http' => [
-                'timeout' => $timeout,
-                'follow_location' => 1,
-                'header' => "User-Agent: LiteNote TweetFetcher/1.0\r\n" . implode("\r\n", $headers) . "\r\n",
-            ],
+        $headers = array_merge([
+            'Accept-Language: zh-CN,zh;q=0.9,en;q=0.8',
+            'User-Agent: LiteNote TweetFetcher/1.0',
+        ], $headers);
+        $r = Http::request('GET', $url, [
+            'headers' => $headers,
+            'timeout' => $timeout,
+            'default_headers' => false,
         ]);
-        $body = @file_get_contents($url, false, $context);
-        return is_string($body) ? $body : '';
+        return ($r['status'] >= 200 && $r['status'] < 400) ? $r['body'] : '';
     }
 
     private function normalizeOembed(array $oembed, string $url): array

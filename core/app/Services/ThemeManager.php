@@ -162,7 +162,7 @@ final class ThemeManager
                 'builtin' => false,
                 'protected' => in_array($key, self::PROTECTED_THEMES, true),
                 'active' => $key === self::activeKeyRaw(),
-                'screenshot' => self::screenshotUrl($key, $manifest),
+                'screenshot' => ExtensionManifest::screenshotUrl(self::themeDirectory(), self::THEME_ROOT, $key, $manifest),
                 'stylesheet' => self::THEME_ROOT . '/' . rawurlencode($key) . '/assets/main.css',
             ];
         }
@@ -178,31 +178,6 @@ final class ThemeManager
         } catch (\Throwable) {
             return 'ember';
         }
-    }
-
-    private static function screenshotUrl(string $key, array $manifest): string
-    {
-        $candidates = [];
-        $declared = trim((string)($manifest['screenshot'] ?? ''));
-        if ($declared !== '') {
-            $candidates[] = ltrim($declared, '/');
-        }
-        foreach (['screenshot.png', 'screenshot.jpg', 'screenshot.jpeg', 'screenshot.webp', 'screenshot.gif', 'screenshot.svg'] as $name) {
-            $candidates[] = $name;
-        }
-
-        $dir = self::themeDirectory() . '/' . $key;
-        foreach ($candidates as $candidate) {
-            if ($candidate === '' || str_contains($candidate, '..')) {
-                continue;
-            }
-            $path = $dir . '/' . $candidate;
-            if (is_file($path)) {
-                return self::THEME_ROOT . '/' . rawurlencode($key) . '/' . str_replace('%2F', '/', rawurlencode($candidate));
-            }
-        }
-
-        return '';
     }
 
     private static function deleteDirectory(string $dir): void

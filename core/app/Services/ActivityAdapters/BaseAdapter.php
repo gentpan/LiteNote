@@ -40,4 +40,25 @@ abstract class BaseAdapter implements ActivityAdapter
     {
         return compact('created', 'updated', 'skipped', 'message');
     }
+
+    /**
+     * 记录一条动态并返回是否为新建(true=created / false=updated)。
+     * 复用 ActivityService::record() 内部的存在性判断,免去各 adapter 重复的 exists() 查询。
+     */
+    protected function ingest(array $data): bool
+    {
+        return $this->activities->record($data)->wasRecentlyCreated;
+    }
+
+    /** 读取整数型 meta 并 clamp 到 [min,max]。 */
+    protected function intMeta(ActivityIntegration $integration, string $key, int $default, int $min, int $max): int
+    {
+        return max($min, min($max, (int)$this->meta($integration, $key, (string)$default)));
+    }
+
+    /** 大数字友好显示:>=1000 转 K。 */
+    protected function formatNumber(int $value): string
+    {
+        return $value >= 1000 ? round($value / 1000, 1) . 'K' : (string)$value;
+    }
 }

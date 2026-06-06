@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Core\FileCache;
+use App\Core\Http;
+
 final class IpGeoService
 {
     public static function lookup(string $ip): array
@@ -10,6 +13,14 @@ final class IpGeoService
         $ip = trim($ip);
         if ($ip === '' || !filter_var($ip, FILTER_VALIDATE_IP) || self::isPrivateIp($ip)) {
             return [];
+        }
+
+        // 同一 IP 的归属地 30 天内只查一次外部 API,其余命中文件缓存。
+        $cache = new FileCache();
+        $cacheKey = 'geoip/' . md5($ip);
+        $cached = $cache->get($cacheKey, null, 86400 * 30);
+        if (is_array($cached)) {
+            return $cached;
         }
 
         $json = self::httpGet('https://api.cnip.io/geoip/' . rawurlencode($ip));
@@ -23,13 +34,15 @@ final class IpGeoService
         }
 
         $code = strtoupper(trim((string)($data['country_code'] ?? '')));
-        return [
+        $result = [
             'geo_country_code' => preg_match('/^[A-Z]{2}$/', $code) ? $code : '',
             'geo_country' => trim((string)($data['country'] ?? '')),
             'geo_region' => trim((string)($data['province'] ?? $data['region'] ?? '')),
             'geo_city' => trim((string)($data['city'] ?? '')),
             'geo_data' => json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
         ];
+        $cache->set($cacheKey, $result);
+        return $result;
     }
 
     public static function flagUrl(?string $countryCode): string
@@ -72,29 +85,12 @@ final class IpGeoService
 
     private static function httpGet(string $url): string
     {
-        if (function_exists('curl_init')) {
-            $ch = curl_init($url);
-            curl_setopt_array($ch, [
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_CONNECTTIMEOUT => 3,
-                CURLOPT_TIMEOUT => 5,
-                CURLOPT_USERAGENT => 'LiteNote GeoIP/1.0',
-            ]);
-            $body = curl_exec($ch);
-            $status = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-            unset($ch);
-            return is_string($body) && $status >= 200 && $status < 400 ? $body : '';
-        }
-
-        $context = stream_context_create([
-            'http' => [
-                'timeout' => 5,
-                'header' => "User-Agent: LiteNote GeoIP/1.0\r\n",
-            ],
+        $r = Http::request('GET', $url, [
+            'headers' => ['User-Agent: LiteNote GeoIP/1.0'],
+            'connect_timeout' => 3,
+            'timeout' => 5,
         ]);
-        $body = @file_get_contents($url, false, $context);
-        return is_string($body) ? $body : '';
+        return ($r['status'] >= 200 && $r['status'] < 400) ? $r['body'] : '';
     }
 
     private static function isPrivateIp(string $ip): bool

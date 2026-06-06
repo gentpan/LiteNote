@@ -39,8 +39,7 @@ final class WakaTimeAdapter extends BaseAdapter
             $seconds = (int)($day['grand_total']['total_seconds'] ?? 0);
             $title = '编码 ' . $this->formatSeconds($seconds);
             $externalId = 'wakatime:summary:' . $date;
-            $before = $this->exists('wakatime', $externalId);
-            $this->activities->record([
+            $isNew = $this->ingest([
                 'type' => 'coding',
                 'action' => 'started_session',
                 'source' => 'wakatime',
@@ -55,8 +54,7 @@ final class WakaTimeAdapter extends BaseAdapter
                     'projects' => $day['projects'] ?? [],
                     'editors' => $day['editors'] ?? [],
                 ],
-            ]);
-            $before ? $updated++ : $created++;
+            ]) ? $created++ : $updated++;
         }
 
         return $this->result($created, $updated, 0, 'WakaTime 同步完成');
@@ -80,11 +78,4 @@ final class WakaTimeAdapter extends BaseAdapter
         return $names ? $label . '：' . implode(' / ', $names) : '';
     }
 
-    private function exists(string $source, string $externalId): bool
-    {
-        return (bool)\App\Models\Activity::db()->fetchOne(
-            'SELECT id FROM activities WHERE source = ? AND external_id = ? LIMIT 1',
-            [$source, $externalId]
-        );
-    }
 }

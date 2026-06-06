@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Core\Config;
+use App\Core\Http;
 use App\Models\MailLog;
 use App\Models\MailUnsubscribe;
 use App\Models\Setting;
@@ -14,8 +15,6 @@ use App\Models\User;
  *
  * 支持:
  * - SendFlare API
- * - Resend API
- * - Cloudflare Email Service REST API
  * - SMTP
  */
 final class Mailer
@@ -32,10 +31,6 @@ final class Mailer
 
         return match ((string)($cfg['driver'] ?? 'sendflare')) {
             'smtp' => trim((string)($cfg['smtp_host'] ?? '')) !== '',
-            'resend' => trim((string)($cfg['resend_api_key'] ?? '')) !== '' && function_exists('curl_init'),
-            'cloudflare' => trim((string)($cfg['cloudflare_api_token'] ?? '')) !== ''
-                && trim((string)($cfg['cloudflare_account_id'] ?? '')) !== ''
-                && function_exists('curl_init'),
             'sendflare' => trim((string)($cfg['sendflare_token'] ?? '')) !== '' && function_exists('curl_init'),
             default => false,
         };
@@ -81,8 +76,6 @@ final class Mailer
         try {
             $ok = match ($driver) {
                 'smtp' => self::sendSmtp($cfg, $to, $subject, $html, $text, $headers),
-                'resend' => self::sendResend($cfg, $to, $subject, $html, $text, $headers),
-                'cloudflare' => self::sendCloudflare($cfg, $to, $subject, $html, $text),
                 default => self::sendSendflare($cfg, $to, $subject, $html),
             };
             self::log($driver, $type, $to, $subject, $ok ? 'sent' : 'failed', $ok ? '' : '服务商返回发送失败');
@@ -161,16 +154,13 @@ final class Mailer
 
         return [
             'enabled' => (bool)self::setting('mail_enabled', $enabledDefault ? '1' : '0'),
-            'driver' => in_array($driver, ['sendflare', 'resend', 'cloudflare', 'smtp'], true) ? $driver : 'sendflare',
+            'driver' => in_array($driver, ['sendflare', 'smtp'], true) ? $driver : 'sendflare',
             'from' => $from,
             'from_name' => $fromName,
             'notify_to' => trim((string)self::setting('mail_notify_to', $cfg['notify_to'] ?? ($legacySendflare['notify_to'] ?? ''))),
             'post_recipients' => trim((string)self::setting('mail_post_recipients', $cfg['post_recipients'] ?? '')),
             'sendflare_endpoint' => trim((string)self::setting('mail_sendflare_endpoint', $cfg['sendflare']['endpoint'] ?? ($legacySendflare['endpoint'] ?? 'https://api.sendflare.com/v1/send'))),
             'sendflare_token' => self::secretSetting('mail_sendflare_token', $cfg['sendflare']['token'] ?? ($legacySendflare['token'] ?? '')),
-            'resend_api_key' => self::secretSetting('mail_resend_api_key', $cfg['resend']['api_key'] ?? ''),
-            'cloudflare_account_id' => trim((string)self::setting('mail_cloudflare_account_id', $cfg['cloudflare']['account_id'] ?? '')),
-            'cloudflare_api_token' => self::secretSetting('mail_cloudflare_api_token', $cfg['cloudflare']['api_token'] ?? ''),
             'smtp_host' => trim((string)self::setting('mail_smtp_host', $cfg['smtp']['host'] ?? '')),
             'smtp_port' => (int)self::setting('mail_smtp_port', (string)($cfg['smtp']['port'] ?? 587)),
             'smtp_secure' => trim((string)self::setting('mail_smtp_secure', $cfg['smtp']['secure'] ?? 'tls')),
@@ -198,46 +188,6 @@ final class Mailer
             'Authorization: Bearer ' . (string)$cfg['sendflare_token'],
             'Content-Type: application/json; charset=utf-8',
         ], $payload);
-    }
-
-    private static function sendResend(array $cfg, string $to, string $subject, string $html, string $text, array $headers): bool
-    {
-        $payload = [
-            'from' => self::formatFrom((string)$cfg['from'], (string)$cfg['from_name']),
-            'to' => [$to],
-            'subject' => $subject,
-            'html' => $html,
-            'text' => $text,
-        ];
-        if ($headers !== []) {
-            $payload['headers'] = $headers;
-        }
-
-        return self::postJson('https://api.resend.com/emails', [
-            'Authorization: Bearer ' . (string)$cfg['resend_api_key'],
-            'Content-Type: application/json',
-        ], $payload);
-    }
-
-    private static function sendCloudflare(array $cfg, string $to, string $subject, string $html, string $text): bool
-    {
-        $accountId = rawurlencode((string)$cfg['cloudflare_account_id']);
-        $payload = [
-            'to' => $to,
-            'from' => (string)$cfg['from'],
-            'subject' => $subject,
-            'html' => $html,
-            'text' => $text,
-        ];
-
-        return self::postJson(
-            "https://api.cloudflare.com/client/v4/accounts/{$accountId}/email/sending/send",
-            [
-                'Authorization: Bearer ' . (string)$cfg['cloudflare_api_token'],
-                'Content-Type: application/json',
-            ],
-            $payload
-        );
     }
 
     private static function sendSmtp(array $cfg, string $to, string $subject, string $html, string $text, array $headers): bool
@@ -312,25 +262,18 @@ final class Mailer
 
     private static function postJson(string $url, array $headers, array $payload): bool
     {
-        $ch = curl_init($url);
-        if ($ch === false) {
-            return false;
-        }
-        curl_setopt_array($ch, [
-            CURLOPT_POST => true,
-            CURLOPT_HTTPHEADER => $headers,
-            CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => 12,
+        $res = Http::request('POST', $url, [
+            'headers' => $headers,
+            'body' => json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'timeout' => 12,
+            'default_headers' => false,
         ]);
-        $body = curl_exec($ch);
-        $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
-        curl_close($ch);
+        $code = $res['status'];
+        $body = $res['body'];
         if ($code < 200 || $code >= 300) {
-            throw new \RuntimeException($error !== '' ? $error : ('HTTP ' . $code . ': ' . mb_substr((string)$body, 0, 300)));
+            throw new \RuntimeException($res['error'] !== '' ? $res['error'] : ('HTTP ' . $code . ': ' . mb_substr($body, 0, 300)));
         }
-        $decoded = json_decode((string)$body, true);
+        $decoded = json_decode($body, true);
         if (is_array($decoded)) {
             if (array_key_exists('success', $decoded) && $decoded['success'] === false) {
                 $messages = [];

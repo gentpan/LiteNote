@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin;
 
+use App\Core\Http;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -121,37 +122,23 @@ final class XOAuthController
 
     private function postForm(string $url, array $fields): array
     {
-        $body = http_build_query($fields);
-        $headers = [
-            'Content-Type: application/x-www-form-urlencoded',
-            'Accept: application/json',
-        ];
-
+        $headers = ['Accept: application/json'];
         $clientId = $this->env('X_OAUTH_CLIENT_ID');
         $clientSecret = $this->env('X_OAUTH_CLIENT_SECRET');
         if ($clientId !== '' && $clientSecret !== '') {
             $headers[] = 'Authorization: Basic ' . base64_encode($clientId . ':' . $clientSecret);
         }
 
-        if (!function_exists('curl_init')) {
-            throw new \RuntimeException('当前 PHP 缺少 curl 扩展');
-        }
-
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => $body,
-            CURLOPT_HTTPHEADER => $headers,
-            CURLOPT_CONNECTTIMEOUT => 15,
-            CURLOPT_TIMEOUT => 20,
+        $res = Http::request('POST', $url, [
+            'headers' => array_merge(['Content-Type: application/x-www-form-urlencoded'], $headers),
+            'body' => http_build_query($fields),
+            'connect_timeout' => 15,
+            'timeout' => 20,
+            'default_headers' => false,
         ]);
-        $response = curl_exec($ch);
-        $status = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-        unset($ch);
 
-        $data = is_string($response) ? json_decode($response, true) : null;
-        if ($status < 200 || $status >= 300 || !is_array($data)) {
+        $data = $res['body'] !== '' ? json_decode($res['body'], true) : null;
+        if (!$res['ok'] || !is_array($data)) {
             $message = is_array($data) ? (string)($data['error_description'] ?? $data['error'] ?? '') : '';
             throw new \RuntimeException($message !== '' ? $message : 'Token exchange failed');
         }
@@ -161,20 +148,13 @@ final class XOAuthController
 
     private function httpGet(string $url, array $headers): string
     {
-        if (!function_exists('curl_init')) {
-            return '';
-        }
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTPHEADER => array_merge(['Accept: application/json'], $headers),
-            CURLOPT_CONNECTTIMEOUT => 10,
-            CURLOPT_TIMEOUT => 15,
+        $res = Http::request('GET', $url, [
+            'headers' => array_merge(['Accept: application/json'], $headers),
+            'connect_timeout' => 10,
+            'timeout' => 15,
+            'default_headers' => false,
         ]);
-        $response = curl_exec($ch);
-        $status = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-        unset($ch);
-        return is_string($response) && $status >= 200 && $status < 300 ? $response : '';
+        return $res['ok'] ? $res['body'] : '';
     }
 
     private function redirectUri(): string

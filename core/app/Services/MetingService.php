@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Core\Config;
+use App\Core\Http;
 
 final class MetingService
 {
@@ -231,33 +232,22 @@ final class MetingService
         }
 
         $url = $this->baseUrl . '/' . ltrim($path, '/');
-        $headers = [
-            'Accept: ' . $accept,
-            'Authorization: Bearer ' . $this->token,
-            'User-Agent: LiteNote/1.0 MetingClient',
-        ];
-
-        $context = stream_context_create([
-            'http' => [
-                'method' => 'GET',
-                'header' => implode("\r\n", $headers),
-                'timeout' => $this->timeout,
-                'ignore_errors' => true,
+        $r = Http::request('GET', $url, [
+            'headers' => [
+                'Accept: ' . $accept,
+                'Authorization: Bearer ' . $this->token,
+                'User-Agent: LiteNote/1.0 MetingClient',
             ],
+            'timeout' => $this->timeout,
+            'default_headers' => false,
         ]);
 
-        $body = @file_get_contents($url, false, $context);
-        $status = 0;
-        foreach (($http_response_header ?? []) as $header) {
-            if (preg_match('~^HTTP/\S+\s+(\d+)~', $header, $match)) {
-                $status = (int)$match[1];
-            }
-        }
-        if ($body === false || $status >= 400) {
+        $status = $r['status'];
+        if ($status === 0 || $status >= 400) {
             $message = $status === 401 ? 'Meting Token 无效或未配置' : ($status === 429 ? 'Meting 今日配额已用完' : 'Meting 请求失败');
             throw new \RuntimeException($message);
         }
 
-        return (string)$body;
+        return $r['body'];
     }
 }

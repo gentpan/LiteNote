@@ -37,9 +37,7 @@ final class NeoDbAdapter extends BaseAdapter
                 $skipped++;
                 continue;
             }
-            $before = $this->exists($mapped['source'], $mapped['external_id']);
-            $this->activities->record($mapped);
-            $before ? $updated++ : $created++;
+            $this->ingest($mapped) ? $created++ : $updated++;
         }
 
         return $this->result($created, $updated, $skipped, 'NeoDB 同步完成');
@@ -95,11 +93,4 @@ final class NeoDbAdapter extends BaseAdapter
         ];
     }
 
-    private function exists(string $source, string $externalId): bool
-    {
-        return (bool)\App\Models\Activity::db()->fetchOne(
-            'SELECT id FROM activities WHERE source = ? AND external_id = ? LIMIT 1',
-            [$source, $externalId]
-        );
-    }
 }

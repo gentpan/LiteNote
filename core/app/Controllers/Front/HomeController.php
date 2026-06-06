@@ -8,7 +8,7 @@ use App\Core\View;
 use App\Models\Category;
 use App\Models\Post;
 use App\Services\Gravatar;
-use App\Services\ActivitySummaryService;
+use App\Services\ActivityCacheService;
 use App\Services\ReadingSettingsService;
 
 /**
@@ -34,7 +34,8 @@ class HomeController
     {
         return View::render('home.index', [
             'feedItems' => ReadingSettingsService::homeFeedItems(),
-            'activitySummary' => (new ActivitySummaryService())->summary(),
+            // 读 5 分钟文件缓存快照,避免每次访问都实时聚合 + 重复建表。
+            'activitySummary' => (new ActivityCacheService())->snapshot()['summary'] ?? null,
             'pageTitle' => null,
             'activeNav' => 'home',
         ]);

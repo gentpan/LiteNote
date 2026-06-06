@@ -18,7 +18,7 @@ final class ActivityCacheService
             static fn(Activity $activity): array => self::serializeActivity($activity),
             Activity::recentPublic(60)
         );
-        $summary = (new ActivitySummaryService())->summary();
+        $summary = (new ActivityStatsService())->summary();
         if (is_array($summary)) {
             $summary['recent'] = array_map(
                 static fn(Activity $activity): array => self::serializeActivity($activity),

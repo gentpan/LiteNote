@@ -18,7 +18,7 @@ final class OpenAiUsageAdapter extends BaseAdapter
         if ($adminKey === '') {
             throw new \RuntimeException('OpenAI Admin Key 不能为空');
         }
-        $days = max(1, min(31, (int)$this->meta($integration, 'days', '7')));
+        $days = $this->intMeta($integration, 'days', 7, 1, 31);
         $startTime = strtotime('-' . ($days - 1) . ' days midnight');
         $url = 'https://api.openai.com/v1/organization/usage/completions?bucket_width=1d&limit='
             . $days . '&start_time=' . $startTime . '&group_by=model';
@@ -47,8 +47,7 @@ final class OpenAiUsageAdapter extends BaseAdapter
                 }
                 $model = (string)($result['model'] ?? 'OpenAI');
                 $externalId = 'openai:usage:' . $date . ':' . ($model ?: 'all');
-                $before = $this->exists('openai', $externalId);
-                $this->activities->record([
+                $isNew = $this->ingest([
                     'type' => 'ai',
                     'action' => 'used_tokens',
                     'source' => 'openai',
@@ -64,24 +63,10 @@ final class OpenAiUsageAdapter extends BaseAdapter
                         'total_tokens' => $input + $output,
                         'requests' => $requests,
                     ],
-                ]);
-                $before ? $updated++ : $created++;
+                ]) ? $created++ : $updated++;
             }
         }
 
         return $this->result($created, $updated, $skipped, 'OpenAI Usage 同步完成');
-    }
-
-    private function formatNumber(int $value): string
-    {
-        return $value >= 1000 ? round($value / 1000, 1) . 'K' : (string)$value;
-    }
-
-    private function exists(string $source, string $externalId): bool
-    {
-        return (bool)\App\Models\Activity::db()->fetchOne(
-            'SELECT id FROM activities WHERE source = ? AND external_id = ? LIMIT 1',
-            [$source, $externalId]
-        );
     }
 }

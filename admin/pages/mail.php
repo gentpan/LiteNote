@@ -8,8 +8,6 @@
         $statusClass = $configured ? 'status-published' : 'status-draft';
         $driverLabels = [
             'sendflare' => 'SendFlare API',
-            'resend' => 'Resend API',
-            'cloudflare' => 'Cloudflare Email Service',
             'smtp' => 'SMTP',
         ];
     @endphp
@@ -125,26 +123,6 @@
                 <div class="form-group">
                     <label>API Token</label>
                     <input type="password" name="mail[mail_sendflare_token]" value="" placeholder="{{ !empty($s['sendflare_token']) ? '已保存，留空不修改' : 'Bearer token' }}" autocomplete="off">
-                </div>
-            </section>
-
-            <section class="mail-provider-card">
-                <h4>Resend</h4>
-                <div class="form-group">
-                    <label>API Key</label>
-                    <input type="password" name="mail[mail_resend_api_key]" value="" placeholder="{{ !empty($s['resend_api_key']) ? '已保存，留空不修改' : 're_xxxxxxxxx' }}" autocomplete="off">
-                </div>
-            </section>
-
-            <section class="mail-provider-card">
-                <h4>Cloudflare Email Service</h4>
-                <div class="form-group">
-                    <label>Account ID</label>
-                    <input type="text" name="mail[mail_cloudflare_account_id]" value="{{ $s['cloudflare_account_id'] ?? '' }}">
-                </div>
-                <div class="form-group">
-                    <label>API Token</label>
-                    <input type="password" name="mail[mail_cloudflare_api_token]" value="" placeholder="{{ !empty($s['cloudflare_api_token']) ? '已保存，留空不修改' : 'Cloudflare API Token' }}" autocomplete="off">
                 </div>
             </section>
 

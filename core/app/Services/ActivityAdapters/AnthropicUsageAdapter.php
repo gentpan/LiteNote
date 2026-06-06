@@ -19,7 +19,7 @@ final class AnthropicUsageAdapter extends BaseAdapter
             throw new \RuntimeException('Anthropic Admin API Key 不能为空');
         }
 
-        $days = max(1, min(31, (int)$this->meta($integration, 'days', '7')));
+        $days = $this->intMeta($integration, 'days', 7, 1, 31);
         $startingAt = gmdate('Y-m-d\T00:00:00\Z', strtotime('-' . ($days - 1) . ' days'));
         $query = http_build_query([
             'starting_at' => $startingAt,
@@ -62,8 +62,7 @@ final class AnthropicUsageAdapter extends BaseAdapter
                 }
                 $model = (string)($result['model'] ?? 'Claude');
                 $externalId = 'anthropic:usage:' . $date . ':' . ($model ?: 'all');
-                $before = $this->exists('anthropic', $externalId);
-                $this->activities->record([
+                $isNew = $this->ingest([
                     'type' => 'ai',
                     'action' => 'used_tokens',
                     'source' => 'anthropic',
@@ -81,24 +80,10 @@ final class AnthropicUsageAdapter extends BaseAdapter
                         'cache_read_input_tokens' => $cacheRead,
                         'cache_creation_input_tokens' => $cacheCreate,
                     ],
-                ]);
-                $before ? $updated++ : $created++;
+                ]) ? $created++ : $updated++;
             }
         }
 
         return $this->result($created, $updated, $skipped, 'Claude Usage 同步完成');
-    }
-
-    private function formatNumber(int $value): string
-    {
-        return $value >= 1000 ? round($value / 1000, 1) . 'K' : (string)$value;
-    }
-
-    private function exists(string $source, string $externalId): bool
-    {
-        return (bool)\App\Models\Activity::db()->fetchOne(
-            'SELECT id FROM activities WHERE source = ? AND external_id = ? LIMIT 1',
-            [$source, $externalId]
-        );
     }
 }

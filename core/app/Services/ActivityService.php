@@ -103,6 +103,7 @@ final class ActivityService
             }
             $activity->save();
             (new ActivityStatsService())->rebuildForDate(substr($fields['happened_at'], 0, 10));
+            $activity->wasRecentlyCreated = false;
             return $activity;
         }
 
@@ -120,6 +121,7 @@ final class ActivityService
         $activity = new Activity($fields);
         $activity->save();
         (new ActivityStatsService())->rebuildForDate(substr($fields['happened_at'], 0, 10));
+        $activity->wasRecentlyCreated = true;
         return $activity;
     }
 

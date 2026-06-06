@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Services\ActivityAdapters;
 
 use App\Core\Config;
+use App\Core\Http;
 use App\Models\ActivityIntegration;
 
 final class XBookmarksAdapter extends BaseAdapter
@@ -57,8 +58,7 @@ final class XBookmarksAdapter extends BaseAdapter
                 }
 
                 $externalId = 'x:bookmark:' . $id;
-                $before = $this->exists($externalId);
-                $this->activities->record([
+                $isNew = $this->ingest([
                     'type' => 'social',
                     'action' => 'saved',
                     'source' => 'x_bookmarks',
@@ -76,8 +76,7 @@ final class XBookmarksAdapter extends BaseAdapter
                         'images' => $normalized['images'] ?? [],
                         'bookmarked_by' => $username !== '' ? $username : $userId,
                     ],
-                ]);
-                $before ? $updated++ : $created++;
+                ]) ? $created++ : $updated++;
             }
 
             $meta = is_array($payload['meta'] ?? null) ? $payload['meta'] : [];
@@ -122,37 +121,29 @@ final class XBookmarksAdapter extends BaseAdapter
     {
         $clientId = $this->env('X_OAUTH_CLIENT_ID');
         $clientSecret = $this->env('X_OAUTH_CLIENT_SECRET');
-        if ($clientId === '' || !function_exists('curl_init')) {
+        if ($clientId === '') {
             return [];
         }
 
-        $headers = [
-            'Content-Type: application/x-www-form-urlencoded',
-            'Accept: application/json',
-        ];
+        $headers = ['Accept: application/json'];
         if ($clientSecret !== '') {
             $headers[] = 'Authorization: Basic ' . base64_encode($clientId . ':' . $clientSecret);
         }
 
-        $ch = curl_init('https://api.x.com/2/oauth2/token');
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => http_build_query([
+        $res = Http::request('POST', 'https://api.x.com/2/oauth2/token', [
+            'headers' => array_merge(['Content-Type: application/x-www-form-urlencoded'], $headers),
+            'body' => http_build_query([
                 'grant_type' => 'refresh_token',
                 'refresh_token' => $refreshToken,
                 'client_id' => $clientId,
             ]),
-            CURLOPT_HTTPHEADER => $headers,
-            CURLOPT_CONNECTTIMEOUT => 15,
-            CURLOPT_TIMEOUT => 20,
+            'connect_timeout' => 15,
+            'timeout' => 20,
+            'default_headers' => false,
         ]);
-        $response = curl_exec($ch);
-        $status = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-        unset($ch);
 
-        $data = is_string($response) ? json_decode($response, true) : null;
-        return $status >= 200 && $status < 300 && is_array($data) ? $data : [];
+        $data = $res['body'] !== '' ? json_decode($res['body'], true) : null;
+        return $res['ok'] && is_array($data) ? $data : [];
     }
 
     private function lookupUserId(string $token, string $username): string
@@ -279,11 +270,4 @@ final class XBookmarksAdapter extends BaseAdapter
         return (string)($_ENV[$key] ?? $_SERVER[$key] ?? '');
     }
 
-    private function exists(string $externalId): bool
-    {
-        return (bool)\App\Models\Activity::db()->fetchOne(
-            'SELECT id FROM activities WHERE source = ? AND external_id = ? LIMIT 1',
-            ['x_bookmarks', $externalId]
-        );
-    }
 }

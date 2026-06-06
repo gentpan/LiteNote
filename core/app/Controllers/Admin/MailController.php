@@ -47,9 +47,6 @@ final class MailController
             'mail_template_footer',
             'mail_sendflare_endpoint',
             'mail_sendflare_token',
-            'mail_resend_api_key',
-            'mail_cloudflare_account_id',
-            'mail_cloudflare_api_token',
             'mail_smtp_host',
             'mail_smtp_port',
             'mail_smtp_secure',
@@ -62,8 +59,6 @@ final class MailController
         ];
         $secrets = [
             'mail_sendflare_token',
-            'mail_resend_api_key',
-            'mail_cloudflare_api_token',
             'mail_smtp_password',
         ];
 
@@ -79,7 +74,7 @@ final class MailController
             if (in_array($key, $secrets, true) && $value === '') {
                 continue;
             }
-            if ($key === 'mail_driver' && !in_array($value, ['sendflare', 'resend', 'cloudflare', 'smtp'], true)) {
+            if ($key === 'mail_driver' && !in_array($value, ['sendflare', 'smtp'], true)) {
                 $value = 'sendflare';
             }
             Setting::set($key, $value);
@@ -123,9 +118,6 @@ final class MailController
             ['k' => 'mail_template_footer', 'v' => '', 'type' => 'text', 'label' => '邮件页脚', 'group_name' => 'mail', 'sort' => 7],
             ['k' => 'mail_sendflare_endpoint', 'v' => (string)($cfg['sendflare_endpoint'] ?? 'https://api.sendflare.com/v1/send'), 'label' => 'SendFlare Endpoint', 'group_name' => 'mail', 'sort' => 20],
             ['k' => 'mail_sendflare_token', 'v' => '', 'type' => 'password', 'label' => 'SendFlare Token', 'group_name' => 'mail', 'sort' => 21],
-            ['k' => 'mail_resend_api_key', 'v' => '', 'type' => 'password', 'label' => 'Resend API Key', 'group_name' => 'mail', 'sort' => 30],
-            ['k' => 'mail_cloudflare_account_id', 'v' => (string)($cfg['cloudflare_account_id'] ?? ''), 'label' => 'Cloudflare Account ID', 'group_name' => 'mail', 'sort' => 40],
-            ['k' => 'mail_cloudflare_api_token', 'v' => '', 'type' => 'password', 'label' => 'Cloudflare API Token', 'group_name' => 'mail', 'sort' => 41],
             ['k' => 'mail_smtp_host', 'v' => (string)($cfg['smtp_host'] ?? ''), 'label' => 'SMTP Host', 'group_name' => 'mail', 'sort' => 50],
             ['k' => 'mail_smtp_port', 'v' => (string)($cfg['smtp_port'] ?? 587), 'label' => 'SMTP Port', 'group_name' => 'mail', 'sort' => 51],
             ['k' => 'mail_smtp_secure', 'v' => (string)($cfg['smtp_secure'] ?? 'tls'), 'label' => 'SMTP 加密', 'group_name' => 'mail', 'sort' => 52],

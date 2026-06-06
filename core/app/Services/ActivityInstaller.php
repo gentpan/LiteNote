@@ -7,8 +7,16 @@ use App\Core\ActivityDatabase;
 
 final class ActivityInstaller
 {
+    /** 进程内"只建表一次"守卫:同一请求里被调多次时,只有首次真正执行 DDL。 */
+    private static bool $done = false;
+
     public static function install(): array
     {
+        if (self::$done) {
+            return [];
+        }
+        self::$done = true;
+
         $db = ActivityDatabase::getInstance();
         $log = [];
 

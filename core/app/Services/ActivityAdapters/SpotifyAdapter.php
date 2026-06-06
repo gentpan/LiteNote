@@ -39,8 +39,7 @@ final class SpotifyAdapter extends BaseAdapter
             }
             $artists = $this->artistNames((array)($track['artists'] ?? []));
             $externalId = 'spotify:played:' . $trackId . ':' . strtotime($playedAt);
-            $before = $this->exists('spotify', $externalId);
-            $this->activities->record([
+            $isNew = $this->ingest([
                 'type' => 'music',
                 'action' => 'played',
                 'source' => 'spotify',
@@ -56,8 +55,7 @@ final class SpotifyAdapter extends BaseAdapter
                     'duration_seconds' => (int)floor(((int)($track['duration_ms'] ?? 0)) / 1000),
                     'cover' => (string)($track['album']['images'][0]['url'] ?? ''),
                 ],
-            ]);
-            $before ? $updated++ : $created++;
+            ]) ? $created++ : $updated++;
         }
 
         if ($this->boolMeta($integration, 'sync_saved', false)) {
@@ -107,8 +105,7 @@ final class SpotifyAdapter extends BaseAdapter
             $artists = $this->artistNames((array)($track['artists'] ?? []));
             $addedAt = $this->isoToSql((string)($item['added_at'] ?? ''));
             $externalId = 'spotify:liked:' . $trackId;
-            $before = $this->exists('spotify', $externalId);
-            $this->activities->record([
+            $isNew = $this->ingest([
                 'type' => 'music',
                 'action' => 'liked',
                 'source' => 'spotify',
@@ -124,8 +121,7 @@ final class SpotifyAdapter extends BaseAdapter
                     'duration_seconds' => (int)floor(((int)($track['duration_ms'] ?? 0)) / 1000),
                     'cover' => (string)($track['album']['images'][0]['url'] ?? ''),
                 ],
-            ]);
-            $before ? $updated++ : $created++;
+            ]) ? $created++ : $updated++;
         }
         return [$created, $updated, $skipped];
     }
@@ -141,11 +137,4 @@ final class SpotifyAdapter extends BaseAdapter
         return implode(' / ', $names);
     }
 
-    private function exists(string $source, string $externalId): bool
-    {
-        return (bool)\App\Models\Activity::db()->fetchOne(
-            'SELECT id FROM activities WHERE source = ? AND external_id = ? LIMIT 1',
-            [$source, $externalId]
-        );
-    }
 }
