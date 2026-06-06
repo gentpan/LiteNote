@@ -34,8 +34,6 @@ $router->get('/category/{slug}',  [CategoryController::class, 'show']);
 // 滔客
 $router->get('/activity',         [ActivityController::class, 'index']);
 $router->get('/talk',             [TalkController::class, 'index']);
-$router->get('/x',                [TalkController::class, 'x']);
-$router->get('/xmarks',           [TalkController::class, 'xmarks']);
 $router->post('/talk/publish',    [TalkController::class, 'publish']);
 $router->post('/talk/{id}/like',  [TalkController::class, 'like']);
 
@@ -77,6 +75,9 @@ $router->get('/api/v1/activity/feed', [ActivityApiController::class, 'feed']);
 $router->get('/api/v1/activity/summary', [ActivityApiController::class, 'summary']);
 $router->get('/api/v1/activity/stats/today', [ActivityApiController::class, 'today']);
 $router->get('/api/v1/activity/stats/{date}', [ActivityApiController::class, 'stat']);
+
+// 插件前台路由:必须在下面的 catch-all 短链接之前注册,否则会被 /{slug} 抢先匹配。
+\App\Services\Plugins\Registry::applyRoutes($router, 'web');
 
 // 自定义页面短链接,必须放在最后,避免覆盖上面的固定路由。
 $router->get('/{category}/{slug}', [PostController::class, 'show']);

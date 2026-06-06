@@ -28,13 +28,14 @@
     </div>
     @endif
 
-    <div class="talk-comments" id="talk-comments-{{ $talkItem->id }}">
+    <div class="talk-comments" id="x-tweet-comments-{{ $talkItem->id }}">
         @if(!empty($comments))
             <ul class="talk-comment-list">
                 @foreach(\App\Core\Helper::nestComments($comments) as $thread)
                     @php $cmt = $thread['comment']; @endphp
                     <li data-id="{{ $cmt->id }}">
-                        <strong>{{ $cmt->nickname }}</strong>
+                        @php $commentAuthor = $cmt; @endphp
+                                    @include('partials.comment-author-link')
                         <span class="comment-time">· {!! \App\Core\Helper::timeTag($cmt->created_at) !!}</span>
                         <button type="button" class="comment-reply-btn" data-parent-id="{{ $cmt->id }}" data-nickname="{{ $cmt->nickname }}">回复</button>
                         <span class="talk-comment-content">{{ $cmt->content }}</span>
@@ -42,7 +43,8 @@
                             <ul class="talk-reply-list">
                                 @foreach($thread['replies'] as $reply)
                                     <li data-id="{{ $reply->id }}">
-                                        <strong>{{ $reply->nickname }}</strong>
+                                        @php $commentAuthor = $reply; @endphp
+                                                    @include('partials.comment-author-link')
                                         @if(!empty($reply->reply_to_name))<span class="reply-arrow">›</span><span class="reply-target">{{ $reply->reply_to_name }}</span>@endif
                                         <span class="comment-time">· {!! \App\Core\Helper::timeTag($reply->created_at) !!}</span>
                                         <button type="button" class="comment-reply-btn" data-parent-id="{{ $reply->id }}" data-nickname="{{ $reply->nickname }}">回复</button>
@@ -60,7 +62,7 @@
             $adminCommentEmail = !empty($currentAdmin) ? (string)($currentAdmin->email ?? '') : '';
         @endphp
         <form class="comment-form talk-comment-form" method="post" action="/comment/submit" data-comment-admin="{{ !empty($currentAdmin) ? '1' : '0' }}">
-            <input type="hidden" name="talk_id" value="{{ $talkItem->id }}">
+            <input type="hidden" name="x_tweet_id" value="{{ $talkItem->id }}">
             <input type="hidden" name="parent_id" value="0">
             <input type="hidden" name="_csrf" value="{{ \App\Core\Session::csrfToken() }}">
             @if(!empty($currentAdmin))
@@ -77,7 +79,7 @@
             <div class="comment-actions">
                 @if(!empty($currentAdmin))
                     <button type="button" class="comment-profile-toggle comment-profile-toggle-admin" aria-label="当前登录头像">
-                        <img class="comment-admin-avatar" src="{{ $currentAdmin->getAvatarUrl(80) }}" alt="">
+                        <img class="comment-admin-avatar" src="{{ $currentAdmin->getAvatarUrl(80) }}" alt="{{ $adminCommentName }}">
                     </button>
                 @else
                     <button type="button" class="comment-profile-toggle" data-comment-profile-toggle aria-label="切换评论资料" hidden>

@@ -56,14 +56,14 @@ final class ActivityController
     {
         ActivityInstaller::install();
         $provider = (string)($params['provider'] ?? '');
-        if (!isset(ActivityIntegration::PROVIDERS[$provider])) {
+        if (!isset(ActivityIntegration::providers()[$provider])) {
             Session::flash('error', '不支持的平台');
             Response::redirect('/admin/activities/integrations');
         }
 
         return View::render('activity.integration-form', [
             'provider' => $provider,
-            'definition' => ActivityIntegration::PROVIDERS[$provider],
+            'definition' => ActivityIntegration::providers()[$provider],
             'integration' => ActivityIntegration::findByProvider($provider) ?: new ActivityIntegration([
                 'provider' => $provider,
                 'status' => 'inactive',
@@ -77,12 +77,12 @@ final class ActivityController
     public function saveIntegration(Request $request, array $params): never
     {
         $provider = (string)($params['provider'] ?? '');
-        if (!isset(ActivityIntegration::PROVIDERS[$provider])) {
+        if (!isset(ActivityIntegration::providers()[$provider])) {
             Session::flash('error', '不支持的平台');
             Response::redirect('/admin/activities/integrations');
         }
 
-        $definition = ActivityIntegration::PROVIDERS[$provider];
+        $definition = ActivityIntegration::providers()[$provider];
         $existing = ActivityIntegration::findByProvider($provider);
         $existingMeta = $existing ? $existing->metadata() : [];
         $metadata = [];

@@ -22,7 +22,6 @@ use App\Controllers\Admin\ActivityController;
 use App\Controllers\Admin\MailController;
 use App\Controllers\Admin\ThemeController;
 use App\Controllers\Admin\PluginController;
-use App\Controllers\Admin\XOAuthController;
 use App\Middleware\AdminAuth;
 use App\Middleware\CsrfMiddleware;
 
@@ -84,6 +83,7 @@ $router->group('/admin', function ($r) {
     $r->post('/themes/activate',       [ThemeController::class, 'activate'], [\App\Middleware\CsrfMiddleware::class]);
     $r->post('/themes/delete',         [ThemeController::class, 'delete'],   [\App\Middleware\CsrfMiddleware::class]);
     $r->get('/plugins',                [PluginController::class, 'index']);
+    $r->post('/plugins/{key}/toggle',  [PluginController::class, 'toggle'], [\App\Middleware\CsrfMiddleware::class]);
 
     // 友情链接
     $r->get('/links',                  [LinkController::class, 'index']);
@@ -105,8 +105,6 @@ $router->group('/admin', function ($r) {
     $r->get('/activities/integrations/{provider}/edit', [ActivityController::class, 'editIntegration']);
     $r->post('/activities/integrations/{provider}/save', [ActivityController::class, 'saveIntegration'], [\App\Middleware\CsrfMiddleware::class]);
     $r->post('/activities/integrations/{provider}/sync', [ActivityController::class, 'syncIntegration'], [\App\Middleware\CsrfMiddleware::class]);
-    $r->get('/oauth/x/start', [XOAuthController::class, 'start']);
-    $r->get('/oauth/x/callback', [XOAuthController::class, 'callback']);
     $r->get('/activities/{id}/edit', [ActivityController::class, 'edit']);
     $r->post('/activities/{id}/edit', [ActivityController::class, 'update'], [\App\Middleware\CsrfMiddleware::class]);
     $r->post('/activities/delete', [ActivityController::class, 'destroy'], [\App\Middleware\CsrfMiddleware::class]);
@@ -157,3 +155,6 @@ $router->group('/admin', function ($r) {
     $r->post('/passkey/register',         [PasskeyController::class, 'register'], [\App\Middleware\CsrfMiddleware::class]);
 
 }, [AdminAuth::class]);
+
+// 插件后台路由:统一套 /admin 前缀与 AdminAuth(见 Registry::applyRoutes)。
+\App\Services\Plugins\Registry::applyRoutes($router, 'admin');

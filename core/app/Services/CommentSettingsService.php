@@ -12,6 +12,7 @@ final class CommentSettingsService
     public const TYPE_PAGE = 'page';
     public const TYPE_TALK = 'talk';
     public const TYPE_MUSIC = 'music';
+    public const TYPE_X_TWEET = 'x_tweet';
 
     private const DEFAULTS = [
         'enabled' => true,
@@ -69,7 +70,7 @@ final class CommentSettingsService
         return (bool) self::settings()['need_audit'];
     }
 
-    public static function typeFromIds(int $postId, int $pageId, int $talkId, int $musicId): string
+    public static function typeFromIds(int $postId, int $pageId, int $talkId, int $musicId, int $xTweetId = 0): string
     {
         if ($postId > 0) {
             return self::TYPE_POST;
@@ -79,6 +80,9 @@ final class CommentSettingsService
         }
         if ($musicId > 0) {
             return self::TYPE_MUSIC;
+        }
+        if ($xTweetId > 0) {
+            return self::TYPE_X_TWEET;
         }
         return self::TYPE_TALK;
     }

@@ -34,6 +34,7 @@
     @foreach($themeCssFiles as $themeCss)
         <link rel="stylesheet" href="{{ $themeCss }}?v={{ \App\Services\ThemeManager::assetVersion($themeCss) }}">
     @endforeach
+    {!! $__pluginFrontHead ?? '' !!}
 </head>
 <body>
 

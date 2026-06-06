@@ -127,10 +127,10 @@
             </div>
             <div class="home-card-actions tweet-footer-actions">
                 @if($tweetLocalActions)
-                    <button type="button" class="home-action talk-like-btn" data-id="{{ $tweet->id }}" aria-label="点赞">
+                    <button type="button" class="home-action x-tweet-like-btn" data-id="{{ $tweet->id }}" aria-label="点赞">
                         <i class="fa-regular fa-thumbs-up"></i><span class="like-count">{{ $localLikeCount }}</span>
                     </button>
-                    <button type="button" class="home-action talk-comment-toggle" data-target="talk-comments-{{ $tweet->id }}">
+                    <button type="button" class="home-action talk-comment-toggle" data-target="x-tweet-comments-{{ $tweet->id }}">
                         <i class="fa-regular fa-comment"></i><span>{{ $localCommentCount }}</span>
                     </button>
                 @elseif($tweetUrl !== '')
@@ -157,7 +157,7 @@
         </footer>
         @if($tweetLocalActions)
             @php $talkItem = $tweet; @endphp
-            @include('partials.talk-local-engagement')
+            @include('partials.x-tweet-engagement')
         @endif
     </div>
 @endif

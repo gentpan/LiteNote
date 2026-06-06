@@ -15,20 +15,6 @@ final class Talk extends Model
 {
     protected static string $table = 'talk';
     protected static array $sortable = ['id', 'created_at', 'published_at', 'likes_count', 'comments_count'];
-    private static bool $tweetSchemaChecked = false;
-
-    public static function ensureTweetDataColumn(): void
-    {
-        if (self::$tweetSchemaChecked) {
-            return;
-        }
-        self::$tweetSchemaChecked = true;
-        try {
-            self::db()->query('ALTER TABLE talk ADD COLUMN tweet_data TEXT');
-        } catch (\Throwable) {
-            // Column already exists or the database is not ready.
-        }
-    }
 
     public static function paginate(int $page = 1, int $perPage = 20, string $orderBy = 'published_at DESC, created_at DESC, id DESC', ?string $whereSql = null, array $params = []): array
     {
@@ -39,75 +25,9 @@ final class Talk extends Model
         return parent::paginate($page, $perPage, $orderBy, $whereSql, $params);
     }
 
-    public function isTweet(): bool
-    {
-        return (string)($this->post_type ?? '') === 'tweet' || trim((string)($this->tweet_url ?? '')) !== '' || trim((string)($this->tweet_id ?? '')) !== '';
-    }
-
     public function publishedAt(): string
     {
         return (string)($this->published_at ?: $this->created_at ?: date('Y-m-d H:i:s'));
-    }
-
-    public function tweetUrl(): string
-    {
-        $url = trim((string)($this->tweet_url ?? ''));
-        if ($url !== '') {
-            return $url;
-        }
-
-        $id = $this->tweetId();
-        return $id !== '' ? 'https://x.com/i/web/status/' . $id : '';
-    }
-
-    public function tweetId(): string
-    {
-        $id = trim((string)($this->tweet_id ?? ''));
-        if ($id !== '') {
-            return $id;
-        }
-
-        $url = trim((string)($this->tweet_url ?? ''));
-        if ($url !== '' && preg_match('~/status(?:es)?/([0-9]+)~', $url, $m)) {
-            return $m[1];
-        }
-
-        return '';
-    }
-
-    public function tweetHandle(): string
-    {
-        $data = $this->tweetData();
-        if (!empty($data['author_handle'])) {
-            return ltrim((string)$data['author_handle'], '@');
-        }
-        $handle = trim((string)($this->tweet_author_handle ?? ''));
-        return ltrim($handle, '@');
-    }
-
-    public function tweetData(): array
-    {
-        $json = trim((string)($this->tweet_data ?? ''));
-        if ($json === '') {
-            return [];
-        }
-        $data = json_decode($json, true);
-        return is_array($data) ? $data : [];
-    }
-
-    public static function extractTweetId(string $value): string
-    {
-        $value = trim($value);
-        if ($value === '') {
-            return '';
-        }
-        if (preg_match('/^[0-9]{8,40}$/', $value)) {
-            return $value;
-        }
-        if (preg_match('~/status(?:es)?/([0-9]+)~', $value, $m)) {
-            return $m[1];
-        }
-        return '';
     }
 
     public function getImages(): array

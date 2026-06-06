@@ -19,6 +19,9 @@
                 @php $item = $feed['item']; @endphp
                 @if($feed['type'] === 'post')
                     @include('partials.feed-post-card')
+                @elseif($feed['type'] === 'x_tweet')
+                    @php $tweet = $item; $tweetLocalActions = true; $tweetShowReplies = false; $tweetHideViews = true; @endphp
+                    @include('partials.tweet-card')
                 @else
                     @include('partials.feed-talk-card')
                 @endif

@@ -219,7 +219,7 @@ final class ThemeManager
         return defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__, 3);
     }
 
-    private static function templateFile(string $template): string
+    public static function templateFile(string $template): string
     {
         if ($template === 'layouts.front') {
             return 'layout.php';

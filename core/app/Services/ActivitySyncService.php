@@ -13,7 +13,6 @@ use App\Services\ActivityAdapters\NeoDbAdapter;
 use App\Services\ActivityAdapters\OpenAiUsageAdapter;
 use App\Services\ActivityAdapters\SpotifyAdapter;
 use App\Services\ActivityAdapters\WakaTimeAdapter;
-use App\Services\ActivityAdapters\XBookmarksAdapter;
 
 final class ActivitySyncService
 {
@@ -30,9 +29,13 @@ final class ActivitySyncService
             new NeoDbAdapter(),
             new OpenAiUsageAdapter(),
             new AnthropicUsageAdapter(),
-            new XBookmarksAdapter(),
             new BilibiliAdapter(),
         ] as $adapter) {
+            $this->adapters[$adapter->provider()] = $adapter;
+        }
+
+        // 合并插件注册的 Activity 适配器(同 provider 时插件覆盖内置)。
+        foreach (\App\Services\Plugins\Registry::adapters() as $adapter) {
             $this->adapters[$adapter->provider()] = $adapter;
         }
     }

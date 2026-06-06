@@ -245,6 +245,11 @@ final class View
                 if ($themePath !== null) {
                     return $themePath;
                 }
+                // 主题未提供该模板时,回落到插件注册的视图目录(顺序:主题 → 插件 → core/system)。
+                $pluginPath = \App\Services\Plugins\Registry::viewPath($template);
+                if ($pluginPath !== null) {
+                    return $pluginPath;
+                }
             } catch (\Throwable) {
                 // Theme fallback must never break rendering the built-in views.
             }
@@ -270,6 +275,12 @@ final class View
 
         if (str_starts_with($template, 'system.')) {
             return $basePath . '/core/system/' . substr($relative, strlen('system/')) . '.php';
+        }
+
+        // 插件视图兜底:支持插件提供后台 / 自定义页面(核心未认领的模板名)。
+        $pluginPath = \App\Services\Plugins\Registry::viewPath($template);
+        if ($pluginPath !== null) {
+            return $pluginPath;
         }
 
         return $basePath . '/core/system/' . $relative . '.php';

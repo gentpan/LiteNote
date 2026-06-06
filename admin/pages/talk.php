@@ -14,7 +14,7 @@
             @foreach($list as $s)
             <tr>
                 <td>{{ $s->id }}</td>
-                <td>{{ $s->isTweet() ? 'X 卡片' : ((int)($s->music_id ?? 0) > 0 ? '音乐' : '滔客') }}</td>
+                <td>{{ (int)($s->music_id ?? 0) > 0 ? '音乐' : '滔客' }}</td>
                 <td><div class="comment-cell">{{ \App\Core\Helper::truncate($s->content, 100) }}</div></td>
                 <td>{{ $s->mood }}</td>
                 <td>{!! $s->is_public ? '<span class="admin-check-icon admin-check-icon-sm" aria-hidden="true"><i class="fa-solid fa-check"></i></span>' : '<i class="fa-solid fa-xmark"></i>' !!}</td>

@@ -76,6 +76,9 @@
             <a href="/admin/themes" class="{{ $__isActive('/admin/themes') ? 'active' : '' }}"><i class="fa-solid fa-palette"></i><span>主题</span></a>
             <a href="/admin/plugins" class="{{ $__isActive('/admin/plugins') ? 'active' : '' }}"><i class="fa-solid fa-plug"></i><span>插件</span></a>
             <a href="/admin/links" class="{{ $__isActive('/admin/links') ? 'active' : '' }}"><i class="fa-solid fa-link"></i><span>友情链接</span></a>
+            @foreach(($__pluginMenus ?? []) as $__pm)
+            <a href="{{ $__pm['href'] ?? '#' }}" class="{{ $__isActive($__pm['href'] ?? '') ? 'active' : '' }}"><i class="{{ $__pm['icon'] ?? 'fa-solid fa-plug' }}"></i><span>{{ $__pm['label'] ?? '' }}</span></a>
+            @endforeach
             <div class="menu-group">系统</div>
             <a href="/admin/settings" class="{{ $__isActive('/admin/settings') ? 'active' : '' }}"><i class="fa-solid fa-gear"></i><span>设置</span></a>
             <a href="/admin/profile" class="{{ $__isActive('/admin/profile') ? 'active' : '' }}"><i class="fa-regular fa-user"></i><span>个人资料</span></a>

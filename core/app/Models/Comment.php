@@ -191,6 +191,36 @@ final class Comment extends Model
         self::db()->update('music', ['comments_count' => $count], 'id = :id', [':id' => $musicId]);
     }
 
+    public static function forXTweet(int $xTweetId, string|CommentStatus $status = CommentStatus::Approved): array
+    {
+        self::ensureGeoColumns();
+        $statusValue = $status instanceof CommentStatus ? $status->value : $status;
+        $comments = self::query(
+            'SELECT * FROM comments WHERE x_tweet_id = ? AND status = ? ORDER BY id ASC',
+            [$xTweetId, $statusValue]
+        );
+        self::hydrateGeoForComments($comments);
+        return $comments;
+    }
+
+    public static function countByXTweet(int $xTweetId, string|CommentStatus $status = CommentStatus::Approved): int
+    {
+        $statusValue = $status instanceof CommentStatus ? $status->value : $status;
+        return (int) self::db()->fetchColumn(
+            'SELECT COUNT(*) FROM comments WHERE x_tweet_id = ? AND status = ?',
+            [$xTweetId, $statusValue]
+        );
+    }
+
+    public static function syncCountForXTweet(int $xTweetId): void
+    {
+        if ($xTweetId <= 0) {
+            return;
+        }
+        $count = self::countByXTweet($xTweetId, CommentStatus::Approved);
+        self::db()->update('x_tweets', ['comments_count' => $count], 'id = :id', [':id' => $xTweetId]);
+    }
+
     public function parent(): ?self
     {
         if (!$this->parent_id) {
