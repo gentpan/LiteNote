@@ -3,7 +3,8 @@
 # 忽略运行时数据、编译产物、用户上传、IDE 文件
 # ============================================
 
-# 运行时 SQLite 数据库(必须本地保留,绝不提交)
+# 运行时 SQLite 数据库(含个人数据,必须本地保留,绝不提交)
+# 注意:default 模板库 database.default.sqlite 是有意纳入版本控制的(随包分发,首次运行自动复制为 live 库),勿忽略。
 runtime/storage/database.sqlite
 runtime/storage/database.sqlite-journal
 runtime/storage/database.sqlite-shm

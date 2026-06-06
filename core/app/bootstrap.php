@@ -90,6 +90,20 @@ if (Config::get('app.debug', false)) {
 // Session
 Session::start();
 
+// 首次部署:本地还没有数据库时,从模板库复制一份默认数据,实现"上传即用"。
+// - 模板库 database.default.sqlite 随仓库分发(含表结构 + 默认管理员 + 示例数据);
+// - live 库 database.sqlite 被 git 忽略,每个部署各自独立;
+// - 部署后直接打开,用 admin / admin123 登录后自行修改即可。
+$__dbPath = (string) Config::get('database.sqlite');
+$__dbSeed = dirname($__dbPath) . '/database.default.sqlite';
+if (!is_file($__dbPath) && is_file($__dbSeed)) {
+    if (!is_dir(dirname($__dbPath))) {
+        @mkdir(dirname($__dbPath), 0775, true);
+    }
+    @copy($__dbSeed, $__dbPath);
+}
+unset($__dbPath, $__dbSeed);
+
 // 自动创建默认管理员（如果不存在）
 if (is_file(Config::get('database.sqlite'))) {
     try {
