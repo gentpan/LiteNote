@@ -42,9 +42,7 @@ final class GitHubAdapter extends BaseAdapter
                 $skipped++;
                 continue;
             }
-            $before = $this->exists($mapped['source'], $mapped['external_id']);
-            $this->activities->record($mapped);
-            $before ? $updated++ : $created++;
+            $this->ingest($mapped) ? $created++ : $updated++;
         }
 
         return $this->result($created, $updated, $skipped, 'GitHub 同步完成');
@@ -132,11 +130,4 @@ final class GitHubAdapter extends BaseAdapter
         return implode("\n", $messages);
     }
 
-    private function exists(string $source, string $externalId): bool
-    {
-        return (bool)\App\Models\Activity::db()->fetchOne(
-            'SELECT id FROM activities WHERE source = ? AND external_id = ? LIMIT 1',
-            [$source, $externalId]
-        );
-    }
 }

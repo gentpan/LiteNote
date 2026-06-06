@@ -68,7 +68,7 @@ return [
 
     'mail' => [
         'enabled' => $envBool('MAIL_ENABLED', $env('SENDFLARE_API_TOKEN') !== ''),
-        'driver' => $env('MAIL_DRIVER', 'sendflare'), // sendflare | resend | cloudflare | smtp
+        'driver' => $env('MAIL_DRIVER', 'sendflare'), // sendflare | smtp
         'from' => $env('MAIL_FROM', $env('SENDFLARE_FROM', 'noreply@example.com')),
         'from_name' => $env('MAIL_FROM_NAME', $env('SENDFLARE_FROM_NAME', 'LiteNote')),
         'notify_to' => $env('MAIL_NOTIFY_TO', $env('COMMENT_NOTIFY_TO')),
@@ -80,13 +80,6 @@ return [
             'from'      => $env('SENDFLARE_FROM', $env('MAIL_FROM', 'noreply@example.com')),
             'from_name' => $env('SENDFLARE_FROM_NAME', $env('MAIL_FROM_NAME', 'LiteNote')),
             'notify_to' => $env('COMMENT_NOTIFY_TO', $env('MAIL_NOTIFY_TO')),
-        ],
-        'resend' => [
-            'api_key' => $env('RESEND_API_KEY'),
-        ],
-        'cloudflare' => [
-            'account_id' => $env('CLOUDFLARE_EMAIL_ACCOUNT_ID'),
-            'api_token' => $env('CLOUDFLARE_EMAIL_API_TOKEN'),
         ],
         'smtp' => [
             'host' => $env('SMTP_HOST'),

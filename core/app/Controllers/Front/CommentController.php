@@ -12,7 +12,7 @@ use App\Models\Music;
 use App\Models\Page;
 use App\Models\Post;
 use App\Models\Talk;
-use App\Services\CommentMailer;
+use App\Services\Notifications;
 use App\Services\CommentSettingsService;
 use App\Services\IpGeoService;
 
@@ -243,12 +243,12 @@ class CommentController
     ): void {
         try {
             $targetInfo = $this->targetInfo($target, $postId, $pageId, $talkId, $musicId, $request);
-            CommentMailer::notifyNewComment($comment, $targetInfo);
+            Notifications::newComment($comment, $targetInfo);
 
             if ($status === CommentStatus::Approved->value && $parentId > 0) {
                 $parent = Comment::find($parentId);
                 if ($parent && (int)$parent->id !== (int)$comment->id) {
-                    CommentMailer::notifyReply($comment, $parent, $targetInfo);
+                    Notifications::commentReply($comment, $parent, $targetInfo);
                 }
             }
         } catch (\Throwable) {

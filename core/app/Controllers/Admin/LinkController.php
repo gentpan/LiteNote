@@ -10,7 +10,7 @@ use App\Core\View;
 use App\Enums\Toggle;
 use App\Models\Link;
 use App\Services\FriendRssService;
-use App\Services\LinkMailer;
+use App\Services\Notifications;
 
 class LinkController
 {
@@ -126,7 +126,7 @@ class LinkController
 
         if ($link && $enabled === Toggle::On->value && !$wasEnabled && $contactEmail !== '') {
             try {
-                LinkMailer::notifyApproved($link, $contactEmail);
+                Notifications::linkApproved($link, $contactEmail);
             } catch (\Throwable) {
             }
         }

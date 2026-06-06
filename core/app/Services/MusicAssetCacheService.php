@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Core\Config;
+use App\Core\Http;
 
 final class MusicAssetCacheService
 {
@@ -73,31 +74,7 @@ final class MusicAssetCacheService
 
     private function download(string $url, int $maxBytes, array $headers): string
     {
-        $context = stream_context_create([
-            'http' => [
-                'method' => 'GET',
-                'header' => implode("\r\n", $headers),
-                'timeout' => $this->timeout,
-                'ignore_errors' => true,
-            ],
-        ]);
-
-        $body = @file_get_contents($url, false, $context);
-        $status = 0;
-        foreach (($http_response_header ?? []) as $header) {
-            if (preg_match('~^HTTP/\S+\s+(\d+)~', $header, $match)) {
-                $status = (int)$match[1];
-            }
-        }
-
-        if ($body === false || $status >= 400 || $body === '') {
-            throw new \RuntimeException('远程资源下载失败');
-        }
-        if (strlen($body) > $maxBytes) {
-            throw new \RuntimeException('远程资源太大');
-        }
-
-        return (string)$body;
+        return Http::download($url, $maxBytes, $headers, $this->timeout);
     }
 
     private function detectImageMime(string $body): string

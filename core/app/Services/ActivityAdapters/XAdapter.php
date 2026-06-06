@@ -54,8 +54,7 @@ final class XAdapter extends BaseAdapter
                 continue;
             }
             $externalId = 'x:tweet:' . $id;
-            $before = $this->exists('x', $externalId);
-            $this->activities->record([
+            $isNew = $this->ingest([
                 'type' => 'social',
                 'action' => 'posted',
                 'source' => 'x',
@@ -72,8 +71,7 @@ final class XAdapter extends BaseAdapter
                     'views' => (int)($tweet['views_count'] ?? 0),
                     'images' => $tweet['images'] ?? [],
                 ],
-            ]);
-            $before ? $updated++ : $created++;
+            ]) ? $created++ : $updated++;
         }
 
         return $this->result($created, $updated, $skipped, 'X 同步完成');
@@ -189,11 +187,4 @@ final class XAdapter extends BaseAdapter
         return $types !== [] && in_array('retweeted', $types, true) && !in_array('quoted', $types, true);
     }
 
-    private function exists(string $source, string $externalId): bool
-    {
-        return (bool)\App\Models\Activity::db()->fetchOne(
-            'SELECT id FROM activities WHERE source = ? AND external_id = ? LIMIT 1',
-            [$source, $externalId]
-        );
-    }
 }

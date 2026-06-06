@@ -32,35 +32,11 @@ final class PluginManager
                 'description' => (string)($manifest['description'] ?? ''),
                 'version' => (string)($manifest['version'] ?? ''),
                 'author' => (string)($manifest['author'] ?? ''),
-                'screenshot' => self::screenshotUrl($key, $manifest),
+                'screenshot' => ExtensionManifest::screenshotUrl(self::pluginDirectory(), self::PLUGIN_ROOT, $key, $manifest),
             ];
         }
         ksort($plugins);
         return $plugins;
-    }
-
-    private static function screenshotUrl(string $key, array $manifest): string
-    {
-        $candidates = [];
-        $declared = trim((string)($manifest['screenshot'] ?? ''));
-        if ($declared !== '') {
-            $candidates[] = ltrim($declared, '/');
-        }
-        foreach (['screenshot.png', 'screenshot.jpg', 'screenshot.jpeg', 'screenshot.webp', 'screenshot.gif', 'screenshot.svg'] as $name) {
-            $candidates[] = $name;
-        }
-
-        $dir = self::pluginDirectory() . '/' . $key;
-        foreach ($candidates as $candidate) {
-            if ($candidate === '' || str_contains($candidate, '..')) {
-                continue;
-            }
-            if (is_file($dir . '/' . $candidate)) {
-                return self::PLUGIN_ROOT . '/' . rawurlencode($key) . '/' . str_replace('%2F', '/', rawurlencode($candidate));
-            }
-        }
-
-        return '';
     }
 
     private static function pluginDirectory(): string

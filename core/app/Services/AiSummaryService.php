@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Core\Config;
+use App\Core\Http;
 
 final class AiSummaryService
 {
@@ -57,7 +58,7 @@ final class AiSummaryService
 
     private static function chatSummary(string $apiKey, string $model, string $baseUrl, string $plain, string $title): string
     {
-        if ($apiKey === '' || $model === '' || !function_exists('curl_init')) {
+        if ($apiKey === '' || $model === '') {
             return '';
         }
         $baseUrl = rtrim($baseUrl, '/');
@@ -77,28 +78,13 @@ final class AiSummaryService
             'max_tokens' => 220,
         ];
 
-        $ch = curl_init($baseUrl . '/chat/completions');
-        if (!$ch) {
+        $res = Http::postJson($baseUrl . '/chat/completions', $payload, [
+            'Authorization: Bearer ' . $apiKey,
+        ], 18);
+        if (!$res['ok'] || $res['body'] === '') {
             return '';
         }
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_POST => true,
-            CURLOPT_HTTPHEADER => [
-                'Content-Type: application/json',
-                'Authorization: Bearer ' . $apiKey,
-            ],
-            CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-            CURLOPT_TIMEOUT => 18,
-        ]);
-        $raw = curl_exec($ch);
-        $code = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-        unset($ch);
-
-        if (!is_string($raw) || $code < 200 || $code >= 300) {
-            return '';
-        }
-        $data = json_decode($raw, true);
+        $data = json_decode($res['body'], true);
         $summary = $data['choices'][0]['message']['content'] ?? '';
         return self::cleanSummary((string)$summary);
     }

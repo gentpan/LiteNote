@@ -10,6 +10,12 @@ final class Activity
 {
     private array $attributes = [];
 
+    /**
+     * 瞬态标志:本次 record() 是新建(true)还是更新(false)。
+     * 声明为真实公有属性,绕过 __set,不会写入 $attributes、不入库。
+     */
+    public bool $wasRecentlyCreated = false;
+
     public function __construct(array $attributes = [])
     {
         $this->attributes = $attributes;

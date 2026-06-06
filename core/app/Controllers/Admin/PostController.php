@@ -17,7 +17,7 @@ use App\Models\Post;
 use App\Services\AiSummaryService;
 use App\Services\ActivityService;
 use App\Services\ImageUploadService;
-use App\Services\PostMailer;
+use App\Services\Notifications;
 use App\Services\PostContentStorage;
 use App\Traits\HasFlashRedirect;
 use App\Traits\HasSlug;
@@ -218,7 +218,7 @@ class PostController
         PostContentStorage::write($slug, $body);
         (new ActivityService())->recordPost($post, 'published_post');
         if ($status === PostStatus::Published->value) {
-            PostMailer::notifyPublished($post);
+            Notifications::postPublished($post);
         }
 
         if ((string)$request->input('delete_source', '') === '1') {
@@ -285,7 +285,7 @@ class PostController
             PostContentStorage::write($slug, $markdown);
             (new ActivityService())->recordPost($post, 'updated_post');
             if ($oldStatus !== PostStatus::Published->value && $data['status'] === PostStatus::Published->value) {
-                PostMailer::notifyPublished($post);
+                Notifications::postPublished($post);
             }
         } else {
             $post = new Post([
@@ -308,7 +308,7 @@ class PostController
             PostContentStorage::write($slug, $markdown);
             (new ActivityService())->recordPost($post, 'published_post');
             if ($data['status'] === PostStatus::Published->value) {
-                PostMailer::notifyPublished($post);
+                Notifications::postPublished($post);
             }
         }
 
@@ -418,7 +418,7 @@ class PostController
                 );
                 foreach ($notifyPosts as $post) {
                     $post->status = PostStatus::Published->value;
-                    PostMailer::notifyPublished($post);
+                    Notifications::postPublished($post);
                 }
                 $this->flashSuccess('已发布 ' . count($ids) . ' 篇文章');
                 break;

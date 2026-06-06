@@ -36,8 +36,7 @@ final class BilibiliAdapter extends BaseAdapter
                 continue;
             }
             $externalId = 'bilibili:' . sha1($url);
-            $before = $this->exists('bilibili', $externalId);
-            $this->activities->record([
+            $isNew = $this->ingest([
                 'type' => 'video',
                 'action' => 'watched',
                 'source' => 'bilibili',
@@ -47,8 +46,7 @@ final class BilibiliAdapter extends BaseAdapter
                 'url' => $url,
                 'happened_at' => $this->isoToSql((string)($item['date'] ?? '')),
                 'metadata' => ['feed_url' => $feedUrl],
-            ]);
-            $before ? $updated++ : $created++;
+            ]) ? $created++ : $updated++;
         }
 
         return $this->result($created, $updated, $skipped, 'Bilibili Feed 同步完成');
@@ -96,11 +94,4 @@ final class BilibiliAdapter extends BaseAdapter
         return $out;
     }
 
-    private function exists(string $source, string $externalId): bool
-    {
-        return (bool)\App\Models\Activity::db()->fetchOne(
-            'SELECT id FROM activities WHERE source = ? AND external_id = ? LIMIT 1',
-            [$source, $externalId]
-        );
-    }
 }

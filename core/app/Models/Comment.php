@@ -98,28 +98,15 @@ final class Comment extends Model
     }
 
     /**
+     * 读路径不再同步请求外部 GeoIP:geo 字段已在评论入库时
+     * (CommentController::submit) 写入,这里只保证列存在。
+     * 历史缺 geo 的评论留空即可,避免访客打开公开页面被外部 API 阻塞。
+     *
      * @param self[] $comments
      */
     public static function hydrateGeoForComments(array $comments): void
     {
         self::ensureGeoColumns();
-        foreach ($comments as $comment) {
-            if (!$comment instanceof self) {
-                continue;
-            }
-            $ip = trim((string)($comment->ip ?? ''));
-            if ($ip === '' || trim((string)($comment->geo_country_code ?? '')) !== '') {
-                continue;
-            }
-            $geo = IpGeoService::lookup($ip);
-            if (empty($geo)) {
-                continue;
-            }
-            self::db()->update('comments', $geo, 'id = :id', [':id' => (int)$comment->id]);
-            foreach ($geo as $key => $value) {
-                $comment->{$key} = $value;
-            }
-        }
     }
 
     public static function recent(int $limit = 10): array

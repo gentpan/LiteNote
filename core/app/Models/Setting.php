@@ -7,6 +7,11 @@ final class Setting extends Model
 {
     protected static string $table = 'settings';
 
+    /** 请求级缓存:key => 已 cast 的值。避免一次请求里对同一 key 反复查库。 */
+    private static array $cache = [];
+    /** 请求级缓存:key => 该 key 是否存在于表中(区分"值为 0/false"与"缺失")。 */
+    private static array $loaded = [];
+
     private const HIDDEN_KEYS = [
         'theme',
         'site_theme',
@@ -65,14 +70,20 @@ final class Setting extends Model
                 'group_name' => (string)($setting['group_name'] ?? 'basic'),
                 'sort' => (int)($setting['sort'] ?? 0),
             ]);
+            // 新插入的默认值同步进请求级缓存,避免之前 get() 缓存的"缺失"状态变陈旧。
+            self::$loaded[(string)$setting['k']] = true;
+            self::$cache[(string)$setting['k']] = self::cast((string)($setting['v'] ?? ''));
         }
     }
 
     public static function get(string $key, mixed $default = null): mixed
     {
-        $row = self::findBy('k', $key);
-        if (!$row) return $default;
-        return self::cast($row->v);
+        if (!array_key_exists($key, self::$loaded)) {
+            $row = self::findBy('k', $key);
+            self::$loaded[$key] = $row !== null;
+            self::$cache[$key] = $row !== null ? self::cast($row->v) : null;
+        }
+        return self::$loaded[$key] ? self::$cache[$key] : $default;
     }
 
     public static function set(string $key, mixed $value): void
@@ -86,6 +97,9 @@ final class Setting extends Model
             $m = new self(['k' => $key, 'v' => $v]);
             $m->save();
         }
+        // 同步请求级缓存,使后续 get() 立即可见新值。
+        self::$loaded[$key] = true;
+        self::$cache[$key] = self::cast($v);
     }
 
     public static function setMany(array $data): void
