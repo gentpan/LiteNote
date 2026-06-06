@@ -34,6 +34,7 @@
         })();
     </script>
     <link rel="stylesheet" href="{{ $themeCss }}?v={{ \App\Services\ThemeManager::assetVersion($themeCss) }}">
+    {!! $__pluginFrontHead ?? '' !!}
 </head>
 <body>
     @php

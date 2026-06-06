@@ -17,7 +17,7 @@ final class Page extends Model
      */
     public static function systemDefinitions(): array
     {
-        return [
+        $core = [
             'activity' => [
                 'title' => '动态',
                 'url' => '/activity',
@@ -29,12 +29,6 @@ final class Page extends Model
                 'url' => '/talk',
                 'icon' => 'fa-regular fa-comments',
                 'sort' => 20,
-            ],
-            'xmarks' => [
-                'title' => 'Xmarks',
-                'url' => '/xmarks',
-                'icon' => 'fa-brands fa-x-twitter',
-                'sort' => 25,
             ],
             'music' => [
                 'title' => '音乐',
@@ -61,6 +55,9 @@ final class Page extends Model
                 'sort' => 60,
             ],
         ];
+
+        // 合并插件注册的导航页(如 xmarks),使其也进入前台导航与 pages 表管理。
+        return array_merge($core, \App\Services\Plugins\Registry::navPages());
     }
 
     public static function ensureSystemPages(): void
@@ -84,24 +81,6 @@ final class Page extends Model
         }
 
         $now = date('Y-m-d H:i:s');
-        $legacyX = $db->fetchOne('SELECT id FROM pages WHERE slug = ? LIMIT 1', ['x']);
-        $xmarks = $db->fetchOne('SELECT id FROM pages WHERE slug = ? LIMIT 1', ['xmarks']);
-        if ($legacyX && !$xmarks) {
-            $db->update('pages', [
-                'title' => 'Xmarks',
-                'slug' => 'xmarks',
-                'url' => '/xmarks',
-                'icon' => 'fa-brands fa-x-twitter',
-                'is_system' => Toggle::On->value,
-                'updated_at' => $now,
-            ], 'id = :id', [':id' => (int)$legacyX['id']]);
-        } elseif ($legacyX && $xmarks) {
-            $db->update('pages', [
-                'is_nav' => Toggle::Off->value,
-                'is_system' => Toggle::Off->value,
-                'updated_at' => $now,
-            ], 'id = :id', [':id' => (int)$legacyX['id']]);
-        }
 
         foreach (self::systemDefinitions() as $slug => $def) {
             $row = $db->fetchOne('SELECT id, title, is_nav, sort, is_system FROM pages WHERE slug = ? LIMIT 1', [$slug]);

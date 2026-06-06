@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace App\Services;
+namespace LiteNotePlugin\X\Services;
 
 use App\Core\Config;
 use App\Core\Http;
-use App\Models\Talk;
+use LiteNotePlugin\X\Models\XTweet;
 
 final class TweetFetchService
 {
@@ -25,7 +25,7 @@ final class TweetFetchService
 
     public function fetch(string $urlOrId): array
     {
-        $tweetId = Talk::extractTweetId($urlOrId);
+        $tweetId = XTweet::extractTweetId($urlOrId);
         $url = $this->normalizeUrl($urlOrId, $tweetId);
         if ($url === '') {
             throw new \InvalidArgumentException('无效的 X 链接');

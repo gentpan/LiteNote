@@ -38,6 +38,7 @@ class CommentController
             'page_id'   => (int) $request->input('page_id', 0),
             'talk_id'=> (int) $request->input('talk_id', 0),
             'music_id'=> (int) $request->input('music_id', 0),
+            'x_tweet_id'=> (int) $request->input('x_tweet_id', 0),
             'parent_id' => (int) $request->input('parent_id', 0),
             'nickname'  => $request->input('nickname', ''),
             'email'     => $request->input('email', ''),
@@ -50,12 +51,12 @@ class CommentController
             $this->backWithError('会话已过期，请刷新页面后重试');
         }
 
-        $target = $this->resolveTarget((int)$data['post_id'], (int)$data['page_id'], (int)$data['talk_id'], (int)$data['music_id']);
+        $target = $this->resolveTarget((int)$data['post_id'], (int)$data['page_id'], (int)$data['talk_id'], (int)$data['music_id'], (int)$data['x_tweet_id']);
         if (!$target) {
             $this->backWithError('评论目标不存在');
         }
 
-        $targetType = CommentSettingsService::typeFromIds((int)$data['post_id'], (int)$data['page_id'], (int)$data['talk_id'], (int)$data['music_id']);
+        $targetType = CommentSettingsService::typeFromIds((int)$data['post_id'], (int)$data['page_id'], (int)$data['talk_id'], (int)$data['music_id'], (int)$data['x_tweet_id']);
         if (!CommentSettingsService::enabledFor($targetType, $target)) {
             $this->backWithError('当前内容已关闭评论');
         }
@@ -94,7 +95,7 @@ class CommentController
             $this->backWithError('评论包含过多链接，已被拦截');
         }
 
-        $parentId = $this->normalizeParentId((int)$data['parent_id'], (int)$data['post_id'], (int)$data['page_id'], (int)$data['talk_id'], (int)$data['music_id']);
+        $parentId = $this->normalizeParentId((int)$data['parent_id'], (int)$data['post_id'], (int)$data['page_id'], (int)$data['talk_id'], (int)$data['music_id'], (int)$data['x_tweet_id']);
 
         $needAudit = CommentSettingsService::needAudit();
         $status = $needAudit ? CommentStatus::Pending->value : CommentStatus::Approved->value;
@@ -106,6 +107,7 @@ class CommentController
             'page_id'   => (int)$data['page_id'],
             'talk_id'=> (int)$data['talk_id'],
             'music_id'=> (int)$data['music_id'],
+            'x_tweet_id'=> (int)$data['x_tweet_id'],
             'parent_id' => $parentId,
             'nickname'  => htmlspecialchars(trim((string)$data['nickname']), ENT_QUOTES, 'UTF-8'),
             'email'     => trim((string)$data['email']),
@@ -126,6 +128,7 @@ class CommentController
             Comment::syncCountForPost((int)$data['post_id']);
             Comment::syncCountForTalk((int)$data['talk_id']);
             Comment::syncCountForMusic((int)$data['music_id']);
+            Comment::syncCountForXTweet((int)$data['x_tweet_id']);
         }
 
         $this->sendNotifications(
@@ -135,6 +138,7 @@ class CommentController
             (int)$data['page_id'],
             (int)$data['talk_id'],
             (int)$data['music_id'],
+            (int)$data['x_tweet_id'],
             $parentId,
             $status,
             $request
@@ -177,7 +181,7 @@ class CommentController
         return $linkCount > 3;
     }
 
-    private function resolveTarget(int $postId, int $pageId, int $talkId, int $musicId): ?object
+    private function resolveTarget(int $postId, int $pageId, int $talkId, int $musicId, int $xTweetId = 0): ?object
     {
         if ($postId) {
             return Post::find($postId);
@@ -197,10 +201,20 @@ class CommentController
                 return $music;
             }
         }
+        if ($xTweetId) {
+            // 不依赖插件类:对 x_tweets 表做通用查询(插件禁用 / 表不存在时静默容错)。
+            try {
+                $row = Comment::db()->fetchOne('SELECT id, is_public FROM x_tweets WHERE id = ? LIMIT 1', [$xTweetId]);
+                if ($row && (int)($row['is_public'] ?? 0) === 1) {
+                    return (object)$row;
+                }
+            } catch (\Throwable) {
+            }
+        }
         return null;
     }
 
-    private function normalizeParentId(int $parentId, int $postId, int $pageId, int $talkId, int $musicId): int
+    private function normalizeParentId(int $parentId, int $postId, int $pageId, int $talkId, int $musicId, int $xTweetId = 0): int
     {
         if ($parentId <= 0) {
             return 0;
@@ -227,6 +241,10 @@ class CommentController
             return $parentId;
         }
 
+        if ($xTweetId > 0 && (int)$parent->x_tweet_id === $xTweetId) {
+            return $parentId;
+        }
+
         return 0;
     }
 
@@ -237,12 +255,13 @@ class CommentController
         int $pageId,
         int $talkId,
         int $musicId,
+        int $xTweetId,
         int $parentId,
         string $status,
         Request $request
     ): void {
         try {
-            $targetInfo = $this->targetInfo($target, $postId, $pageId, $talkId, $musicId, $request);
+            $targetInfo = $this->targetInfo($target, $postId, $pageId, $talkId, $musicId, $xTweetId, $request);
             Notifications::newComment($comment, $targetInfo);
 
             if ($status === CommentStatus::Approved->value && $parentId > 0) {
@@ -256,7 +275,7 @@ class CommentController
         }
     }
 
-    private function targetInfo(object $target, int $postId, int $pageId, int $talkId, int $musicId, Request $request): array
+    private function targetInfo(object $target, int $postId, int $pageId, int $talkId, int $musicId, int $xTweetId, Request $request): array
     {
         if ($postId > 0) {
             return [
@@ -276,6 +295,13 @@ class CommentController
             return [
                 'title' => '音乐：' . (string)($target->title ?? ('#' . $musicId)),
                 'url' => $this->absoluteUrl('/music#music-comments', $request),
+            ];
+        }
+
+        if ($xTweetId > 0) {
+            return [
+                'title' => '推文分享 #' . $xTweetId,
+                'url' => $this->absoluteUrl('/#x-tweet-' . $xTweetId, $request),
             ];
         }
 

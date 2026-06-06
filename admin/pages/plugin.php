@@ -35,7 +35,11 @@
                                 <h3>{{ $plugin['name'] }}</h3>
                                 <p>{{ $plugin['description'] ?: '这个插件暂未填写描述。' }}</p>
                             </div>
-                            <span class="status status-draft">已安装</span>
+                            @if($plugin['enabled'] ?? false)
+                                <span class="status status-published">已启用</span>
+                            @else
+                                <span class="status status-draft">未启用</span>
+                            @endif
                         </div>
                         <div class="resource-meta">
                             <span><i class="fa-solid fa-folder"></i> {{ $plugin['key'] }}</span>
@@ -46,6 +50,14 @@
                                 <span><i class="fa-regular fa-user"></i> {{ $plugin['author'] }}</span>
                             @endif
                         </div>
+                        <form method="post" action="/admin/plugins/{{ $plugin['key'] }}/toggle" class="plugin-toggle-form">
+                            <input type="hidden" name="_csrf" value="{{ $csrf }}">
+                            @if($plugin['enabled'] ?? false)
+                                <button type="submit" class="btn btn-danger">禁用</button>
+                            @else
+                                <button type="submit" class="btn btn-primary">启用</button>
+                            @endif
+                        </form>
                     </div>
                 </article>
             @endforeach

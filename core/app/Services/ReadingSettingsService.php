@@ -116,6 +116,13 @@ final class ReadingSettingsService
         foreach ($latestTalks as $talk) {
             $rest[] = self::feedItem('talk', $talk, false);
         }
+        // 合并插件贡献的时间线条目(如 X 推文),与核心 post/talk 一起按时间排序。
+        // 归为"非文章"内容:仅在非纯文章模式下混入。
+        if ($mode !== self::MODE_POSTS) {
+            foreach (\App\Services\Plugins\Registry::collectHomeFeedItems() as $pluginItem) {
+                $rest[] = $pluginItem;
+            }
+        }
         usort($rest, static fn(array $a, array $b): int => $b['time'] <=> $a['time']);
 
         return array_slice(array_merge($pinned, $rest), 0, $total);

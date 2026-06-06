@@ -3,27 +3,16 @@
     $imageCount = count($images);
     $music = $item->getRelation('music');
     $isMusicTalk = !empty($music);
-    $isTweetTalk = $item->isTweet();
     $comments = $item->getRelation('comments') ?: [];
     $keywords = $item->getKeywords();
     $displayContent = $item->contentWithoutKeywords();
     $commentCount = count($comments);
 @endphp
-<article class="feed-card feed-talk-card kami-feed-item kami-talk-item {{ $isTweetTalk ? 'tweet-talk-card' : '' }}" id="talk-{{ $item->id }}">
+<article class="feed-card feed-talk-card kami-feed-item kami-talk-item" id="talk-{{ $item->id }}">
     <div class="kami-feed-marker" aria-hidden="true">
-        <span>{{ $isTweetTalk ? 'X' : ($isMusicTalk ? '乐' : '记') }}</span>
+        <span>{{ $isMusicTalk ? '乐' : '记' }}</span>
     </div>
     <div class="kami-feed-body">
-        @if($isTweetTalk)
-            @php
-                $tweet = $item;
-                $talkItem = $item;
-                $tweetLocalActions = true;
-                $tweetShowReplies = false;
-                $tweetHideViews = true;
-            @endphp
-            @include('partials.tweet-card')
-        @else
             <div class="talk-content kami-talk-content">{{ $displayContent }}</div>
 
             @if(!empty($images))
@@ -136,6 +125,5 @@
                 </form>
             </div>
             @endif
-        @endif
     </div>
 </article>

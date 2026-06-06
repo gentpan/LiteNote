@@ -3,7 +3,6 @@
     $imageCount = count($images);
     $music = $item->getRelation('music');
     $isMusicTalk = !empty($music);
-    $isTweetTalk = $item->isTweet();
     $comments = $item->getRelation('comments') ?: [];
     $keywords = $item->getKeywords();
     $displayContent = $item->contentWithoutKeywords();
@@ -12,17 +11,7 @@
 @if($isMusicTalk)
     @include('partials.home-music-card')
 @else
-<article class="home-card home-card--talk {{ $isTweetTalk ? 'home-card--x tweet-talk-card' : '' }} home-talk-card" id="talk-{{ $item->id }}">
-    @if($isTweetTalk)
-        @php
-            $tweet = $item;
-            $talkItem = $item;
-            $tweetLocalActions = true;
-            $tweetShowReplies = false;
-            $tweetHideViews = true;
-        @endphp
-        @include('partials.tweet-card')
-    @else
+<article class="home-card home-card--talk home-talk-card" id="talk-{{ $item->id }}">
         @if(trim((string)$displayContent) !== '')
             <div class="home-card-body talk-content">{{ $displayContent }}</div>
         @endif
@@ -118,6 +107,5 @@
                 </div>
             </form>
         </div>
-    @endif
 </article>
 @endif

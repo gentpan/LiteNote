@@ -10,9 +10,7 @@ use App\Core\Session;
 use App\Core\View;
 use App\Enums\Toggle;
 use App\Models\Comment;
-use App\Models\Activity;
 use App\Models\Talk;
-use App\Support\TweetCardItem;
 
 class TalkController
 {
@@ -20,7 +18,7 @@ class TalkController
     {
         $perPage = 10;
         $page = max(1, (int)($_GET['page'] ?? 1));
-        $whereSql = "is_public = ? AND COALESCE(music_id, 0) = 0 AND (COALESCE(post_type, '') = '' OR post_type = 'talk') AND COALESCE(tweet_id, '') = '' AND COALESCE(tweet_url, '') = ''";
+        $whereSql = "is_public = ? AND COALESCE(music_id, 0) = 0 AND (COALESCE(post_type, '') = '' OR post_type = 'talk')";
         ['items' => $list, 'total' => $total] = Talk::paginate(
             $page,
             $perPage,
@@ -39,29 +37,6 @@ class TalkController
             'pageTitle' => '滔客',
             'activeNav' => 'talk',
         ]);
-    }
-
-    public function x(): never
-    {
-        Response::notFound('404 - 页面不存在');
-    }
-
-    public function xmarks(): string
-    {
-        $perPage = 24;
-        $page = max(1, (int)($_GET['page'] ?? 1));
-        ['items' => $items, 'total' => $total] = Activity::paginate($page, $perPage, ['source' => 'x_bookmarks'], true);
-        $list = array_map(static fn(Activity $activity): TweetCardItem => new TweetCardItem($activity), $items);
-
-        return View::render('front.x.index', [
-            'list' => $list,
-            'total' => $total,
-            'page' => $page,
-            'perPage' => $perPage,
-            'paginator' => Helper::loadMore($page, $total, $perPage, Helper::url('/xmarks')),
-            'pageTitle' => 'Xmarks',
-            'activeNav' => 'xmarks',
-        ], 'layouts.front');
     }
 
     public function like(Request $request, array $params): never

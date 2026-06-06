@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace App\Controllers\Admin;
+namespace LiteNotePlugin\X\Controllers;
 
 use App\Core\Http;
 use App\Core\Request;

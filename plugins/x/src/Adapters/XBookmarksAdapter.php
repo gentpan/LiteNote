@@ -1,11 +1,12 @@
 <?php
 declare(strict_types=1);
 
-namespace App\Services\ActivityAdapters;
+namespace LiteNotePlugin\X\Adapters;
 
 use App\Core\Config;
 use App\Core\Http;
 use App\Models\ActivityIntegration;
+use App\Services\ActivityAdapters\BaseAdapter;
 
 final class XBookmarksAdapter extends BaseAdapter
 {

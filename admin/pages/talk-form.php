@@ -14,9 +14,6 @@
         <a class="btn {{ $formType === 'talk' ? 'btn-primary' : '' }}" href="{{ $item ? '/admin/talk/'.$item->id.'/edit' : '/admin/talk/create?type=talk' }}">
             <i class="fa-regular fa-pen-to-square"></i> 写滔客
         </a>
-        <a class="btn {{ $formType === 'tweet' ? 'btn-primary' : '' }}" href="{{ $item ? '/admin/talk/'.$item->id.'/edit' : '/admin/talk/create?type=tweet' }}">
-            <i class="fa-brands fa-x-twitter"></i> 分享 X
-        </a>
         <a class="btn {{ $formType === 'music' ? 'btn-primary' : '' }}" href="{{ $item ? '/admin/talk/'.$item->id.'/edit' : '/admin/talk/create?type=music' }}">
             <i class="fa-solid fa-music"></i> 分享音乐
         </a>
@@ -26,16 +23,7 @@
         <input type="hidden" name="_csrf" value="{{ $csrf }}">
         <input type="hidden" name="post_type" value="{{ $formType }}">
 
-        @if($formType === 'tweet')
-            <div class="admin-form-section">
-                <h3><i class="fa-brands fa-x-twitter"></i> 分享 X</h3>
-                <div class="form-group">
-                    <label>X 链接 *</label>
-                    <input type="url" name="tweet_url" value="{{ $item->tweet_url ?? '' }}" required placeholder="https://x.com/user/status/1994155465488670828">
-                    <small class="hint">只需要填写 X 链接。保存时由服务器抓取内容、作者、图片等信息，并保存为本地 JSON 用于前端渲染。</small>
-                </div>
-            </div>
-        @elseif($formType === 'music')
+        @if($formType === 'music')
             <div class="admin-form-section">
                 <h3><i class="fa-solid fa-music"></i> 分享音乐</h3>
                 <div class="form-group">

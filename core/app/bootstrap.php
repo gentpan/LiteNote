@@ -189,3 +189,14 @@ View::composer(['*layouts.front', '*layouts.admin', '*front.*', '*home.*', '*pos
     }
     return $data;
 });
+
+// 加载已启用的插件:注册插件 autoloader,并让每个启用插件通过 register(PluginContext)
+// 把路由回调 / Activity 适配器 / 后台菜单 / 导航页 / 视图目录 / head 片段登记进 Registry。
+// 路由回调此刻只是被收集,真正 apply 到 $router 发生在 routes 文件内(见 web.php / admin.php 末尾)。
+try {
+    \App\Services\PluginManager::boot();
+    View::share('__pluginMenus', \App\Services\Plugins\Registry::adminMenus());
+    View::share('__pluginFrontHead', \App\Services\Plugins\Registry::frontHeadHtml());
+} catch (\Throwable) {
+    // 插件系统异常不应阻断站点启动。
+}

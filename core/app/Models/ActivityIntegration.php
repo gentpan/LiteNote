@@ -7,7 +7,7 @@ final class ActivityIntegration
 {
     private array $attributes = [];
 
-    public const PROVIDERS = [
+    public const BUILTIN_PROVIDERS = [
         'github' => [
             'label' => 'GitHub',
             'icon' => 'fa-brands fa-github',
@@ -90,21 +90,6 @@ final class ActivityIntegration
                 'public_usage' => ['label' => '公开用量', 'placeholder' => '1 公开 / 0 只统计'],
             ],
         ],
-        'x_bookmarks' => [
-            'label' => 'X Bookmarks',
-            'icon' => 'fa-solid fa-bookmark',
-            'description' => '同步我的 X 书签，允许保存别人的公开内容。',
-            'default_interval_minutes' => 360,
-            'token_label' => 'OAuth 用户 Access Token',
-            'token_hint' => '需要 OAuth 2.0 用户授权，scope 至少包含 tweet.read、users.read、bookmark.read。',
-            'refresh_label' => '',
-            'fields' => [
-                'username' => ['label' => '用户名', 'placeholder' => 'gentpan'],
-                'user_id' => ['label' => '用户 ID', 'placeholder' => '可选；填写后不再按用户名查询'],
-                'limit' => ['label' => '每页条数', 'placeholder' => '50'],
-                'pages' => ['label' => '同步页数', 'placeholder' => '1'],
-            ],
-        ],
         'bilibili' => [
             'label' => 'Bilibili',
             'icon' => 'fa-brands fa-bilibili',
@@ -118,6 +103,17 @@ final class ActivityIntegration
             ],
         ],
     ];
+
+    /**
+     * 内置 + 插件注册的 provider 定义合并。形态与原 const 数组完全一致,
+     * 供 configured()/defaultIntervalMinutes()/ActivityController 以数组方式访问。
+     *
+     * @return array<string,array<string,mixed>>
+     */
+    public static function providers(): array
+    {
+        return array_merge(self::BUILTIN_PROVIDERS, \App\Services\Plugins\Registry::providers());
+    }
 
     public function __construct(array $attributes = [])
     {
@@ -148,7 +144,7 @@ final class ActivityIntegration
         }
 
         $out = [];
-        foreach (self::PROVIDERS as $provider => $definition) {
+        foreach (self::providers() as $provider => $definition) {
             $out[$provider] = [
                 'provider' => $provider,
                 'definition' => $definition,
@@ -206,7 +202,7 @@ final class ActivityIntegration
 
     public static function defaultIntervalMinutes(string $provider): int
     {
-        return max(0, (int)(self::PROVIDERS[$provider]['default_interval_minutes'] ?? 240));
+        return max(0, (int)(self::providers()[$provider]['default_interval_minutes'] ?? 240));
     }
 
     public function syncIntervalMinutes(): int
