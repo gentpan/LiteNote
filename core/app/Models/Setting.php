@@ -7,6 +7,24 @@ final class Setting extends Model
 {
     protected static string $table = 'settings';
 
+    private const HIDDEN_KEYS = [
+        'theme',
+        'site_theme',
+        'site_favicon_mode',
+        'site_favicon_source',
+        'site_favicon_error',
+        'site_favicon_updated_at',
+        'site_favicon_version',
+        'comment_enabled',
+        'comment_post_enabled',
+        'comment_page_enabled',
+        'comment_talk_enabled',
+        'comment_music_enabled',
+        'comment_email_required',
+        'comment_replies_enabled',
+        'comment_close_old_days',
+    ];
+
     public static function allAsArray(): array
     {
         $rows = self::db()->fetchAll('SELECT k, v FROM settings');
@@ -21,17 +39,8 @@ final class Setting extends Model
     {
         $rows = self::db()->fetchAll('SELECT * FROM settings ORDER BY group_name ASC, sort ASC, id ASC');
         $grouped = [];
-        $hidden = [
-            'theme',
-            'site_theme',
-            'site_favicon_mode',
-            'site_favicon_source',
-            'site_favicon_error',
-            'site_favicon_updated_at',
-            'site_favicon_version',
-        ];
         foreach ($rows as $r) {
-            if (in_array(($r['k'] ?? ''), $hidden, true)) {
+            if (self::isHiddenKey((string)($r['k'] ?? ''))) {
                 continue;
             }
             $grouped[$r['group_name']][] = $r;
@@ -84,6 +93,11 @@ final class Setting extends Model
         foreach ($data as $k => $v) {
             self::set($k, $v);
         }
+    }
+
+    public static function isHiddenKey(string $key): bool
+    {
+        return in_array($key, self::HIDDEN_KEYS, true);
     }
 
     private static function cast(mixed $v): mixed

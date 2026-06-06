@@ -140,7 +140,7 @@ View::share('currentAdmin', $currentAdmin);
 //
 // 注意:模板渲染时实际传的是完整路径,如 "front.talk.index",
 // pattern 必须用 "*.xxx.*" 才能跨 front/admin 前缀匹配。
-View::composer(['*layouts.front', '*layouts.admin', '*home.*', '*post.*', '*page.*', '*category.*', '*archive.*', '*search.*', '*talk.*', '*music.*', '*friend.*'], function (array $data): array {
+View::composer(['*layouts.front', '*layouts.admin', '*front.*', '*home.*', '*post.*', '*page.*', '*category.*', '*archive.*', '*search.*', '*talk.*', '*music.*', '*friend.*'], function (array $data): array {
     static $cached = null;
     try {
         if ($cached === null) {

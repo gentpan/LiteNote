@@ -22,6 +22,7 @@ use App\Controllers\Admin\ActivityController;
 use App\Controllers\Admin\MailController;
 use App\Controllers\Admin\ThemeController;
 use App\Controllers\Admin\PluginController;
+use App\Controllers\Admin\XOAuthController;
 use App\Middleware\AdminAuth;
 use App\Middleware\CsrfMiddleware;
 
@@ -104,6 +105,8 @@ $router->group('/admin', function ($r) {
     $r->get('/activities/integrations/{provider}/edit', [ActivityController::class, 'editIntegration']);
     $r->post('/activities/integrations/{provider}/save', [ActivityController::class, 'saveIntegration'], [\App\Middleware\CsrfMiddleware::class]);
     $r->post('/activities/integrations/{provider}/sync', [ActivityController::class, 'syncIntegration'], [\App\Middleware\CsrfMiddleware::class]);
+    $r->get('/oauth/x/start', [XOAuthController::class, 'start']);
+    $r->get('/oauth/x/callback', [XOAuthController::class, 'callback']);
     $r->get('/activities/{id}/edit', [ActivityController::class, 'edit']);
     $r->post('/activities/{id}/edit', [ActivityController::class, 'update'], [\App\Middleware\CsrfMiddleware::class]);
     $r->post('/activities/delete', [ActivityController::class, 'destroy'], [\App\Middleware\CsrfMiddleware::class]);
@@ -118,6 +121,9 @@ $router->group('/admin', function ($r) {
 
     // 音乐
     $r->get('/music',              [MusicController::class, 'index']);
+    $r->get('/music/meting/search', [MusicController::class, 'metingSearch']);
+    $r->get('/music/meting/song',   [MusicController::class, 'metingSong']);
+    $r->get('/music/online',       [MusicController::class, 'online']);
     $r->get('/music/create',       [MusicController::class, 'create']);
     $r->post('/music/create',      [MusicController::class, 'store'],  [\App\Middleware\CsrfMiddleware::class]);
     $r->get('/music/{id}/edit',    [MusicController::class, 'edit']);

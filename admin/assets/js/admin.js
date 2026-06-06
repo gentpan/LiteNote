@@ -260,6 +260,7 @@
     window.adminConfirm = adminConfirm;
     window.adminToast = showToast;
     window.siteToast = showToast;
+    window.adminUploadToast = uploadToast;
 
     document.addEventListener('submit', function(e) {
         var form = e.target;
@@ -632,6 +633,24 @@
         }
     }
 
+    function loadingSpinnerMarkup(extraClass) {
+        if (typeof window.adminLoadingSpinner === 'function') {
+            return window.adminLoadingSpinner(extraClass || '');
+        }
+        return '<i class="fa-solid fa-spinner fa-spin"></i>';
+    }
+
+    function uploadProgressToast(filename) {
+        if (typeof window.adminUploadToast === 'function') {
+            return window.adminUploadToast(filename);
+        }
+        return {
+            progress: function() {},
+            success: function(message) { notify(message || '\u{4E0A}\u{4F20}\u{5B8C}\u{6210}', 'success'); },
+            error: function(message) { notify(message || '\u{4E0A}\u{4F20}\u{5931}\u{8D25}', 'error'); }
+        };
+    }
+
     function uploadImage(file, purpose, uploadUrl, csrf) {
         if (!uploadUrl || !file) {
             return Promise.reject(new Error('\u{4E0A}\u{4F20}\u{63A5}\u{53E3}\u{4E0D}\u{53EF}\u{7528}'));
@@ -705,17 +724,7 @@
     }
 
     function normalizeLrcText(value) {
-        value = String(value || '').replace(/\r\n?/g, '\n').trim();
-        if (!/\[\d{1,2}:\d{2}(?:[.:]\d{1,3})?\]/.test(value)) {
-            return value;
-        }
-        return value.split('\n').map(function(line) {
-            line = line.trim();
-            if (!line || /^\[(ti|ar|al|by|offset|length|re):[^\]]*\]$/i.test(line)) {
-                return '';
-            }
-            return line.replace(/(?:\[\d{1,2}:\d{2}(?:[.:]\d{1,3})?\])+/g, '').trim();
-        }).filter(Boolean).join('\n');
+        return String(value || '').replace(/\r\n?/g, '\n').trim();
     }
 
     function initLrcInputs() {
@@ -733,6 +742,181 @@
             input.addEventListener('blur', normalize);
             if (input.form) {
                 input.form.addEventListener('submit', normalize);
+            }
+        });
+    }
+
+    function initMetingSearch() {
+        var panel = document.querySelector('[data-meting-search]');
+        if (!panel || panel.dataset.bound === '1') return;
+        panel.dataset.bound = '1';
+
+        var form = document.querySelector('.music-editor-form');
+        var provider = panel.querySelector('[data-meting-provider]');
+        var keyword = panel.querySelector('[data-meting-keyword]');
+        var submit = panel.querySelector('[data-meting-submit]');
+        var results = panel.querySelector('[data-meting-results]');
+        var status = panel.querySelector('[data-meting-status]');
+        var searchUrl = panel.dataset.searchUrl || '/admin/music/meting/search';
+        var songUrl = panel.dataset.songUrl || '/admin/music/meting/song';
+        var requestTimeout = 15000;
+        if (!form || !provider || !keyword || !submit || !results || !status) return;
+
+        function fetchJsonWithTimeout(url) {
+            var controller = window.AbortController ? new AbortController() : null;
+            var timer = controller ? setTimeout(function() { controller.abort(); }, requestTimeout) : null;
+            return fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                signal: controller ? controller.signal : undefined
+            }).finally(function() {
+                if (timer) clearTimeout(timer);
+            });
+        }
+
+        function setStatus(text, tone) {
+            status.textContent = text || '';
+            status.dataset.tone = tone || '';
+        }
+
+        function setField(name, value) {
+            var field = form.querySelector('[name="' + name + '"]');
+            if (!field) return;
+            field.value = value || '';
+            field.dispatchEvent(new Event('input', { bubbles: true }));
+            field.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        function itemLabel(item) {
+            var parts = [];
+            if (item.artist) parts.push(item.artist);
+            if (item.album) parts.push(item.album);
+            return parts.join(' · ');
+        }
+
+        function renderItems(items) {
+            results.innerHTML = '';
+            if (!items.length) {
+                results.innerHTML = '<p class="empty">\u{6CA1}\u{6709}\u{641C}\u{5230}\u{97F3}\u{4E50}</p>';
+                return;
+            }
+            items.forEach(function(item) {
+                var row = document.createElement('button');
+                row.type = 'button';
+                row.className = 'meting-result-item';
+                row.dataset.id = item.id || '';
+                row.dataset.provider = item.provider || provider.value || 'netease';
+                row.dataset.title = item.title || item.name || '';
+                row.dataset.artist = item.artist || '';
+                row.dataset.album = item.album || '';
+                row.dataset.duration = item.duration || '';
+                row.innerHTML = ''
+                    + '<span class="meting-result-main">'
+                    + '  <strong></strong>'
+                    + '  <em></em>'
+                    + '</span>'
+                    + '<span class="meting-result-side">'
+                    + '  <em class="meting-result-duration"></em>'
+                    + '  <span class="meting-result-action"><i class="fa-solid fa-arrow-right"></i></span>'
+                    + '</span>';
+                row.querySelector('strong').textContent = item.title || item.name || '\u{672A}\u{547D}\u{540D}\u{6B4C}\u{66F2}';
+                row.querySelector('em').textContent = itemLabel(item) || row.dataset.provider;
+                row.querySelector('.meting-result-duration').textContent = item.duration || '';
+                row.addEventListener('click', function() {
+                    fillSong(row.dataset.provider, row.dataset.id, row);
+                });
+                results.appendChild(row);
+            });
+        }
+
+        function search() {
+            var q = keyword.value.trim();
+            if (!q) {
+                setStatus('\u{8BF7}\u{8F93}\u{5165}\u{641C}\u{7D22}\u{5173}\u{952E}\u{8BCD}', 'error');
+                keyword.focus();
+                return;
+            }
+            var url = searchUrl + '?provider=' + encodeURIComponent(provider.value || 'netease') + '&q=' + encodeURIComponent(q) + '&limit=10';
+            setBusy(submit, true, loadingSpinnerMarkup('admin-loading-spinner-light'));
+            setStatus('\u{6B63}\u{5728}\u{641C}\u{7D22}...', '');
+            fetchJsonWithTimeout(url)
+                .then(function(res) { return res.json().then(function(data) {
+                    if (!res.ok || data.ok === false) {
+                        throw new Error((data.error && data.error.message) || '\u{641C}\u{7D22}\u{5931}\u{8D25}');
+                    }
+                    return data.data || {};
+                }); })
+                .then(function(data) {
+                    var items = Array.isArray(data.items) ? data.items : [];
+                    renderItems(items);
+                    setStatus(items.length ? '\u{9009}\u{62E9}\u{4E00}\u{9996}\u{6B4C}\u{586B}\u{5165}\u{8868}\u{5355}' : '\u{6CA1}\u{6709}\u{641C}\u{5230}\u{7ED3}\u{679C}', items.length ? 'success' : '');
+                })
+                .catch(function(err) {
+                    results.innerHTML = '';
+                    var message = err.name === 'AbortError' ? '\u{641C}\u{7D22}\u{8D85}\u{65F6}\u{FF0C}\u{8BF7}\u{7A0D}\u{540E}\u{91CD}\u{8BD5}' : (err.message || '\u{641C}\u{7D22}\u{5931}\u{8D25}');
+                    setStatus(message, 'error');
+                    notify(message, 'error');
+                })
+                .finally(function() {
+                    setBusy(submit, false);
+                });
+        }
+
+        function fillSong(songProvider, id, row) {
+            if (!id) {
+                setStatus('\u{6B4C}\u{66F2} ID \u{65E0}\u{6548}', 'error');
+                return;
+            }
+            if (row) {
+                setField('title', row.dataset.title || '');
+                setField('artist', row.dataset.artist || '');
+                setField('album', row.dataset.album || '');
+                if (row.dataset.duration) setField('duration', row.dataset.duration);
+                setField('source', 'meting');
+                setField('source_provider', row.dataset.provider || songProvider || provider.value || 'netease');
+                setField('source_id', id);
+            }
+            var url = songUrl + '?provider=' + encodeURIComponent(songProvider || provider.value || 'netease') + '&id=' + encodeURIComponent(id);
+            if (row) row.classList.add('is-loading');
+            setStatus('\u{6B63}\u{5728}\u{83B7}\u{53D6}\u{97F3}\u{9891}\u{3001}\u{5C01}\u{9762}\u{548C}\u{6B4C}\u{8BCD}\u{94FE}\u{63A5}...', '');
+            fetchJsonWithTimeout(url)
+                .then(function(res) { return res.json().then(function(data) {
+                    if (!res.ok || data.ok === false) {
+                        throw new Error((data.error && data.error.message) || '\u{83B7}\u{53D6}\u{6B4C}\u{66F2}\u{5931}\u{8D25}');
+                    }
+                    return data.data || {};
+                }); })
+                .then(function(song) {
+                    if (song.title) setField('title', song.title);
+                    if (song.artist) setField('artist', song.artist);
+                    if (song.album) setField('album', song.album);
+                    setField('audio_url', song.audio_url || song.raw_url || '');
+                    setField('cover_url', song.cover_url || song.raw_cover || '');
+                    setField('lyrics_url', song.lyrics_url || song.raw_lyric || '');
+                    setField('source', song.source || 'meting');
+                    setField('source_provider', song.provider || songProvider || provider.value || 'netease');
+                    setField('source_id', song.id || id);
+                    if (song.lyrics_url || song.raw_lyric) {
+                        setField('lyrics', '');
+                    }
+                    if (song.duration) setField('duration', song.duration);
+                    setStatus('\u{5DF2}\u{586B}\u{5165}\u{8868}\u{5355}\u{FF0C}\u{68C0}\u{67E5}\u{540E}\u{4FDD}\u{5B58}', 'success');
+                    notify('\u{97F3}\u{4E50}\u{4FE1}\u{606F}\u{5DF2}\u{586B}\u{5165}', 'success');
+                })
+                .catch(function(err) {
+                    var message = err.name === 'AbortError' ? '\u{83B7}\u{53D6}\u{8D85}\u{65F6}\u{FF0C}\u{8BF7}\u{7A0D}\u{540E}\u{91CD}\u{8BD5}' : (err.message || '\u{83B7}\u{53D6}\u{6B4C}\u{66F2}\u{5931}\u{8D25}');
+                    setStatus(message, 'error');
+                    notify(message, 'error');
+                })
+                .finally(function() {
+                    if (row) row.classList.remove('is-loading');
+                });
+        }
+
+        submit.addEventListener('click', search);
+        keyword.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                search();
             }
         });
     }
@@ -760,8 +944,8 @@
             fileInput.addEventListener('change', function() {
                 var file = fileInput.files && fileInput.files[0];
                 if (!file) return;
-                var toast = uploadToast(file.name || '');
-                setBusy(trigger, true, adminLoadingSpinnerSvg());
+                var toast = uploadProgressToast(file.name || '');
+                setBusy(trigger, true, loadingSpinnerMarkup());
                 root.classList.add('is-uploading');
                 uploadAttachment(file, uploadUrl, csrf, function(progress) {
                     toast.progress(progress);
@@ -813,7 +997,7 @@
         coverFile.addEventListener('change', function() {
             var file = coverFile.files && coverFile.files[0];
             if (!file) return;
-            setBusy(coverBtn, true, adminLoadingSpinnerSvg());
+            setBusy(coverBtn, true, loadingSpinnerMarkup());
             uploadImage(file, 'cover', uploadUrl, csrf).then(function(data) {
                 if (coverUrl) coverUrl.value = data.url || '';
                 updateCoverPreview(data.url || '');
@@ -893,7 +1077,7 @@
         function generateSummary() {
             if (!summaryUrl) return;
             var btn = root.querySelector('[data-md="summary"]');
-            setBusy(btn, true, adminLoadingSpinnerSvg());
+            setBusy(btn, true, loadingSpinnerMarkup());
             var data = new URLSearchParams();
             data.set('_csrf', csrf);
             data.set('title', titleInput ? titleInput.value : '');
@@ -982,7 +1166,7 @@
                 var file = imagePicker.files && imagePicker.files[0];
                 if (!file) return;
                 var btn = root.querySelector('[data-md="image-upload"]');
-                setBusy(btn, true, adminLoadingSpinnerSvg());
+                setBusy(btn, true, loadingSpinnerMarkup());
                 uploadImage(file, uploadPurpose, uploadUrl, csrf).then(function(data) {
                     insert('![', '](' + data.url + ')', data.name || '\u{56FE}\u{7247}\u{63CF}\u{8FF0}');
                 }).catch(function(err) {
@@ -1013,6 +1197,7 @@
     initCoverUpload();
     initUploadFields();
     initLrcInputs();
+    initMetingSearch();
     document.querySelectorAll('.markdown-editor').forEach(initEditor);
 })();
 

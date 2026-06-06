@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="login-card">
-        <h1>
+        <div class="login-hero">
             <span class="login-logo" aria-hidden="true">
                 <svg class="litenote-logo-svg" viewBox="128 128 784 784" version="1.1" xmlns="http://www.w3.org/2000/svg" focusable="false">
                     <path d="M164 144h84v744h-84c-11.05 0-20-8.95-20-20V164c0-11.05 8.95-20 20-20z" fill="currentColor"></path>
@@ -10,24 +10,32 @@
                     <path d="M604 144h192v332.44l-94.32-42.88L604 476.24V144z" fill="currentColor"></path>
                 </svg>
             </span>
-            LiteNote 后台
-        </h1>
-        <p class="subtitle">请登录</p>
+            <div class="login-title-block">
+                <h1>LiteNote 后台</h1>
+                <p class="subtitle">登录后管理文章、说说和站点设置</p>
+            </div>
+        </div>
         @if($error)
             <div hidden data-toast-type="error" data-toast-message="{{ $error }}"></div>
         @endif
         @if(\App\Core\Session::hasFlash('reset_success'))
             <div hidden data-toast-type="success" data-toast-message="{{ \App\Core\Session::getFlash('reset_success') }}"></div>
         @endif
-        <form method="post" action="/admin/login">
+        <form class="login-form" method="post" action="/admin/login">
             <input type="hidden" name="_csrf" value="{{ $csrf }}">
             <div class="form-group">
                 <label>用户名</label>
-                <input type="text" name="username" required autofocus>
+                <div class="login-input-wrap">
+                    <i class="fa-regular fa-user" aria-hidden="true"></i>
+                    <input type="text" name="username" autocomplete="username" placeholder="输入用户名" required autofocus>
+                </div>
             </div>
             <div class="form-group">
                 <label>密码</label>
-                <input type="password" name="password" required>
+                <div class="login-input-wrap">
+                    <i class="fa-solid fa-lock" aria-hidden="true"></i>
+                    <input type="password" name="password" autocomplete="current-password" placeholder="输入密码" required>
+                </div>
             </div>
             <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-right-to-bracket"></i> 登录</button>
         </form>

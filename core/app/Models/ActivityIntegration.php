@@ -90,19 +90,19 @@ final class ActivityIntegration
                 'public_usage' => ['label' => '公开用量', 'placeholder' => '1 公开 / 0 只统计'],
             ],
         ],
-        'x' => [
-            'label' => 'X',
-            'icon' => 'fa-brands fa-x-twitter',
-            'description' => '同步自己的公开 X；也可只填固定 Tweet URLs。',
-            'default_interval_minutes' => 60,
-            'token_label' => 'Bearer Token',
-            'token_hint' => '用于拉取用户最近推文；不填时只处理 Tweet URLs。',
+        'x_bookmarks' => [
+            'label' => 'X Bookmarks',
+            'icon' => 'fa-solid fa-bookmark',
+            'description' => '同步我的 X 书签，允许保存别人的公开内容。',
+            'default_interval_minutes' => 360,
+            'token_label' => 'OAuth 用户 Access Token',
+            'token_hint' => '需要 OAuth 2.0 用户授权，scope 至少包含 tweet.read、users.read、bookmark.read。',
             'refresh_label' => '',
             'fields' => [
                 'username' => ['label' => '用户名', 'placeholder' => 'gentpan'],
-                'limit' => ['label' => '每页条数', 'placeholder' => '100'],
-                'pages' => ['label' => '同步页数', 'placeholder' => '10，填 0 表示直到没有下一页'],
-                'tweet_urls' => ['label' => 'Tweet URLs', 'placeholder' => '每行一个 X 链接', 'textarea' => true],
+                'user_id' => ['label' => '用户 ID', 'placeholder' => '可选；填写后不再按用户名查询'],
+                'limit' => ['label' => '每页条数', 'placeholder' => '50'],
+                'pages' => ['label' => '同步页数', 'placeholder' => '1'],
             ],
         ],
         'bilibili' => [
@@ -261,6 +261,16 @@ final class ActivityIntegration
         Activity::db()->update('activity_integrations', [
             'status' => $status,
             'last_synced_at' => $lastSyncedAt,
+            'updated_at' => date('Y-m-d H:i:s'),
+        ], 'provider = :provider', [':provider' => (string)$this->provider]);
+    }
+
+    public function updateMetadata(array $metadata): void
+    {
+        $current = $this->metadata();
+        $merged = array_replace($current, $metadata);
+        Activity::db()->update('activity_integrations', [
+            'metadata' => json_encode($merged, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
             'updated_at' => date('Y-m-d H:i:s'),
         ], 'provider = :provider', [':provider' => (string)$this->provider]);
     }

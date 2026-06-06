@@ -24,6 +24,98 @@
                 </div>
             </div>
 
+            @if(\App\Core\Session::hasFlash('friend_link_success'))
+                <div hidden data-toast-type="success" data-toast-message="{{ \App\Core\Session::getFlash('friend_link_success') }}"></div>
+            @endif
+            @if(\App\Core\Session::hasFlash('friend_link_error'))
+                <div hidden data-toast-type="error" data-toast-message="{{ \App\Core\Session::getFlash('friend_link_error') }}"></div>
+            @endif
+
+            <div class="friend-request-box" id="friend-link-request">
+                <div class="friend-request-actions" role="tablist" aria-label="友链申请方式">
+                    <button type="button" class="friend-request-btn is-active" data-friend-request-tab="apply" aria-selected="true">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span>申请链接</span>
+                    </button>
+                    <button type="button" class="friend-request-btn" data-friend-request-tab="modify" aria-selected="false">
+                        <i class="fa-regular fa-pen-to-square"></i>
+                        <span>修改链接</span>
+                    </button>
+                </div>
+                <div class="friend-request-panels">
+                    <form class="friend-request-form" method="post" action="/links/apply" data-friend-request-panel="apply">
+                        <input type="hidden" name="_csrf" value="{{ \App\Core\Session::csrfToken() }}">
+                        <div class="friend-request-grid">
+                            <label class="friend-request-field">
+                                <span>站点名称 *</span>
+                                <input type="text" name="name" required>
+                            </label>
+                            <label class="friend-request-field">
+                                <span>站点地址 *</span>
+                                <input type="text" name="url" placeholder="https://example.com" required>
+                            </label>
+                            <label class="friend-request-field">
+                                <span>联系邮箱 *</span>
+                                <input type="email" name="contact_email" required>
+                            </label>
+                            <label class="friend-request-field">
+                                <span>RSS 地址</span>
+                                <input type="text" name="rss_url" placeholder="https://example.com/rss.xml">
+                            </label>
+                            <label class="friend-request-field">
+                                <span>Logo 地址</span>
+                                <input type="text" name="logo" placeholder="https://example.com/avatar.png">
+                            </label>
+                            <label class="friend-request-field friend-request-field-full">
+                                <span>站点描述</span>
+                                <textarea name="description" rows="3" maxlength="255"></textarea>
+                            </label>
+                        </div>
+                        <div class="friend-request-footer">
+                            <p>提交后会进入后台待审核，审核通过后展示在友链列表。</p>
+                            <button type="submit" class="friend-request-submit">提交申请</button>
+                        </div>
+                    </form>
+                    <form class="friend-request-form" method="post" action="/links/modify" data-friend-request-panel="modify" hidden>
+                        <input type="hidden" name="_csrf" value="{{ \App\Core\Session::csrfToken() }}">
+                        <div class="friend-request-grid">
+                            <label class="friend-request-field friend-request-field-full">
+                                <span>当前已展示的原链接 *</span>
+                                <input type="text" name="previous_url" placeholder="https://old.example.com" required>
+                            </label>
+                            <label class="friend-request-field">
+                                <span>新站点名称 *</span>
+                                <input type="text" name="name" required>
+                            </label>
+                            <label class="friend-request-field">
+                                <span>新站点地址 *</span>
+                                <input type="text" name="url" placeholder="https://example.com" required>
+                            </label>
+                            <label class="friend-request-field">
+                                <span>联系邮箱 *</span>
+                                <input type="email" name="contact_email" required>
+                            </label>
+                            <label class="friend-request-field">
+                                <span>RSS 地址</span>
+                                <input type="text" name="rss_url" placeholder="https://example.com/rss.xml">
+                            </label>
+                            <label class="friend-request-field">
+                                <span>Logo 地址</span>
+                                <input type="text" name="logo" placeholder="https://example.com/avatar.png">
+                            </label>
+                            <label class="friend-request-field friend-request-field-full">
+                                <span>站点描述</span>
+                                <textarea name="description" rows="3" maxlength="255"></textarea>
+                            </label>
+                        </div>
+                        <div class="friend-request-footer">
+                            <p>修改不会直接覆盖旧信息，审核通过后再更新展示。</p>
+                            <button type="submit" class="friend-request-submit">提交修改</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <div class="friend-list">
                 @if(empty($links))
                     <p class="empty friend-empty">还没有添加友情链接。</p>
@@ -158,5 +250,25 @@
                 </form>
             </section>
         @endif
+        <script>
+        (function () {
+            var requestTabs = document.querySelectorAll('[data-friend-request-tab]');
+            var requestPanels = document.querySelectorAll('[data-friend-request-panel]');
+            if (!requestTabs.length || !requestPanels.length) return;
+            requestTabs.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    var mode = button.getAttribute('data-friend-request-tab') === 'modify' ? 'modify' : 'apply';
+                    requestTabs.forEach(function (item) {
+                        var active = item.getAttribute('data-friend-request-tab') === mode;
+                        item.classList.toggle('is-active', active);
+                        item.setAttribute('aria-selected', active ? 'true' : 'false');
+                    });
+                    requestPanels.forEach(function (panel) {
+                        panel.hidden = panel.getAttribute('data-friend-request-panel') !== mode;
+                    });
+                });
+            });
+        })();
+        </script>
     </section>
 @endsection

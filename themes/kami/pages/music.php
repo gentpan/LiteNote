@@ -34,7 +34,6 @@
                                 <div class="music-title-stack">
                                     <div class="music-title-line">
                                         <h1 data-music-title>{{ $featured->title }}</h1>
-                                        <span class="music-vip-badge">VIP</span>
                                     </div>
                                     <p class="music-artist-line">
                                         <span data-music-artist>{{ $featured->artist ?: '未知歌手' }}</span>
@@ -52,7 +51,7 @@
                                         <span>{{ $line }}</span>
                                     @endforeach
                                 @else
-                                    <span>{{ $featured->description ?: '暂无歌词，按下播放让这首歌先响起来。' }}</span>
+                                    <span>暂无歌词，按下播放让这首歌先响起来。</span>
                                 @endif
                             </div>
                             <div class="music-progress-block">
@@ -189,11 +188,10 @@
                                 data-audio="{{ $song->audio_url }}"
                                 data-cover="{{ $song->cover_url ?? '' }}"
                                 data-duration="{{ $song->duration ?? '' }}"
-                                data-description="{{ $song->description ?? '' }}"
-                                data-mood="{{ $song->mood ?? '' }}"
                                 data-likes="{{ (int)($song->likes_count ?? 0) }}"
                                 data-comments="{{ count($song->getRelation('comments') ?: []) }}"
                                 data-published="{{ $songPublishedAt }}"
+                                data-lyrics-url="{{ $song->lyrics_url ?? '' }}"
                                 data-lyrics="{{ base64_encode((string)($song->lyrics ?? '')) }}">
                             <span class="music-track-number">{{ str_pad((string)((int)$index + 1), 2, '0', STR_PAD_LEFT) }}</span>
                             <span class="music-track-cover">
@@ -208,7 +206,6 @@
                                 <small>{{ $song->artist ?: '未知歌手' }}</small>
                             </span>
                             <span class="music-track-side">
-                                @if($song->mood)<em>#{{ $song->mood }}</em>@endif
                                 <span><i class="fa-regular fa-calendar"></i> {{ $songPublishedLabel }}</span>
                                 <span><i class="fa-regular fa-comment"></i> <b data-music-track-comments>{{ count($song->getRelation('comments') ?: []) }}</b></span>
                                 <span>{{ $song->duration ?: '试听' }}</span>
@@ -220,8 +217,8 @@
                 <div class="music-rain-quota-card music-page-footer">
                     <div>
                         <span class="music-rain-kicker"><i class="fa-solid fa-cloud-rain"></i> 阴雨额度</span>
-                        <h2>{{ $featured ? ($featured->mood ?: $featured->title) : '今日歌单' }}</h2>
-                        <p>{{ $featured ? ($featured->description ?: '给今天留一点可以循环播放的背景音乐。') : '还没有添加音乐，去后台录入第一首吧。' }}</p>
+                        <h2>{{ $featured ? $featured->title : '今日歌单' }}</h2>
+                        <p>{{ $featured ? '给今天留一点可以循环播放的背景音乐。' : '还没有添加音乐，去后台录入第一首吧。' }}</p>
                     </div>
                     <div class="music-rain-stats">
                         <span><strong>{{ $total }}</strong> 首音乐</span>

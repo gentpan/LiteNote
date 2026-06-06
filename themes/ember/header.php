@@ -13,7 +13,11 @@
     @yield('head')
     <link rel="stylesheet" href="https://static.bluecdn.com/libs/fontawesome/7.2.0/css/all.min.css">
     @php
-        $mainCss = '/themes/ember/assets/main.css';
+        $themeCssFiles = [
+            '/themes/ember/assets/main.css',
+            '/themes/ember/assets/pages.css',
+            '/themes/ember/assets/home.css',
+        ];
         $mainJs = '/themes/ember/assets/main.js';
     @endphp
     <script>
@@ -27,7 +31,9 @@
             } catch (e) {}
         })();
     </script>
-    <link rel="stylesheet" href="{{ $mainCss }}?v={{ \App\Services\ThemeManager::assetVersion($mainCss) }}">
+    @foreach($themeCssFiles as $themeCss)
+        <link rel="stylesheet" href="{{ $themeCss }}?v={{ \App\Services\ThemeManager::assetVersion($themeCss) }}">
+    @endforeach
 </head>
 <body>
 
@@ -35,6 +41,7 @@
         $navItems = $navItems ?? [];
         if (empty($navItems)) {
             $navItems = [
+                ['title' => '动态', 'slug' => 'activity', 'url' => '/activity', 'icon' => 'fa-solid fa-chart-simple'],
                 ['title' => '滔客', 'slug' => 'talk', 'url' => '/talk', 'icon' => 'fa-regular fa-comments'],
                 ['title' => '音乐', 'slug' => 'music', 'url' => '/music', 'icon' => 'fa-solid fa-music'],
                 ['title' => '归档', 'slug' => 'archives', 'url' => '/archives', 'icon' => 'fa-solid fa-box-archive'],
@@ -43,13 +50,27 @@
             ];
         }
         $navMainItems = [];
-        $navCtaItem = null;
+        $navCtaItem = ['title' => '动态', 'slug' => 'activity', 'url' => '/activity', 'icon' => 'fa-solid fa-chart-simple'];
         foreach ($navItems as $navItem) {
-            if (($navItem['slug'] ?? '') === 'feeds') {
+            if (($navItem['slug'] ?? '') === 'activity') {
                 $navCtaItem = $navItem;
                 continue;
             }
+            if (in_array(($navItem['slug'] ?? ''), ['about', 'archives', 'feeds'], true)) {
+                continue;
+            }
             $navMainItems[] = $navItem;
+        }
+        $hasRecentActivity = false;
+        try {
+            $recentActivitySince = date('Y-m-d H:i:s', time() - 6 * 3600);
+            $recentActivityNow = date('Y-m-d H:i:s');
+            $hasRecentActivity = (int)\App\Models\Activity::db()->fetchColumn(
+                "SELECT COUNT(*) FROM activities WHERE visibility = 'public' AND happened_at >= ? AND happened_at <= ?",
+                [$recentActivitySince, $recentActivityNow]
+            ) > 0;
+        } catch (\Throwable $e) {
+            $hasRecentActivity = false;
         }
     @endphp
 
@@ -57,25 +78,34 @@
     <nav class="site-nav-bar">
         <div class="nav-pill" id="nav-shell">
             <div class="nav-row">
-                <span class="nav-indicator" aria-hidden="true"></span>
-                <a href="/" class="nav-avatar {{ ($activeNav ?? '') === 'home' ? 'active' : '' }}" title="{{ !empty($author) ? ($author->nickname ?: $author->username) : '首页' }}" aria-label="返回首页">
-                    @if(!empty($author))
-                        <img class="nav-avatar-img" src="{{ $author->getAvatarUrl(40) }}" alt="{{ $author->nickname }}" width="32" height="32" loading="lazy">
-                    @else
-                        <span class="nav-avatar-fallback"><i class="fa-solid fa-house"></i></span>
-                    @endif
-                    <span class="nav-avatar-home" aria-hidden="true"><i class="fa-solid fa-house"></i></span>
-                </a>
+                <div class="nav-identity-orb" data-nav-identity data-nav-admin="{{ !empty($currentAdmin) ? '1' : '0' }}">
+                    <a href="{{ ($activeNav ?? '') === 'home' ? '/?__refresh=1' : '/' }}" class="nav-avatar {{ ($activeNav ?? '') === 'home' ? 'active' : '' }}" title="{{ !empty($author) ? ($author->nickname ?: $author->username) : '首页' }}" aria-label="返回首页">
+                        @if(!empty($author))
+                            <img class="nav-avatar-img" src="{{ $author->getAvatarUrl(40) }}" alt="{{ $author->nickname }}" width="32" height="32" loading="lazy" data-blogger-avatar="{{ $author->getAvatarUrl(40) }}" data-blogger-name="{{ $author->nickname ?: $author->username }}">
+                        @else
+                            <span class="nav-avatar-fallback"><i class="fa-solid fa-house"></i></span>
+                        @endif
+                        <span class="nav-avatar-home" aria-hidden="true"><i class="fa-solid fa-house"></i></span>
+                    </a>
+                    <div class="nav-identity-actions" aria-label="头像快捷菜单">
+                        @if(!empty($currentAdmin))
+                            <a class="nav-identity-action nav-identity-profile" href="/admin/logout" aria-label="登出" title="登出"><i class="fa-solid fa-right-from-bracket"></i></a>
+                        @else
+                            <button type="button" class="nav-identity-action nav-identity-profile" data-nav-identity-edit aria-label="更换资料" title="更换资料"><i class="fa-solid fa-user-pen"></i></button>
+                        @endif
+                        <a class="nav-identity-action nav-identity-about" href="/about" aria-label="关于我" title="关于我"><i class="fa-regular fa-circle-user"></i></a>
+                        <a class="nav-identity-action nav-identity-archives" href="/archives" aria-label="归档" title="归档"><i class="fa-solid fa-box-archive"></i></a>
+                    </div>
+                </div>
                 <div class="nav-main-links">
                     <a href="/posts" class="nav-link nav-dd-trigger {{ ($activeNav ?? '') === 'posts' ? 'active' : '' }}" aria-haspopup="true">
-                        <i class="fa-regular fa-file-lines"></i>
                         <span>文章</span>
                         <i class="fa-solid fa-chevron-down nav-dd-caret"></i>
                     </a>
                     @foreach($navMainItems as $navItem)
                         @php $navItemActive = ($activeNav ?? '') === ($navItem['slug'] ?? ''); @endphp
                         <a href="{{ $navItem['url'] ?? '#' }}" class="nav-link {{ $navItemActive ? 'active' : '' }}">
-                            <i class="{{ $navItem['icon'] ?? 'fa-regular fa-bookmark' }}"></i><span>{{ $navItem['title'] ?? '' }}</span>
+                            <span>{{ $navItem['title'] ?? '' }}</span>
                         </a>
                     @endforeach
                 </div>
@@ -83,10 +113,15 @@
                     @if($navCtaItem)
                         @php
                             $navCtaSlug = $navCtaItem['slug'] ?? '';
-                            $navCtaActive = ($activeNav ?? '') === $navCtaSlug || ($navCtaSlug === 'feeds' && ($pageTitle ?? '') === '订阅');
+                            $navCtaActive = ($activeNav ?? '') === $navCtaSlug || ($navCtaSlug === 'activity' && ($pageTitle ?? '') === '动态');
                         @endphp
-                        <a href="{{ $navCtaItem['url'] ?? '#' }}" class="nav-cta {{ $navCtaActive ? 'active' : '' }}">
-                            <i class="{{ $navCtaItem['icon'] ?? 'fa-solid fa-square-rss' }}"></i><span>{{ $navCtaItem['title'] ?? '订阅' }}</span>
+                        <a href="{{ $navCtaItem['url'] ?? '#' }}" class="nav-cta {{ $navCtaActive ? 'active' : '' }} {{ $hasRecentActivity ? 'has-recent-activity' : '' }}">
+                            @if($navCtaSlug === 'activity')
+                                <span class="nav-activity-bars" aria-hidden="true"><i></i><i></i><i></i></span>
+                            @else
+                                <i class="{{ $navCtaItem['icon'] ?? 'fa-solid fa-chart-simple' }}"></i>
+                            @endif
+                            <span>{{ $navCtaItem['title'] ?? '动态' }}</span>
                         </a>
                     @endif
                 </div>

@@ -5,7 +5,7 @@
         <header class="kami-page-head">
             <p class="kami-page-kicker">LiteNote · Kami</p>
             <h1>纸上近况</h1>
-            <p>文章、滔客、音乐与 X 记录收束在同一张温暖纸面里。</p>
+            <p>文章、滔客、音乐与 Xmarks 收束在同一张温暖纸面里。</p>
         </header>
 
         @include('partials.activity-summary-card')

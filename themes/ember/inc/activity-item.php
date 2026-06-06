@@ -6,6 +6,11 @@
     $ts = strtotime((string)$activity->happened_at) ?: time();
     $days = (int)floor((strtotime(date('Y-m-d')) - strtotime(date('Y-m-d', $ts))) / 86400);
     $dayLabel = $days <= 0 ? '今天' : ($days === 1 ? '昨天' : $days . '天前');
+    $dateText = \App\Core\Helper::formatDate((string)$activity->happened_at, 'm.d');
+    $timeText = \App\Core\Helper::formatDate((string)$activity->happened_at, 'H:i');
+    $typeLabel = \App\Services\ActivityService::typeLabel($type);
+    $actionLabel = \App\Services\ActivityService::actionLabel((string)($activity->action ?? 'manual'));
+    $source = trim((string)($activity->source ?? ''));
     $rating = isset($meta['rating']) ? (float)$meta['rating'] : null;
     $ratingText = '';
     if ($rating !== null) {
@@ -14,10 +19,19 @@
     }
 @endphp
 <article class="activity-item activity-type-{{ $type }}" id="activity-{{ $activity->id }}">
-    <time class="activity-item-time" datetime="{{ $activity->happened_at }}">{{ $dayLabel }}</time>
+    <time class="activity-item-time" datetime="{{ $activity->happened_at }}">
+        <strong>{{ $dayLabel }}</strong>
+        <small>{{ $dateText }}</small>
+    </time>
     <span class="activity-item-line" aria-hidden="true"></span>
     <span class="activity-item-icon"><i class="{{ $icon }}"></i></span>
     <div class="activity-item-body">
+        <div class="activity-item-meta">
+            <span>{{ $timeText }}</span>
+            <span>{{ $actionLabel }}</span>
+            <span>{{ $typeLabel }}</span>
+            @if($source !== '')<span>{{ $source }}</span>@endif
+        </div>
         <div class="activity-item-title">
             @if($activity->url)
                 <a href="{{ $activity->url }}" target="{{ str_starts_with((string)$activity->url, '/') ? '_self' : '_blank' }}" rel="nofollow noopener">{{ $activity->title }}</a>
@@ -29,10 +43,5 @@
         @if(trim((string)$activity->content) !== '')
             <div class="activity-item-content">{{ $activity->content }}</div>
         @endif
-        <div class="activity-item-meta">
-            <span>{{ \App\Core\Helper::formatDate((string)$activity->happened_at, 'H:i') }}</span>
-            <span>{{ \App\Services\ActivityService::typeLabel($type) }}</span>
-            <span>{{ $activity->source }}</span>
-        </div>
     </div>
 </article>

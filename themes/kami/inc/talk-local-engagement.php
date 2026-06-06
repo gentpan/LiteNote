@@ -1,28 +1,12 @@
 @php
-    $images = $item->getImages();
-    $imageCount = count($images);
-    $music = $item->getRelation('music');
-    $isMusicTalk = !empty($music);
-    $comments = $item->getRelation('comments') ?: [];
-    $keywords = $item->getKeywords();
-    $displayContent = $item->contentWithoutKeywords();
-    $commentCount = count($comments);
+    $talkItem = $talkItem ?? $item ?? $s ?? null;
+    $comments = $comments ?? ($talkItem ? ($talkItem->getRelation('comments') ?: []) : []);
+    $keywords = $keywords ?? ($talkItem ? $talkItem->getKeywords() : []);
+    $commentTotal = $talkItem ? (int)($talkItem->comments_count ?? count($comments)) : count($comments);
+    $hideLocalFeedActions = !empty($tweetLocalActions);
 @endphp
-<article class="feed-card feed-talk-card" id="talk-{{ $item->id }}">
-    <div class="talk-content">{{ $displayContent }}</div>
-
-    @if(!empty($images))
-        <div class="talk-images talk-images-count-{{ min($imageCount, 10) }}">
-            @foreach($images as $img)
-                <img src="{{ trim($img) }}" alt="" loading="lazy">
-        @endforeach
-    </div>
-    @endif
-
-    @if($isMusicTalk)
-        @include('partials.music-share-card')
-    @endif
-
+@if($talkItem)
+    @if(!$hideLocalFeedActions)
     <div class="feed-actions">
         <div class="feed-talk-meta">
             <span class="feed-talk-keywords">
@@ -31,31 +15,20 @@
                 @endforeach
             </span>
             <span class="feed-talk-dot">·</span>
-            <span>{!! \App\Core\Helper::timeTag($item->created_at) !!}</span>
+            <span>{!! \App\Core\Helper::timeTag($talkItem->publishedAt()) !!}</span>
         </div>
         <div class="feed-talk-side">
-            @if($isMusicTalk)
-                <button type="button" class="feed-action music-share-like-btn" data-music-id="{{ $music->id }}" aria-label="喜欢这首音乐">
-                    <i class="fa-regular fa-heart"></i><span data-music-like-count>{{ (int)($music->likes_count ?? 0) }}</span>
-                </button>
-                <button type="button" class="feed-action talk-comment-toggle" data-target="talk-comments-{{ $item->id }}" data-music-id="{{ $music->id }}" aria-label="查看这首音乐的评论">
-                    <i class="fa-regular fa-comment"></i><span data-music-comment-count>{{ $commentCount }}</span>
-                </button>
-            @else
-                <button type="button" class="feed-action talk-like-btn" data-id="{{ $item->id }}" aria-label="点赞">
-                    <i class="fa-regular fa-thumbs-up"></i><span class="like-count">{{ (int)($item->likes_count ?? 0) }}</span>
-                </button>
-                <button type="button" class="feed-action talk-comment-toggle" data-target="talk-comments-{{ $item->id }}">
-                    <i class="fa-regular fa-comment"></i><span>{{ (int)($item->comments_count ?? count($comments)) }}</span>
-                </button>
-            @endif
+            <button type="button" class="feed-action talk-like-btn" data-id="{{ $talkItem->id }}" aria-label="点赞">
+                <i class="fa-regular fa-thumbs-up"></i><span class="like-count">{{ (int)($talkItem->likes_count ?? 0) }}</span>
+            </button>
+            <button type="button" class="feed-action talk-comment-toggle" data-target="talk-comments-{{ $talkItem->id }}">
+                <i class="fa-regular fa-comment"></i><span>{{ $commentTotal }}</span>
+            </button>
         </div>
     </div>
+    @endif
 
-    @if($isMusicTalk)
-        @include('partials.music-share-comments')
-    @else
-    <div class="talk-comments" id="talk-comments-{{ $item->id }}">
+    <div class="talk-comments" id="talk-comments-{{ $talkItem->id }}">
         @if(!empty($comments))
             <ul class="talk-comment-list">
                 @foreach(\App\Core\Helper::nestComments($comments) as $thread)
@@ -87,22 +60,14 @@
             $adminCommentEmail = !empty($currentAdmin) ? (string)($currentAdmin->email ?? '') : '';
         @endphp
         <form class="comment-form talk-comment-form" method="post" action="/comment/submit" data-comment-admin="{{ !empty($currentAdmin) ? '1' : '0' }}">
-            <input type="hidden" name="talk_id" value="{{ $item->id }}">
+            <input type="hidden" name="talk_id" value="{{ $talkItem->id }}">
             <input type="hidden" name="parent_id" value="0">
             <input type="hidden" name="_csrf" value="{{ \App\Core\Session::csrfToken() }}">
             @if(!empty($currentAdmin))
-                <div class="comment-admin-bar">
-                    <img class="comment-admin-avatar" src="{{ $currentAdmin->getAvatarUrl(80) }}" alt="{{ $adminCommentName }}">
-                    <div class="comment-admin-info">
-                        <span class="comment-admin-name">{{ $adminCommentName }}</span>
-                        @if($adminCommentEmail !== '')<span class="comment-admin-email">{{ $adminCommentEmail }}</span>@endif
-                    </div>
-                    <a class="comment-admin-logout" href="/admin/logout">注销</a>
-                </div>
                 <input type="hidden" name="nickname" value="{{ $adminCommentName }}">
                 <input type="hidden" name="email" value="{{ $adminCommentEmail }}">
             @else
-                <div class="form-row">
+                <div class="form-row comment-profile-fields">
                     <input type="text" name="nickname" placeholder="昵称 *" required>
                     <input type="email" name="email" placeholder="邮箱{{ \App\Services\CommentSettingsService::emailRequired() ? ' *' : '（选填）' }}" {{ \App\Services\CommentSettingsService::emailRequired() ? 'required' : '' }}>
                     <input type="text" name="website" placeholder="网站(选填)">
@@ -110,10 +75,18 @@
             @endif
             <textarea name="content" rows="3" placeholder="写评论..." required></textarea>
             <div class="comment-actions">
+                @if(!empty($currentAdmin))
+                    <button type="button" class="comment-profile-toggle comment-profile-toggle-admin" aria-label="当前登录头像">
+                        <img class="comment-admin-avatar" src="{{ $currentAdmin->getAvatarUrl(80) }}" alt="">
+                    </button>
+                @else
+                    <button type="button" class="comment-profile-toggle" data-comment-profile-toggle aria-label="切换评论资料" hidden>
+                        <img class="comment-admin-avatar" src="{{ \App\Services\Gravatar::url('', 80) }}" alt="" data-comment-profile-avatar data-comment-avatar-default="{{ \App\Services\Gravatar::url('', 80) }}">
+                    </button>
+                @endif
                 @include('partials.comment-captcha')
                 <button type="submit">提交评论</button>
             </div>
         </form>
     </div>
-    @endif
-</article>
+@endif

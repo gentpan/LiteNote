@@ -11,7 +11,14 @@
                 </button>
                 @if(!empty($socials))
                     @foreach($socials as $s)
-                        @if(($s['key'] ?? '') !== 'email' && strpos((string)($s['url'] ?? ''), 'mailto:') !== 0)
+                        @php
+                            $socialKey = strtolower((string)($s['key'] ?? ''));
+                            $socialUrl = (string)($s['url'] ?? '');
+                            $socialPath = parse_url($socialUrl, PHP_URL_PATH) ?: $socialUrl;
+                            $isRssLink = in_array($socialKey, ['rss', 'feed'], true)
+                                || in_array(rtrim($socialPath, '/'), ['/rss.xml', '/feed'], true);
+                        @endphp
+                        @if($socialKey !== 'email' && !$isRssLink && strpos($socialUrl, 'mailto:') !== 0)
                             <a href="{{ $s['url'] }}" class="footer-social" title="{{ $s['label'] }}" aria-label="{{ $s['label'] }}" target="_blank" rel="nofollow noopener">{!! $s['icon'] !!}</a>
                         @endif
                     @endforeach
@@ -23,4 +30,3 @@
     <script src="{{ $mainJs }}?v={{ \App\Services\ThemeManager::assetVersion($mainJs) }}"></script>
 </body>
 </html>
-

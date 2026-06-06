@@ -18,12 +18,19 @@ final class XAdapter extends BaseAdapter
         $urls = $this->manualUrls($integration);
         $token = trim((string)$integration->access_token);
         $username = ltrim($this->meta($integration, 'username'), '@');
+        $profile = null;
         if ($token !== '' && $username !== '') {
+            $profile = $this->fetchUserProfile($token, $username);
+            if ($profile) {
+                $integration->updateMetadata(['x_profile' => $profile]);
+            }
             $urls = array_merge($urls, $this->latestTweetUrls(
                 $token,
+                (string)($profile['id'] ?? ''),
                 $username,
                 max(5, min(100, (int)$this->meta($integration, 'limit', '100'))),
-                max(0, min(100, (int)$this->meta($integration, 'pages', '10')))
+                max(0, min(100, (int)$this->meta($integration, 'pages', '10'))),
+                $this->boolMeta($integration, 'include_retweets', false)
             ));
         }
         $urls = array_values(array_unique(array_filter($urls)));
@@ -81,17 +88,51 @@ final class XAdapter extends BaseAdapter
         return preg_split('/[\s,]+/', $raw, -1, PREG_SPLIT_NO_EMPTY) ?: [];
     }
 
-    private function latestTweetUrls(string $token, string $username, int $limit, int $maxPages): array
+    private function fetchUserProfile(string $token, string $username): ?array
     {
         $user = $this->http->getJson(
-            'https://api.x.com/2/users/by/username/' . rawurlencode($username),
+            'https://api.x.com/2/users/by/username/' . rawurlencode($username) . '?' . http_build_query([
+                'user.fields' => 'description,profile_image_url,public_metrics,url,verified,verified_type',
+            ]),
             ['Authorization: Bearer ' . $token],
             15
         );
-        $userId = (string)($user['data']['id'] ?? '');
+        $data = is_array($user['data'] ?? null) ? $user['data'] : [];
+        $userId = (string)($data['id'] ?? '');
+        if ($userId === '') {
+            return null;
+        }
+
+        $metrics = is_array($data['public_metrics'] ?? null) ? $data['public_metrics'] : [];
+        $handle = ltrim((string)($data['username'] ?? $username), '@');
+        return [
+            'id' => $userId,
+            'name' => (string)($data['name'] ?? ''),
+            'username' => $handle,
+            'avatar' => (string)($data['profile_image_url'] ?? ''),
+            'description' => (string)($data['description'] ?? ''),
+            'url' => (string)($data['url'] ?? ''),
+            'profile_url' => $handle !== '' ? 'https://x.com/' . rawurlencode($handle) : '',
+            'verified' => !empty($data['verified']),
+            'verified_type' => (string)($data['verified_type'] ?? ''),
+            'followers_count' => (int)($metrics['followers_count'] ?? 0),
+            'following_count' => (int)($metrics['following_count'] ?? 0),
+            'tweet_count' => (int)($metrics['tweet_count'] ?? 0),
+            'listed_count' => (int)($metrics['listed_count'] ?? 0),
+            'fetched_at' => date('Y-m-d H:i:s'),
+        ];
+    }
+
+    private function latestTweetUrls(string $token, string $userId, string $username, int $limit, int $maxPages, bool $includeRetweets): array
+    {
+        if ($userId === '') {
+            $profile = $this->fetchUserProfile($token, $username);
+            $userId = (string)($profile['id'] ?? '');
+        }
         if ($userId === '') {
             return [];
         }
+
         $urls = [];
         $paginationToken = '';
         $page = 0;
@@ -99,7 +140,7 @@ final class XAdapter extends BaseAdapter
             $page++;
             $params = [
                 'max_results' => $limit,
-                'tweet.fields' => 'created_at,public_metrics,attachments,entities',
+                'tweet.fields' => 'created_at,public_metrics,attachments,entities,referenced_tweets',
                 'expansions' => 'attachments.media_keys,author_id',
                 'media.fields' => 'url,preview_image_url,type',
                 'user.fields' => 'name,username,profile_image_url,verified',
@@ -113,6 +154,9 @@ final class XAdapter extends BaseAdapter
                 20
             );
             foreach ((array)($tweets['data'] ?? []) as $tweet) {
+                if (!$includeRetweets && $this->isRetweetOnly($tweet)) {
+                    continue;
+                }
                 if (is_array($tweet) && !empty($tweet['id'])) {
                     $urls[] = 'https://x.com/' . rawurlencode($username) . '/status/' . rawurlencode((string)$tweet['id']);
                 }
@@ -122,6 +166,27 @@ final class XAdapter extends BaseAdapter
         } while ($paginationToken !== '' && ($maxPages === 0 || $page < $maxPages));
 
         return $urls;
+    }
+
+    private function isRetweetOnly(mixed $tweet): bool
+    {
+        if (!is_array($tweet)) {
+            return false;
+        }
+
+        $references = is_array($tweet['referenced_tweets'] ?? null) ? $tweet['referenced_tweets'] : [];
+        if ($references === []) {
+            return false;
+        }
+
+        $types = [];
+        foreach ($references as $reference) {
+            if (is_array($reference) && isset($reference['type'])) {
+                $types[] = (string)$reference['type'];
+            }
+        }
+
+        return $types !== [] && in_array('retweeted', $types, true) && !in_array('quoted', $types, true);
     }
 
     private function exists(string $source, string $externalId): bool

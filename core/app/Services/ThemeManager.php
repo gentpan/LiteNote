@@ -266,7 +266,6 @@ final class ThemeManager
             'archive.index' => 'pages/archive.php',
             'category.show' => 'pages/category.php',
             'friend.index' => 'pages/friend.php',
-            'friend.subscribe' => 'pages/friend-subscribe.php',
             'home.posts' => 'pages/home-posts.php',
             'home.readers' => 'pages/home-readers.php',
             'search.index' => 'pages/search.php',

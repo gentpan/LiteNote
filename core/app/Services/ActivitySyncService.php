@@ -13,7 +13,7 @@ use App\Services\ActivityAdapters\NeoDbAdapter;
 use App\Services\ActivityAdapters\OpenAiUsageAdapter;
 use App\Services\ActivityAdapters\SpotifyAdapter;
 use App\Services\ActivityAdapters\WakaTimeAdapter;
-use App\Services\ActivityAdapters\XAdapter;
+use App\Services\ActivityAdapters\XBookmarksAdapter;
 
 final class ActivitySyncService
 {
@@ -30,7 +30,7 @@ final class ActivitySyncService
             new NeoDbAdapter(),
             new OpenAiUsageAdapter(),
             new AnthropicUsageAdapter(),
-            new XAdapter(),
+            new XBookmarksAdapter(),
             new BilibiliAdapter(),
         ] as $adapter) {
             $this->adapters[$adapter->provider()] = $adapter;

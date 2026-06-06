@@ -2,47 +2,53 @@
     /** @var \App\Models\Talk $item */
     /** @var \App\Models\Music $music */
     $comments = $comments ?? [];
+    $shareText = trim((string)($item->contentWithoutKeywords() ?? ''));
+    $ownerShareText = $shareText !== '' ? $shareText : '分享了这首音乐。';
+    $musicRootComments = array_values(array_filter($comments, static function($comment) {
+        return empty($comment->parent_id);
+    }));
+    $musicCommentCount = count($musicRootComments);
+    $bloggerName = !empty($author) ? ($author->nickname ?: $author->username) : ($site['title'] ?? '博主');
+    $bloggerAvatar = !empty($author) ? $author->getAvatarUrl(96) : '';
     $adminCommentName = !empty($currentAdmin) ? ($currentAdmin->nickname ?: $currentAdmin->username) : '';
     $adminCommentEmail = !empty($currentAdmin) ? (string)($currentAdmin->email ?? '') : '';
 @endphp
 <div class="talk-comments comments music-share-comments"
      id="talk-comments-{{ $item->id }}"
      data-music-comment-thread="{{ $music->id }}"
-     data-comment-count="{{ count($comments) }}">
+     data-comment-count="{{ $musicCommentCount }}">
     <div class="music-share-comments-head">
-        <span>{{ $music->title }}</span>
-        <em><span data-music-comment-count>{{ count($comments) }}</span> 条评论</em>
+        <span>歌曲评论</span>
+        <em><span data-music-comment-count>{{ $musicCommentCount }}</span> 条评论</em>
     </div>
-    @if(!empty($comments))
+    <div class="music-share-owner-card">
+        <div class="music-share-owner-avatar" aria-hidden="true">
+            @if($bloggerAvatar !== '')
+                <img src="{{ $bloggerAvatar }}" alt="{{ $bloggerName }}" loading="lazy" width="48" height="48">
+            @else
+                <span>{{ mb_substr((string)$bloggerName, 0, 1) }}</span>
+            @endif
+        </div>
+        <div class="music-share-owner-body">
+            <p class="music-share-comment-note">{{ $ownerShareText }}</p>
+        </div>
+    </div>
+    @if(!empty($musicRootComments))
         <ul class="comment-list">
-            @foreach(\App\Core\Helper::nestComments($comments) as $thread)
-                @php $cmt = $thread['comment']; @endphp
-                <li class="comment-item" data-id="{{ $cmt->id }}">
+            @foreach($musicRootComments as $cmt)
+                @php
+                    $commentText = (string)$cmt->content;
+                @endphp
+                <li class="comment-item" data-id="{{ $cmt->id }}" data-full-content="{{ $commentText }}" tabindex="0" role="button">
+                    <img class="music-share-comment-avatar" src="{{ $cmt->getAvatarUrl(64) }}" alt="{{ $cmt->nickname }}" loading="lazy" width="40" height="40">
                     <div class="comment-body">
                         <div class="comment-meta">
-                            <strong>{{ $cmt->nickname }}</strong>
-                            <span class="ct">· {!! \App\Core\Helper::timeTag($cmt->created_at) !!}</span>
-                            <button type="button" class="comment-reply-btn" data-parent-id="{{ $cmt->id }}" data-nickname="{{ $cmt->nickname }}">回复</button>
+                            @php $commentAuthor = $cmt; @endphp
+                                    @include('partials.comment-author-link')
+                            <span class="ct">{!! \App\Core\Helper::timeTag($cmt->created_at) !!}</span>
                         </div>
-                        <div class="comment-content">{{ $cmt->content }}</div>
+                        <div class="comment-content">{{ $commentText }}</div>
                     </div>
-                    @if(!empty($thread['replies']))
-                        <ul class="comment-reply-list">
-                            @foreach($thread['replies'] as $reply)
-                                <li class="comment-item comment-reply" data-id="{{ $reply->id }}">
-                                    <div class="comment-body">
-                                        <div class="comment-meta">
-                                            <strong>{{ $reply->nickname }}</strong>
-                                            @if(!empty($reply->reply_to_name))<span class="reply-arrow">›</span><span class="reply-target">{{ $reply->reply_to_name }}</span>@endif
-                                            <span class="ct">· {!! \App\Core\Helper::timeTag($reply->created_at) !!}</span>
-                                            <button type="button" class="comment-reply-btn" data-parent-id="{{ $reply->id }}" data-nickname="{{ $reply->nickname }}">回复</button>
-                                        </div>
-                                        <div class="comment-content">{{ preg_replace('/^@\S+\s*/u', '', (string) $reply->content) }}</div>
-                                    </div>
-                                </li>
-                            @endforeach
-                        </ul>
-                    @endif
                 </li>
             @endforeach
         </ul>
@@ -55,27 +61,28 @@
         <input type="hidden" name="parent_id" value="0">
         <input type="hidden" name="_csrf" value="{{ \App\Core\Session::csrfToken() }}">
         @if(!empty($currentAdmin))
-            <div class="comment-admin-bar">
-                <img class="comment-admin-avatar" src="{{ $currentAdmin->getAvatarUrl(80) }}" alt="{{ $adminCommentName }}">
-                <div class="comment-admin-info">
-                    <span class="comment-admin-name">{{ $adminCommentName }}</span>
-                    @if($adminCommentEmail !== '')<span class="comment-admin-email">{{ $adminCommentEmail }}</span>@endif
-                </div>
-                <a class="comment-admin-logout" href="/admin/logout">注销</a>
-            </div>
             <input type="hidden" name="nickname" value="{{ $adminCommentName }}">
             <input type="hidden" name="email" value="{{ $adminCommentEmail }}">
         @else
-            <div class="form-row">
+            <div class="form-row comment-profile-fields">
                 <input type="text" name="nickname" placeholder="昵称 *" required>
-                <input type="email" name="email" placeholder="邮箱{{ \App\Services\CommentSettingsService::emailRequired() ? ' *' : '（选填）' }}" {{ \App\Services\CommentSettingsService::emailRequired() ? 'required' : '' }}>
+                <input type="email" name="email" placeholder="邮箱 *" required>
                 <input type="text" name="website" placeholder="网站(选填)">
             </div>
         @endif
         <textarea name="content" rows="3" placeholder="写这首歌的评论..." required></textarea>
         <div class="comment-actions">
+            @if(!empty($currentAdmin))
+                <button type="button" class="comment-profile-toggle comment-profile-toggle-admin" aria-label="当前登录头像">
+                    <img class="comment-admin-avatar" src="{{ $currentAdmin->getAvatarUrl(80) }}" alt="{{ $adminCommentName }}">
+                </button>
+            @else
+                <button type="button" class="comment-profile-toggle" data-comment-profile-toggle aria-label="修改评论资料" hidden>
+                    <img class="comment-admin-avatar" src="{{ \App\Services\Gravatar::url('', 80) }}" alt="" data-comment-profile-avatar data-comment-avatar-default="{{ \App\Services\Gravatar::url('', 80) }}">
+                </button>
+            @endif
             @include('partials.comment-captcha')
-            <button type="submit">提交评论</button>
+            <button type="submit">提交乐评</button>
         </div>
     </form>
 </div>

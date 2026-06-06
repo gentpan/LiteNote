@@ -1,7 +1,8 @@
 @extends('layouts.admin')
 
 @section('content')
-    <form method="post" action="{{ $item ? '/admin/music/'.$item->id.'/edit' : '/admin/music/create' }}" class="admin-form" data-dirty-watch>
+<div class="music-admin-shell">
+    <form method="post" action="{{ $item ? '/admin/music/'.$item->id.'/edit' : '/admin/music/create' }}" class="admin-form music-editor-form" data-dirty-watch>
         <input type="hidden" name="_csrf" value="{{ $csrf }}">
 
         <div class="form-row">
@@ -53,37 +54,36 @@
 
         <div class="form-row">
             <div class="form-group">
-                <label>心情标签</label>
-                <input type="text" name="mood" value="{{ $item->mood ?? '' }}" placeholder="例如：阴雨额度">
-            </div>
-            <div class="form-group">
-                <label>发布时间</label>
-                <input type="datetime-local" name="published_at" value="{{ $item ? $item->publishedInputValue() : date('Y-m-d\TH:i') }}">
-                <small class="hint">音乐页会按发布时间自动整理播放列表。</small>
-            </div>
-            <div class="form-group">
                 <label>时长</label>
                 <input type="text" name="duration" value="{{ $item->duration ?? '' }}" placeholder="例如：5:44">
             </div>
-        </div>
-
-        <div class="form-row">
             <div class="form-group">
                 <label>排序</label>
                 <input type="number" name="sort" value="{{ $item->sort ?? 0 }}">
-                <small class="hint">同一发布时间下，可用排序微调先后。</small>
+                <small class="hint">用于音乐库列表排序；发布到说说时再选择发布时间。</small>
             </div>
         </div>
 
         <div class="form-group">
-            <label>一句描述</label>
-            <input type="text" name="description" value="{{ $item->description ?? '' }}" placeholder="用于播放器里没有歌词时展示">
+            <label>歌词文件 URL</label>
+            <div class="admin-upload-field"
+                 data-upload-field
+                 data-upload-url="/admin/attachments/upload"
+                 data-csrf="{{ $csrf }}"
+                 data-upload-accept=".lrc,.txt,text/plain">
+                <input type="text" name="lyrics_url" value="{{ $item->lyrics_url ?? '' }}" placeholder="https://example.com/song.lrc 或 /uploads/...">
+                <button type="button" class="admin-upload-field-btn" data-upload-trigger aria-label="上传歌词文件" title="上传歌词文件">
+                    <i class="fa-solid fa-arrow-up-from-bracket"></i>
+                </button>
+                <input type="file" data-upload-input accept=".lrc,.txt,text/plain" hidden>
+            </div>
+            <small class="hint">支持 LRC / TXT 文件链接。Meting 搜索会优先填入这里，不把歌词正文写入数据库。</small>
         </div>
 
         <div class="form-group">
             <label>歌词 / 文案</label>
-            <textarea name="lyrics" rows="6" data-lrc-input placeholder="[00:12.00] 可以直接粘贴 LRC，系统会自动识别成纯歌词">{{ $item->lyrics ?? '' }}</textarea>
-            <small class="hint">支持直接粘贴 LRC 格式文本，保存时会自动去掉时间轴和 ti/ar/al 等元信息。</small>
+            <textarea name="lyrics" rows="6" data-lrc-input placeholder="[00:12.00] 也可以直接粘贴 LRC 或普通歌词文本">{{ $item->lyrics ?? '' }}</textarea>
+            <small class="hint">可直接粘贴 LRC 格式文本；如果同时填写歌词文件 URL，前台优先加载歌词文件。</small>
         </div>
 
         <div class="form-group">
@@ -96,4 +96,31 @@
             <a href="/admin/music" class="btn">取消</a>
         </div>
     </form>
+
+    @if($item)
+        <form method="post" action="/admin/music/delete" class="admin-form music-delete-panel"
+              data-confirm="确定删除这首音乐？此操作不可撤销。"
+              data-confirm-title="删除音乐"
+              data-confirm-text="确认删除">
+            <input type="hidden" name="_csrf" value="{{ $csrf }}">
+            <input type="hidden" name="id" value="{{ $item->id }}">
+            <div class="music-delete-panel-body">
+                <div>
+                    <h3>删除音乐</h3>
+                    @if((int)($linkedTalkCount ?? 0) > 0)
+                        <p class="music-delete-warning">这首音乐已被 {{ (int)$linkedTalkCount }} 条音乐说说使用。</p>
+                        <label class="music-delete-option">
+                            <input type="checkbox" name="delete_talks" value="1">
+                            同时删除这些音乐说说
+                        </label>
+                        <p>不勾选时，只删除音乐，并保留说说内容、取消音乐关联。</p>
+                    @else
+                        <p>删除后，这首音乐不会再出现在音乐库和说说音乐选择里。</p>
+                    @endif
+                </div>
+                <button type="submit" class="btn btn-danger"><i class="fa-regular fa-trash-can"></i> 删除</button>
+            </div>
+        </form>
+    @endif
+</div>
 @endsection
