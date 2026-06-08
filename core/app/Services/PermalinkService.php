@@ -11,18 +11,26 @@ use App\Models\Setting;
 
 final class PermalinkService
 {
-    public const MODE_DEFAULT = 'default';
-    public const MODE_SIMPLE = 'simple';
-    public const MODE_CATEGORY = 'category';
-    public const MODE_NUMERIC = 'numeric';
+    public const BASE_NONE = '';
+    public const BASE_CUSTOM = 'custom';
+    public const PATTERN_SLUG = 'slug';
+    public const PATTERN_ID = 'id';
+    public const PATTERN_YM_SLUG = 'ym_slug';
+    public const PATTERN_YMD_SLUG = 'ymd_slug';
+    public const PATTERN_YMD_TIME_SLUG = 'ymd_time_slug';
+    public const PATTERN_CATEGORY_SLUG = 'category_slug';
+    public const PATTERN_CATEGORY_YMD_SLUG = 'category_ymd_slug';
+    public const PATTERN_CATEGORY_ID = 'category_id';
+    public const PATTERN_YMD_ID = 'ymd_id';
 
     public static function ensureDefaults(): void
     {
         Setting::ensureDefaults([
-            ['k' => 'permalink_mode', 'v' => self::MODE_DEFAULT, 'type' => 'select', 'label' => '文章链接模式', 'group_name' => 'permalink', 'sort' => 1],
-            ['k' => 'permalink_numeric_prefix', 'v' => 'post', 'label' => '数字链接前缀', 'group_name' => 'permalink', 'sort' => 10],
-            ['k' => 'permalink_numeric_source', 'v' => 'six', 'type' => 'select', 'label' => '数字来源', 'group_name' => 'permalink', 'sort' => 11],
-            ['k' => 'permalink_numeric_suffix', 'v' => '.html', 'type' => 'select', 'label' => '数字链接后缀', 'group_name' => 'permalink', 'sort' => 12],
+            ['k' => 'permalink_base', 'v' => 'post', 'type' => 'select', 'label' => '路径前缀', 'group_name' => 'permalink', 'sort' => 1],
+            ['k' => 'permalink_base_custom', 'v' => 'blog', 'label' => '自定义路径名称', 'group_name' => 'permalink', 'sort' => 2],
+            ['k' => 'permalink_pattern', 'v' => self::PATTERN_SLUG, 'type' => 'select', 'label' => '链接字段', 'group_name' => 'permalink', 'sort' => 3],
+            ['k' => 'permalink_suffix_mode', 'v' => '.html', 'type' => 'select', 'label' => '链接后缀', 'group_name' => 'permalink', 'sort' => 4],
+            ['k' => 'permalink_suffix_custom', 'v' => '.html', 'label' => '自定义后缀', 'group_name' => 'permalink', 'sort' => 5],
         ]);
     }
 
@@ -30,51 +38,46 @@ final class PermalinkService
     {
         try {
             self::ensureDefaults();
-            $mode = (string) Setting::get('permalink_mode', self::MODE_DEFAULT);
-            $prefix = trim((string) Setting::get('permalink_numeric_prefix', 'post'), '/');
-            $source = (string) Setting::get('permalink_numeric_source', 'six');
-            $suffix = (string) Setting::get('permalink_numeric_suffix', '.html');
+            $base = self::sanitizeBase((string) Setting::get('permalink_base', 'post'));
+            $baseCustom = self::sanitizeSegment((string) Setting::get('permalink_base_custom', 'blog'), 'blog');
+            $pattern = self::sanitizePattern((string) Setting::get('permalink_pattern', self::PATTERN_SLUG));
+            $suffixMode = (string) Setting::get('permalink_suffix_mode', '.html');
+            $suffixCustom = (string) Setting::get('permalink_suffix_custom', '.html');
         } catch (\Throwable) {
-            $mode = self::MODE_DEFAULT;
-            $prefix = 'post';
-            $source = 'six';
-            $suffix = '.html';
+            $base = 'post';
+            $baseCustom = 'blog';
+            $pattern = self::PATTERN_SLUG;
+            $suffixMode = '.html';
+            $suffixCustom = '.html';
         }
 
-        if (!in_array($mode, [self::MODE_DEFAULT, self::MODE_SIMPLE, self::MODE_CATEGORY, self::MODE_NUMERIC], true)) {
-            $mode = self::MODE_DEFAULT;
-        }
-        if (!in_array($source, ['id', 'six'], true)) {
-            $source = 'six';
-        }
-        if (!in_array($suffix, ['', '.html'], true)) {
-            $suffix = '.html';
-        }
-        if ($prefix !== '' && !preg_match('/^[a-zA-Z0-9_-]+$/', $prefix)) {
-            $prefix = 'post';
-        }
+        $suffix = self::sanitizeSuffix($suffixMode === 'custom' ? $suffixCustom : $suffixMode);
+        $prefix = $base === self::BASE_CUSTOM ? $baseCustom : $base;
 
-        return compact('mode', 'prefix', 'source', 'suffix');
+        return compact('base', 'baseCustom', 'prefix', 'pattern', 'suffixMode', 'suffixCustom', 'suffix');
     }
 
     public static function postUrl(Post $post): string
     {
         $settings = self::settings();
-        $slug = trim((string)$post->slug, '/');
+        $parts = self::pathParts($post, (string)$settings['pattern']);
+        if ($parts === []) {
+            $parts = [self::slug($post)];
+        }
+        $last = array_key_last($parts);
+        $parts[$last] .= (string)$settings['suffix'];
 
-        $path = match ($settings['mode']) {
-            self::MODE_SIMPLE => '/' . $slug,
-            self::MODE_CATEGORY => '/' . self::categorySlug($post) . '/' . $slug,
-            self::MODE_NUMERIC => self::numericPath($post, $settings),
-            default => '/post/' . $slug . '.html',
-        };
+        $prefix = trim((string)$settings['prefix'], '/');
+        if ($prefix !== '') {
+            array_unshift($parts, $prefix);
+        }
 
-        return $path;
+        return '/' . implode('/', $parts);
     }
 
     public static function postUrlFromParts(int $id, string $slug, ?string $categorySlug = null): string
     {
-        $post = new Post([
+        $post = Post::find($id) ?: new Post([
             'id' => $id,
             'slug' => $slug,
         ]);
@@ -90,17 +93,15 @@ final class PermalinkService
     public static function resolve(string $path): ?Post
     {
         $path = self::cleanPath($path);
-        if ($path === '' || self::isReservedPath($path)) {
+        if ($path === '') {
             return null;
         }
 
         $settings = self::settings();
-        $post = match ($settings['mode']) {
-            self::MODE_SIMPLE => self::resolveSimple($path),
-            self::MODE_CATEGORY => self::resolveCategory($path),
-            self::MODE_NUMERIC => self::resolveNumeric($path, $settings),
-            default => self::resolveDefault($path),
-        };
+        if (self::isReservedPath($path, (string)$settings['prefix'])) {
+            return null;
+        }
+        $post = self::resolveConfigured($path, $settings);
 
         return $post && (string)$post->status === PostStatus::Published->value ? $post : null;
     }
@@ -113,69 +114,48 @@ final class PermalinkService
 
     public static function pageSlugConflicts(int $limit = 20): array
     {
-        if (self::settings()['mode'] !== self::MODE_SIMPLE) {
+        $settings = self::settings();
+        if ((string)$settings['prefix'] !== '' || (string)$settings['suffix'] !== '') {
             return [];
         }
+
         $rows = Post::db()->fetchAll(
-            "SELECT p.slug, p.title
+            "SELECT p.id, p.slug, p.title, p.published_at, p.category_id
              FROM posts p
-             INNER JOIN pages pg ON pg.slug = p.slug
              WHERE p.status = ?
              ORDER BY p.id DESC
-             LIMIT " . max(1, min(100, $limit)),
+             LIMIT 100",
             [PostStatus::Published->value]
         );
+        $conflicts = [];
+        foreach ($rows as $row) {
+            $post = new Post($row);
+            $parts = self::pathParts($post, (string)$settings['pattern']);
+            if (count($parts) !== 1) {
+                continue;
+            }
+            if (Page::findBySlug($parts[0])) {
+                $conflicts[] = ['slug' => $parts[0], 'title' => (string)$row['title']];
+                if (count($conflicts) >= $limit) {
+                    break;
+                }
+            }
+        }
 
-        return $rows;
+        return $conflicts;
     }
 
-    private static function resolveDefault(string $path): ?Post
+    private static function resolveConfigured(string $path, array $settings): ?Post
     {
-        if (!preg_match('#^post/([^/]+)\.html$#', $path, $match)) {
-            return null;
-        }
-        return Post::findBySlug($match[1]);
-    }
-
-    private static function resolveSimple(string $path): ?Post
-    {
-        if (str_contains($path, '/') || str_ends_with($path, '.html')) {
-            return null;
-        }
-        if (Page::findBySlug($path)) {
-            return null;
-        }
-        return Post::findBySlug($path);
-    }
-
-    private static function resolveCategory(string $path): ?Post
-    {
-        $parts = explode('/', $path);
-        if (count($parts) !== 2 || $parts[0] === '' || $parts[1] === '') {
-            return null;
-        }
-
-        $post = Post::findBySlug($parts[1]);
-        if (!$post) {
-            return null;
-        }
-        return self::categorySlug($post) === $parts[0] ? $post : null;
-    }
-
-    private static function resolveNumeric(string $path, array $settings): ?Post
-    {
-        $prefix = (string)$settings['prefix'];
-        $suffix = (string)$settings['suffix'];
-
+        $prefix = trim((string)$settings['prefix'], '/');
         if ($prefix !== '') {
             if (!str_starts_with($path, $prefix . '/')) {
                 return null;
             }
             $path = substr($path, strlen($prefix) + 1);
-        } elseif (str_contains($path, '/')) {
-            return null;
         }
 
+        $suffix = (string)$settings['suffix'];
         if ($suffix !== '') {
             if (!str_ends_with($path, $suffix)) {
                 return null;
@@ -183,39 +163,75 @@ final class PermalinkService
             $path = substr($path, 0, -strlen($suffix));
         }
 
-        if (!preg_match('/^\d+$/', $path)) {
+        if ($path === '') {
+            return null;
+        }
+        $parts = array_values(array_filter(explode('/', $path), static fn(string $part): bool => $part !== ''));
+        if ($parts === []) {
             return null;
         }
 
-        $id = self::idFromNumber($path, (string)$settings['source']);
-        return $id > 0 ? Post::find($id) : null;
-    }
-
-    private static function numericPath(Post $post, array $settings): string
-    {
-        $number = self::numberForPost($post, (string)$settings['source']);
-        $prefix = trim((string)$settings['prefix'], '/');
-        $suffix = (string)$settings['suffix'];
-        $parts = $prefix !== '' ? [$prefix, $number . $suffix] : [$number . $suffix];
-        return '/' . implode('/', $parts);
-    }
-
-    private static function numberForPost(Post $post, string $source): string
-    {
-        $id = max(1, (int)$post->id);
-        if ($source === 'id') {
-            return (string)$id;
+        $identity = end($parts);
+        $pattern = (string)$settings['pattern'];
+        $post = self::patternUsesId($pattern) ? Post::find((int)$identity) : Post::findBySlug((string)$identity);
+        if (!$post) {
+            return null;
         }
-        return (string)(100000 + $id);
+
+        if ($prefix === '' && count($parts) === 1 && Page::findBySlug($parts[0])) {
+            return null;
+        }
+
+        $expected = self::pathParts($post, $pattern);
+        return $expected === $parts ? $post : null;
     }
 
-    private static function idFromNumber(string $number, string $source): int
+    private static function pathParts(Post $post, string $pattern): array
     {
-        $value = (int)$number;
-        if ($source === 'six') {
-            return $value >= 100001 ? $value - 100000 : 0;
+        $date = self::dateParts($post);
+        return match ($pattern) {
+            self::PATTERN_ID => [self::id($post)],
+            self::PATTERN_YM_SLUG => [$date['Y'], $date['m'], self::slug($post)],
+            self::PATTERN_YMD_SLUG => [$date['Y'], $date['m'], $date['d'], self::slug($post)],
+            self::PATTERN_YMD_TIME_SLUG => [$date['Y'], $date['m'], $date['d'], $date['His'], self::slug($post)],
+            self::PATTERN_CATEGORY_SLUG => [self::categorySlug($post), self::slug($post)],
+            self::PATTERN_CATEGORY_YMD_SLUG => [self::categorySlug($post), $date['Y'], $date['m'], $date['d'], self::slug($post)],
+            self::PATTERN_CATEGORY_ID => [self::categorySlug($post), self::id($post)],
+            self::PATTERN_YMD_ID => [$date['Y'], $date['m'], $date['d'], self::id($post)],
+            default => [self::slug($post)],
+        };
+    }
+
+    private static function dateParts(Post $post): array
+    {
+        $raw = trim((string)($post->published_at ?? '')) ?: trim((string)($post->created_at ?? ''));
+        $ts = $raw !== '' ? strtotime($raw) : false;
+        if ($ts === false) {
+            $ts = time();
         }
-        return $value;
+
+        return [
+            'Y' => date('Y', $ts),
+            'm' => date('m', $ts),
+            'd' => date('d', $ts),
+            'His' => date('His', $ts),
+        ];
+    }
+
+    private static function id(Post $post): string
+    {
+        return (string)max(1, (int)$post->id);
+    }
+
+    private static function slug(Post $post): string
+    {
+        $slug = trim((string)$post->slug, '/');
+        return $slug !== '' ? $slug : self::id($post);
+    }
+
+    private static function patternUsesId(string $pattern): bool
+    {
+        return in_array($pattern, [self::PATTERN_ID, self::PATTERN_CATEGORY_ID, self::PATTERN_YMD_ID], true);
     }
 
     private static function categorySlug(Post $post): string
@@ -225,20 +241,87 @@ final class PermalinkService
         return $slug !== '' ? $slug : 'post';
     }
 
+    public static function allowedBases(): array
+    {
+        return [self::BASE_NONE, 'post', 'posts', 'article', 'archive', 'blog', self::BASE_CUSTOM];
+    }
+
+    public static function allowedPatterns(): array
+    {
+        return [
+            self::PATTERN_SLUG,
+            self::PATTERN_ID,
+            self::PATTERN_YM_SLUG,
+            self::PATTERN_YMD_SLUG,
+            self::PATTERN_YMD_TIME_SLUG,
+            self::PATTERN_CATEGORY_SLUG,
+            self::PATTERN_CATEGORY_YMD_SLUG,
+            self::PATTERN_CATEGORY_ID,
+            self::PATTERN_YMD_ID,
+        ];
+    }
+
+    public static function sanitizeBase(string $value): string
+    {
+        $value = trim($value, '/');
+        return in_array($value, self::allowedBases(), true) ? $value : 'post';
+    }
+
+    public static function sanitizePattern(string $value): string
+    {
+        return in_array($value, self::allowedPatterns(), true) ? $value : self::PATTERN_SLUG;
+    }
+
+    public static function sanitizeSegment(string $value, string $default = 'blog'): string
+    {
+        $value = trim($value, '/');
+        if ($value === '') {
+            return $default;
+        }
+        if (!preg_match('/^[a-zA-Z0-9_-]{1,40}$/', $value)) {
+            return $default;
+        }
+        return in_array($value, self::reservedFirstSegments(), true) ? $default : $value;
+    }
+
+    public static function sanitizeSuffix(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+        if ($value[0] !== '.') {
+            $value = '.' . $value;
+        }
+        return preg_match('/^\.[a-zA-Z0-9][a-zA-Z0-9_-]{0,11}$/', $value) ? strtolower($value) : '.html';
+    }
+
     private static function cleanPath(string $path): string
     {
-        $parts = parse_url($path);
-        $path = is_array($parts) && isset($parts['path']) ? (string)$parts['path'] : $path;
+        if (preg_match('#^https?://#i', $path)) {
+            $parts = parse_url($path);
+            $path = is_array($parts) && isset($parts['path']) ? (string)$parts['path'] : $path;
+        } else {
+            $path = preg_split('/[?#]/', $path, 2)[0] ?? $path;
+        }
         return trim(rawurldecode($path), '/');
     }
 
-    private static function isReservedPath(string $path): bool
+    private static function isReservedPath(string $path, string $configuredPrefix = ''): bool
     {
         $first = explode('/', $path, 2)[0] ?? '';
-        return in_array($first, [
+        if ($configuredPrefix !== '' && $first === $configuredPrefix && str_contains($path, '/')) {
+            return false;
+        }
+        return in_array($first, self::reservedFirstSegments(), true);
+    }
+
+    private static function reservedFirstSegments(): array
+    {
+        return [
             'admin', 'api', 'category', 'posts', 'readers', 'activity', 'talk', 'x',
             'music', 'archives', 'search', 'links', 'subscribe', 'comment',
             'captcha', 'rss.xml', 'feed', 'mail', 'themes', 'uploads',
-        ], true);
+        ];
     }
 }

@@ -3,12 +3,42 @@
 @section('content')
     @php
         $commentStatusLabels = \App\Enums\CommentStatus::options();
+        $commentSettings = $commentSettings ?? [];
+        $needAuditOn = !empty($commentSettings['need_audit']);
+        $captchaOn = !empty($commentSettings['captcha']);
+        $statusTabs = [
+            'all' => '全部',
+            'pending' => '待审核',
+            'approved' => '已通过',
+            'spam' => '垃圾',
+        ];
     @endphp
-    <div class="admin-toolbar">
-        <a class="btn" href="/admin/comments?status=all">全部</a>
-        <a class="btn" href="/admin/comments?status=pending">待审核</a>
-        <a class="btn" href="/admin/comments?status=approved">已通过</a>
-        <a class="btn" href="/admin/comments?status=spam">垃圾</a>
+    <div class="admin-toolbar comment-toolbar">
+        @foreach($statusTabs as $tabStatus => $tabLabel)
+            <a class="btn {{ ($status ?? 'all') === $tabStatus ? 'btn-secondary is-active' : '' }}" href="/admin/comments?status={{ $tabStatus }}">{{ $tabLabel }}</a>
+        @endforeach
+        <div class="comment-toolbar-settings">
+            <form method="post" action="/admin/comments/settings" class="comment-toggle-form" data-ajax-toggle>
+                <input type="hidden" name="_csrf" value="{{ $csrf }}">
+                <input type="hidden" name="key" value="comment_need_audit">
+                <input type="hidden" name="comment_need_audit" value="0">
+                <span class="comment-toggle-label">评论需审核</span>
+                <label class="cat-switch" title="{{ $needAuditOn ? '点击关闭评论审核' : '点击开启评论审核' }}">
+                    <input type="checkbox" name="comment_need_audit" value="1" {{ $needAuditOn ? 'checked' : '' }}>
+                    <span class="cat-switch-slider"></span>
+                </label>
+            </form>
+            <form method="post" action="/admin/comments/settings" class="comment-toggle-form" data-ajax-toggle>
+                <input type="hidden" name="_csrf" value="{{ $csrf }}">
+                <input type="hidden" name="key" value="comment_captcha">
+                <input type="hidden" name="comment_captcha" value="0">
+                <span class="comment-toggle-label">评论验证码</span>
+                <label class="cat-switch" title="{{ $captchaOn ? '点击关闭评论验证码' : '点击开启评论验证码' }}">
+                    <input type="checkbox" name="comment_captcha" value="1" {{ $captchaOn ? 'checked' : '' }}>
+                    <span class="cat-switch-slider"></span>
+                </label>
+            </form>
+        </div>
     </div>
     <table class="admin-table admin-action-table admin-action-table-medium">
         <thead>

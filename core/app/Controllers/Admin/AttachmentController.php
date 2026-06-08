@@ -63,6 +63,15 @@ class AttachmentController
         ], 'layouts.admin');
     }
 
+    public function settings(): string
+    {
+        return View::render('attachment.settings', [
+            'attachmentSettings' => $this->attachmentSettings(),
+            'csrf'  => Session::csrfToken(),
+            'pageTitle' => '附件设置',
+        ], 'layouts.admin');
+    }
+
     public function saveSettings(Request $request): never
     {
         $values = [
@@ -86,7 +95,8 @@ class AttachmentController
 
         Setting::setMany($values);
         Session::flash('success', '附件设置已保存');
-        Response::redirect('/admin/attachments');
+        $redirect = (string)$request->input('redirect', '/admin/settings/attachments');
+        Response::redirect($redirect === '/admin/attachments' ? $redirect : '/admin/settings/attachments');
     }
 
     private function attachmentSettings(): array
@@ -195,7 +205,7 @@ class AttachmentController
     public function upload(Request $request): never
     {
         if (empty($_FILES['file'])) {
-            Response::json(['code' => 1, 'msg' => '没有文件']);
+            Response::json(['code' => 1, 'msg' => ImageUploadService::missingUploadMessage('文件')]);
         }
         $file = $_FILES['file'];
 

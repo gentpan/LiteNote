@@ -32,13 +32,26 @@ final class ImageUploadService
         return false;
     }
 
+    public static function missingUploadMessage(string $label = '文件'): string
+    {
+        $contentLength = (int)($_SERVER['CONTENT_LENGTH'] ?? 0);
+        if ($contentLength <= 0) {
+            return '请选择' . $label;
+        }
+
+        $uploadLimit = ini_get('upload_max_filesize') ?: '';
+        $postLimit = ini_get('post_max_size') ?: '';
+        $limit = trim("upload_max_filesize={$uploadLimit}, post_max_size={$postLimit}", ', ');
+        return $label . '超过服务器上传限制' . ($limit !== '' ? '（' . $limit . '）' : '');
+    }
+
     /**
      * @return array{id:int|string|null,url:string,name:string,size:int,type:string,filename:string,mime:string}
      */
     public static function upload(array $file, string $purpose = 'image'): array
     {
         if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
-            throw new \RuntimeException('上传错误: ' . (string)($file['error'] ?? 'unknown'));
+            throw new \RuntimeException(self::uploadErrorMessage((int)($file['error'] ?? UPLOAD_ERR_NO_FILE)));
         }
 
         $maxSize = (int)Config::get('upload.max_size', 5 * 1024 * 1024);
@@ -163,6 +176,19 @@ final class ImageUploadService
             }
         }
         return mime_content_type($path) ?: '';
+    }
+
+    private static function uploadErrorMessage(int $error): string
+    {
+        return match ($error) {
+            UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => self::missingUploadMessage('图片'),
+            UPLOAD_ERR_PARTIAL => '图片只上传了一部分，请重试',
+            UPLOAD_ERR_NO_FILE => '请选择图片',
+            UPLOAD_ERR_NO_TMP_DIR => '服务器缺少上传临时目录',
+            UPLOAD_ERR_CANT_WRITE => '服务器无法写入上传文件',
+            UPLOAD_ERR_EXTENSION => '上传被 PHP 扩展拦截',
+            default => '上传错误: ' . $error,
+        };
     }
 
     private static function convertToWebp(string $source, string $mime, string $target): void

@@ -22,9 +22,9 @@ class SettingController
         return $this->renderSection('basic');
     }
 
-    public function comments(): string
+    public function comments(): never
     {
-        return $this->renderSection('comment');
+        Response::redirect('/admin/comments');
     }
 
     public function permalinks(): string
@@ -92,7 +92,7 @@ class SettingController
             $conflicts = PermalinkService::pageSlugConflicts(5);
             if ($conflicts !== []) {
                 $slugs = implode('、', array_map(static fn(array $row): string => (string)$row['slug'], $conflicts));
-                Session::flash('warning', '简短模式下页面地址优先，以下文章 slug 会被页面覆盖：' . $slugs);
+                Session::flash('warning', '当前固定链接规则会与页面地址冲突，页面地址优先：' . $slugs);
             }
         }
 
@@ -106,7 +106,7 @@ class SettingController
         \App\Core\View::share('site', \App\Core\Config::get('site'));
         Session::flash('success', '设置已保存');
         Response::redirect(match ($section) {
-            'comment' => '/admin/settings/comments',
+            'comment' => '/admin/comments',
             'permalink' => '/admin/settings/permalinks',
             default => '/admin/settings',
         });
@@ -174,10 +174,11 @@ class SettingController
         $value = is_array($value) ? '' : trim((string)$value);
 
         return match ($key) {
-            'permalink_mode' => in_array($value, ['default', 'simple', 'category', 'numeric'], true) ? $value : 'default',
-            'permalink_numeric_source' => in_array($value, ['id', 'six'], true) ? $value : 'six',
-            'permalink_numeric_suffix' => in_array($value, ['', '.html'], true) ? $value : '.html',
-            'permalink_numeric_prefix' => $this->sanitizePermalinkPrefix($value),
+            'permalink_base' => PermalinkService::sanitizeBase($value),
+            'permalink_base_custom' => PermalinkService::sanitizeSegment($value, 'blog'),
+            'permalink_pattern' => PermalinkService::sanitizePattern($value),
+            'permalink_suffix_mode' => in_array($value, ['', '.html', '.htm', 'custom'], true) ? $value : '.html',
+            'permalink_suffix_custom' => PermalinkService::sanitizeSuffix($value),
             'site_avatar_url' => $this->absoluteUploadUrl($value),
             default => $value,
         };
@@ -189,15 +190,6 @@ class SettingController
             return $value;
         }
         return Helper::url('/' . ltrim($value, '/'));
-    }
-
-    private function sanitizePermalinkPrefix(string $value): string
-    {
-        $value = trim($value, '/');
-        if ($value === '') {
-            return '';
-        }
-        return preg_match('/^[a-zA-Z0-9_-]+$/', $value) ? $value : 'post';
     }
 
 }

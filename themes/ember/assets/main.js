@@ -3080,6 +3080,21 @@
         }, 2200);
     }
 
+    function compactUploadFilename(filename) {
+        var value = String(filename || '').trim();
+        var chars = Array.from(value);
+        if (chars.length <= 24) {
+            return value;
+        }
+        var dot = value.lastIndexOf('.');
+        var ext = dot > 0 && value.length - dot <= 10 ? value.slice(dot) : '';
+        var stem = ext ? value.slice(0, -ext.length) : value;
+        var stemChars = Array.from(stem);
+        var head = stemChars.slice(0, 12).join('');
+        var tail = stemChars.slice(Math.max(12, stemChars.length - 6)).join('');
+        return head + '...' + tail + ext;
+    }
+
     function frontUploadToast(filename) {
         var toast = document.createElement('div');
         toast.className = 'front-copy-toast front-upload-toast site-toast';
@@ -3091,7 +3106,11 @@
             + '  <span class="front-upload-toast-head"><span class="front-upload-toast-title"></span><strong class="front-upload-toast-percent">0%</strong></span>'
             + '  <span class="front-upload-toast-bar"><span></span></span>'
             + '</span>';
-        toast.querySelector('.front-upload-toast-title').textContent = filename ? ('上传 ' + filename) : '正在上传';
+        var title = toast.querySelector('.front-upload-toast-title');
+        title.textContent = filename ? ('上传 ' + compactUploadFilename(filename)) : '正在上传';
+        if (filename) {
+            title.title = filename;
+        }
         document.body.appendChild(toast);
 
         var bar = toast.querySelector('.front-upload-toast-bar span');

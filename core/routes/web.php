@@ -90,5 +90,9 @@ $router->get('/api/v1/activity/stats/{date}', [ActivityApiController::class, 'st
 \App\Services\Plugins\Registry::applyRoutes($router, 'web');
 
 // 自定义页面短链接,必须放在最后,避免覆盖上面的固定路由。
+$router->get('/{p1}/{p2}/{p3}/{p4}/{p5}/{p6}', [PostController::class, 'show']);
+$router->get('/{p1}/{p2}/{p3}/{p4}/{p5}',      [PostController::class, 'show']);
+$router->get('/{p1}/{p2}/{p3}/{p4}',           [PostController::class, 'show']);
+$router->get('/{p1}/{p2}/{p3}',                [PostController::class, 'show']);
 $router->get('/{category}/{slug}', [PostController::class, 'show']);
 $router->get('/{slug}',           [PageController::class, 'show']);
