@@ -56,6 +56,10 @@ final class Setting extends Model
         'comment_email_required',
         'comment_replies_enabled',
         'comment_close_old_days',
+        'permalink_mode',
+        'permalink_numeric_prefix',
+        'permalink_numeric_source',
+        'permalink_numeric_suffix',
     ];
 
     public static function allAsArray(): array

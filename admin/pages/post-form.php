@@ -8,7 +8,7 @@
         $postAllowRss = $post ? (int)($post->allow_rss ?? 1) === 1 : true;
         $postIsTop = $post ? (int)($post->is_top ?? 0) === 1 : false;
         $postIsPrivate = $post ? (int)($post->is_private ?? 0) === 1 : false;
-        $postStatus = (string)($post->status ?? 'published');
+        $postStatus = (string)($post->status ?? 'draft');
         $selectedCategoryId = (int)($post->category_id ?? 0);
         if ($selectedCategoryId <= 0 && !empty($categories)) {
             $selectedCategoryId = (int)$categories[0]->id;
@@ -45,8 +45,8 @@
 
             <aside class="post-editor-sidebar">
                 <div class="post-editor-actions">
-                    <button type="submit" class="btn btn-primary" data-post-publish-button><i class="fa-solid fa-paper-plane"></i> 发布</button>
-                    <button type="submit" class="btn"><i class="fa-solid fa-floppy-disk"></i> 保存</button>
+                    <button type="submit" name="submit_action" value="publish" class="btn btn-primary" data-post-publish-button><i class="fa-solid fa-paper-plane"></i> 发布</button>
+                    <button type="submit" name="submit_action" value="save_draft" class="btn" data-post-save-button><i class="fa-solid fa-floppy-disk"></i> 保存</button>
                     <a href="/admin/posts" class="btn"><i class="fa-solid fa-arrow-left"></i> 返回</a>
                 </div>
 

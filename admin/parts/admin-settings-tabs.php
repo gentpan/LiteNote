@@ -8,16 +8,16 @@
             'active' => $__settingsPath === '/admin/settings' || $__settingsPath === '/admin/settings/',
         ],
         [
-            'href' => '/admin/settings/comments',
-            'icon' => 'fa-regular fa-comment-dots',
-            'label' => '评论',
-            'active' => str_starts_with($__settingsPath, '/admin/settings/comments'),
-        ],
-        [
             'href' => '/admin/settings/permalinks',
             'icon' => 'fa-solid fa-link',
             'label' => '固定链接',
             'active' => str_starts_with($__settingsPath, '/admin/settings/permalinks'),
+        ],
+        [
+            'href' => '/admin/settings/attachments',
+            'icon' => 'fa-solid fa-paperclip',
+            'label' => '附件',
+            'active' => str_starts_with($__settingsPath, '/admin/settings/attachments'),
         ],
         [
             'href' => '/admin/settings/mail',

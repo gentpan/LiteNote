@@ -101,6 +101,7 @@ $router->group('/admin', function ($r) {
 
     // 评论
     $r->get('/comments',               [CommentController::class, 'index']);
+    $r->post('/comments/settings',      [CommentController::class, 'saveSettings'], [\App\Middleware\CsrfMiddleware::class]);
     $r->post('/comments/approve',      [CommentController::class, 'approve'],[\App\Middleware\CsrfMiddleware::class]);
     $r->post('/comments/spam',         [CommentController::class, 'spam'],   [\App\Middleware\CsrfMiddleware::class]);
     $r->post('/comments/delete',       [CommentController::class, 'destroy'],[\App\Middleware\CsrfMiddleware::class]);
@@ -138,6 +139,7 @@ $router->group('/admin', function ($r) {
     $r->get('/settings',               [SettingController::class, 'index']);
     $r->get('/settings/comments',      [SettingController::class, 'comments']);
     $r->get('/settings/permalinks',    [SettingController::class, 'permalinks']);
+    $r->get('/settings/attachments',   [AttachmentController::class, 'settings']);
     $r->post('/settings/save',         [SettingController::class, 'save'],   [\App\Middleware\CsrfMiddleware::class]);
     $r->post('/settings/favicon',      [SettingController::class, 'uploadFavicon'], [\App\Middleware\CsrfMiddleware::class]);
     $r->post('/settings/site-logo',    [SettingController::class, 'uploadSiteLogo'], [\App\Middleware\CsrfMiddleware::class]);

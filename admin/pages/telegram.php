@@ -93,36 +93,38 @@
 
         <section class="admin-form mail-log-panel telegram-help-panel">
             <h3 class="settings-group-title"><i class="fa-solid fa-list-check"></i> 字段用途</h3>
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>环境变量</th>
-                        <th>是否必填</th>
-                        <th>使用位置</th>
-                        <th>说明</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><code>TELEGRAM_BOT_TOKEN</code></td>
-                        <td>必填</td>
-                        <td>下载 Telegram 图片、调用 Bot API</td>
-                        <td>{{ $hasToken ? '已填写' : '未填写，请到 BotFather 获取后填写' }}</td>
-                    </tr>
-                    <tr>
-                        <td><code>TELEGRAM_WEBHOOK_SECRET</code></td>
-                        <td>必填</td>
-                        <td>校验 webhook 请求</td>
-                        <td>{{ $secret !== '' ? '已填写' : '未填写，保存时会自动生成' }}</td>
-                    </tr>
-                    <tr>
-                        <td><code>TELEGRAM_ALLOWED_CHAT_IDS</code></td>
-                        <td>建议填写</td>
-                        <td>限制哪些 Telegram 会话可以发布说说</td>
-                        <td>{{ $chatIds !== '' ? $chatIds : '未填写，建议填写自己的 chat id' }}</td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="settings-section">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>环境变量</th>
+                            <th>是否必填</th>
+                            <th>使用位置</th>
+                            <th>说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>TELEGRAM_BOT_TOKEN</code></td>
+                            <td>必填</td>
+                            <td>下载 Telegram 图片、调用 Bot API</td>
+                            <td>{{ $hasToken ? '已填写' : '未填写，请到 BotFather 获取后填写' }}</td>
+                        </tr>
+                        <tr>
+                            <td><code>TELEGRAM_WEBHOOK_SECRET</code></td>
+                            <td>必填</td>
+                            <td>校验 webhook 请求</td>
+                            <td>{{ $secret !== '' ? '已填写' : '未填写，保存时会自动生成' }}</td>
+                        </tr>
+                        <tr>
+                            <td><code>TELEGRAM_ALLOWED_CHAT_IDS</code></td>
+                            <td>建议填写</td>
+                            <td>限制哪些 Telegram 会话可以发布说说</td>
+                            <td>{{ $chatIds !== '' ? $chatIds : '未填写，建议填写自己的 chat id' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </section>
     </div>
 @endsection

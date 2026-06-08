@@ -149,7 +149,7 @@ class TalkController
 
         $file = $request->files['image'] ?? null;
         if (!is_array($file)) {
-            Response::json(['code' => 1, 'msg' => '请选择图片']);
+            Response::json(['code' => 1, 'msg' => ImageUploadService::missingUploadMessage('图片')]);
         }
 
         try {

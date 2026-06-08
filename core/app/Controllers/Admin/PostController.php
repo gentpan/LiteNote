@@ -136,7 +136,7 @@ class PostController
     {
         $file = $request->files['image'] ?? null;
         if (!is_array($file)) {
-            Response::json(['code' => 1, 'msg' => '请选择图片']);
+            Response::json(['code' => 1, 'msg' => ImageUploadService::missingUploadMessage('图片')]);
         }
 
         try {
@@ -234,6 +234,14 @@ class PostController
     private function persist(Request $request, ?int $id): never
     {
         Post::ensurePublishingOptionsSchema();
+        $submitAction = (string)$request->input('submit_action', '');
+        $status = (string)$request->input('status', PostStatus::Draft->value);
+        if ($submitAction === 'publish') {
+            $status = PostStatus::Published->value;
+        } elseif ($submitAction === 'save_draft') {
+            $status = PostStatus::Draft->value;
+        }
+
         $data = [
             'title'    => $request->input('title', ''),
             'slug'     => $request->input('slug', ''),
@@ -241,7 +249,7 @@ class PostController
             'markdown' => $request->input('markdown_content', ''),
             'cover'    => $request->input('cover', ''),
             'category_id' => $request->input('category_id', 0),
-            'status'   => $request->input('status', PostStatus::Published->value),
+            'status'   => $status,
             'published_at' => $request->input('published_at', ''),
             'allow_comments' => $request->input('allow_comments', '0'),
             'allow_rss' => $request->input('allow_rss', '0'),
@@ -333,7 +341,7 @@ class PostController
             }
         }
 
-        $this->flashSuccess($id ? '文章已更新' : '文章已发布');
+        $this->flashSuccess($data['status'] === PostStatus::Published->value ? ($id ? '文章已发布' : '文章已发布') : ($id ? '草稿已保存' : '草稿已保存'));
         $this->redirect('/admin/posts');
     }
 

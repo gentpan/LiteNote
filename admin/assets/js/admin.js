@@ -70,6 +70,21 @@
         bindToast(toast);
     }
 
+    function compactUploadFilename(filename) {
+        var value = String(filename || '').trim();
+        var chars = Array.from(value);
+        if (chars.length <= 24) {
+            return value;
+        }
+        var dot = value.lastIndexOf('.');
+        var ext = dot > 0 && value.length - dot <= 10 ? value.slice(dot) : '';
+        var stem = ext ? value.slice(0, -ext.length) : value;
+        var stemChars = Array.from(stem);
+        var head = stemChars.slice(0, 12).join('');
+        var tail = stemChars.slice(Math.max(12, stemChars.length - 6)).join('');
+        return head + '...' + tail + ext;
+    }
+
     function uploadToast(filename) {
         var stack = document.querySelector('.admin-toast-stack');
         if (!stack) {
@@ -89,7 +104,11 @@
             + '  <div class="admin-upload-toast-head"><span class="admin-upload-toast-title"></span><strong class="admin-upload-toast-percent">0%</strong></div>'
             + '  <div class="admin-upload-toast-bar"><span></span></div>'
             + '</div>';
-        toast.querySelector('.admin-upload-toast-title').textContent = filename ? '\u{4E0A}\u{4F20} ' + filename : '\u{6B63}\u{5728}\u{4E0A}\u{4F20}';
+        var title = toast.querySelector('.admin-upload-toast-title');
+        title.textContent = filename ? '\u{4E0A}\u{4F20} ' + compactUploadFilename(filename) : '\u{6B63}\u{5728}\u{4E0A}\u{4F20}';
+        if (filename) {
+            title.title = filename;
+        }
         stack.appendChild(toast);
 
         var bar = toast.querySelector('.admin-upload-toast-bar span');
@@ -289,7 +308,7 @@
                     return;
                 }
                 if (xhr.status < 200 || xhr.status >= 300 || !payload || payload.code !== 0) {
-                    reject(new Error((payload && payload.msg) || '\u{4E0A}\u{4F20}\u{5931}\u{8D25}'));
+                    reject(new Error((payload && (payload.msg || payload.error)) || ('\u{4E0A}\u{4F20}\u{5931}\u{8D25} HTTP ' + xhr.status)));
                     return;
                 }
                 resolve(payload);
@@ -300,6 +319,8 @@
             xhr.send(data);
         });
     }
+
+    window.adminUploadFileRequest = uploadFileRequest;
 
     window.adminUploadFile = function(options) {
         options = options || {};
@@ -560,11 +581,13 @@
                     return payload;
                 });
             }).then(function(payload) {
-                var saved = payload.data && Number(payload.data.show_in_nav) === 1;
+                var saved = payload.data && Object.prototype.hasOwnProperty.call(payload.data, 'value')
+                    ? Number(payload.data.value) === 1
+                    : Number(payload.data && payload.data.show_in_nav) === 1;
                 checkbox.checked = saved;
                 lastChecked = saved;
                 var label = checkbox.closest('label');
-                if (label) {
+                if (label && payload.data && Object.prototype.hasOwnProperty.call(payload.data, 'show_in_nav')) {
                     label.title = saved ? '\u{70B9}\u{51FB}\u{4ECE}\u{83DC}\u{5355}\u{680F}\u{9690}\u{85CF}' : '\u{70B9}\u{51FB}\u{5728}\u{83DC}\u{5355}\u{680F}\u{663E}\u{793A}';
                 }
                 showToast(payload.msg || '\u{4FDD}\u{5B58}\u{6210}\u{529F}', 'success');
@@ -729,7 +752,7 @@
         if (!uploadUrl || !file) {
             return Promise.reject(new Error('\u{4E0A}\u{4F20}\u{63A5}\u{53E3}\u{4E0D}\u{53EF}\u{7528}'));
         }
-        return uploadFileRequest(uploadUrl, {
+        return window.adminUploadFileRequest(uploadUrl, {
             _csrf: csrf || '',
             purpose: purpose || 'editor'
         }, 'image', file, onProgress).then(function(payload) {
@@ -741,7 +764,7 @@
         if (!uploadUrl || !file) {
             return Promise.reject(new Error('\u{4E0A}\u{4F20}\u{63A5}\u{53E3}\u{4E0D}\u{53EF}\u{7528}'));
         }
-        return uploadFileRequest(uploadUrl, { _csrf: csrf || '' }, 'file', file, onProgress).then(function(payload) {
+        return window.adminUploadFileRequest(uploadUrl, { _csrf: csrf || '' }, 'file', file, onProgress).then(function(payload) {
             return payload.data || {};
         });
     }
@@ -1010,9 +1033,11 @@
         var coverBtn = document.getElementById('cover-upload-btn');
         var coverFile = document.getElementById('cover-file');
         var coverPreview = document.getElementById('cover-preview');
+        var form = coverBtn ? coverBtn.closest('form') : null;
         var root = editorConfigRoot();
-        var uploadUrl = root ? (root.getAttribute('data-upload-url') || '') : '';
-        var csrf = root ? (root.getAttribute('data-csrf') || '') : '';
+        var csrfField = form ? form.querySelector('input[name="_csrf"]') : null;
+        var uploadUrl = (coverBtn && coverBtn.getAttribute('data-upload-url')) || (root ? (root.getAttribute('data-upload-url') || '') : '') || '/admin/posts/upload-image';
+        var csrf = (csrfField ? csrfField.value : '') || (root ? (root.getAttribute('data-csrf') || '') : '');
 
         function updateCoverPreview(url) {
             if (!coverPreview) return;
@@ -1039,8 +1064,13 @@
             uploadImage(file, 'cover', uploadUrl, csrf, function(progress) {
                 toast.progress(progress);
             }).then(function(data) {
-                if (coverUrl) coverUrl.value = data.url || '';
-                updateCoverPreview(data.url || '');
+                var url = data.url || data.relative_url || data.fileurl || '';
+                if (coverUrl) {
+                    coverUrl.value = url;
+                    coverUrl.dispatchEvent(new Event('input', { bubbles: true }));
+                    coverUrl.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                updateCoverPreview(url);
                 toast.success('\u{7279}\u{8272}\u{56FE}\u{5DF2}\u{4E0A}\u{4F20}');
             }).catch(function(err) {
                 toast.error(err.message || '\u{7279}\u{8272}\u{56FE}\u{4E0A}\u{4F20}\u{5931}\u{8D25}');
@@ -1419,6 +1449,15 @@
             var status = form ? form.querySelector('select[name="status"]') : null;
             if (status) {
                 status.value = 'published';
+            }
+        });
+    });
+    document.querySelectorAll('[data-post-save-button]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var form = btn.closest('form');
+            var status = form ? form.querySelector('select[name="status"]') : null;
+            if (status) {
+                status.value = 'draft';
             }
         });
     });

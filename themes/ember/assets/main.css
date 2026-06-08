@@ -3102,6 +3102,7 @@ html.with-fancybox .fancybox__dialog {
     font-size: 13px;
     font-weight: 600;
     box-shadow: 0 12px 28px rgba(15, 23, 42, .18);
+    overflow: hidden;
     opacity: 0;
     pointer-events: none;
     transform: translateY(8px);
@@ -3138,18 +3139,23 @@ html.with-fancybox .fancybox__dialog {
 }
 .front-upload-toast-body {
     min-width: 0;
+    max-width: 100%;
     flex: 1 1 auto;
     display: grid;
     gap: 8px;
+    overflow: hidden;
 }
 .front-upload-toast-head {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: baseline;
-    justify-content: space-between;
     gap: 10px;
+    min-width: 0;
 }
 .front-upload-toast-title {
     min-width: 0;
+    max-width: 100%;
+    display: block;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

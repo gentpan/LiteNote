@@ -10,7 +10,9 @@ use App\Core\Session;
 use App\Core\View;
 use App\Enums\CommentStatus;
 use App\Models\Comment;
+use App\Models\Setting;
 use App\Services\CommentModerationService;
+use App\Services\CommentSettingsService;
 use App\Services\IpGeoService;
 use App\Traits\HasFlashRedirect;
 
@@ -29,6 +31,7 @@ class CommentController
     public function index(): string
     {
         Comment::ensureGeoColumns();
+        CommentSettingsService::ensureDefaults();
         $status = $_GET['status'] ?? 'all';
         $page = max(1, (int)($_GET['page'] ?? 1));
         $perPage = (int) \App\Core\Config::get('pagination.admin_per_page', 20);
@@ -79,10 +82,36 @@ class CommentController
             'page'      => $page,
             'perPage'   => $perPage,
             'total'     => $total,
+            'commentSettings' => CommentSettingsService::settings(),
             'paginator' => Helper::paginate($page, $total, $perPage, '/admin/comments?status=' . $status),
             'csrf'      => Session::csrfToken(),
             'pageTitle' => '评论管理',
         ], 'layouts.admin');
+    }
+
+    public function saveSettings(Request $request): never
+    {
+        $key = (string)$request->input('key', '');
+        $allowed = [
+            'comment_need_audit' => '评论需审核',
+            'comment_captcha' => '评论验证码',
+        ];
+        if (!array_key_exists($key, $allowed)) {
+            Response::json(['code' => 1, 'msg' => '不支持的评论设置']);
+        }
+
+        CommentSettingsService::ensureDefaults();
+        $value = (string)$request->input($key, $request->input('value', '0')) === '1' ? '1' : '0';
+        Setting::set($key, $value);
+
+        Response::json([
+            'code' => 0,
+            'msg' => $allowed[$key] . '已' . ($value === '1' ? '开启' : '关闭'),
+            'data' => [
+                'key' => $key,
+                'value' => (int)$value,
+            ],
+        ]);
     }
 
     private function hydrateGeoRows(array &$rows): void

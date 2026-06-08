@@ -44,7 +44,7 @@
         @if(!empty($permalinkConflicts))
             <div class="alert alert-info">
                 <i class="fa-solid fa-circle-info"></i>
-                <span>简短模式下页面优先。以下文章 slug 与页面冲突：{{ implode('、', array_map(static fn($row) => $row['slug'], $permalinkConflicts)) }}</span>
+                <span>当前固定链接规则下页面地址优先。以下文章路径与页面冲突：{{ implode('、', array_map(static fn($row) => $row['slug'], $permalinkConflicts)) }}</span>
             </div>
         @endif
 
@@ -86,29 +86,43 @@
                             ];
                             $isToggle = $type === 'bool' || in_array((string)$item['k'], $toggleKeys, true);
                             $selectOptions = [
-                                'permalink_mode' => [
-                                    'default' => '默认：/post/{slug}.html',
-                                    'simple' => '简短：/{slug}',
-                                    'category' => '分类：/{category}/{slug}',
-                                    'numeric' => '数字模式',
+                                'permalink_base' => [
+                                    'post' => 'post',
+                                    'posts' => 'posts',
+                                    'article' => 'article',
+                                    'archive' => 'archive',
+                                    'blog' => 'blog',
+                                    '' => '无前缀',
+                                    'custom' => '自定义路径名称',
                                 ],
-                                'permalink_numeric_source' => [
-                                    'six' => '6 位固定码（100001 起）',
-                                    'id' => '文章 ID',
+                                'permalink_pattern' => [
+                                    'slug' => '关键词：{slug}',
+                                    'id' => '文章 ID：{id}',
+                                    'ym_slug' => '年月 + 关键词：{yyyy}/{mm}/{slug}',
+                                    'ymd_slug' => '年月日 + 关键词：{yyyy}/{mm}/{dd}/{slug}',
+                                    'ymd_time_slug' => '年月日时间 + 关键词：{yyyy}/{mm}/{dd}/{HHmmss}/{slug}',
+                                    'category_slug' => '分类 + 关键词：{category}/{slug}',
+                                    'category_ymd_slug' => '分类 + 年月日 + 关键词：{category}/{yyyy}/{mm}/{dd}/{slug}',
+                                    'category_id' => '分类 + 文章 ID：{category}/{id}',
+                                    'ymd_id' => '年月日 + 文章 ID：{yyyy}/{mm}/{dd}/{id}',
                                 ],
-                                'permalink_numeric_suffix' => [
+                                'permalink_suffix_mode' => [
                                     '.html' => '.html',
+                                    '.htm' => '.htm',
                                     '' => '无后缀',
+                                    'custom' => '自定义后缀',
                                 ],
                             ];
                             $fieldHints = [
-                                'permalink_numeric_prefix' => '可为空，或填写 post、archive 等。只允许字母、数字、下划线和短横线。',
-                                'permalink_mode' => '简短模式会优先匹配页面，再匹配文章；保存后如有冲突会提示。',
+                                'permalink_base' => '前缀只从固定选项中选择；选择“无前缀”时页面地址优先，可能与文章链接冲突。',
+                                'permalink_base_custom' => '仅在路径前缀选择“自定义路径名称”时使用。只允许字母、数字、下划线和短横线。',
+                                'permalink_pattern' => '关键词对应文章 slug；年月日和时间来自文章发布时间。',
+                                'permalink_suffix_custom' => '仅在链接后缀选择“自定义后缀”时使用。示例：.html、.htm、.xhtml。',
                                 'site_analytics_code' => '填入统计平台提供的完整代码，例如 <script>...</script>。保存后会在前台页面底部自动加载。',
                                 'site_mapbox_token' => '用于滔客发布时搜索/反查城市，请填写 Mapbox public token，不要填写 secret token。',
                             ];
                         @endphp
-                        <div class="form-group @if($isToggle) form-group-toggle @endif">
+                        <div class="form-group @if($isToggle) form-group-toggle @endif" data-setting-key="{{ $item['k'] }}">
                             <label for="setting-{{ $item['k'] }}">
                                 {{ $item['label'] ?: $item['k'] }}
                             </label>
@@ -179,6 +193,30 @@
             state.textContent = on ? '已开启' : '已关闭';
         });
     });
+
+    (function () {
+        function syncPermalinkOptionals() {
+            var base = document.getElementById('setting-permalink_base');
+            var suffix = document.getElementById('setting-permalink_suffix_mode');
+            var baseCustom = document.querySelector('[data-setting-key="permalink_base_custom"]');
+            var suffixCustom = document.querySelector('[data-setting-key="permalink_suffix_custom"]');
+            if (baseCustom && base) {
+                baseCustom.hidden = base.value !== 'custom';
+            }
+            if (suffixCustom && suffix) {
+                suffixCustom.hidden = suffix.value !== 'custom';
+            }
+        }
+        var baseSelect = document.getElementById('setting-permalink_base');
+        var suffixSelect = document.getElementById('setting-permalink_suffix_mode');
+        if (baseSelect) {
+            baseSelect.addEventListener('change', syncPermalinkOptionals);
+        }
+        if (suffixSelect) {
+            suffixSelect.addEventListener('change', syncPermalinkOptionals);
+        }
+        syncPermalinkOptionals();
+    })();
 
     (function () {
         var input = document.getElementById('faviconUploadInput');
