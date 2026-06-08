@@ -9,7 +9,7 @@
         ];
         $quickActions = [
             ['label' => '写文章', 'href' => '/admin/posts/create', 'icon' => 'fa-regular fa-pen-to-square'],
-            ['label' => '发布滔客', 'href' => '/admin/talk/create', 'icon' => 'fa-regular fa-comments'],
+            ['label' => '滔客管理', 'href' => '/admin/talk', 'icon' => 'fa-regular fa-comments'],
             ['label' => '管理附件', 'href' => '/admin/attachments', 'icon' => 'fa-solid fa-paperclip'],
             ['label' => '系统设置', 'href' => '/admin/settings', 'icon' => 'fa-solid fa-gear'],
         ];

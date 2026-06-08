@@ -74,12 +74,13 @@ final class Plugin implements PluginInterface
             'label' => 'X 推文',
             'href' => '/admin/x/tweets',
             'icon' => 'fa-brands fa-x-twitter',
-            'group' => '资源',
+            'group' => '内容',
             'sort' => 60,
         ]);
         $ctx->adminRoutes(static function (Router $r): void {
             $r->get('/x/tweets', [XAdminController::class, 'index']);
             $r->post('/x/tweets/store', [XAdminController::class, 'store'], [\App\Middleware\CsrfMiddleware::class]);
+            $r->post('/x/tweets/refresh', [XAdminController::class, 'refresh'], [\App\Middleware\CsrfMiddleware::class]);
             $r->post('/x/tweets/delete', [XAdminController::class, 'destroy'], [\App\Middleware\CsrfMiddleware::class]);
         });
 
@@ -91,7 +92,7 @@ final class Plugin implements PluginInterface
         // 把推文混入首页时间线(核心 homeFeedItems 合并各贡献者产出后按时间排序)。
         $ctx->homeFeedContributor(static function (): array {
             try {
-                ['items' => $items] = XTweet::paginate(1, 12, 'published_at DESC, created_at DESC, id DESC', 'is_public = 1');
+                ['items' => $items] = XTweet::paginate(1, 200, 'published_at DESC, created_at DESC, id DESC', 'is_public = 1');
             } catch (\Throwable) {
                 return [];
             }
@@ -100,7 +101,7 @@ final class Plugin implements PluginInterface
                 $xt->loadComments();
                 $out[] = [
                     'type' => 'x_tweet',
-                    'partial' => 'partials.tweet-card',
+                    'partial' => 'partials.x-card',
                     'time' => strtotime((string)$xt->publishedAt()) ?: 0,
                     'item' => $xt,
                     'fixed' => false,

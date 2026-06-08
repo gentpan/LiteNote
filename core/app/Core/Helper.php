@@ -61,12 +61,11 @@ final class Helper
         $now = time();
         $diff = max(0, $now - $ts);
         return match (true) {
-            $diff < 60        => '刚刚',
-            $diff < 3600      => floor($diff / 60) . ' 分钟前',
-            $diff < 86400     => floor($diff / 3600) . ' 小时前',
-            $diff < 86400 * 30 => floor($diff / 86400) . ' 天前',
-            $diff < 86400 * 365 => floor($diff / (86400 * 30)) . ' 个月前',
-            default           => floor($diff / (86400 * 365)) . ' 年前',
+            $diff < 60         => max(1, $diff) . ' 秒前',
+            $diff < 3600       => floor($diff / 60) . ' 分钟前',
+            $diff < 86400      => floor($diff / 3600) . ' 小时前',
+            $diff < 86400 * 7  => floor($diff / 86400) . ' 天前',
+            default            => self::formatDate($ts, 'Y-m-d H:i'),
         };
     }
 
@@ -78,22 +77,48 @@ final class Helper
     public static function timeTag(string|int|\DateTimeInterface $date, ?string $class = null): string
     {
         $ts = self::timestamp($date);
-        $full = self::formatDate($ts, 'Y-m-d H:i:s');
-        $classAttr = $class ? ' class="' . self::e($class) . '"' : '';
-        return '<time' . $classAttr . ' datetime="' . self::e(date('c', $ts)) . '" title="' . self::e($full) . '">'
-            . self::e(self::humanDate($ts))
+        $label = self::humanDate($ts);
+        $absolute = self::formatDate($ts, 'Y-m-d H:i');
+        $classes = trim('time-tag' . ($class ? ' ' . $class : ''));
+        $isRelative = time() - $ts >= 0 && time() - $ts < 86400 * 7;
+        $attrs = [
+            'class' => $classes,
+            'datetime' => date('c', $ts),
+        ];
+        if ($isRelative) {
+            $attrs['data-time-relative'] = $label;
+            $attrs['data-time-absolute'] = $absolute;
+        }
+        $attrText = '';
+        foreach ($attrs as $name => $value) {
+            $attrText .= ' ' . $name . '="' . self::e((string)$value) . '"';
+        }
+        return '<time' . $attrText . '>'
+            . self::e($label)
             . '</time>';
     }
 
     public static function dateTimeTag(string|int|\DateTimeInterface $date, ?string $class = null): string
     {
         $ts = self::timestamp($date);
-        $full = self::formatDate($ts, 'Y-m-d H:i:s');
         $label = self::formatDate($ts, 'Y-m-d H:i');
-        $classAttr = $class ? ' class="' . self::e($class) . '"' : '';
-        return '<time' . $classAttr . ' datetime="' . self::e(date('c', $ts)) . '" title="' . self::e($full) . '">'
+        $classes = trim('time-tag' . ($class ? ' ' . $class : ''));
+        $classAttr = ' class="' . self::e($classes) . '"';
+        return '<time' . $classAttr . ' datetime="' . self::e(date('c', $ts)) . '">'
             . self::e($label)
             . '</time>';
+    }
+
+    public static function compactNumber(int|float $number): string
+    {
+        $value = max(0, (float)$number);
+        if ($value < 1000) {
+            return (string)(int)$value;
+        }
+
+        $decimals = $value < 10000 ? 1 : 0;
+        $compact = number_format($value / 1000, $decimals, '.', '');
+        return preg_replace('/\.0$/', '', $compact) . 'k';
     }
 
     private static function timestamp(string|int|\DateTimeInterface $date): int

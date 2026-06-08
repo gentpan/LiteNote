@@ -50,7 +50,7 @@
         @if(!empty($definition['token_label']))
             <div class="form-group">
                 <label>{{ $definition['token_label'] }}</label>
-                <input type="password" name="access_token" value="" placeholder="{{ $hasToken ? '已保存，留空则不修改' : $definition['token_label'] }}">
+                <input type="password" name="access_token" value="" placeholder="{{ $hasToken ? '已保存，留空则不修改' : $definition['token_label'] }}" data-no-dirty>
                 @if(!empty($definition['token_hint']))<span class="field-hint">{{ $definition['token_hint'] }}</span>@endif
             </div>
         @endif
@@ -58,7 +58,7 @@
         @if(!empty($definition['refresh_label']))
             <div class="form-group">
                 <label>{{ $definition['refresh_label'] }}</label>
-                <input type="password" name="refresh_token" value="" placeholder="{{ $hasRefresh ? '已保存，留空则不修改' : $definition['refresh_label'] }}">
+                <input type="password" name="refresh_token" value="" placeholder="{{ $hasRefresh ? '已保存，留空则不修改' : $definition['refresh_label'] }}" data-no-dirty>
             </div>
         @endif
 
@@ -68,7 +68,7 @@
                 @if(!empty($field['textarea']))
                     <textarea name="metadata_{{ $key }}" rows="5" placeholder="{{ $field['placeholder'] ?? '' }}">{{ $meta[$key] ?? '' }}</textarea>
                 @else
-                    <input type="{{ !empty($field['secret']) ? 'password' : 'text' }}" name="metadata_{{ $key }}" value="{{ !empty($field['secret']) && !empty($meta[$key] ?? '') ? '' : ($meta[$key] ?? '') }}" placeholder="{{ !empty($field['secret']) && !empty($meta[$key] ?? '') ? '已保存，留空则不修改' : ($field['placeholder'] ?? '') }}">
+                    <input type="{{ !empty($field['secret']) ? 'password' : 'text' }}" name="metadata_{{ $key }}" value="{{ !empty($field['secret']) && !empty($meta[$key] ?? '') ? '' : ($meta[$key] ?? '') }}" placeholder="{{ !empty($field['secret']) && !empty($meta[$key] ?? '') ? '已保存，留空则不修改' : ($field['placeholder'] ?? '') }}" {{ !empty($field['secret']) ? 'data-no-dirty' : '' }}>
                 @endif
             </div>
         @endforeach

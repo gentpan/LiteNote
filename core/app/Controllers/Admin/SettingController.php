@@ -5,11 +5,13 @@ namespace App\Controllers\Admin;
 
 use App\Core\Request;
 use App\Core\Response;
+use App\Core\Helper;
 use App\Core\Session;
 use App\Core\View;
 use App\Models\Setting;
 use App\Services\CommentSettingsService;
 use App\Services\FaviconService;
+use App\Services\ImageUploadService;
 use App\Services\PermalinkService;
 use App\Services\ReadingSettingsService;
 
@@ -18,11 +20,6 @@ class SettingController
     public function index(): string
     {
         return $this->renderSection('basic');
-    }
-
-    public function reading(): string
-    {
-        return $this->renderSection('reading');
     }
 
     public function comments(): string
@@ -67,6 +64,20 @@ class SettingController
         ], 'layouts.admin');
     }
 
+    public function uploadSiteLogo(Request $request): never
+    {
+        if (empty($_FILES['logo'])) {
+            Response::json(['code' => 1, 'msg' => '没有选择 Logo 文件']);
+        }
+
+        try {
+            $data = ImageUploadService::upload($_FILES['logo'], 'site-logo');
+            Response::json(['code' => 0, 'msg' => 'Logo 已上传', 'data' => $data]);
+        } catch (\Throwable $e) {
+            Response::json(['code' => 1, 'msg' => $e->getMessage()]);
+        }
+    }
+
     public function save(Request $request): never
     {
         $data = (array) $request->input('settings', []);
@@ -95,7 +106,6 @@ class SettingController
         \App\Core\View::share('site', \App\Core\Config::get('site'));
         Session::flash('success', '设置已保存');
         Response::redirect(match ($section) {
-            'reading' => '/admin/settings/reading',
             'comment' => '/admin/settings/comments',
             'permalink' => '/admin/settings/permalinks',
             default => '/admin/settings',
@@ -123,7 +133,7 @@ class SettingController
                 'k' => 'site_avatar_url',
                 'v' => '',
                 'type' => 'string',
-                'label' => '站点头像地址',
+                'label' => '站点 Logo',
                 'group_name' => 'basic',
                 'sort' => 8,
             ],
@@ -135,7 +145,28 @@ class SettingController
                 'group_name' => 'basic',
                 'sort' => 9,
             ],
+            [
+                'k' => 'site_analytics_code',
+                'v' => '',
+                'type' => 'textarea',
+                'label' => '统计代码',
+                'group_name' => 'basic',
+                'sort' => 10,
+            ],
+            [
+                'k' => 'site_mapbox_token',
+                'v' => '',
+                'type' => 'string',
+                'label' => 'Mapbox 公开 Token',
+                'group_name' => 'basic',
+                'sort' => 11,
+            ],
         ]);
+        $siteAvatar = Setting::findBy('k', 'site_avatar_url');
+        if ($siteAvatar && (string)$siteAvatar->label !== '站点 Logo') {
+            $siteAvatar->label = '站点 Logo';
+            $siteAvatar->save();
+        }
     }
 
     private function sanitizeSetting(string $key, mixed $value): mixed
@@ -143,16 +174,21 @@ class SettingController
         $value = is_array($value) ? '' : trim((string)$value);
 
         return match ($key) {
-            'home_feed_mode' => in_array($value, ['mixed', 'posts', 'talks'], true) ? $value : 'mixed',
-            'home_total_limit' => (string)max(1, min(60, (int)$value)),
-            'home_post_limit', 'home_talk_limit' => (string)max(0, min(60, (int)$value)),
-            'post_list_per_page' => (string)max(1, min(50, (int)$value)),
             'permalink_mode' => in_array($value, ['default', 'simple', 'category', 'numeric'], true) ? $value : 'default',
             'permalink_numeric_source' => in_array($value, ['id', 'six'], true) ? $value : 'six',
             'permalink_numeric_suffix' => in_array($value, ['', '.html'], true) ? $value : '.html',
             'permalink_numeric_prefix' => $this->sanitizePermalinkPrefix($value),
+            'site_avatar_url' => $this->absoluteUploadUrl($value),
             default => $value,
         };
+    }
+
+    private function absoluteUploadUrl(string $value): string
+    {
+        if ($value === '' || preg_match('#^https?://#i', $value)) {
+            return $value;
+        }
+        return Helper::url('/' . ltrim($value, '/'));
     }
 
     private function sanitizePermalinkPrefix(string $value): string

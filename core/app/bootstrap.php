@@ -132,12 +132,23 @@ if (is_file(Config::get('database.sqlite'))) {
             View::share($k, $v);
             Config::set("site.{$k}", $v);
         }
+        $mapboxToken = getenv('SITE_MAPBOX_TOKEN');
+        if ($mapboxToken !== false && trim((string)$mapboxToken) !== '') {
+            Config::set('site.site_mapbox_token', trim((string)$mapboxToken));
+            View::share('site_mapbox_token', trim((string)$mapboxToken));
+        }
         View::share('site', Config::get('site'));
     } catch (\Throwable) {
         // 首次安装时数据库还没建好
     }
 }
 View::share('site', Config::get('site'));
+
+try {
+    \App\Services\BackupService::runDueSafely();
+} catch (\Throwable) {
+    // 备份任务不影响正常访问。
+}
 
 $currentAdmin = null;
 try {

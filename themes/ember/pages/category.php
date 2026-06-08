@@ -1,32 +1,53 @@
 @extends('layouts.front')
 
 @section('content')
-    <header class="category-hero cat-color-{{ $category->colorIndex() }}">
-        <div class="category-hero-ico"><i class="{{ $category->iconClass() }}"></i></div>
-        <div class="category-hero-body">
-            <h1 class="category-hero-name">{{ $category->name }}</h1>
-            @if($category->description)
-                <p class="category-hero-desc">{{ $category->description }}</p>
+    <section class="category-page">
+        <div class="category-shell">
+            <header class="category-hero cat-color-{{ $category->colorIndex() }}">
+                <div class="category-hero-ico"><i class="{{ $category->iconClass() }}"></i></div>
+                <div class="category-hero-body">
+                    <span class="category-hero-kicker">Category</span>
+                    <h1 class="category-hero-name">{{ $category->name }}</h1>
+                    <div class="category-hero-meta">
+                        <span class="category-hero-stat"><i class="fa-regular fa-file-lines"></i> {{ (int)$articleStats['article_count'] }} 篇文章</span>
+                        <span class="category-hero-stat"><i class="fa-regular fa-eye"></i> {{ number_format((int)($articleStats['views'] ?? 0)) }} 阅读</span>
+                        <span class="category-hero-stat"><i class="fa-solid fa-keyboard"></i> {{ number_format((int)($articleStats['words'] ?? 0)) }} 字</span>
+                        <span class="category-hero-stat"><i class="fa-regular fa-comments"></i> {{ number_format((int)($articleStats['comments_count'] ?? 0)) }} 评论</span>
+                        <span class="category-hero-stat"><i class="fa-regular fa-heart"></i> {{ number_format((int)($articleStats['likes_count'] ?? 0)) }} 点赞</span>
+                    </div>
+                </div>
+                @if($category->description)
+                    <p class="category-hero-desc">{{ $category->description }}</p>
+                @endif
+            </header>
+
+            <div class="js-list-items home-list home-post-list category-post-list" data-category-feed-list>
+                @if(empty($posts))
+                    <p class="empty category-empty">该分类下还没有文章</p>
+                @else
+                    @php $offset = 0; @endphp
+                    @include('partials.category-post-items')
+                @endif
+            </div>
+            @if(!empty($categoryHasMore))
+                <div class="home-feed-more category-feed-more"
+                     data-home-feed-more
+                     data-list-selector="[data-category-feed-list]"
+                     data-offset="{{ count($posts ?? []) }}"
+                     data-limit="10"
+                     data-url="/category/{{ $category->slug }}/feed">
+                    <button type="button" class="home-feed-more-btn">
+                        <span>加载更多</span>
+                    </button>
+                    <div class="home-feed-more-loading" hidden>
+                        <span class="load-more-spinner"></span>
+                    </div>
+                    <div class="home-feed-more-end" hidden>
+                        <i class="fa-regular fa-circle-check"></i>
+                        <span>没有更多内容</span>
+                    </div>
+                </div>
             @endif
-            <div class="category-hero-meta"><i class="fa-regular fa-file-lines"></i> 共 {{ $total }} 篇文章</div>
         </div>
-    </header>
-    @if(empty($posts))
-        <p class="empty">该分类下还没有文章</p>
-    @endif
-    <div class="js-list-items">
-    @foreach($posts as $post)
-        <article class="post-card">
-            <h3 class="post-title">
-                <a href="{{ $post->getUrl() }}">{{ $post->title }}</a>
-            </h3>
-            <p class="post-meta">
-                <span><i class="fa-regular fa-calendar"></i> {!! \App\Core\Helper::timeTag($post->published_at) !!}</span>
-                <span><i class="fa-regular fa-eye"></i> {{ $post->views }} 浏览</span>
-            </p>
-            <p class="post-excerpt">{{ $post->summaryOrContent(200) }}</p>
-        </article>
-    @endforeach
-    </div>
-    {!! $paginator ?? '' !!}
+    </section>
 @endsection

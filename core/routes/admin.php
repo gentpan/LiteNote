@@ -20,6 +20,7 @@ use App\Controllers\Admin\ProfileController;
 use App\Controllers\Admin\PasskeyController;
 use App\Controllers\Admin\ActivityController;
 use App\Controllers\Admin\MailController;
+use App\Controllers\Admin\TelegramController;
 use App\Controllers\Admin\ThemeController;
 use App\Controllers\Admin\PluginController;
 use App\Middleware\AdminAuth;
@@ -75,6 +76,11 @@ $router->group('/admin', function ($r) {
 
     // 附件
     $r->get('/attachments',            [AttachmentController::class, 'index']);
+    $r->post('/attachments/settings',  [AttachmentController::class, 'saveSettings'], [\App\Middleware\CsrfMiddleware::class]);
+    $r->post('/attachments/s3-test',   [AttachmentController::class, 'testS3'], [\App\Middleware\CsrfMiddleware::class]);
+    $r->post('/attachments/s3-clear',  [AttachmentController::class, 'clearS3'], [\App\Middleware\CsrfMiddleware::class]);
+    $r->post('/attachments/s3-command', [AttachmentController::class, 's3ClearCommand'], [\App\Middleware\CsrfMiddleware::class]);
+    $r->post('/attachments/backup-now', [AttachmentController::class, 'backupNow'], [\App\Middleware\CsrfMiddleware::class]);
     $r->post('/attachments/upload',    [AttachmentController::class, 'upload'], [\App\Middleware\CsrfMiddleware::class]);
     $r->post('/attachments/delete',    [AttachmentController::class, 'destroy'],[\App\Middleware\CsrfMiddleware::class]);
 
@@ -111,10 +117,9 @@ $router->group('/admin', function ($r) {
 
     // 滔客
     $r->get('/talk',               [TalkController::class, 'index']);
-    $r->get('/talk/create',        [TalkController::class, 'create']);
-    $r->post('/talk/create',       [TalkController::class, 'store'],  [\App\Middleware\CsrfMiddleware::class]);
     $r->get('/talk/{id}/edit',     [TalkController::class, 'edit']);
     $r->post('/talk/{id}/edit',    [TalkController::class, 'update'], [\App\Middleware\CsrfMiddleware::class]);
+    $r->post('/talk/{id}/toggle',  [TalkController::class, 'togglePublic'], [\App\Middleware\CsrfMiddleware::class]);
     $r->post('/talk/delete',       [TalkController::class, 'destroy'],[\App\Middleware\CsrfMiddleware::class]);
 
     // 音乐
@@ -124,20 +129,23 @@ $router->group('/admin', function ($r) {
     $r->get('/music/online',       [MusicController::class, 'online']);
     $r->get('/music/create',       [MusicController::class, 'create']);
     $r->post('/music/create',      [MusicController::class, 'store'],  [\App\Middleware\CsrfMiddleware::class]);
+    $r->post('/music/{id}/share',  [MusicController::class, 'share'],  [\App\Middleware\CsrfMiddleware::class]);
     $r->get('/music/{id}/edit',    [MusicController::class, 'edit']);
     $r->post('/music/{id}/edit',   [MusicController::class, 'update'], [\App\Middleware\CsrfMiddleware::class]);
     $r->post('/music/delete',      [MusicController::class, 'destroy'],[\App\Middleware\CsrfMiddleware::class]);
 
     // 设置
     $r->get('/settings',               [SettingController::class, 'index']);
-    $r->get('/settings/reading',       [SettingController::class, 'reading']);
     $r->get('/settings/comments',      [SettingController::class, 'comments']);
     $r->get('/settings/permalinks',    [SettingController::class, 'permalinks']);
     $r->post('/settings/save',         [SettingController::class, 'save'],   [\App\Middleware\CsrfMiddleware::class]);
     $r->post('/settings/favicon',      [SettingController::class, 'uploadFavicon'], [\App\Middleware\CsrfMiddleware::class]);
+    $r->post('/settings/site-logo',    [SettingController::class, 'uploadSiteLogo'], [\App\Middleware\CsrfMiddleware::class]);
     $r->get('/settings/mail',          [MailController::class, 'index']);
     $r->post('/settings/mail/save',    [MailController::class, 'save'],      [\App\Middleware\CsrfMiddleware::class]);
     $r->post('/settings/mail/test',    [MailController::class, 'test'],      [\App\Middleware\CsrfMiddleware::class]);
+    $r->get('/settings/telegram',      [TelegramController::class, 'index']);
+    $r->post('/settings/telegram/save', [TelegramController::class, 'save'], [\App\Middleware\CsrfMiddleware::class]);
     $r->get('/mail',                   static function (): never {
         \App\Core\Response::redirect('/admin/settings/mail');
     });

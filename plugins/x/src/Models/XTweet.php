@@ -11,7 +11,7 @@ use App\Models\Model;
  *
  * 表 x_tweets 与核心 talk 表平级(同在主库),字段对应原 talk 的 tweet_* + 通用
  * content/images/is_public/published_at/likes_count/comments_count。本地评论复用核心
- * comments 表的 x_tweet_id 列。提供与原 Talk 推文一致的视图接口,供 tweet-card 渲染。
+ * comments 表的 x_tweet_id 列。提供与原 Talk 推文一致的视图接口,供 x-card 渲染。
  */
 final class XTweet extends Model
 {
@@ -26,7 +26,7 @@ final class XTweet extends Model
         return parent::paginate($page, $perPage, $orderBy, $whereSql, $params);
     }
 
-    /** 供主题 tweet-card 复用 Talk 的判定接口。 */
+    /** 供主题 x-card 复用 Talk 的判定接口。 */
     public function isTweet(): bool
     {
         return true;

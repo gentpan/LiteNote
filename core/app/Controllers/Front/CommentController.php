@@ -12,6 +12,7 @@ use App\Models\Music;
 use App\Models\Page;
 use App\Models\Post;
 use App\Models\Talk;
+use App\Services\CommentModerationService;
 use App\Services\Notifications;
 use App\Services\CommentSettingsService;
 use App\Services\IpGeoService;
@@ -98,7 +99,8 @@ class CommentController
         $parentId = $this->normalizeParentId((int)$data['parent_id'], (int)$data['post_id'], (int)$data['page_id'], (int)$data['talk_id'], (int)$data['music_id'], (int)$data['x_tweet_id']);
 
         $needAudit = CommentSettingsService::needAudit();
-        $status = $needAudit ? CommentStatus::Pending->value : CommentStatus::Approved->value;
+        $defaultStatus = $needAudit ? CommentStatus::Pending->value : CommentStatus::Approved->value;
+        $status = CommentModerationService::statusFor(trim((string)$data['email']), $request->ip, $defaultStatus);
         Comment::ensureGeoColumns();
         $geo = IpGeoService::lookup($request->ip);
 
@@ -131,26 +133,29 @@ class CommentController
             Comment::syncCountForXTweet((int)$data['x_tweet_id']);
         }
 
-        $this->sendNotifications(
-            $cmt,
-            $target,
-            (int)$data['post_id'],
-            (int)$data['page_id'],
-            (int)$data['talk_id'],
-            (int)$data['music_id'],
-            (int)$data['x_tweet_id'],
-            $parentId,
-            $status,
-            $request
-        );
+        if ($status !== CommentStatus::Spam->value) {
+            $this->sendNotifications(
+                $cmt,
+                $target,
+                (int)$data['post_id'],
+                (int)$data['page_id'],
+                (int)$data['talk_id'],
+                (int)$data['music_id'],
+                (int)$data['x_tweet_id'],
+                $parentId,
+                $status,
+                $request
+            );
+        }
 
-        $successMsg = $needAudit ? '评论已提交，等待审核后显示' : '评论发布成功';
+        $isPending = $status !== CommentStatus::Approved->value;
+        $successMsg = $isPending ? '评论已提交，等待审核后显示' : '评论发布成功';
 
         if ($this->isAjax) {
             $resp = [
                 'code' => 0,
                 'msg' => $successMsg,
-                'pending' => $needAudit,
+                'pending' => $isPending,
                 'avatar_url' => $cmt->getAvatarUrl(80),
                 'comment' => [
                     'id'       => (int) $cmt->id,
@@ -165,7 +170,7 @@ class CommentController
                     'page_id'  => (int) $data['page_id'],
                     'talk_id'  => (int) $data['talk_id'],
                     'music_id' => (int) $data['music_id'],
-                    'pending'  => $needAudit,
+                    'pending'  => $isPending,
                 ],
             ];
             Response::json($resp);

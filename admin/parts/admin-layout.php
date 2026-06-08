@@ -15,12 +15,31 @@
 <body class="admin-body">
     @php
         $__path = parse_url($_SERVER['REQUEST_URI'] ?? '/admin', PHP_URL_PATH) ?: '/admin';
+        $__sidebarSearchQuery = trim((string)($_GET['q'] ?? ''));
         $__isActive = static function (string $href) use ($__path): bool {
             if ($href === '/admin') {
                 return $__path === '/admin' || $__path === '/admin/';
             }
             return $__path === $href || str_starts_with($__path, rtrim($href, '/') . '/');
         };
+        $__pluginRootMenus = [];
+        $__pluginChildrenByParent = [];
+        foreach (($__pluginMenus ?? []) as $__pm) {
+            $parent = (string)($__pm['parent'] ?? '');
+            if ($parent !== '') {
+                $__pluginChildrenByParent[$parent][] = $__pm;
+                continue;
+            }
+            $__pluginRootMenus[] = $__pm;
+        }
+        $__talkPluginChildren = $__pluginChildrenByParent['talk'] ?? [];
+        $__talkBranchActive = $__isActive('/admin/talk');
+        foreach ($__talkPluginChildren as $__pm) {
+            if ($__isActive((string)($__pm['href'] ?? ''))) {
+                $__talkBranchActive = true;
+                break;
+            }
+        }
         $__pageDescriptions = [
             '仪表盘' => '查看内容和评论的实时概览',
             '文章管理' => '管理长文、草稿、分类、置顶和推荐内容',
@@ -28,7 +47,7 @@
             '导入 Markdown' => '从本地 Markdown 快速创建文章',
             '页面管理' => '维护关于、友链等自定义独立页面',
             '滔客管理' => '管理短内容、图片动态和心情标签',
-            '写滔客' => '发布短动态、图片和心情标签',
+            'X 推文' => '把 X 推文作为独立卡片发布到首页时间线',
             '音乐管理' => '维护音乐库、封面、歌词和播放状态',
             '添加音乐' => '录入音频地址、唱片封面、歌词和展示排序',
             '添加本地音乐' => '上传或填写本地托管音乐、封面和歌词',
@@ -45,7 +64,47 @@
             '系统设置' => '配置站点资料、阅读、评论和邮件通知',
             '个人资料' => '维护管理员信息、头像和社交链接',
         ];
+        $__pageIcons = [
+            '仪表盘' => 'fa-solid fa-house',
+            '文章管理' => 'fa-regular fa-file-lines',
+            '写文章' => 'fa-regular fa-file-lines',
+            '编辑文章' => 'fa-regular fa-file-lines',
+            '导入 Markdown' => 'fa-regular fa-file-lines',
+            '页面管理' => 'fa-regular fa-bookmark',
+            '新建页面' => 'fa-regular fa-bookmark',
+            '编辑页面' => 'fa-regular fa-bookmark',
+            '滔客管理' => 'fa-regular fa-comments',
+            'X 推文' => 'fa-brands fa-x-twitter',
+            '音乐管理' => 'fa-solid fa-music',
+            '添加音乐' => 'fa-solid fa-music',
+            '添加本地音乐' => 'fa-solid fa-music',
+            '添加线上音乐' => 'fa-solid fa-music',
+            '编辑音乐' => 'fa-solid fa-music',
+            '动态管理' => 'fa-solid fa-chart-simple',
+            '动态同步' => 'fa-solid fa-chart-simple',
+            '配置同步' => 'fa-solid fa-chart-simple',
+            '编辑动态' => 'fa-solid fa-chart-simple',
+            '评论管理' => 'fa-regular fa-comment-dots',
+            '附件管理' => 'fa-solid fa-paperclip',
+            '主题管理' => 'fa-solid fa-palette',
+            '插件管理' => 'fa-solid fa-plug',
+            '友情链接' => 'fa-solid fa-link',
+            '系统设置' => 'fa-solid fa-gear',
+            '个人资料' => 'fa-regular fa-user',
+        ];
+        foreach (($__pluginMenus ?? []) as $__pm) {
+            $label = (string)($__pm['label'] ?? '');
+            $href = (string)($__pm['href'] ?? '');
+            $icon = (string)($__pm['icon'] ?? '');
+            if ($label !== '' && $icon !== '') {
+                $__pageIcons[$label] = $icon;
+            }
+            if ($href !== '' && $icon !== '' && $__isActive($href)) {
+                $__pageIcons[$pageTitle ?? ''] = $icon;
+            }
+        }
         $__desc = $__pageDescriptions[$pageTitle ?? ''] ?? 'LiteNote 内容管理后台';
+        $__pageIcon = $__pageIcons[$pageTitle ?? ''] ?? 'fa-solid fa-gear';
     @endphp
     <aside class="admin-sidebar">
         <div class="admin-brand">
@@ -62,12 +121,33 @@
                 </div>
             </a>
         </div>
+        <form class="admin-sidebar-search" method="get" action="/admin/posts" role="search">
+            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+            <input type="search" name="q" value="{{ $__sidebarSearchQuery }}" placeholder="Search" aria-label="搜索文章">
+            <button type="submit" title="搜索文章">⌘K</button>
+        </form>
         <nav class="admin-menu">
             <a href="/admin" class="{{ $__isActive('/admin') ? 'active' : '' }}"><i class="fa-solid fa-house"></i><span>仪表盘</span></a>
             <div class="menu-group">内容</div>
             <a href="/admin/posts" class="{{ $__isActive('/admin/posts') ? 'active' : '' }}"><i class="fa-regular fa-file-lines"></i><span>文章</span></a>
             <a href="/admin/pages" class="{{ $__isActive('/admin/pages') ? 'active' : '' }}"><i class="fa-regular fa-bookmark"></i><span>页面</span></a>
-            <a href="/admin/talk" class="{{ $__isActive('/admin/talk') ? 'active' : '' }}"><i class="fa-regular fa-comments"></i><span>滔客</span></a>
+            @if($__talkPluginChildren)
+                <div class="admin-menu-branch {{ $__talkBranchActive ? 'is-open active' : '' }}" data-admin-menu-branch>
+                    <div class="admin-menu-branch-head">
+                        <a href="/admin/talk" class="{{ $__isActive('/admin/talk') ? 'active' : '' }}"><i class="fa-regular fa-comments"></i><span>滔客</span></a>
+                        <button type="button" class="admin-menu-branch-toggle" data-admin-menu-toggle aria-label="展开滔客子菜单" aria-expanded="{{ $__talkBranchActive ? 'true' : 'false' }}">
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                    </div>
+                    <div class="admin-menu-children">
+                        @foreach($__talkPluginChildren as $__pm)
+                            <a href="{{ $__pm['href'] ?? '#' }}" class="{{ $__isActive($__pm['href'] ?? '') ? 'active' : '' }}"><i class="{{ $__pm['icon'] ?? 'fa-solid fa-plug' }}"></i><span>{{ $__pm['label'] ?? '' }}</span></a>
+                        @endforeach
+                    </div>
+                </div>
+            @else
+                <a href="/admin/talk" class="{{ $__isActive('/admin/talk') ? 'active' : '' }}"><i class="fa-regular fa-comments"></i><span>滔客</span></a>
+            @endif
             <a href="/admin/activities" class="{{ $__isActive('/admin/activities') ? 'active' : '' }}"><i class="fa-solid fa-chart-simple"></i><span>动态</span></a>
             <a href="/admin/music" class="{{ $__isActive('/admin/music') ? 'active' : '' }}"><i class="fa-solid fa-music"></i><span>音乐</span></a>
             <a href="/admin/comments" class="{{ $__isActive('/admin/comments') ? 'active' : '' }}"><i class="fa-regular fa-comment-dots"></i><span>评论</span></a>
@@ -76,7 +156,7 @@
             <a href="/admin/themes" class="{{ $__isActive('/admin/themes') ? 'active' : '' }}"><i class="fa-solid fa-palette"></i><span>主题</span></a>
             <a href="/admin/plugins" class="{{ $__isActive('/admin/plugins') ? 'active' : '' }}"><i class="fa-solid fa-plug"></i><span>插件</span></a>
             <a href="/admin/links" class="{{ $__isActive('/admin/links') ? 'active' : '' }}"><i class="fa-solid fa-link"></i><span>友情链接</span></a>
-            @foreach(($__pluginMenus ?? []) as $__pm)
+            @foreach($__pluginRootMenus as $__pm)
             <a href="{{ $__pm['href'] ?? '#' }}" class="{{ $__isActive($__pm['href'] ?? '') ? 'active' : '' }}"><i class="{{ $__pm['icon'] ?? 'fa-solid fa-plug' }}"></i><span>{{ $__pm['label'] ?? '' }}</span></a>
             @endforeach
             <div class="menu-group">系统</div>
@@ -90,11 +170,16 @@
     <div class="admin-wrapper">
         <header class="admin-header">
             <div class="admin-page-title">
-                <h2>{{ $pageTitle ?? '后台' }}</h2>
+                <h2><i class="{{ $__pageIcon }}" aria-hidden="true"></i><span>{{ $pageTitle ?? '后台' }}</span></h2>
                 <p>{{ $__desc }}</p>
             </div>
             <div class="admin-user">
                 <a href="/" target="_blank" class="admin-preview-link" title="查看网站" aria-label="查看网站"><i class="fa-solid fa-house"></i></a>
+                @if(!empty($currentAdmin))
+                    <a href="/admin/profile" class="admin-account-chip" title="个人资料">
+                        <img src="{{ $currentAdmin->getAvatarUrl(32) }}" alt="" width="28" height="28">
+                    </a>
+                @endif
             </div>
         </header>
         @php

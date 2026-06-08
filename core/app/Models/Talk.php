@@ -15,9 +15,39 @@ final class Talk extends Model
 {
     protected static string $table = 'talk';
     protected static array $sortable = ['id', 'created_at', 'published_at', 'likes_count', 'comments_count'];
+    private static bool $locationSchemaChecked = false;
+
+    public static function ensureLocationSchema(): void
+    {
+        if (self::$locationSchemaChecked) {
+            return;
+        }
+        self::$locationSchemaChecked = true;
+
+        foreach ([
+            ['location_name', 'VARCHAR(160)'],
+            ['location_city', 'VARCHAR(80)'],
+            ['location_lat', 'VARCHAR(40)'],
+            ['location_lng', 'VARCHAR(40)'],
+            ['location_provider', 'VARCHAR(20)'],
+            ['location_data', 'TEXT'],
+            ['weather_label', 'VARCHAR(40)'],
+            ['weather_icon', 'VARCHAR(80)'],
+            ['weather_temp', 'VARCHAR(20)'],
+            ['weather_code', 'INTEGER DEFAULT 0'],
+            ['weather_data', 'TEXT'],
+        ] as [$column, $type]) {
+            try {
+                self::db()->query("ALTER TABLE talk ADD COLUMN {$column} {$type}");
+            } catch (\Throwable) {
+                // Column already exists.
+            }
+        }
+    }
 
     public static function paginate(int $page = 1, int $perPage = 20, string $orderBy = 'published_at DESC, created_at DESC, id DESC', ?string $whereSql = null, array $params = []): array
     {
+        self::ensureLocationSchema();
         // 如果未指定 where，默认只查公开的
         if ($whereSql === null) {
             $whereSql = 'is_public = ' . Toggle::On->value;
@@ -46,8 +76,7 @@ final class Talk extends Model
             return $keywords;
         }
 
-        $mood = trim((string)($this->mood ?? ''));
-        return $mood !== '' ? [$mood] : ['日常'];
+        return [];
     }
 
     public function contentWithoutKeywords(): string
@@ -57,8 +86,77 @@ final class Talk extends Model
         return trim($content);
     }
 
+    public function locationDisplayName(): string
+    {
+        $name = trim((string)($this->location_name ?? ''));
+        $city = trim((string)($this->location_city ?? ''));
+        $value = $name !== '' ? $name : $city;
+        return self::compactLocationName($value);
+    }
+
+    public function locationFullName(): string
+    {
+        $name = trim((string)($this->location_name ?? ''));
+        $city = trim((string)($this->location_city ?? ''));
+        $data = json_decode((string)($this->location_data ?? ''), true);
+        if (is_array($data)) {
+            $full = trim((string)($data['full_name'] ?? $data['place_name'] ?? ''));
+            if ($full !== '') {
+                return $full;
+            }
+        }
+        return $name !== '' ? $name : $city;
+    }
+
+    private static function compactLocationName(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+
+        $value = preg_replace('/^中华人民共和国/u', '', $value) ?? $value;
+        $value = trim($value, " \t\n\r\0\x0B,，");
+        if ($value === '') {
+            return '';
+        }
+
+        $parts = preg_split('/[,，]/u', $value);
+        if (is_array($parts) && count($parts) > 1) {
+            $first = trim((string)$parts[0]);
+            if ($first !== '') {
+                return $first;
+            }
+        }
+
+        preg_match_all('/[^省市县区旗盟州]+(?:自治区|特别行政区|省|市|县|区|旗|盟|州)/u', $value, $matches);
+        $segments = array_values(array_filter(array_map('trim', $matches[0] ?? [])));
+        if (!empty($segments)) {
+            return (string)end($segments);
+        }
+
+        return mb_strlen($value) > 18 ? mb_substr($value, 0, 18) . '...' : $value;
+    }
+
+    public function weatherDisplayText(): string
+    {
+        $label = trim((string)($this->weather_label ?? ''));
+        if ($label === '') {
+            return '';
+        }
+        $temp = trim((string)($this->weather_temp ?? ''));
+        return $temp !== '' ? $label . ' ' . $temp . '°C' : $label;
+    }
+
+    public function weatherIconClass(): string
+    {
+        $icon = trim((string)($this->weather_icon ?? ''));
+        return preg_match('/^[a-zA-Z0-9 _-]+$/', $icon) ? $icon : 'fa-solid fa-cloud';
+    }
+
     public static function recentPublic(int $limit = 10): array
     {
+        self::ensureLocationSchema();
         $rows = self::db()->fetchAll(
             "SELECT * FROM talk WHERE is_public = ? ORDER BY published_at DESC, created_at DESC, id DESC LIMIT {$limit}",
             [Toggle::On->value]

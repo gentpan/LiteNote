@@ -7,6 +7,7 @@ use App\Core\Helper;
 use App\Core\View;
 use App\Models\Category;
 use App\Models\Post;
+use App\Models\Talk;
 use App\Services\PermalinkService;
 
 class ArchiveController
@@ -24,7 +25,8 @@ class ArchiveController
         unset($post);
 
         $stats = $this->buildStats($posts);
-        $heatmap = $this->buildHeatmap($posts);
+        $talks = $this->publicTalks();
+        $heatmap = $this->buildHeatmap($posts, $talks);
         $categoryCards = $this->buildCategoryCards($posts);
         $years = [];
         foreach ($posts as $p) {
@@ -83,13 +85,25 @@ class ArchiveController
         return $plain === '' ? 0 : mb_strlen($plain);
     }
 
-    private function buildHeatmap(array $posts): array
+    private function buildHeatmap(array $posts, array $talks = []): array
     {
-        $counts = [];
+        $wordsByDay = [];
+        $articlesByDay = [];
         foreach ($posts as $row) {
             $day = substr((string)($row['published_at'] ?? ''), 0, 10);
             if ($day !== '') {
-                $counts[$day] = ($counts[$day] ?? 0) + 1;
+                $post = new Post($row);
+                $wordsByDay[$day] = ($wordsByDay[$day] ?? 0) + $this->wordCount($post->markdown() ?: (string)($row['summary'] ?? ''));
+                $articlesByDay[$day] = ($articlesByDay[$day] ?? 0) + 1;
+            }
+        }
+
+        $talksByDay = [];
+        foreach ($talks as $row) {
+            $day = substr((string)($row['published_at'] ?? $row['created_at'] ?? ''), 0, 10);
+            if ($day !== '') {
+                $wordsByDay[$day] = ($wordsByDay[$day] ?? 0) + $this->wordCount((string)($row['content'] ?? ''));
+                $talksByDay[$day] = ($talksByDay[$day] ?? 0) + 1;
             }
         }
 
@@ -100,25 +114,17 @@ class ArchiveController
         $endDow = (int)date('w', $today);
         $gridEnd = strtotime('+' . (6 - $endDow) . ' days', $today) ?: $today;
 
-        $max = 0;
-        foreach ($counts as $date => $count) {
-            $ts = strtotime($date) ?: 0;
-            if ($ts >= $rangeStart && $ts <= $today) {
-                $max = max($max, $count);
-            }
-        }
         $days = [];
         $months = [];
         $monthSeen = [];
         $i = 0;
         for ($ts = $gridStart; $ts <= $gridEnd; $ts += 86400, $i++) {
             $date = date('Y-m-d', $ts);
-            $count = $counts[$date] ?? 0;
+            $words = $wordsByDay[$date] ?? 0;
+            $articles = $articlesByDay[$date] ?? 0;
+            $talkCount = $talksByDay[$date] ?? 0;
             $inRange = $ts >= $rangeStart && $ts <= $today;
-            $level = 0;
-            if ($count > 0 && $max > 0) {
-                $level = max(1, min(4, (int)ceil(($count / $max) * 4)));
-            }
+            $level = $this->heatmapLevel($words);
             $week = intdiv($i, 7) + 1;
             if ($inRange) {
                 $monthKey = date('Y-m', $ts);
@@ -129,7 +135,10 @@ class ArchiveController
             }
             $days[] = [
                 'date' => $date,
-                'count' => $inRange ? $count : 0,
+                'count' => $inRange ? $words : 0,
+                'words' => $inRange ? $words : 0,
+                'articles' => $inRange ? $articles : 0,
+                'talks' => $inRange ? $talkCount : 0,
                 'level' => $inRange ? $level : 0,
                 'muted' => !$inRange,
             ];
@@ -140,6 +149,29 @@ class ArchiveController
             'months' => $months,
             'weeks' => max(1, (int)ceil(count($days) / 7)),
         ];
+    }
+
+    private function heatmapLevel(int $words): int
+    {
+        return match (true) {
+            $words >= 2000 => 5,
+            $words >= 1500 => 4,
+            $words >= 1000 => 3,
+            $words >= 500 => 2,
+            $words > 0 => 1,
+            default => 0,
+        };
+    }
+
+    private function publicTalks(): array
+    {
+        try {
+            return Talk::db()->fetchAll(
+                "SELECT content, created_at, published_at FROM talk WHERE is_public = 1 AND COALESCE(post_type, 'talk') = 'talk'"
+            );
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     private function buildCategoryCards(array $posts): array

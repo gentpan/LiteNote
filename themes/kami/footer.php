@@ -36,6 +36,9 @@
         <span class="side-theme-label" data-theme-label>深色模式</span>
     </button>
 
+    @if(!empty($site['site_analytics_code']))
+        {!! $site['site_analytics_code'] !!}
+    @endif
     <script src="{{ $themeJs }}?v={{ \App\Services\ThemeManager::assetVersion($themeJs) }}"></script>
 </body>
 </html>

@@ -1,55 +1,72 @@
 @extends('layouts.front')
 
 @section('content')
-    <article class="post-detail {{ $post->cover ? 'has-cover' : 'no-cover' }}">
+    @php
+        $postCover = $post->displayCover();
+        $commentsOpen = (int)($post->allow_comments ?? 1) === 1;
+    @endphp
+    <article class="post-detail has-cover">
         <div class="post-body-card post-detail-card">
-            @if($post->cover)
-                <header class="post-hero-card">
-                    <div class="post-cover">
-                        <img src="{{ $post->cover }}" alt="{{ $post->title }}" loading="lazy" decoding="async" no-view draggable="false">
-                    </div>
-                    <div class="post-hero-title">
-                        <h1 class="post-title">
-                            @if($post->is_top)<span class="badge badge-top">置顶</span>@endif
-                            {{ $post->title }}
-                        </h1>
-                    </div>
-                </header>
-            @else
-                <header class="post-header">
+            <header class="post-hero-card">
+                <div class="post-cover">
+                    <img src="{{ $postCover }}" alt="{{ $post->title }}" loading="lazy" decoding="async" draggable="false">
+                </div>
+                <div class="post-hero-title">
                     <h1 class="post-title">
                         @if($post->is_top)<span class="badge badge-top">置顶</span>@endif
                         {{ $post->title }}
                     </h1>
-                </header>
-            @endif
+                </div>
+            </header>
 
             <div class="post-detail-content">
                 @php
                     // 标题已在特色图/页头显示,正文里去掉开头与标题重复的标题行
                     $__bodyMd = $post->markdown();
                     if ($__bodyMd !== '') {
-                        $__bodyMd = preg_replace('/\A\s*#{1,4}[ \t]+' . preg_quote(trim((string) $post->title), '/') . '[ \t]*(\R+|$)/u', '', $__bodyMd, 1);
+                        $__bodyMd = \App\Services\PostContentStorage::bodyWithoutTitleHeading($__bodyMd, (string) $post->title);
                         $__bodyHtml = \App\Core\Markdown::parse($__bodyMd);
                     } else {
                         $__bodyHtml = (string) $post->content;
                     }
                 @endphp
+                <aside class="post-side-stats" aria-label="文章数据">
+                    <span class="post-side-stat" title="{{ (int)$post->views }} 浏览">
+                        <i class="fa-regular fa-eye" aria-hidden="true"></i>
+                        <span>{{ \App\Core\Helper::compactNumber((int)$post->views) }}</span>
+                    </span>
+                    <button type="button" class="post-side-stat" title="{{ count($comments) }} 评论" data-post-comments-scroll>
+                        <i class="fa-regular fa-comment" aria-hidden="true"></i>
+                        <span>{{ \App\Core\Helper::compactNumber(count($comments)) }}</span>
+                    </button>
+                </aside>
                 <div class="post-content">{!! $__bodyHtml !!}</div>
-                <footer class="post-footer-meta">
-                    <p class="post-meta">
-                        <span><i class="fa-regular fa-calendar"></i> {!! \App\Core\Helper::timeTag($post->published_at) !!}</span>
-                        @if($category)
-                            <span><i class="fa-solid fa-folder"></i> <a href="/category/{{ $category->slug }}">{{ $category->name }}</a></span>
+                <div class="post-end-like-wrap">
+                    <button type="button" class="post-end-like post-like-btn" data-id="{{ $post->id }}" aria-label="点赞">
+                        <i class="fa-regular fa-thumbs-up" aria-hidden="true"></i>
+                        <span class="like-count">{{ (int)($post->likes_count ?? 0) }}</span>
+                    </button>
+                </div>
+                <div class="post-end-divider" aria-hidden="true"><span>THE END</span></div>
+                @php
+                    $postAuthorName = !empty($author) ? ($author->nickname ?: $author->username) : ($site['title'] ?? '作者');
+                    $postAuthorAvatar = !empty($author) ? $author->getAvatarUrl(48) : '';
+                @endphp
+                <div class="post-license-card">
+                    <div class="post-license-info">
+                        @if($postAuthorAvatar !== '')
+                            <img class="post-license-avatar" src="{{ $postAuthorAvatar }}" alt="{{ $postAuthorName }}" loading="lazy" width="28" height="28">
                         @endif
-                        <span><i class="fa-regular fa-eye"></i> {{ $post->views }} 浏览</span>
-                        <span><i class="fa-regular fa-comments"></i> {{ count($comments) }} 评论</span>
-                    </p>
-                </footer>
+                        <strong class="post-license-author">{{ $postAuthorName }}</strong>
+                        <span class="post-license-text">
+                            本文于 {!! \App\Core\Helper::dateTimeTag($post->published_at) !!} 发布@if($category)在 <a class="post-license-inline-link" href="/category/{{ $category->slug }}">{{ $category->name }}</a> 下@endif，采用 <i class="fa-brands fa-creative-commons" aria-hidden="true"></i> <a class="post-license-inline-link" href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-NC-SA 4.0</a> 许可协议，转载请注明来源。
+                        </span>
+                    </div>
+                </div>
                 {{-- 标签功能已下线,UI 隐藏(数据 + 代码保留) --}}
                 {{-- 文章底部 author block 已删除(2026-06) --}}
 
-                <section class="comments">
+                <section class="comments" id="comments">
                     <h3>评论 ({{ count($comments) }})</h3>
                     @if(\App\Core\Session::hasFlash('comment_success'))
                         <div hidden data-toast-type="success" data-toast-message="{{ \App\Core\Session::getFlash('comment_success') }}"></div>
@@ -67,7 +84,7 @@
                                         @php $commentAuthor = $cmt; @endphp
                                     @include('partials.comment-author-link')
                                         <span>· {!! \App\Core\Helper::timeTag($cmt->created_at) !!}</span>
-                                        <button type="button" class="comment-reply-btn" data-parent-id="{{ $cmt->id }}" data-nickname="{{ $cmt->nickname }}">回复</button>
+                                        @if($commentsOpen)<button type="button" class="comment-reply-btn" data-parent-id="{{ $cmt->id }}" data-nickname="{{ $cmt->nickname }}">回复</button>@endif
                                     </div>
                                     <div class="comment-content">{{ $cmt->content }}</div>
                                 </div>
@@ -82,7 +99,7 @@
                                                     @include('partials.comment-author-link')
                                                         @if(!empty($reply->reply_to_name))<span class="reply-arrow">›</span><span class="reply-target">{{ $reply->reply_to_name }}</span>@endif
                                                         <span>· {!! \App\Core\Helper::timeTag($reply->created_at) !!}</span>
-                                                        <button type="button" class="comment-reply-btn" data-parent-id="{{ $reply->id }}" data-nickname="{{ $reply->nickname }}">回复</button>
+                                                        @if($commentsOpen)<button type="button" class="comment-reply-btn" data-parent-id="{{ $reply->id }}" data-nickname="{{ $reply->nickname }}">回复</button>@endif
                                                     </div>
                                                     <div class="comment-content">{{ preg_replace('/^@\S+\s*/u', '', (string) $reply->content) }}</div>
                                                 </div>
@@ -97,6 +114,7 @@
                         $adminCommentName = !empty($currentAdmin) ? ($currentAdmin->nickname ?: $currentAdmin->username) : '';
                         $adminCommentEmail = !empty($currentAdmin) ? (string)($currentAdmin->email ?? '') : '';
                     @endphp
+                    @if($commentsOpen)
                     <form class="comment-form" method="post" action="/comment/submit" data-comment-admin="{{ !empty($currentAdmin) ? '1' : '0' }}">
                         <input type="hidden" name="post_id" value="{{ $post->id }}">
                         <input type="hidden" name="parent_id" value="0">
@@ -126,6 +144,9 @@
                             <button type="submit">提交评论</button>
                         </div>
                     </form>
+                    @else
+                        <p class="empty">评论已关闭。</p>
+                    @endif
                 </section>
             </div>
         </div>

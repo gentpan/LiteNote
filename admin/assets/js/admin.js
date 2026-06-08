@@ -262,6 +262,68 @@
     window.siteToast = showToast;
     window.adminUploadToast = uploadToast;
 
+    function uploadFileRequest(url, fields, fileField, file, onProgress) {
+        if (!url || !file) {
+            return Promise.reject(new Error('\u{4E0A}\u{4F20}\u{63A5}\u{53E3}\u{4E0D}\u{53EF}\u{7528}'));
+        }
+        return new Promise(function(resolve, reject) {
+            var xhr = new XMLHttpRequest();
+            var data = new FormData();
+            Object.keys(fields || {}).forEach(function(key) {
+                data.append(key, fields[key]);
+            });
+            data.append(fileField || 'file', file);
+
+            xhr.open('POST', url, true);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            xhr.upload.addEventListener('progress', function(event) {
+                if (!event.lengthComputable || !onProgress) return;
+                onProgress((event.loaded / event.total) * 100);
+            });
+            xhr.onload = function() {
+                var payload = null;
+                try {
+                    payload = JSON.parse(xhr.responseText || '{}');
+                } catch (e) {
+                    reject(new Error('\u{4E0A}\u{4F20}\u{54CD}\u{5E94}\u{89E3}\u{6790}\u{5931}\u{8D25}'));
+                    return;
+                }
+                if (xhr.status < 200 || xhr.status >= 300 || !payload || payload.code !== 0) {
+                    reject(new Error((payload && payload.msg) || '\u{4E0A}\u{4F20}\u{5931}\u{8D25}'));
+                    return;
+                }
+                resolve(payload);
+            };
+            xhr.onerror = function() {
+                reject(new Error('\u{7F51}\u{7EDC}\u{9519}\u{8BEF}\u{FF0C}\u{4E0A}\u{4F20}\u{5931}\u{8D25}'));
+            };
+            xhr.send(data);
+        });
+    }
+
+    window.adminUploadFile = function(options) {
+        options = options || {};
+        var file = options.file || null;
+        var toast = options.toast === false ? null : uploadToast(file ? file.name : '');
+        if (toast) toast.progress(3);
+        return uploadFileRequest(
+            options.url || '',
+            options.fields || {},
+            options.fileField || 'file',
+            file,
+            function(progress) {
+                if (toast) toast.progress(progress);
+                if (typeof options.onProgress === 'function') options.onProgress(progress);
+            }
+        ).then(function(payload) {
+            if (toast) toast.success(options.successMessage || '\u{4E0A}\u{4F20}\u{5B8C}\u{6210}');
+            return payload;
+        }).catch(function(err) {
+            if (toast) toast.error(err.message || options.errorMessage || '\u{4E0A}\u{4F20}\u{5931}\u{8D25}');
+            throw err;
+        });
+    };
+
     document.addEventListener('submit', function(e) {
         var form = e.target;
         if (!form || form.nodeName !== 'FORM') {
@@ -436,7 +498,19 @@
             isDirty = hasDirtyForm();
         });
     });
-    dirtyForms().forEach(markFormClean);
+
+    function markAllDirtyFormsClean() {
+        dirtyForms().forEach(markFormClean);
+        isDirty = false;
+    }
+
+    markAllDirtyFormsClean();
+    window.setTimeout(markAllDirtyFormsClean, 0);
+    window.setTimeout(markAllDirtyFormsClean, 250);
+    window.addEventListener('pageshow', function() {
+        window.setTimeout(markAllDirtyFormsClean, 0);
+    });
+
     window.addEventListener('beforeunload', function(e) {
         if (suppressDirtyWarning) {
             return;
@@ -651,25 +725,15 @@
         };
     }
 
-    function uploadImage(file, purpose, uploadUrl, csrf) {
+    function uploadImage(file, purpose, uploadUrl, csrf, onProgress) {
         if (!uploadUrl || !file) {
             return Promise.reject(new Error('\u{4E0A}\u{4F20}\u{63A5}\u{53E3}\u{4E0D}\u{53EF}\u{7528}'));
         }
-        var data = new FormData();
-        data.append('_csrf', csrf || '');
-        data.append('purpose', purpose || 'editor');
-        data.append('image', file);
-        return fetch(uploadUrl, {
-            method: 'POST',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' },
-            body: data
-        }).then(function(res) {
-            return res.ok ? res.json() : Promise.reject(new Error('\u{4E0A}\u{4F20}\u{5931}\u{8D25}'));
-        }).then(function(data) {
-            if (data.code !== 0) {
-                throw new Error(data.msg || '\u{4E0A}\u{4F20}\u{5931}\u{8D25}');
-            }
-            return data.data;
+        return uploadFileRequest(uploadUrl, {
+            _csrf: csrf || '',
+            purpose: purpose || 'editor'
+        }, 'image', file, onProgress).then(function(payload) {
+            return payload.data || {};
         });
     }
 
@@ -677,36 +741,8 @@
         if (!uploadUrl || !file) {
             return Promise.reject(new Error('\u{4E0A}\u{4F20}\u{63A5}\u{53E3}\u{4E0D}\u{53EF}\u{7528}'));
         }
-        return new Promise(function(resolve, reject) {
-            var xhr = new XMLHttpRequest();
-            var data = new FormData();
-            data.append('_csrf', csrf || '');
-            data.append('file', file);
-
-            xhr.open('POST', uploadUrl, true);
-            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-            xhr.upload.addEventListener('progress', function(event) {
-                if (!event.lengthComputable || !onProgress) return;
-                onProgress((event.loaded / event.total) * 100);
-            });
-            xhr.onload = function() {
-                var payload = null;
-                try {
-                    payload = JSON.parse(xhr.responseText || '{}');
-                } catch (e) {
-                    reject(new Error('\u{4E0A}\u{4F20}\u{54CD}\u{5E94}\u{89E3}\u{6790}\u{5931}\u{8D25}'));
-                    return;
-                }
-                if (xhr.status < 200 || xhr.status >= 300 || !payload || payload.code !== 0) {
-                    reject(new Error((payload && payload.msg) || '\u{4E0A}\u{4F20}\u{5931}\u{8D25}'));
-                    return;
-                }
-                resolve(payload.data || {});
-            };
-            xhr.onerror = function() {
-                reject(new Error('\u{7F51}\u{7EDC}\u{9519}\u{8BEF}\u{FF0C}\u{4E0A}\u{4F20}\u{5931}\u{8D25}'));
-            };
-            xhr.send(data);
+        return uploadFileRequest(uploadUrl, { _csrf: csrf || '' }, 'file', file, onProgress).then(function(payload) {
+            return payload.data || {};
         });
     }
 
@@ -997,12 +1033,17 @@
         coverFile.addEventListener('change', function() {
             var file = coverFile.files && coverFile.files[0];
             if (!file) return;
+            var toast = uploadProgressToast(file.name || '');
+            toast.progress(3);
             setBusy(coverBtn, true, loadingSpinnerMarkup());
-            uploadImage(file, 'cover', uploadUrl, csrf).then(function(data) {
+            uploadImage(file, 'cover', uploadUrl, csrf, function(progress) {
+                toast.progress(progress);
+            }).then(function(data) {
                 if (coverUrl) coverUrl.value = data.url || '';
                 updateCoverPreview(data.url || '');
+                toast.success('\u{7279}\u{8272}\u{56FE}\u{5DF2}\u{4E0A}\u{4F20}');
             }).catch(function(err) {
-                notify(err.message || '\u{7279}\u{8272}\u{56FE}\u{4E0A}\u{4F20}\u{5931}\u{8D25}', 'error');
+                toast.error(err.message || '\u{7279}\u{8272}\u{56FE}\u{4E0A}\u{4F20}\u{5931}\u{8D25}');
             }).finally(function() {
                 setBusy(coverBtn, false);
                 coverFile.value = '';
@@ -1022,6 +1063,10 @@
         var preview = root.querySelector('[data-editor-preview]');
         var words = root.querySelector('[data-editor-words]');
         var lines = root.querySelector('[data-editor-lines]');
+        var toolbarWords = root.querySelector('[data-editor-words-toolbar]');
+        var paragraphs = root.querySelector('[data-editor-paragraphs]');
+        var reading = root.querySelector('[data-editor-reading]');
+        var syncStatus = root.querySelector('[data-editor-sync-status]');
         var filePicker = root.querySelector('[data-md-file-picker]');
         var imagePicker = root.querySelector('[data-md-image-picker]');
         var titleInput = findBySelector(root.getAttribute('data-title-input')) || document.getElementById('post-title');
@@ -1058,12 +1103,12 @@
         function command(type) {
             var table = '| \u{5217}\u{4E00} | \u{5217}\u{4E8C} |\n| --- | --- |\n| \u{5185}\u{5BB9} | \u{5185}\u{5BB9} |';
             switch (type) {
-                case 'heading': insertLine('## ', '\u{5C0F}\u{6807}\u{9898}'); break;
                 case 'bold': insert('**', '**', '\u{52A0}\u{7C97}\u{6587}\u{5B57}'); break;
                 case 'italic': insert('*', '*', '\u{659C}\u{4F53}\u{6587}\u{5B57}'); break;
                 case 'quote': insertLine('> ', '\u{5F15}\u{7528}\u{5185}\u{5BB9}'); break;
                 case 'code': insert('```php\n', '\n```', 'echo "Hello LiteNote";'); break;
                 case 'link': insert('[', '](https://example.com)', '\u{94FE}\u{63A5}\u{6587}\u{5B57}'); break;
+                case 'image': insert('![', '](https://example.com/image.jpg)', '\u{56FE}\u{7247}\u{63CF}\u{8FF0}'); break;
                 case 'image-upload':
                     if (imagePicker) imagePicker.click();
                     break;
@@ -1073,6 +1118,54 @@
                 case 'summary': generateSummary(); break;
             }
         }
+
+        function insertHeading(level) {
+            level = Math.max(1, Math.min(5, parseInt(level, 10) || 2));
+            insertLine(new Array(level + 1).join('#') + ' ', '\u{5C0F}\u{6807}\u{9898}');
+        }
+
+        function closeHeadingMenus(except) {
+            root.querySelectorAll('[data-heading-menu]').forEach(function(menu) {
+                if (except && menu === except) return;
+                var dropdown = menu.querySelector('[data-heading-dropdown]');
+                var toggle = menu.querySelector('[data-heading-toggle]');
+                if (dropdown) dropdown.hidden = true;
+                if (toggle) toggle.setAttribute('aria-expanded', 'false');
+            });
+        }
+
+        root.querySelectorAll('[data-heading-menu]').forEach(function(menu) {
+            var toggle = menu.querySelector('[data-heading-toggle]');
+            var dropdown = menu.querySelector('[data-heading-dropdown]');
+            if (!toggle || !dropdown) return;
+
+            toggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                var nextOpen = dropdown.hidden;
+                closeHeadingMenus(menu);
+                dropdown.hidden = !nextOpen;
+                toggle.setAttribute('aria-expanded', nextOpen ? 'true' : 'false');
+            });
+
+            dropdown.querySelectorAll('[data-md-heading]').forEach(function(btn) {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    insertHeading(btn.dataset.mdHeading || '2');
+                    dropdown.hidden = true;
+                    toggle.setAttribute('aria-expanded', 'false');
+                });
+            });
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!root.contains(e.target)) {
+                closeHeadingMenus();
+                return;
+            }
+            if (!e.target.closest || !e.target.closest('[data-heading-menu]')) {
+                closeHeadingMenus();
+            }
+        });
 
         function generateSummary() {
             if (!summaryUrl) return;
@@ -1111,8 +1204,15 @@
             var plain = value.replace(/[#>*_`\-[\]()!|]/g, '').trim();
             var count = plain ? plain.length : 0;
             var lineCount = value ? value.split('\n').length : 0;
+            var paragraphCount = value.trim() ? value.trim().split(/\n\s*\n/).filter(function(block) {
+                return block.trim() !== '';
+            }).length : 0;
+            var readingMinutes = Math.max(1, Math.ceil(count / 400));
             if (words) words.textContent = count + ' \u{5B57}';
+            if (toolbarWords) toolbarWords.textContent = count + ' \u{5B57}';
             if (lines) lines.textContent = lineCount + ' \u{884C}';
+            if (paragraphs) paragraphs.textContent = paragraphCount + ' \u{6BB5}';
+            if (reading) reading.textContent = readingMinutes + ' \u{5206}\u{949F}';
         }
 
         function updatePreview() {
@@ -1131,14 +1231,17 @@
                 return res.ok ? res.json() : Promise.reject();
             }).then(function(data) {
                 preview.innerHTML = data.html || '<div class="empty">\u{9884}\u{89C8}\u{4F1A}\u{663E}\u{793A}\u{5728}\u{8FD9}\u{91CC}</div>';
+                if (syncStatus) syncStatus.textContent = '\u{5DF2}\u{540C}\u{6B65}';
             }).catch(function() {
                 preview.innerHTML = '<div class="empty">\u{9884}\u{89C8}\u{6682}\u{65F6}\u{4E0D}\u{53EF}\u{7528}</div>';
+                if (syncStatus) syncStatus.textContent = '\u{9884}\u{89C8}\u{5931}\u{8D25}';
             });
         }
 
         function schedulePreview() {
             updateStats();
             clearTimeout(previewTimer);
+            if (syncStatus) syncStatus.textContent = '\u{540C}\u{6B65}\u{4E2D}';
             previewTimer = setTimeout(updatePreview, 260);
         }
 
@@ -1166,11 +1269,16 @@
                 var file = imagePicker.files && imagePicker.files[0];
                 if (!file) return;
                 var btn = root.querySelector('[data-md="image-upload"]');
+                var toast = uploadProgressToast(file.name || '');
+                toast.progress(3);
                 setBusy(btn, true, loadingSpinnerMarkup());
-                uploadImage(file, uploadPurpose, uploadUrl, csrf).then(function(data) {
+                uploadImage(file, uploadPurpose, uploadUrl, csrf, function(progress) {
+                    toast.progress(progress);
+                }).then(function(data) {
                     insert('![', '](' + data.url + ')', data.name || '\u{56FE}\u{7247}\u{63CF}\u{8FF0}');
+                    toast.success('\u{56FE}\u{7247}\u{5DF2}\u{4E0A}\u{4F20}');
                 }).catch(function(err) {
-                    notify(err.message || '\u{56FE}\u{7247}\u{4E0A}\u{4F20}\u{5931}\u{8D25}', 'error');
+                    toast.error(err.message || '\u{56FE}\u{7247}\u{4E0A}\u{4F20}\u{5931}\u{8D25}');
                 }).finally(function() {
                     setBusy(btn, false);
                     imagePicker.value = '';
@@ -1194,10 +1302,126 @@
         updatePreview();
     }
 
+    function initAdminMenuBranches() {
+        document.querySelectorAll('[data-admin-menu-branch]').forEach(function(branch) {
+            if (branch.dataset.bound === '1') {
+                return;
+            }
+            branch.dataset.bound = '1';
+            var toggle = branch.querySelector('[data-admin-menu-toggle]');
+            if (!toggle) {
+                return;
+            }
+            toggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var isOpen = !branch.classList.contains('is-open');
+                branch.classList.toggle('is-open', isOpen);
+                toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            });
+        });
+    }
+
+    function initAdminSidebarSearch() {
+        var input = document.querySelector('.admin-sidebar-search input[type="search"]');
+        if (!input || input.dataset.bound === '1') {
+            return;
+        }
+        input.dataset.bound = '1';
+        document.addEventListener('keydown', function(e) {
+            var key = (e.key || '').toLowerCase();
+            if ((e.metaKey || e.ctrlKey) && key === 'k') {
+                e.preventDefault();
+                input.focus();
+                input.select();
+            }
+        });
+    }
+
+    function initMusicShareDialog() {
+        var dialog = document.querySelector('[data-music-share-dialog]');
+        var form = dialog ? dialog.querySelector('[data-music-share-form]') : null;
+        if (!dialog || !form || dialog.dataset.bound === '1') {
+            return;
+        }
+        dialog.dataset.bound = '1';
+        var title = dialog.querySelector('[data-music-share-title]');
+        var textarea = form.querySelector('textarea[name="content"]');
+        var cancel = dialog.querySelector('[data-music-share-cancel]');
+
+        function close() {
+            dialog.hidden = true;
+            document.body.classList.remove('admin-dialog-open');
+            form.action = '';
+            if (textarea) {
+                textarea.value = '';
+            }
+        }
+
+        function open(btn) {
+            var action = btn.getAttribute('data-share-action') || '';
+            var musicTitle = btn.getAttribute('data-music-title') || '这首歌';
+            var artist = btn.getAttribute('data-music-artist') || '';
+            if (!action) {
+                return;
+            }
+            form.action = action;
+            if (title) {
+                title.textContent = artist ? (musicTitle + ' · ' + artist) : musicTitle;
+            }
+            dialog.hidden = false;
+            document.body.classList.add('admin-dialog-open');
+            setTimeout(function() {
+                if (textarea) {
+                    textarea.focus();
+                }
+            }, 0);
+        }
+
+        document.querySelectorAll('[data-music-share]').forEach(function(btn) {
+            if (btn.dataset.bound === '1') {
+                return;
+            }
+            btn.dataset.bound = '1';
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                open(btn);
+            });
+        });
+
+        if (cancel) {
+            cancel.addEventListener('click', close);
+        }
+        dialog.addEventListener('click', function(e) {
+            if (e.target === dialog || e.target.classList.contains('admin-dialog-shell')) {
+                close();
+            }
+        });
+        document.addEventListener('keydown', function(e) {
+            if (!dialog.hidden && e.key === 'Escape') {
+                e.preventDefault();
+                close();
+            }
+        });
+    }
+
+    initAdminMenuBranches();
+    initAdminSidebarSearch();
+    initMusicShareDialog();
     initCoverUpload();
     initUploadFields();
     initLrcInputs();
     initMetingSearch();
+    document.querySelectorAll('[data-post-publish-button]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var form = btn.closest('form');
+            var status = form ? form.querySelector('select[name="status"]') : null;
+            if (status) {
+                status.value = 'published';
+            }
+        });
+    });
     document.querySelectorAll('.markdown-editor').forEach(initEditor);
 })();
 
@@ -1242,7 +1466,7 @@ function passkeySupported() {
 }
 
 // \u{6CE8}\u{518C} Passkey
-async function registerPasskey(deviceName = '\u{6211}\u{7684}\u{8BBE}\u{5907}') {
+async function registerPasskey() {
     passkeySupported();
     const res = await fetch('/admin/passkey/register-options', {
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
@@ -1283,7 +1507,7 @@ async function registerPasskey(deviceName = '\u{6211}\u{7684}\u{8BBE}\u{5907}') 
             'X-Requested-With': 'XMLHttpRequest'
         },
         credentials: 'same-origin',
-        body: JSON.stringify({ credential: JSON.stringify(data), device_name: deviceName })
+        body: JSON.stringify({ credential: JSON.stringify(data) })
     });
 
     return await passkeyJson(saveRes);

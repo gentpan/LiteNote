@@ -75,57 +75,57 @@
     };
 @endphp
 @if($tweet)
-    <div class="home-card-inner home-card--x-inner tweet-card">
-        <div class="home-card-header tweet-card-head">
-            <div class="tweet-author">
+    <div class="home-card home-card--x home-card--x-inner home-x-card x-card tweet-card kami-tweet-card">
+        <div class="home-card-header x-card-head tweet-card-head">
+            <div class="x-card-author tweet-author">
                 @if($avatar !== '')
-                    <img class="tweet-avatar" src="{{ $avatar }}" alt="{{ $authorName ?: $handle ?: 'X' }}" loading="lazy" width="38" height="38">
+                    <img class="x-card-avatar tweet-avatar" src="{{ $avatar }}" alt="{{ $authorName ?: $handle ?: 'X' }}" loading="lazy" width="38" height="38">
                 @else
-                    <span class="tweet-avatar tweet-avatar-fallback">{{ mb_substr($authorName ?: $handle ?: 'X', 0, 1) }}</span>
+                    <span class="x-card-avatar x-card-avatar-fallback tweet-avatar tweet-avatar-fallback">{{ mb_substr($authorName ?: $handle ?: 'X', 0, 1) }}</span>
                 @endif
-                <span class="tweet-author-text">
+                <span class="x-card-author-text tweet-author-text">
                     <strong>
                         {{ $authorName ?: ($handle !== '' ? '@'.$handle : 'X 用户') }}
                         @if($isVerified)
-                            <i class="fa-solid fa-circle-check tweet-verified" aria-label="认证账号"></i>
+                            <i class="fa-solid fa-circle-check x-card-verified tweet-verified" aria-label="认证账号"></i>
                         @endif
                     </strong>
                     @if($handle !== '')<em>@{{ $handle }}</em>@endif
                 </span>
             </div>
             @if($tweetUrl !== '')
-                <a class="tweet-x-link" href="{{ $tweetUrl }}" target="_blank" rel="noopener noreferrer" aria-label="打开 X 原帖">
+                <a class="x-card-logo-link tweet-x-link" href="{{ $tweetUrl }}" target="_blank" rel="noopener noreferrer" aria-label="打开 X 原帖">
                     <i class="fa-brands fa-x-twitter"></i>
                 </a>
             @endif
         </div>
 
         @if($body !== '')
-            <div class="home-card-body tweet-body">{!! $linkifyTweetBody($body) !!}</div>
+            <div class="home-card-body x-card-body tweet-body">{!! $linkifyTweetBody($body) !!}</div>
         @elseif($tweetUrl !== '')
-            <a class="home-card-body tweet-body tweet-body-link" href="{{ $tweetUrl }}" target="_blank" rel="noopener noreferrer">
+            <a class="home-card-body x-card-body x-card-body-link tweet-body tweet-body-link" href="{{ $tweetUrl }}" target="_blank" rel="noopener noreferrer">
                 <i class="fa-brands fa-x-twitter"></i>
                 <span>查看 X 原帖</span>
             </a>
         @endif
 
         @if(!empty($images))
-            <div class="home-card-media {{ $tweetLocalActions ? 'talk-images' : 'tweet-media' }} {{ $tweetLocalActions ? 'talk-images-count-' . min(count($images), 10) : 'tweet-media-count-' . min(count($images), 4) }}">
+            <div class="home-card-media {{ $tweetLocalActions ? 'talk-images' : 'x-card-media tweet-media' }} {{ $tweetLocalActions ? 'talk-images-count-' . min(count($images), 10) : 'x-card-media-count-' . min(count($images), 4) . ' tweet-media-count-' . min(count($images), 4) }}">
                 @foreach(array_slice($images, 0, 4) as $idx => $img)
                     <img src="{{ trim($img) }}" alt="" loading="lazy" decoding="async">
                 @endforeach
             </div>
         @endif
 
-        <footer class="tweet-footer home-card-footer home-card-meta-bar">
-            <div class="home-card-meta tweet-footer-meta">
+        <footer class="x-card-footer tweet-footer home-card-footer home-card-meta-bar">
+            <div class="home-card-meta x-card-footer-meta tweet-footer-meta">
                 @if($postedAt !== '')
-                    <time datetime="{{ $postedAt }}">{{ \App\Core\Helper::formatDate($postedAt, 'H:i · Y-m-d') }}</time>
+                    {!! \App\Core\Helper::timeTag($postedAt) !!}
                 @else
-                    <time datetime="{{ $tweet->publishedAt() }}">{{ \App\Core\Helper::formatDate($tweet->publishedAt(), 'H:i · Y-m-d') }}</time>
+                    {!! \App\Core\Helper::timeTag($tweet->publishedAt()) !!}
                 @endif
             </div>
-            <div class="home-card-actions tweet-footer-actions">
+            <div class="home-card-actions x-card-footer-actions tweet-footer-actions">
                 @if($tweetLocalActions)
                     <button type="button" class="home-action x-tweet-like-btn" data-id="{{ $tweet->id }}" aria-label="点赞">
                         <i class="fa-regular fa-thumbs-up"></i><span class="like-count">{{ $localLikeCount }}</span>
@@ -135,20 +135,20 @@
                     </button>
                 @elseif($tweetUrl !== '')
                     @if($tweetShowReplies)
-                        <a href="{{ $tweetUrl }}" target="_blank" rel="noopener noreferrer" class="tweet-action" aria-label="在 X 打开评论">
+                        <a href="{{ $tweetUrl }}" target="_blank" rel="noopener noreferrer" class="x-card-action tweet-action" aria-label="在 X 打开评论">
                             <i class="fa-regular fa-comment"></i><span>{{ $repliesCount }}</span>
                         </a>
                     @endif
-                    <a href="{{ $tweetUrl }}" target="_blank" rel="noopener noreferrer" class="tweet-action" aria-label="在 X 打开并转发">
+                    <a href="{{ $tweetUrl }}" target="_blank" rel="noopener noreferrer" class="x-card-action tweet-action" aria-label="在 X 打开并转发">
                         <i class="fa-solid fa-retweet"></i><span>{{ $repostsCount }}</span>
                     </a>
                     @if($likesCount > 0)
-                        <a href="{{ $tweetUrl }}" target="_blank" rel="noopener noreferrer" class="tweet-action tweet-like" aria-label="在 X 打开并点赞">
+                        <a href="{{ $tweetUrl }}" target="_blank" rel="noopener noreferrer" class="x-card-action x-card-like tweet-action tweet-like" aria-label="在 X 打开并点赞">
                             <i class="fa-solid fa-heart"></i><span>{{ $likesCount }}</span>
                         </a>
                     @endif
                     @if(!$tweetHideViews)
-                        <span class="tweet-action" aria-label="浏览数">
+                        <span class="x-card-action tweet-action" aria-label="浏览数">
                             <i class="fa-regular fa-eye"></i><span>{{ $viewsCount }}</span>
                         </span>
                     @endif

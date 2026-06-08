@@ -23,6 +23,41 @@ final class EnvService
         ];
     }
 
+    public static function get(string $key, string $default = ''): string
+    {
+        $value = getenv($key);
+        if ($value === false && isset($_ENV[$key])) {
+            $value = $_ENV[$key];
+        }
+        if ($value === false && isset($_SERVER[$key])) {
+            $value = $_SERVER[$key];
+        }
+        if ($value !== false) {
+            return (string)$value;
+        }
+
+        $path = self::path();
+        if (!is_file($path)) {
+            return $default;
+        }
+        foreach (file($path, FILE_IGNORE_NEW_LINES) ?: [] as $line) {
+            if (!preg_match('/^\s*' . preg_quote($key, '/') . '\s*=\s*(.*)\s*$/', $line, $matches)) {
+                continue;
+            }
+            return self::parseValue((string)$matches[1]);
+        }
+        return $default;
+    }
+
+    public static function getMany(array $keys): array
+    {
+        $values = [];
+        foreach ($keys as $key) {
+            $values[$key] = self::get((string)$key);
+        }
+        return $values;
+    }
+
     public static function setMany(array $values): void
     {
         $path = self::path();
@@ -61,6 +96,34 @@ final class EnvService
         if (@file_put_contents($path, $body, LOCK_EX) === false) {
             throw new \RuntimeException('.env 写入失败，请检查文件权限');
         }
+
+        foreach ($values as $key => $value) {
+            if (!preg_match('/^[A-Z0-9_]+$/', (string)$key)) {
+                continue;
+            }
+            $value = (string)$value;
+            if (function_exists('putenv')) {
+                putenv($key . '=' . $value);
+            }
+            $_ENV[$key] = $value;
+            $_SERVER[$key] = $value;
+        }
+    }
+
+    private static function parseValue(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+        if (
+            (str_starts_with($value, '"') && str_ends_with($value, '"')) ||
+            (str_starts_with($value, "'") && str_ends_with($value, "'"))
+        ) {
+            $value = substr($value, 1, -1);
+            return str_replace(['\\"', '\\\\'], ['"', '\\'], $value);
+        }
+        return $value;
     }
 
     private static function formatValue(string $value): string

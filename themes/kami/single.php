@@ -1,6 +1,7 @@
 @extends('layouts.front')
 
 @section('content')
+    @php $commentsOpen = (int)($post->allow_comments ?? 1) === 1; @endphp
     <article class="post-detail kami-article {{ $post->cover ? 'has-cover' : 'no-cover' }}">
         @if($post->cover)
             <figure class="kami-article-cover">
@@ -27,7 +28,7 @@
                 @php
                     $__bodyMd = $post->markdown();
                     if ($__bodyMd !== '') {
-                        $__bodyMd = preg_replace('/\A\s*#{1,4}[ \t]+' . preg_quote(trim((string) $post->title), '/') . '[ \t]*(\R+|$)/u', '', $__bodyMd, 1);
+                        $__bodyMd = \App\Services\PostContentStorage::bodyWithoutTitleHeading($__bodyMd, (string) $post->title);
                         $__bodyHtml = \App\Core\Markdown::parse($__bodyMd);
                     } else {
                         $__bodyHtml = (string) $post->content;
@@ -64,7 +65,7 @@
                                         @if($cmtLocation !== '')
                                             <span class="comment-location"><span>{{ $cmtLocation }}</span></span>
                                         @endif
-                                        <button type="button" class="comment-reply-btn" data-parent-id="{{ $cmt->id }}" data-nickname="{{ $cmt->nickname }}">回复</button>
+                                        @if($commentsOpen)<button type="button" class="comment-reply-btn" data-parent-id="{{ $cmt->id }}" data-nickname="{{ $cmt->nickname }}">回复</button>@endif
                                     </div>
                                     <div class="comment-content">{{ $cmt->content }}</div>
                                 </div>
@@ -82,7 +83,7 @@
                                                         @if($replyLocation !== '')
                                                             <span class="comment-location"><span>{{ $replyLocation }}</span></span>
                                                         @endif
-                                                        <button type="button" class="comment-reply-btn" data-parent-id="{{ $reply->id }}" data-nickname="{{ $reply->nickname }}">回复</button>
+                                                        @if($commentsOpen)<button type="button" class="comment-reply-btn" data-parent-id="{{ $reply->id }}" data-nickname="{{ $reply->nickname }}">回复</button>@endif
                                                     </div>
                                                     <div class="comment-content">{{ preg_replace('/^@\S+\s*/u', '', (string) $reply->content) }}</div>
                                                 </div>
@@ -97,6 +98,7 @@
                         $adminCommentName = !empty($currentAdmin) ? ($currentAdmin->nickname ?: $currentAdmin->username) : '';
                         $adminCommentEmail = !empty($currentAdmin) ? (string)($currentAdmin->email ?? '') : '';
                     @endphp
+                    @if($commentsOpen)
                     <form class="comment-form" method="post" action="/comment/submit" data-comment-admin="{{ !empty($currentAdmin) ? '1' : '0' }}">
                         <input type="hidden" name="post_id" value="{{ $post->id }}">
                         <input type="hidden" name="parent_id" value="0">
@@ -125,6 +127,9 @@
                             <button type="submit">提交评论</button>
                         </div>
                     </form>
+                    @else
+                        <p class="empty">评论已关闭。</p>
+                    @endif
                 </section>
             </div>
         </div>

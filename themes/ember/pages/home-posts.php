@@ -22,17 +22,11 @@
                         }
                         $postNumberText = str_pad((string) max(1, $postNumber), 2, '0', STR_PAD_LEFT);
                         $category = $post->getCategory();
+                        $cover = $post->displayCover();
                     @endphp
                     <article class="post-feature-card">
                         <a class="post-feature-cover" href="{{ $post->getUrl() }}" aria-label="{{ $post->title }}">
-                            @if($post->cover)
-                                <img src="{{ $post->cover }}" alt="{{ $post->title }}" loading="lazy" decoding="async">
-                            @else
-                                <span class="post-feature-placeholder">
-                                    <span>{{ $postNumberText }}</span>
-                                    @if($category)<small>{{ $category->name }}</small>@endif
-                                </span>
-                            @endif
+                            <img src="{{ $cover }}" alt="{{ $post->title }}" loading="lazy" decoding="async">
                         </a>
                         <div class="post-feature-body">
                             <p class="post-feature-meta">

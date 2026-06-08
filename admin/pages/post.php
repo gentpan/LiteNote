@@ -28,7 +28,18 @@
           data-confirm-tone="primary"
           data-confirm-text="确认执行">
         <input type="hidden" name="_csrf" value="{{ $csrf }}">
-        <table class="admin-table admin-action-table admin-action-table-wide">
+        <table class="admin-table admin-action-table admin-action-table-wide post-admin-table">
+            <colgroup>
+                <col class="post-col-check">
+                <col class="post-col-id">
+                <col class="post-col-title">
+                <col class="post-col-category">
+                <col class="post-col-views">
+                <col class="post-col-comments">
+                <col class="post-col-status">
+                <col class="post-col-date">
+                <col class="post-col-actions">
+            </colgroup>
             <thead>
                 <tr>
                     <th><input type="checkbox" id="check-all"></th>

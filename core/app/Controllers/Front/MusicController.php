@@ -8,7 +8,6 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
-use App\Enums\Toggle;
 use App\Models\Comment;
 use App\Models\Music;
 use App\Services\MetingService;
@@ -19,7 +18,7 @@ class MusicController
     {
         $perPage = 50;
         $page = max(1, (int)($_GET['page'] ?? 1));
-        ['items' => $list, 'total' => $total] = Music::paginatePublic($page, $perPage);
+        ['items' => $list, 'total' => $total] = Music::paginate($page, $perPage, 'published_at DESC, sort ASC, id DESC');
         foreach ($list as $item) {
             $item->setRelation('comments', Comment::forMusic((int)$item->id));
         }
@@ -39,7 +38,7 @@ class MusicController
     {
         $id = (int)($params['id'] ?? 0);
         $item = Music::find($id);
-        if (!$item || (int)$item->is_public !== Toggle::On->value) {
+        if (!$item) {
             Response::json(['code' => 1, 'msg' => '音乐不存在'], 404);
         }
 
@@ -64,7 +63,7 @@ class MusicController
     {
         $id = (int)($params['id'] ?? 0);
         $item = Music::find($id);
-        if (!$item || (int)$item->is_public !== Toggle::On->value) {
+        if (!$item) {
             Response::json(['code' => 1, 'msg' => '音乐不存在'], 404);
         }
 

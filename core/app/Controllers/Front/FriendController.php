@@ -222,7 +222,7 @@ class FriendController
             ['label' => '网址', 'value' => Helper::url('/'), 'icon' => 'fa-solid fa-link'],
             ['label' => '站点名称', 'value' => $title !== '' ? $title : 'LiteNote', 'icon' => 'fa-regular fa-id-card'],
             ['label' => '描述', 'value' => $description, 'icon' => 'fa-regular fa-note-sticky'],
-            ['label' => '头像地址', 'value' => $this->absoluteAssetUrl($avatar), 'icon' => 'fa-regular fa-image'],
+            ['label' => '站点 Logo', 'value' => $this->absoluteAssetUrl($avatar), 'icon' => 'fa-regular fa-image'],
         ];
     }
 

@@ -57,7 +57,6 @@
                         $groupLabels = [
                             'basic' => '基础设置',
                             'comment' => '评论设置',
-                            'reading' => '阅读设置',
                             'permalink' => '固定链接',
                             'link' => '链接设置',
                             'media' => '媒体设置',
@@ -87,11 +86,6 @@
                             ];
                             $isToggle = $type === 'bool' || in_array((string)$item['k'], $toggleKeys, true);
                             $selectOptions = [
-                                'home_feed_mode' => [
-                                    'mixed' => '文章 + 说说混排',
-                                    'posts' => '只显示文章',
-                                    'talks' => '只显示说说',
-                                ],
                                 'permalink_mode' => [
                                     'default' => '默认：/post/{slug}.html',
                                     'simple' => '简短：/{slug}',
@@ -108,16 +102,15 @@
                                 ],
                             ];
                             $fieldHints = [
-                                'home_fixed_posts' => '填写文章 ID 或 slug，使用英文逗号、中文逗号或换行分隔，最多 3 个。',
-                                'home_fixed_talks' => '填写说说 ID，使用英文逗号、中文逗号或换行分隔，最多 3 个。',
                                 'permalink_numeric_prefix' => '可为空，或填写 post、archive 等。只允许字母、数字、下划线和短横线。',
                                 'permalink_mode' => '简短模式会优先匹配页面，再匹配文章；保存后如有冲突会提示。',
+                                'site_analytics_code' => '填入统计平台提供的完整代码，例如 <script>...</script>。保存后会在前台页面底部自动加载。',
+                                'site_mapbox_token' => '用于滔客发布时搜索/反查城市，请填写 Mapbox public token，不要填写 secret token。',
                             ];
                         @endphp
                         <div class="form-group @if($isToggle) form-group-toggle @endif">
                             <label for="setting-{{ $item['k'] }}">
                                 {{ $item['label'] ?: $item['k'] }}
-                                <code class="setting-key">{{ $item['k'] }}</code>
                             </label>
 
                             @if($isToggle)
@@ -138,13 +131,24 @@
                                     @endforeach
                                 </select>
                             @elseif($type === 'number')
-                                <input type="number" name="settings[{{ $item['k'] }}]" id="setting-{{ $item['k'] }}" value="{{ $val }}">
+                                @php
+                                    $numberBounds = [];
+                                    $bounds = $numberBounds[(string)$item['k']] ?? [];
+                                @endphp
+                                <input type="number" name="settings[{{ $item['k'] }}]" id="setting-{{ $item['k'] }}" value="{{ $val }}" @if(isset($bounds['min'])) min="{{ $bounds['min'] }}" @endif @if(isset($bounds['max'])) max="{{ $bounds['max'] }}" @endif>
                             @elseif(mb_strlen($val) > 100 || str_contains($val, "\n"))
                                 <textarea name="settings[{{ $item['k'] }}]" id="setting-{{ $item['k'] }}" rows="3">{{ $val }}</textarea>
                             @elseif($type === 'textarea')
                                 <textarea name="settings[{{ $item['k'] }}]" id="setting-{{ $item['k'] }}" rows="3">{{ $val }}</textarea>
                             @elseif($type === 'password')
                                 <input type="password" name="settings[{{ $item['k'] }}]" id="setting-{{ $item['k'] }}" value="{{ $val }}" autocomplete="off">
+                            @elseif($item['k'] === 'site_avatar_url')
+                                <div class="setting-upload-field">
+                                    <input type="url" name="settings[{{ $item['k'] }}]" id="setting-{{ $item['k'] }}" value="{{ $val }}" placeholder="https://example.com/uploads/logo.webp">
+                                    <input type="file" id="siteLogoUploadInput" accept="image/jpeg,image/png,image/gif,image/webp" hidden data-no-dirty>
+                                    <button type="button" class="btn" id="siteLogoUploadBtn"><i class="fa-solid fa-upload"></i> 上传</button>
+                                </div>
+                                <p class="field-hint" id="siteLogoUploadStatus">用于前台站点资料展示；个人头像请在个人资料里设置。</p>
                             @else
                                 <input type="text" name="settings[{{ $item['k'] }}]" id="setting-{{ $item['k'] }}" value="{{ $val }}">
                             @endif
@@ -189,26 +193,91 @@
 
         input.addEventListener('change', function () {
             if (!input.files || !input.files[0]) return;
-            var fd = new FormData();
-            fd.append('_csrf', csrf);
-            fd.append('favicon', input.files[0]);
+            var file = input.files[0];
             btn.disabled = true;
             status.textContent = '正在生成全套图标...';
-            fetch('/admin/settings/favicon', {
-                method: 'POST',
-                body: fd,
-                credentials: 'same-origin'
-            })
-                .then(function (r) { return r.json(); })
+            var upload = window.adminUploadFile
+                ? window.adminUploadFile({
+                    url: '/admin/settings/favicon',
+                    fields: { _csrf: csrf },
+                    fileField: 'favicon',
+                    file: file,
+                    successMessage: '图标已生成'
+                })
+                : (function () {
+                    var fd = new FormData();
+                    fd.append('_csrf', csrf);
+                    fd.append('favicon', file);
+                    return fetch('/admin/settings/favicon', {
+                        method: 'POST',
+                        body: fd,
+                        credentials: 'same-origin'
+                    }).then(function (r) { return r.json(); });
+                })();
+            upload
                 .then(function (res) {
                     if (!res || res.code !== 0) {
                         throw new Error((res && res.msg) || '生成失败');
                     }
-                    window.adminToast && window.adminToast(res.msg || '图标已生成', 'success');
                     setTimeout(function () { window.location.reload(); }, 600);
                 })
                 .catch(function (err) {
                     status.textContent = err.message || '生成失败';
+                    window.adminToast && window.adminToast(status.textContent, 'error');
+                })
+                .finally(function () {
+                    btn.disabled = false;
+                    input.value = '';
+                });
+        });
+    })();
+
+    (function () {
+        var input = document.getElementById('siteLogoUploadInput');
+        var btn = document.getElementById('siteLogoUploadBtn');
+        var field = document.getElementById('setting-site_avatar_url');
+        var status = document.getElementById('siteLogoUploadStatus');
+        var csrf = '{{ $csrf }}';
+        if (!input || !btn || !field) return;
+
+        btn.addEventListener('click', function () {
+            input.click();
+        });
+
+        input.addEventListener('change', function () {
+            if (!input.files || !input.files[0]) return;
+            var file = input.files[0];
+            btn.disabled = true;
+            status.textContent = '正在上传 Logo...';
+            var upload = window.adminUploadFile
+                ? window.adminUploadFile({
+                    url: '/admin/settings/site-logo',
+                    fields: { _csrf: csrf },
+                    fileField: 'logo',
+                    file: file,
+                    successMessage: 'Logo 已上传'
+                })
+                : (function () {
+                    var fd = new FormData();
+                    fd.append('_csrf', csrf);
+                    fd.append('logo', file);
+                    return fetch('/admin/settings/site-logo', {
+                        method: 'POST',
+                        body: fd,
+                        credentials: 'same-origin'
+                    }).then(function (r) { return r.json(); });
+                })();
+            upload
+                .then(function (res) {
+                    if (!res || res.code !== 0) {
+                        throw new Error((res && res.msg) || '上传失败');
+                    }
+                    field.value = res.data.url || '';
+                    field.dispatchEvent(new Event('input', { bubbles: true }));
+                    status.textContent = '已上传，保存设置后生效';
+                })
+                .catch(function (err) {
+                    status.textContent = err.message || '上传失败';
                     window.adminToast && window.adminToast(status.textContent, 'error');
                 })
                 .finally(function () {

@@ -18,6 +18,7 @@ class AuthController
         return View::render('auth.login', [
             'csrf' => Session::csrfToken(),
             'error' => Session::getFlash('login_error'),
+            'success' => (($_GET['password_changed'] ?? '') === '1') ? '密码已修改，请重新登录' : '',
         ], 'layouts.admin_auth');
     }
 

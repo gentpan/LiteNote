@@ -15,12 +15,13 @@ class FeedController
 {
     public function feed(): never
     {
+        Post::ensurePublishingOptionsSchema();
         $siteTitle = Setting::get('title', 'LiteNote');
         $siteDesc  = Setting::get('description', '');
         $baseUrl   = $this->baseUrl();
 
         $rows = Post::db()->fetchAll(
-            "SELECT * FROM posts WHERE status='" . PostStatus::Published->value . "' ORDER BY published_at DESC LIMIT 30"
+            "SELECT * FROM posts WHERE status='" . PostStatus::Published->value . "' AND COALESCE(is_private, 0) = 0 AND COALESCE(allow_rss, 1) = 1 ORDER BY published_at DESC LIMIT 30"
         );
 
         $items = [];
@@ -62,12 +63,13 @@ class FeedController
      */
     public function llms(): never
     {
+        Post::ensurePublishingOptionsSchema();
         $siteTitle = (string) Setting::get('title', 'LiteNote');
         $siteDesc  = (string) Setting::get('description', '');
         $baseUrl   = $this->baseUrl();
 
         $rows = Post::db()->fetchAll(
-            "SELECT * FROM posts WHERE status='" . PostStatus::Published->value . "' ORDER BY published_at DESC LIMIT 200"
+            "SELECT * FROM posts WHERE status='" . PostStatus::Published->value . "' AND COALESCE(is_private, 0) = 0 AND COALESCE(allow_rss, 1) = 1 ORDER BY published_at DESC LIMIT 200"
         );
 
         $lines = [];
