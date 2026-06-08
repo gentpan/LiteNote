@@ -25,7 +25,8 @@
         <div class="form-row">
             <div class="form-group">
                 <label>用户名</label>
-                <input type="text" value="{{ $user->username }}" disabled>
+                <input type="text" name="username" value="{{ $user->username }}" required minlength="3" maxlength="32" pattern="[A-Za-z0-9_.-]{3,32}" autocomplete="username">
+                <p class="field-hint">3-32 位，只允许字母、数字、下划线、点和短横线。修改后下次登录请使用新用户名。</p>
             </div>
             <div class="form-group">
                 <label>昵称</label>
@@ -99,18 +100,29 @@
             if (!input.files || !input.files[0]) {
                 return;
             }
-            var fd = new FormData();
-            fd.append('_csrf', csrf);
-            fd.append('avatar', input.files[0]);
+            var file = input.files[0];
 
             btn.disabled = true;
             status.textContent = '上传中...';
-            fetch('/admin/profile/avatar', {
-                method: 'POST',
-                body: fd,
-                credentials: 'same-origin'
-            })
-                .then(function (r) { return r.json(); })
+            var upload = window.adminUploadFile
+                ? window.adminUploadFile({
+                    url: '/admin/profile/avatar',
+                    fields: { _csrf: csrf },
+                    fileField: 'avatar',
+                    file: file,
+                    successMessage: '头像已上传'
+                })
+                : (function () {
+                    var fd = new FormData();
+                    fd.append('_csrf', csrf);
+                    fd.append('avatar', file);
+                    return fetch('/admin/profile/avatar', {
+                        method: 'POST',
+                        body: fd,
+                        credentials: 'same-origin'
+                    }).then(function (r) { return r.json(); });
+                })();
+            upload
                 .then(function (res) {
                     if (!res || res.code !== 0) {
                         throw new Error((res && res.msg) || '上传失败');
@@ -224,37 +236,54 @@
     })();
     </script>
 
-    <h3 class="settings-group-title profile-section-title"><i class="fa-solid fa-key"></i> Passkey 登录</h3>
+    <div class="settings-group-title profile-section-title profile-section-title-actions">
+        <span><i class="fa-solid fa-key"></i> Passkey 登录</span>
+        <button type="button" class="btn btn-primary" id="passkeyRegisterBtn">
+            <i class="fa-solid fa-fingerprint"></i> 绑定 Passkey
+        </button>
+    </div>
     <div class="settings-section profile-settings-section">
         <p class="muted small">
             当前已绑定 {{ (int)($passkeyCount ?? 0) }} 个 Passkey。绑定后可在后台登录页直接使用系统 Passkey 登录。
         </p>
-        <div class="form-row">
-            <div class="form-group">
-                <label>设备名称</label>
-                <input type="text" id="passkeyDeviceName" value="我的设备" data-no-dirty>
-            </div>
-            <div class="form-group passkey-bind-action">
-                <label>&nbsp;</label>
-                <button type="button" class="btn btn-primary" id="passkeyRegisterBtn">
-                    <i class="fa-solid fa-fingerprint"></i> 绑定 Passkey
-                </button>
-            </div>
-        </div>
+        @if(!empty($passkeys))
+            <table class="admin-table passkey-table">
+                <thead>
+                    <tr>
+                        <th>绑定时间</th>
+                        <th>最近使用</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($passkeys as $passkey)
+                        <tr>
+                            <td>{!! \App\Core\Helper::dateTimeTag((string)($passkey['created_at'] ?? '')) !!}</td>
+                            <td>
+                                @if(!empty($passkey['last_used_at']))
+                                    {!! \App\Core\Helper::dateTimeTag((string)$passkey['last_used_at']) !!}
+                                @else
+                                    <span class="muted">从未</span>
+                                @endif
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endif
     </div>
 
     <script>
     (function () {
         var btn = document.getElementById('passkeyRegisterBtn');
-        var nameInput = document.getElementById('passkeyDeviceName');
         if (!btn) return;
         btn.addEventListener('click', function () {
             var original = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 绑定中';
-            registerPasskey((nameInput && nameInput.value.trim()) || '我的设备')
+            registerPasskey()
                 .then(function (res) {
                     window.adminToast && window.adminToast(res.message || 'Passkey 已绑定', 'success');
+                    setTimeout(function () { window.location.reload(); }, 600);
                 })
                 .catch(function (err) {
                     window.adminToast && window.adminToast(err.message || 'Passkey 绑定失败', 'error');

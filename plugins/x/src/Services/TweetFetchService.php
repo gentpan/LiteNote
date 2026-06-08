@@ -5,6 +5,7 @@ namespace LiteNotePlugin\X\Services;
 
 use App\Core\Config;
 use App\Core\Http;
+use App\Models\Attachment;
 use LiteNotePlugin\X\Models\XTweet;
 
 final class TweetFetchService
@@ -23,7 +24,7 @@ final class TweetFetchService
         $this->bearerToken = trim((string)$bearerToken);
     }
 
-    public function fetch(string $urlOrId): array
+    public function fetch(string $urlOrId, bool $forceImageRecache = false): array
     {
         $tweetId = XTweet::extractTweetId($urlOrId);
         $url = $this->normalizeUrl($urlOrId, $tweetId);
@@ -88,7 +89,7 @@ final class TweetFetchService
         $data['images'] = array_values(array_unique(array_filter(array_map('trim', $data['images']))));
         $data['remote_images'] = $data['images'];
         if ($data['images'] !== []) {
-            $data['images'] = $this->localizeTweetImages($data['images'], (string)$data['id']);
+            $data['images'] = $this->localizeTweetImages($data['images'], (string)$data['id'], $forceImageRecache);
         }
 
         return $data;
@@ -394,12 +395,12 @@ final class TweetFetchService
      * @param array<int,string> $images
      * @return array<int,string>
      */
-    private function localizeTweetImages(array $images, string $tweetId): array
+    private function localizeTweetImages(array $images, string $tweetId, bool $force = false): array
     {
         $localized = [];
         foreach ($images as $index => $imageUrl) {
             $imageUrl = (string)$imageUrl;
-            $localUrl = $this->downloadRemoteImage($imageUrl, $tweetId, $index);
+            $localUrl = $this->downloadRemoteImage($imageUrl, $tweetId, $index, $force);
             if ($localUrl !== '') {
                 $localized[] = $localUrl;
                 continue;
@@ -413,7 +414,7 @@ final class TweetFetchService
         return array_values(array_unique(array_filter($localized)));
     }
 
-    private function downloadRemoteImage(string $url, string $tweetId, int $index): string
+    private function downloadRemoteImage(string $url, string $tweetId, int $index, bool $force = false): string
     {
         $url = trim($url);
         if (!preg_match('~^https?://~i', $url)) {
@@ -450,11 +451,37 @@ final class TweetFetchService
         $safeId = preg_match('/^[0-9]{8,40}$/', $tweetId) ? $tweetId : 'tweet';
         $filename = $safeId . '-' . ($index + 1) . '-' . substr(sha1($url), 0, 12) . '.webp';
         $path = $subDir . '/' . $filename;
-        if (!is_file($path) && !$this->writeWebpImage($body, $mime, $path)) {
+        if (($force || !is_file($path)) && !$this->writeWebpImage($body, $mime, $path)) {
             return '';
         }
 
-        return $uploadUrl . '/' . $sub . '/' . $filename;
+        $localUrl = $uploadUrl . '/' . $sub . '/' . $filename;
+        $this->recordLocalAttachment($path, $localUrl, $filename);
+
+        return $localUrl;
+    }
+
+    private function recordLocalAttachment(string $path, string $url, string $filename): void
+    {
+        try {
+            if (Attachment::findBy('fileurl', $url)) {
+                return;
+            }
+
+            $att = new Attachment([
+                'filename' => $filename,
+                'original_name' => $filename,
+                'filepath' => $path,
+                'fileurl' => $url,
+                'filetype' => 'webp',
+                'filesize' => is_file($path) ? (int)filesize($path) : 0,
+                'mime_type' => 'image/webp',
+                'user_id' => 1,
+            ]);
+            $att->save();
+        } catch (\Throwable) {
+            // X 抓取不能因为附件索引失败而中断。
+        }
     }
 
     private function isBlockedRemoteImage(string $url): bool

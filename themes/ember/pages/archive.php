@@ -28,7 +28,7 @@
             <section class="archive-heat-panel">
                 <div class="archive-section-head">
                     <h2>近一年更新热力图</h2>
-                    <p>颜色越深表示当天发文越多</p>
+                    <p>颜色按当天写作字数区分，500 / 1000 / 1500 / 2000 字逐级加深</p>
                 </div>
                 <div class="archive-heat-scroll">
                     <div class="archive-heat-inner" style="--weeks: {{ $heatmap['weeks'] ?? 53 }}">
@@ -37,10 +37,18 @@
                                 <span style="grid-column: {{ $month['week'] }}">{{ $month['label'] }}</span>
                             @endforeach
                         </div>
-                        <div class="archive-heat-cells" aria-label="近一年每日发文热力图">
+                        <div class="archive-heat-cells" aria-label="近一年每日写作字数热力图">
                             @foreach(($heatmap['days'] ?? []) as $day)
+                                @php
+                                    $articleCount = (int)($day['articles'] ?? 0);
+                                    $talkCount = (int)($day['talks'] ?? 0);
+                                    $heatTitleParts = [];
+                                    if ($articleCount > 0) { $heatTitleParts[] = $articleCount . ' 篇文章'; }
+                                    if ($talkCount > 0) { $heatTitleParts[] = $talkCount . ' 篇说说'; }
+                                    $heatTitle = empty($heatTitleParts) ? '没有内容' : implode('，', $heatTitleParts);
+                                @endphp
                                 <span class="archive-heat-cell level-{{ $day['level'] }} {{ !empty($day['muted']) ? 'is-muted' : '' }}"
-                                      title="{{ $day['date'] }}：{{ $day['count'] }} 篇"></span>
+                                      title="{{ $day['date'] }}：{{ $heatTitle }}"></span>
                             @endforeach
                         </div>
                         <div class="archive-heat-legend">
@@ -50,6 +58,7 @@
                             <i class="level-2"></i>
                             <i class="level-3"></i>
                             <i class="level-4"></i>
+                            <i class="level-5"></i>
                             <span>多</span>
                         </div>
                     </div>

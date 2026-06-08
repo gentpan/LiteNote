@@ -8,6 +8,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
+use App\Services\AttachmentCleanupService;
 use LiteNotePlugin\X\Models\XTweet;
 use LiteNotePlugin\X\Services\TweetFetchService;
 
@@ -51,33 +52,51 @@ final class XAdminController
             Response::redirect('/admin/x/tweets');
         }
 
-        $content = trim((string)($data['text'] ?? ''));
-        if ($content === '') {
-            $content = 'X 原帖 ' . ((string)($data['url'] ?? $url));
+        $existing = $this->findExistingTweet($data, $url);
+        if ($existing) {
+            XTweet::db()->update('x_tweets', $this->fieldsFromFetchedTweet($data, $url), 'id = :id', [':id' => (int)$existing->id]);
+            Session::flash('success', '推文已存在，已刷新缓存内容');
+            Response::redirect('/admin/x/tweets');
         }
-        $now = date('Y-m-d H:i:s');
 
-        (new XTweet([
-            'tweet_id' => (string)($data['id'] ?? XTweet::extractTweetId($url)),
-            'tweet_url' => (string)($data['url'] ?? $url),
-            'tweet_author_name' => (string)($data['author_name'] ?? ''),
-            'tweet_author_handle' => (string)($data['author_handle'] ?? ''),
-            'tweet_author_avatar' => (string)($data['author_avatar'] ?? ''),
-            'tweet_author_verified' => !empty($data['author_verified']) ? 1 : 0,
-            'tweet_posted_at' => $data['posted_at'] ?? null,
-            'tweet_likes_count' => (int)($data['likes_count'] ?? 0),
-            'tweet_reposts_count' => (int)($data['reposts_count'] ?? 0),
-            'tweet_data' => json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-            'content' => $content,
-            'images' => implode(',', array_slice($data['images'] ?? [], 0, 4)),
-            'is_public' => 1,
-            'likes_count' => 0,
-            'comments_count' => 0,
-            'published_at' => (string)($data['posted_at'] ?? $now),
-            'created_at' => $now,
-        ]))->save();
+        (new XTweet(array_merge(
+            $this->fieldsFromFetchedTweet($data, $url),
+            [
+                'is_public' => 1,
+                'likes_count' => 0,
+                'comments_count' => 0,
+                'created_at' => date('Y-m-d H:i:s'),
+            ]
+        )))->save();
 
         Session::flash('success', '推文已发布');
+        Response::redirect('/admin/x/tweets');
+    }
+
+    public function refresh(Request $request): never
+    {
+        $id = (int)$request->input('id', 0);
+        $tweet = $id > 0 ? XTweet::find($id) : null;
+        if (!$tweet) {
+            Session::flash('error', '推文不存在');
+            Response::redirect('/admin/x/tweets');
+        }
+
+        $source = $tweet->tweetUrl() ?: $tweet->tweetId();
+        if ($source === '') {
+            Session::flash('error', '这条推文缺少可刷新的 X 链接');
+            Response::redirect('/admin/x/tweets');
+        }
+
+        try {
+            $data = (new TweetFetchService())->fetch($source, true);
+        } catch (\Throwable $e) {
+            Session::flash('error', '推文刷新失败：' . $e->getMessage());
+            Response::redirect('/admin/x/tweets');
+        }
+
+        XTweet::db()->update('x_tweets', $this->fieldsFromFetchedTweet($data, $source), 'id = :id', [':id' => $id]);
+        Session::flash('success', '推文内容和图片缓存已刷新');
         Response::redirect('/admin/x/tweets');
     }
 
@@ -85,10 +104,72 @@ final class XAdminController
     {
         $id = (int)$request->input('id', 0);
         if ($id > 0) {
-            XTweet::db()->delete('x_tweets', 'id = ?', [$id]);
-            XTweet::db()->delete('comments', 'x_tweet_id = ?', [$id]);
+            $tweet = XTweet::find($id);
+            $attachmentValues = $tweet ? [
+                (string)($tweet->images ?? ''),
+                (string)($tweet->content ?? ''),
+                (string)($tweet->tweet_data ?? ''),
+                (string)($tweet->tweet_author_avatar ?? ''),
+            ] : [];
+            $db = XTweet::db();
+            try {
+                $db->beginTransaction();
+                $db->delete('comments', 'x_tweet_id = ?', [$id]);
+                $db->delete('x_tweets', 'id = ?', [$id]);
+                $db->commit();
+            } catch (\Throwable) {
+                $db->rollBack();
+                Session::flash('error', '推文删除失败，请稍后重试');
+                Response::redirect('/admin/x/tweets');
+            }
+            AttachmentCleanupService::deleteUnusedFromValues($attachmentValues);
         }
         Session::flash('success', '推文已删除');
         Response::redirect('/admin/x/tweets');
+    }
+
+    private function findExistingTweet(array $data, string $fallbackUrl): ?XTweet
+    {
+        $tweetId = trim((string)($data['id'] ?? XTweet::extractTweetId($fallbackUrl)));
+        if ($tweetId !== '') {
+            $tweet = XTweet::findBy('tweet_id', $tweetId);
+            if ($tweet) {
+                return $tweet;
+            }
+        }
+
+        $url = trim((string)($data['url'] ?? $fallbackUrl));
+        return $url !== '' ? XTweet::findBy('tweet_url', $url) : null;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function fieldsFromFetchedTweet(array $data, string $fallbackUrl): array
+    {
+        $content = trim((string)($data['text'] ?? ''));
+        $url = (string)($data['url'] ?? $fallbackUrl);
+        if ($content === '') {
+            $content = 'X 原帖 ' . $url;
+        }
+
+        $postedAt = $data['posted_at'] ?? null;
+        $now = date('Y-m-d H:i:s');
+
+        return [
+            'tweet_id' => (string)($data['id'] ?? XTweet::extractTweetId($fallbackUrl)),
+            'tweet_url' => $url,
+            'tweet_author_name' => (string)($data['author_name'] ?? ''),
+            'tweet_author_handle' => (string)($data['author_handle'] ?? ''),
+            'tweet_author_avatar' => (string)($data['author_avatar'] ?? ''),
+            'tweet_author_verified' => !empty($data['author_verified']) ? 1 : 0,
+            'tweet_posted_at' => $postedAt,
+            'tweet_likes_count' => (int)($data['likes_count'] ?? 0),
+            'tweet_reposts_count' => (int)($data['reposts_count'] ?? 0),
+            'tweet_data' => json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'content' => $content,
+            'images' => implode(',', array_slice($data['images'] ?? [], 0, 4)),
+            'published_at' => (string)($postedAt ?? $now),
+        ];
     }
 }

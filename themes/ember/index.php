@@ -1,21 +1,26 @@
 @extends('layouts.front')
 
 @section('content')
-    <section class="home-list">
+    <section class="home-list js-home-feed-list" data-home-feed-list>
         @if(empty($feedItems))
             <p class="empty">还没有内容</p>
         @endif
 
-        @foreach($feedItems as $feed)
-            @php $item = $feed['item']; @endphp
-            @if($feed['type'] === 'post')
-                @include('partials.home-post-card')
-            @elseif($feed['type'] === 'x_tweet')
-                @php $tweet = $item; $tweetLocalActions = true; $tweetShowReplies = false; $tweetHideViews = true; @endphp
-                @include('partials.tweet-card')
-            @else
-                @include('partials.home-talk-card')
-            @endif
-        @endforeach
+        @include('partials.home-feed-items')
     </section>
+
+    @if(!empty($homeFeedHasMore))
+        <div class="home-feed-more" data-home-feed-more data-offset="{{ count($feedItems ?? []) }}" data-limit="10" data-url="/home/feed">
+            <button type="button" class="home-feed-more-btn">
+                <span>加载更多</span>
+            </button>
+            <div class="home-feed-more-loading" hidden>
+                <span class="load-more-spinner"></span>
+            </div>
+            <div class="home-feed-more-end" hidden>
+                <i class="fa-regular fa-circle-check"></i>
+                <span>没有更多内容</span>
+            </div>
+        </div>
+    @endif
 @endsection

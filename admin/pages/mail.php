@@ -122,7 +122,7 @@
                 </div>
                 <div class="form-group">
                     <label>API Token</label>
-                    <input type="password" name="mail[mail_sendflare_token]" value="" placeholder="{{ !empty($s['sendflare_token']) ? '已保存，留空不修改' : 'Bearer token' }}" autocomplete="off">
+                    <input type="password" name="mail[mail_sendflare_token]" value="" placeholder="{{ !empty($s['sendflare_token']) ? '已保存，留空不修改' : 'Bearer token' }}" autocomplete="off" data-no-dirty>
                 </div>
             </section>
 
@@ -154,7 +154,7 @@
                 </div>
                 <div class="form-group">
                     <label>密码</label>
-                    <input type="password" name="mail[mail_smtp_password]" value="" placeholder="{{ !empty($s['smtp_password']) ? '已保存，留空不修改' : 'SMTP password' }}" autocomplete="off">
+                    <input type="password" name="mail[mail_smtp_password]" value="" placeholder="{{ !empty($s['smtp_password']) ? '已保存，留空不修改' : 'SMTP password' }}" autocomplete="off" data-no-dirty>
                 </div>
             </section>
         </div>

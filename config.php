@@ -26,7 +26,7 @@ return [
     'app' => [
         'name'      => 'LiteNote',
         'version'   => '1.0.0',
-        'url'       => 'http://127.0.0.1:5555',
+        'url'       => $env('APP_URL', 'http://127.0.0.1:5555'),
         'debug'     => true,
         'timezone'  => 'Asia/Shanghai',
         'locale'    => 'zh-CN',
@@ -43,7 +43,7 @@ return [
         'subtitle'    => '记录、分享、思考',
         'description' => '一个用 PHP 8.5 写的小博客',
         'keywords'    => 'PHP,博客,个人',
-        'beian'       => '',
+        'site_analytics_code' => '',
         'comment_need_audit' => true,
         'comment_captcha'    => false,
     ],
@@ -52,7 +52,7 @@ return [
         'path'    => __DIR__ . '/uploads',
         'url'     => '/uploads',
         'max_size' => 50 * 1024 * 1024,  // 50MB
-        'allowed_ext' => ['jpg','jpeg','png','gif','webp','mp3','m4a','wav','ogg','flac','aac','lrc','pdf','zip','txt','md'],
+        'allowed_ext' => ['jpg','jpeg','png','gif','webp','mp3','m4a','wav','ogg','flac','aac','lrc','mp4','webm','mov','m4v','avi','mkv','pdf','zip','txt','md'],
     ],
 
     'pagination' => [

@@ -179,6 +179,7 @@
                             $songPublishedLabel = \App\Core\Helper::formatDate($songPublishedAt, 'Y-m-d');
                         @endphp
                         <button type="button"
+                                id="music-{{ $song->id }}"
                                 class="music-track-row {{ (int)$index === 0 ? 'is-active' : '' }}"
                                 data-music-track
                                 data-index="{{ $index }}"

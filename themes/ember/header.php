@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="https://static.bluecdn.com/libs/fontawesome/7.2.0/css/all.min.css">
     @php
         $themeCssFiles = [
+            '/themes/ember/assets/vendor/fancybox/fancybox.css',
             '/themes/ember/assets/main.css',
             '/themes/ember/assets/pages.css',
             '/themes/ember/assets/home.css',
@@ -143,6 +144,10 @@
         </div>
     </nav>
 
+    <div class="side-quick-actions" aria-label="快捷操作">
+    <button type="button" class="side-search-toggle" data-search-toggle aria-label="搜索" title="搜索">
+        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+    </button>
     <button type="button" class="side-theme-toggle" data-theme-toggle aria-label="切换深色模式" title="切换深色模式">
         <span class="side-theme-icon" aria-hidden="true">
             <i class="fa-solid fa-moon theme-icon-moon"></i>
@@ -150,6 +155,20 @@
         </span>
         <span class="side-theme-label" data-theme-label>深色模式</span>
     </button>
+    </div>
+
+    <div class="site-search-overlay" data-search-overlay hidden>
+        <div class="site-search-panel" role="dialog" aria-modal="true" aria-label="站内搜索">
+            <form action="/search" method="get" class="site-search-pop-form">
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                <input type="search" name="q" value="{{ $keyword ?? '' }}" placeholder="搜索文章、页面、滔客、音乐、X" autocomplete="off" data-search-input>
+                <button type="submit">搜索</button>
+                <button type="button" class="site-search-close" data-search-close aria-label="关闭搜索">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </form>
+        </div>
+    </div>
 
     <div class="container {{ ($activeNav ?? '') === 'archives' ? 'container-archive' : '' }}">
         <main class="site-main">

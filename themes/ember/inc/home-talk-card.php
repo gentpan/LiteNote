@@ -7,13 +7,17 @@
     $keywords = $item->getKeywords();
     $displayContent = $item->contentWithoutKeywords();
     $commentCount = count($comments);
+    $locationName = method_exists($item, 'locationDisplayName') ? $item->locationDisplayName() : trim((string)($item->location_name ?: $item->location_city ?: ''));
+    $locationTitle = method_exists($item, 'locationFullName') ? $item->locationFullName() : trim((string)($item->location_name ?: $item->location_city ?: ''));
+    $weatherText = method_exists($item, 'weatherDisplayText') ? $item->weatherDisplayText() : '';
+    $weatherIcon = method_exists($item, 'weatherIconClass') ? $item->weatherIconClass() : 'fa-solid fa-cloud';
 @endphp
 @if($isMusicTalk)
     @include('partials.home-music-card')
 @else
 <article class="home-card home-card--talk home-talk-card" id="talk-{{ $item->id }}">
-        @if(trim((string)$displayContent) !== '')
-            <div class="home-card-body talk-content">{{ $displayContent }}</div>
+        @if(trim((string)$displayContent) !== '' || !empty($keywords))
+            <div class="home-card-body talk-content">@if(!empty($keywords))<span class="talk-inline-keywords">@foreach($keywords as $keyword)<span>#{{ $keyword }}</span>@endforeach</span>@endif{{ $displayContent }}</div>
         @endif
 
         @if(!empty($images))
@@ -26,13 +30,13 @@
 
         <footer class="home-actions home-card-footer home-card-meta-bar">
             <div class="home-card-meta home-talk-meta">
-                <span class="home-talk-keywords">
-                    @foreach($keywords as $keyword)
-                        <span>#{{ $keyword }}</span>
-                    @endforeach
-                </span>
-                <span class="home-talk-dot">·</span>
                 <span>{!! \App\Core\Helper::timeTag($item->publishedAt()) !!}</span>
+                @if($locationName !== '')
+                    <span class="home-talk-location" title="{{ $locationTitle }}"><i class="fa-solid fa-location-dot"></i>{{ $locationName }}</span>
+                @endif
+                @if($weatherText !== '')
+                    <span class="home-talk-weather"><i class="{{ $weatherIcon }}"></i>{{ $weatherText }}</span>
+                @endif
             </div>
             <div class="home-card-actions home-talk-side">
                 <button type="button" class="home-action talk-like-btn" data-id="{{ $item->id }}" aria-label="点赞">

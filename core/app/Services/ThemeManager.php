@@ -83,11 +83,7 @@ final class ThemeManager
 
     public static function activeKey(): string
     {
-        try {
-            $key = (string)\App\Models\Setting::get('site_theme', 'ember');
-        } catch (\Throwable) {
-            $key = 'ember';
-        }
+        $key = self::activeKeyRaw();
         return isset(self::all()[$key]) ? $key : 'ember';
     }
 
@@ -174,7 +170,11 @@ final class ThemeManager
     private static function activeKeyRaw(): string
     {
         try {
-            return (string)\App\Models\Setting::get('site_theme', 'ember');
+            $key = (string)\App\Models\Setting::get('site_theme', '');
+            if ($key !== '') {
+                return $key;
+            }
+            return (string)\App\Models\Setting::get('theme', 'ember');
         } catch (\Throwable) {
             return 'ember';
         }

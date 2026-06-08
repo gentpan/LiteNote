@@ -63,7 +63,7 @@ class PasskeyService
             'user_id' => $data['user_id'] ?? 1,
             'public_key' => $data['public_key'],
             'counter' => $data['counter'] ?? 0,
-            'device_name' => $data['device_name'] ?? '未知设备',
+            'device_name' => $data['device_name'] ?? '',
         ];
 
         if ($this->getCredentialById($credentialId)) {

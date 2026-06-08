@@ -53,7 +53,6 @@ final class Http
             $response = curl_exec($ch);
             $status = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
             $error = curl_error($ch);
-            curl_close($ch);
             $bodyStr = is_string($response) ? $response : '';
             return [
                 'status' => $status,

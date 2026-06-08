@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Front;
 
-use App\Core\Helper;
+use App\Core\Response;
 use App\Core\View;
 use App\Models\Category;
 use App\Models\Post;
@@ -17,6 +17,8 @@ use App\Models\Post;
  */
 class CategoryController
 {
+    private const PER_PAGE = 10;
+
     public function __construct()
     {
         View::composer('layouts.front', function (array $data): array {
@@ -35,18 +37,46 @@ class CategoryController
             \App\Core\Response::notFound("分类不存在: {$slug}");
         }
 
-        $perPage = 5;
+        $perPage = self::PER_PAGE;
         $page = max(1, (int)($_GET['page'] ?? 1));
         ['items' => $posts, 'total' => $total] = Post::paginatePublished($page, $perPage, (int)$cat->id);
+        $articleStats = $cat->getArticleStats();
 
         return View::render('category.show', [
             'category'  => $cat,
             'posts'     => $posts,
             'total'     => $total,
+            'articleStats' => $articleStats,
             'page'      => $page,
             'perPage'   => $perPage,
-            'paginator' => Helper::loadMore($page, $total, $perPage, Helper::url('/category/' . $slug)),
+            'categoryHasMore' => ($page * $perPage) < $total,
             'pageTitle' => $cat->name,
+        ]);
+    }
+
+    public function feed($request, array $params): never
+    {
+        $slug = $params['slug'] ?? '';
+        $cat = Category::findBySlug($slug);
+        if (!$cat) {
+            Response::json(['code' => 404, 'msg' => '分类不存在'], 404);
+        }
+
+        $limit = self::PER_PAGE;
+        $offset = max(0, (int)($_GET['offset'] ?? 0));
+        $page = (int) floor($offset / $limit) + 1;
+        ['items' => $posts, 'total' => $total] = Post::paginatePublished($page, $limit, (int)$cat->id);
+        $html = View::render('partials.category-post-items', [
+            'posts' => $posts,
+            'offset' => $offset,
+        ]);
+
+        Response::json([
+            'code' => 0,
+            'html' => $html,
+            'count' => count($posts),
+            'nextOffset' => $offset + count($posts),
+            'hasMore' => ($offset + count($posts)) < $total,
         ]);
     }
 }

@@ -7,6 +7,7 @@ use App\Core\Config;
 use App\Core\Helper;
 use App\Core\Session;
 use App\Models\Attachment;
+use App\Models\Setting;
 
 final class ImageUploadService
 {
@@ -67,6 +68,12 @@ final class ImageUploadService
         if ($base === '') {
             $base = $purpose;
         }
+
+        $convertToWebp = (string)Setting::get('attachment_image_webp_enabled', '1') === '1';
+        if (!$convertToWebp) {
+            return self::saveOriginalImage($file, $tmp, $mime, $subDir, $sub, $base);
+        }
+
         $filename = $base . '-' . date('YmdHis') . '-' . bin2hex(random_bytes(4)) . '.webp';
         $absPath = $subDir . '/' . $filename;
 
@@ -89,12 +96,58 @@ final class ImageUploadService
 
         return [
             'id'       => $att->id ?? null,
-            'url'      => $relUrl,
+            'url'      => Helper::url($relUrl),
+            'relative_url' => $relUrl,
+            'fileurl'  => $relUrl,
             'name'     => (string)($file['name'] ?? $filename),
             'size'     => $filesize,
             'type'     => 'image',
             'filename' => $filename,
             'mime'     => 'image/webp',
+        ];
+    }
+
+    private static function saveOriginalImage(array $file, string $tmp, string $mime, string $subDir, string $sub, string $base): array
+    {
+        $ext = match ($mime) {
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/gif' => 'gif',
+            'image/webp' => 'webp',
+            default => strtolower(pathinfo((string)($file['name'] ?? ''), PATHINFO_EXTENSION)) ?: 'jpg',
+        };
+        $filename = $base . '-' . date('YmdHis') . '-' . bin2hex(random_bytes(4)) . '.' . $ext;
+        $absPath = $subDir . '/' . $filename;
+        if (!move_uploaded_file($tmp, $absPath)) {
+            if (!copy($tmp, $absPath)) {
+                throw new \RuntimeException('图片保存失败');
+            }
+        }
+
+        $relUrl = rtrim((string)Config::get('upload.url'), '/') . '/' . $sub . '/' . $filename;
+        $filesize = is_file($absPath) ? (int)filesize($absPath) : 0;
+        $att = new Attachment([
+            'filename' => $filename,
+            'original_name' => (string)($file['name'] ?? $filename),
+            'filepath' => $absPath,
+            'fileurl' => $relUrl,
+            'filetype' => $ext,
+            'filesize' => $filesize,
+            'mime_type' => $mime,
+            'user_id' => Session::get('admin_user.id', 1),
+        ]);
+        $att->save();
+
+        return [
+            'id' => $att->id ?? null,
+            'url' => Helper::url($relUrl),
+            'relative_url' => $relUrl,
+            'fileurl' => $relUrl,
+            'name' => (string)($file['name'] ?? $filename),
+            'size' => $filesize,
+            'type' => 'image',
+            'filename' => $filename,
+            'mime' => $mime,
         ];
     }
 

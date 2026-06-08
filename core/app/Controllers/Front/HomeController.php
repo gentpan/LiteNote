@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controllers\Front;
 
 use App\Core\Helper;
+use App\Core\Response;
 use App\Core\View;
 use App\Models\Category;
 use App\Models\Post;
@@ -32,12 +33,34 @@ class HomeController
 
     public function index(): string
     {
+        $limit = 10;
+        $feedItems = ReadingSettingsService::homeFeedItems(0, $limit);
+
         return View::render('home.index', [
-            'feedItems' => ReadingSettingsService::homeFeedItems(),
+            'feedItems' => $feedItems,
+            'homeFeedHasMore' => ReadingSettingsService::homeFeedHasMore(0, count($feedItems)),
             // 读 5 分钟文件缓存快照,避免每次访问都实时聚合 + 重复建表。
             'activitySummary' => (new ActivityCacheService())->snapshot()['summary'] ?? null,
             'pageTitle' => null,
             'activeNav' => 'home',
+        ]);
+    }
+
+    public function feed(): never
+    {
+        $offset = max(0, (int)($_GET['offset'] ?? 0));
+        $limit = max(1, min(20, (int)($_GET['limit'] ?? 10)));
+        $feedItems = ReadingSettingsService::homeFeedItems($offset, $limit);
+        $html = View::render('partials.home-feed-items', [
+            'feedItems' => $feedItems,
+        ]);
+
+        Response::json([
+            'code' => 0,
+            'html' => $html,
+            'count' => count($feedItems),
+            'nextOffset' => $offset + count($feedItems),
+            'hasMore' => count($feedItems) > 0 && ReadingSettingsService::homeFeedHasMore($offset, count($feedItems)),
         ]);
     }
 

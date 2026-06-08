@@ -19,7 +19,7 @@
                         $tweetHideViews = true;
                     @endphp
                     <article class="x-masonry-item" id="xmark-{{ $tweet->id }}">
-                        @include('partials.tweet-card')
+                        @include('partials.x-card')
                     </article>
                 @endforeach
             </div>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Page;
+use App\Models\Post;
 use App\Models\Setting;
 
 final class CommentSettingsService
@@ -96,6 +97,16 @@ final class CommentSettingsService
 
         if ($type === self::TYPE_PAGE && $target instanceof Page && (string)($target->slug ?? '') === 'friends') {
             return true;
+        }
+
+        if ($type === self::TYPE_POST && $target instanceof Post) {
+            Post::ensurePublishingOptionsSchema();
+            if ((int)($target->is_private ?? 0) === 1) {
+                return false;
+            }
+            if ((int)($target->allow_comments ?? 1) !== 1) {
+                return false;
+            }
         }
 
         $key = $type . '_enabled';

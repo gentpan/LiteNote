@@ -20,6 +20,9 @@
     <div class="music-share-comments-head">
         <span>歌曲评论</span>
         <em><span data-music-comment-count>{{ $musicCommentCount }}</span> 条评论</em>
+        <button type="button" class="music-share-comments-close" data-music-comments-close aria-label="关闭音乐评论">
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
     </div>
     <div class="music-share-owner-card">
         <div class="music-share-owner-avatar" aria-hidden="true">

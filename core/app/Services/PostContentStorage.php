@@ -30,6 +30,34 @@ final class PostContentStorage
         }
     }
 
+    public static function writePost(string $slug, string $title, string $bodyMarkdown): void
+    {
+        self::write($slug, self::composePostMarkdown($title, $bodyMarkdown));
+    }
+
+    public static function composePostMarkdown(string $title, string $bodyMarkdown): string
+    {
+        $title = trim(preg_replace('/\s+/u', ' ', $title) ?? $title);
+        $body = self::bodyWithoutTitleHeading($bodyMarkdown, $title);
+        if ($title === '') {
+            return $body;
+        }
+        return '# ' . $title . ($body !== '' ? "\n\n" . $body : '');
+    }
+
+    public static function bodyWithoutTitleHeading(string $markdown, string $title): string
+    {
+        $markdown = self::normalize($markdown);
+        $title = trim($title);
+        if ($title === '') {
+            return trim($markdown);
+        }
+
+        $pattern = '/\A\s*#{1,6}[ \t]+' . preg_quote($title, '/') . '[ \t]*(?:\R+|$)/u';
+        $markdown = preg_replace($pattern, '', $markdown, 1) ?? $markdown;
+        return trim($markdown);
+    }
+
     public static function read(string $slug): string
     {
         $path = self::path($slug);

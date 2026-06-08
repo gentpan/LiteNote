@@ -10,16 +10,43 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
 use App\Models\Attachment;
+use App\Models\Setting;
+use App\Services\BackupService;
 use App\Services\ImageUploadService;
+use App\Services\S3StorageService;
 
 class AttachmentController
 {
+    private const SETTING_KEYS = [
+        'attachment_cdn_enabled',
+        'attachment_cdn_url',
+        'attachment_image_webp_enabled',
+        'attachment_s3_enabled',
+        'attachment_s3_endpoint',
+        'attachment_s3_bucket',
+        'attachment_s3_region',
+        'attachment_s3_access_key',
+        'attachment_s3_secret_key',
+        'attachment_s3_prefix',
+        'attachment_s3_delete_remote',
+        'attachment_backup_enabled',
+        'attachment_backup_s3_enabled',
+        'attachment_backup_time',
+        'attachment_backup_retention_days',
+        'attachment_backup_keep_versions',
+        'attachment_backup_last_run_date',
+        'attachment_backup_last_status',
+    ];
+
     public function index(): string
     {
         $page = max(1, (int)($_GET['page'] ?? 1));
         $perPage = 24;
-        $type = $_GET['type'] ?? null;
+        $type = trim((string)($_GET['type'] ?? ''));
+        $type = $type !== '' ? $type : null;
+        Attachment::syncLocalUploadFiles();
         $result = Attachment::paginateByType($page, $perPage, $type);
+        $baseUrl = '/admin/attachments' . ($type ? '?type=' . rawurlencode($type) : '');
 
         return View::render('attachment.index', [
             'items' => $result['items'],
@@ -27,10 +54,142 @@ class AttachmentController
             'page'  => $page,
             'perPage' => $perPage,
             'type'  => $type,
-            'paginator' => Helper::paginate($page, $result['total'], $perPage, '/admin/attachments'),
+            'categoryOptions' => Attachment::categoryOptions(),
+            'categoryCounts' => Attachment::categoryCounts(),
+            'attachmentSettings' => $this->attachmentSettings(),
+            'paginator' => Helper::paginate($page, $result['total'], $perPage, $baseUrl),
             'csrf'  => Session::csrfToken(),
             'pageTitle' => '附件管理',
         ], 'layouts.admin');
+    }
+
+    public function saveSettings(Request $request): never
+    {
+        $values = [
+            'attachment_cdn_enabled' => $request->input('attachment_cdn_enabled', '0') === '1' ? '1' : '0',
+            'attachment_cdn_url' => $this->cleanUrl((string)$request->input('attachment_cdn_url', '')),
+            'attachment_image_webp_enabled' => $request->input('attachment_image_webp_enabled', '0') === '1' ? '1' : '0',
+            'attachment_s3_enabled' => $request->input('attachment_s3_enabled', '0') === '1' ? '1' : '0',
+            'attachment_s3_endpoint' => $this->cleanUrl((string)$request->input('attachment_s3_endpoint', '')),
+            'attachment_s3_bucket' => trim((string)$request->input('attachment_s3_bucket', '')),
+            'attachment_s3_region' => trim((string)$request->input('attachment_s3_region', 'auto')),
+            'attachment_s3_access_key' => trim((string)$request->input('attachment_s3_access_key', '')),
+            'attachment_s3_secret_key' => trim((string)$request->input('attachment_s3_secret_key', '')),
+            'attachment_s3_prefix' => trim((string)$request->input('attachment_s3_prefix', ''), "/ \t\n\r\0\x0B"),
+            'attachment_s3_delete_remote' => $request->input('attachment_s3_delete_remote', '0') === '1' ? '1' : '0',
+            'attachment_backup_enabled' => $request->input('attachment_backup_enabled', '0') === '1' ? '1' : '0',
+            'attachment_backup_s3_enabled' => $request->input('attachment_backup_s3_enabled', '0') === '1' ? '1' : '0',
+            'attachment_backup_time' => $this->cleanBackupTime((string)$request->input('attachment_backup_time', '00:00')),
+            'attachment_backup_retention_days' => (string)max(1, min(365, (int)$request->input('attachment_backup_retention_days', '15'))),
+            'attachment_backup_keep_versions' => (string)max(1, min(200, (int)$request->input('attachment_backup_keep_versions', '10'))),
+        ];
+
+        Setting::setMany($values);
+        Session::flash('success', '附件设置已保存');
+        Response::redirect('/admin/attachments');
+    }
+
+    private function attachmentSettings(): array
+    {
+        $defaults = [
+            'attachment_cdn_enabled' => '0',
+            'attachment_cdn_url' => '',
+            'attachment_image_webp_enabled' => '1',
+            'attachment_s3_enabled' => '0',
+            'attachment_s3_endpoint' => '',
+            'attachment_s3_bucket' => '',
+            'attachment_s3_region' => 'auto',
+            'attachment_s3_access_key' => '',
+            'attachment_s3_secret_key' => '',
+            'attachment_s3_prefix' => '',
+            'attachment_s3_delete_remote' => '0',
+        ];
+        $defaults = array_merge($defaults, BackupService::defaults());
+
+        foreach (self::SETTING_KEYS as $key) {
+            $defaults[$key] = (string)Setting::get($key, $defaults[$key] ?? '');
+        }
+
+        return $defaults;
+    }
+
+    public function testS3(Request $request): never
+    {
+        try {
+            $result = (new S3StorageService($this->s3ConfigFromRequest($request)))->testConnection();
+            Response::json(['code' => 0, 'msg' => $result['message'], 'data' => $result]);
+        } catch (\Throwable $e) {
+            Response::json(['code' => 1, 'msg' => $e->getMessage()]);
+        }
+    }
+
+    public function clearS3(Request $request): never
+    {
+        try {
+            $result = (new S3StorageService($this->s3ConfigFromRequest($request)))->clearPrefix();
+            $msg = '已删除 ' . (int)$result['deleted'] . ' 个对象';
+            if (!empty($result['truncated'])) {
+                $msg .= '，达到本次上限，请再次执行';
+            }
+            Response::json(['code' => 0, 'msg' => $msg, 'data' => $result]);
+        } catch (\Throwable $e) {
+            Response::json(['code' => 1, 'msg' => $e->getMessage()]);
+        }
+    }
+
+    public function s3ClearCommand(Request $request): never
+    {
+        try {
+            $command = (new S3StorageService($this->s3ConfigFromRequest($request)))->clearCommand();
+            Response::json(['code' => 0, 'msg' => '清空命令已生成', 'data' => ['command' => $command]]);
+        } catch (\Throwable $e) {
+            Response::json(['code' => 1, 'msg' => $e->getMessage()]);
+        }
+    }
+
+    public function backupNow(Request $request): never
+    {
+        try {
+            $settings = array_merge($this->attachmentSettings(), $this->s3ConfigFromRequest($request), $this->backupConfigFromRequest($request));
+            $result = (new BackupService())->run($settings, true);
+            Response::json(['code' => 0, 'msg' => $result['message'], 'data' => $result]);
+        } catch (\Throwable $e) {
+            Response::json(['code' => 1, 'msg' => $e->getMessage()]);
+        }
+    }
+
+    private function cleanUrl(string $value): string
+    {
+        return rtrim(trim($value), '/');
+    }
+
+    private function s3ConfigFromRequest(Request $request): array
+    {
+        return [
+            'attachment_s3_endpoint' => $this->cleanUrl((string)$request->input('attachment_s3_endpoint', '')),
+            'attachment_s3_bucket' => trim((string)$request->input('attachment_s3_bucket', '')),
+            'attachment_s3_region' => trim((string)$request->input('attachment_s3_region', 'auto')),
+            'attachment_s3_access_key' => trim((string)$request->input('attachment_s3_access_key', '')),
+            'attachment_s3_secret_key' => trim((string)$request->input('attachment_s3_secret_key', '')),
+            'attachment_s3_prefix' => trim((string)$request->input('attachment_s3_prefix', ''), "/ \t\n\r\0\x0B"),
+        ];
+    }
+
+    private function backupConfigFromRequest(Request $request): array
+    {
+        return [
+            'attachment_backup_enabled' => $request->input('attachment_backup_enabled', '0') === '1' ? '1' : '0',
+            'attachment_backup_s3_enabled' => $request->input('attachment_backup_s3_enabled', '0') === '1' ? '1' : '0',
+            'attachment_backup_time' => $this->cleanBackupTime((string)$request->input('attachment_backup_time', '00:00')),
+            'attachment_backup_retention_days' => (string)max(1, min(365, (int)$request->input('attachment_backup_retention_days', '15'))),
+            'attachment_backup_keep_versions' => (string)max(1, min(200, (int)$request->input('attachment_backup_keep_versions', '10'))),
+        ];
+    }
+
+    private function cleanBackupTime(string $value): string
+    {
+        $value = trim($value);
+        return preg_match('/^\d{2}:\d{2}$/', $value) ? $value : '00:00';
     }
 
     public function upload(Request $request): never
@@ -100,10 +259,12 @@ class AttachmentController
             'msg'  => 'ok',
             'data' => [
                 'id'   => $att->id,
-                'url'  => $relUrl,
+                'url'  => Helper::url($relUrl),
+                'relative_url' => $relUrl,
+                'fileurl' => $relUrl,
                 'name' => $file['name'],
                 'size' => $file['size'],
-                'type' => in_array($ext, ['jpg','jpeg','png','gif','webp']) ? 'image' : 'file',
+                'type' => $att->categoryKey(),
             ],
         ]);
     }

@@ -67,7 +67,7 @@ class PasskeyController
             'credential_id' => $data['id'],
             'public_key'    => json_encode($data['response']),
             'counter'       => 0,
-            'device_name'   => $request->input('device_name', '未知设备')
+            'device_name'   => ''
         ]);
 
         Session::forget('passkey_challenge');

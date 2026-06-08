@@ -8,12 +8,6 @@
             'active' => $__settingsPath === '/admin/settings' || $__settingsPath === '/admin/settings/',
         ],
         [
-            'href' => '/admin/settings/reading',
-            'icon' => 'fa-regular fa-newspaper',
-            'label' => '阅读',
-            'active' => str_starts_with($__settingsPath, '/admin/settings/reading'),
-        ],
-        [
             'href' => '/admin/settings/comments',
             'icon' => 'fa-regular fa-comment-dots',
             'label' => '评论',
@@ -30,6 +24,12 @@
             'icon' => 'fa-regular fa-envelope',
             'label' => '邮件',
             'active' => str_starts_with($__settingsPath, '/admin/settings/mail'),
+        ],
+        [
+            'href' => '/admin/settings/telegram',
+            'icon' => 'fa-brands fa-telegram',
+            'label' => 'Telegram',
+            'active' => str_starts_with($__settingsPath, '/admin/settings/telegram'),
         ],
     ];
 @endphp

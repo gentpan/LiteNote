@@ -27,6 +27,8 @@
                 }
                 $website = trim((string)($c['website'] ?? ''));
                 $websiteHref = $website !== '' && preg_match('/^https?:\/\//i', $website) ? $website : ($website !== '' ? 'https://' . $website : '');
+                $targetTitle = trim((string)($c['target_title'] ?? ''));
+                $targetContent = trim((string)($c['target_content'] ?? ''));
             @endphp
             <tr>
                 <td>{{ $c['id'] }}</td>
@@ -35,27 +37,31 @@
                         <img class="avatar avatar-sm" src="{{ \App\Services\Gravatar::url((string)($c['email'] ?? ''), 36) }}" alt="" loading="lazy" width="36" height="36">
                         <div class="cmt-user-main">
                             <div class="cmt-user-head">
-                                <span class="cmt-user-name">{{ $c['nickname'] }}</span>
+                                @if($websiteHref !== '')
+                                    <a class="cmt-user-name cmt-user-name-link" href="{{ $websiteHref }}" target="_blank" rel="noopener noreferrer">{{ $c['nickname'] }}</a>
+                                @else
+                                    <span class="cmt-user-name">{{ $c['nickname'] }}</span>
+                                @endif
                                 @if($flagUrl !== '')
                                     <img class="cmt-user-flag" src="{{ $flagUrl }}" alt="{{ $c['geo_country_code'] ?? '' }}" title="{{ $flagTitle }}" loading="lazy" width="18" height="12">
                                 @endif
-                                @if($c['email'])<small class="cmt-user-email">{{ $c['email'] }}</small>@endif
+                                @if($c['ip'])<span class="cmt-user-ip" title="{{ $flagTitle }}">{{ $c['ip'] }}</span>@endif
                             </div>
-                            @if($website !== '')
-                                <a class="cmt-user-website" href="{{ $websiteHref }}" target="_blank" rel="noopener noreferrer">{{ $website }}</a>
-                            @endif
+                            @if($c['email'])<small class="cmt-user-email">{{ $c['email'] }}</small>@endif
                         </div>
                     </div>
                 </td>
                 <td>
                     @if($c['post_id'])
-                        <a href="{{ \App\Services\PermalinkService::postUrlFromParts((int)($c['target_post_id'] ?? $c['post_id']), (string)$c['target_slug'], (string)($c['target_category_slug'] ?? '')) }}" target="_blank"><i class="fa-regular fa-file-lines"></i> {{ $c['target_title'] }}</a>
+                        <a href="{{ \App\Services\PermalinkService::postUrlFromParts((int)($c['target_post_id'] ?? $c['post_id']), (string)$c['target_slug'], (string)($c['target_category_slug'] ?? '')) }}" target="_blank"><i class="fa-regular fa-file-lines"></i> {{ $targetTitle }}</a>
                     @elseif($c['page_id'])
-                        <a href="/{{ $c['target_slug'] }}" target="_blank"><i class="fa-regular fa-bookmark"></i> {{ $c['target_title'] }}</a>
+                        <a href="/{{ $c['target_slug'] }}" target="_blank"><i class="fa-regular fa-bookmark"></i> {{ $targetTitle }}</a>
                     @elseif($c['talk_id'])
-                        <a href="/#talk-{{ $c['talk_id'] }}" target="_blank"><i class="fa-regular fa-comments"></i> {{ $c['target_title'] }}</a>
+                        <a href="/#talk-{{ $c['talk_id'] }}" target="_blank" title="{{ $targetContent }}"><i class="fa-regular fa-comments"></i> {{ $targetTitle }}</a>
                     @elseif($c['music_id'])
-                        <a href="/music#music-comments" target="_blank"><i class="fa-solid fa-music"></i> {{ $c['target_title'] }}</a>
+                        <a href="/music#music-comments" target="_blank"><i class="fa-solid fa-music"></i> {{ $targetTitle }}</a>
+                    @elseif(!empty($c['x_tweet_id']))
+                        <a href="/x#xmark-{{ $c['x_tweet_id'] }}" target="_blank" title="{{ $targetContent }}"><i class="fa-brands fa-x-twitter"></i> {{ $targetTitle }}</a>
                     @else
                         <span class="muted">无</span>
                     @endif

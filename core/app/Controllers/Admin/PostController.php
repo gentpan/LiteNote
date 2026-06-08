@@ -16,6 +16,7 @@ use App\Models\Category;
 use App\Models\Post;
 use App\Services\AiSummaryService;
 use App\Services\ActivityService;
+use App\Services\AttachmentCleanupService;
 use App\Services\ImageUploadService;
 use App\Services\Notifications;
 use App\Services\PostContentStorage;
@@ -105,6 +106,7 @@ class PostController
 
     private function form(?Post $post): string
     {
+        Post::ensurePublishingOptionsSchema();
         return View::render('post.form', [
             'post'       => $post,
             'categories' => Category::allEnabled(),
@@ -215,7 +217,7 @@ class PostController
             'updated_at'       => $now,
         ]);
         $post->save();
-        PostContentStorage::write($slug, $body);
+        PostContentStorage::writePost($slug, $title, $body);
         (new ActivityService())->recordPost($post, 'published_post');
         if ($status === PostStatus::Published->value) {
             Notifications::postPublished($post);
@@ -231,6 +233,7 @@ class PostController
 
     private function persist(Request $request, ?int $id): never
     {
+        Post::ensurePublishingOptionsSchema();
         $data = [
             'title'    => $request->input('title', ''),
             'slug'     => $request->input('slug', ''),
@@ -239,7 +242,11 @@ class PostController
             'cover'    => $request->input('cover', ''),
             'category_id' => $request->input('category_id', 0),
             'status'   => $request->input('status', PostStatus::Published->value),
-            'tags'     => $request->input('tags', ''),
+            'published_at' => $request->input('published_at', ''),
+            'allow_comments' => $request->input('allow_comments', '0'),
+            'allow_rss' => $request->input('allow_rss', '0'),
+            'is_top' => $request->input('is_top', '0'),
+            'is_private' => $request->input('is_private', '0'),
         ];
 
         $validator = Validator::make($data, [
@@ -260,6 +267,12 @@ class PostController
 
         $slug = Post::resolveSlug((string)$data['slug'], (string)$data['title'], $id);
         $now = date('Y-m-d H:i:s');
+        $publishedAt = $this->normalizeDateTime((string)$data['published_at'], $now);
+        $categoryId = $this->normalizeCategoryId((int)$data['category_id']);
+        $allowComments = ((string)$data['allow_comments'] === '1') ? Toggle::On->value : Toggle::Off->value;
+        $allowRss = ((string)$data['allow_rss'] === '1') ? Toggle::On->value : Toggle::Off->value;
+        $isTop = ((string)$data['is_top'] === '1') ? Toggle::On->value : Toggle::Off->value;
+        $isPrivate = ((string)$data['is_private'] === '1') ? Toggle::On->value : Toggle::Off->value;
 
         if ($id) {
             $post = Post::find($id);
@@ -276,13 +289,18 @@ class PostController
                 'content'          => '',
                 'markdown_content' => '',
                 'cover'            => trim((string)$data['cover']),
-                'category_id'      => (int)$data['category_id'],
+                'category_id'      => $categoryId,
                 'status'           => $data['status'],
+                'published_at'     => $publishedAt,
+                'allow_comments'   => $allowComments,
+                'allow_rss'        => $allowRss,
+                'is_top'           => $isTop,
+                'is_private'       => $isPrivate,
                 'updated_at'       => $now,
             ]);
             $post->save();
             PostContentStorage::rename($oldSlug, $slug);
-            PostContentStorage::write($slug, $markdown);
+            PostContentStorage::writePost($slug, trim((string)$data['title']), $markdown);
             (new ActivityService())->recordPost($post, 'updated_post');
             if ($oldStatus !== PostStatus::Published->value && $data['status'] === PostStatus::Published->value) {
                 Notifications::postPublished($post);
@@ -295,17 +313,20 @@ class PostController
                 'content'          => '',
                 'markdown_content' => '',
                 'cover'            => trim((string)$data['cover']),
-                'category_id'      => (int)$data['category_id'],
+                'category_id'      => $categoryId,
                 'user_id'          => Session::get('admin_user.id', 1),
-                'is_top'           => Toggle::Off->value,
+                'is_top'           => $isTop,
                 'is_recommend'     => Toggle::Off->value,
+                'allow_comments'   => $allowComments,
+                'allow_rss'        => $allowRss,
+                'is_private'       => $isPrivate,
                 'status'           => $data['status'],
-                'published_at'     => $now,
+                'published_at'     => $publishedAt,
                 'created_at'       => $now,
                 'updated_at'       => $now,
             ]);
             $post->save();
-            PostContentStorage::write($slug, $markdown);
+            PostContentStorage::writePost($slug, trim((string)$data['title']), $markdown);
             (new ActivityService())->recordPost($post, 'published_post');
             if ($data['status'] === PostStatus::Published->value) {
                 Notifications::postPublished($post);
@@ -314,6 +335,28 @@ class PostController
 
         $this->flashSuccess($id ? '文章已更新' : '文章已发布');
         $this->redirect('/admin/posts');
+    }
+
+    private function normalizeDateTime(string $value, string $fallback): string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return $fallback;
+        }
+        $value = str_replace('T', ' ', $value);
+        if (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/', $value)) {
+            $value .= ':00';
+        }
+        $time = strtotime($value);
+        return $time ? date('Y-m-d H:i:s', $time) : $fallback;
+    }
+
+    private function normalizeCategoryId(int $categoryId): int
+    {
+        if ($categoryId > 0) {
+            return $categoryId;
+        }
+        return (int) (Category::allEnabled()[0]->id ?? 0);
     }
 
     public function toggleFlag(Request $request, array $params): never
@@ -354,20 +397,26 @@ class PostController
         $id = (int)($params['id'] ?? 0);
         if ($id) {
             $post = Post::find($id);
+            $attachmentValues = $post ? [
+                (string)($post->cover ?? ''),
+                (string)($post->content ?? ''),
+                (string)($post->markdown_content ?? ''),
+            ] : [];
             $db = Post::db();
             try {
                 $db->beginTransaction();
                 $db->delete('comments', 'post_id = ?', [$id]);
                 $db->delete('posts', 'id = ?', [$id]);
                 $db->commit();
-                if ($post) {
-                    PostContentStorage::delete((string)$post->slug);
-                }
             } catch (\Throwable $e) {
                 $db->rollBack();
                 $this->flashError('删除失败: ' . $e->getMessage());
                 $this->redirect('/admin/posts');
             }
+            if ($post) {
+                PostContentStorage::delete((string)$post->slug);
+            }
+            AttachmentCleanupService::deleteUnusedFromValues($attachmentValues);
         }
         $this->flashSuccess('文章已删除');
         $this->redirect('/admin/posts');
@@ -398,6 +447,12 @@ class PostController
         switch ($action) {
             case 'delete':
                 $posts = Post::whereInIds($ids);
+                $attachmentValues = [];
+                foreach ($posts as $post) {
+                    $attachmentValues[] = (string)($post->cover ?? '');
+                    $attachmentValues[] = (string)($post->content ?? '');
+                    $attachmentValues[] = (string)($post->markdown_content ?? '');
+                }
                 $db->beginTransaction();
                 $db->query("DELETE FROM comments WHERE post_id IN ({$placeholders})", $ids);
                 $db->query("DELETE FROM posts WHERE id IN ({$placeholders})", $ids);
@@ -405,6 +460,7 @@ class PostController
                 foreach ($posts as $post) {
                     PostContentStorage::delete((string)$post->slug);
                 }
+                AttachmentCleanupService::deleteUnusedFromValues($attachmentValues);
                 $this->flashSuccess('已删除 ' . count($ids) . ' 篇文章');
                 break;
             case 'publish':

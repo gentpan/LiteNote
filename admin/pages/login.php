@@ -18,6 +18,9 @@
         @if($error)
             <div hidden data-toast-type="error" data-toast-message="{{ $error }}"></div>
         @endif
+        @if(!empty($success))
+            <div hidden data-toast-type="success" data-toast-message="{{ $success }}"></div>
+        @endif
         @if(\App\Core\Session::hasFlash('reset_success'))
             <div hidden data-toast-type="success" data-toast-message="{{ \App\Core\Session::getFlash('reset_success') }}"></div>
         @endif

@@ -1003,6 +1003,11 @@ html[data-site-theme="kami"] .archive-heat-legend .level-4 {
     background: var(--c-primary);
 }
 
+html[data-site-theme="kami"] .archive-heat-cell.level-5,
+html[data-site-theme="kami"] .archive-heat-legend .level-5 {
+    background: #8C3F36;
+}
+
 html[data-site-theme="kami"] .kami-page-head {
     margin: 0 0 48px;
     padding: 0 0 40px;

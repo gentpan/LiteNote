@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\PostStatus;
+use App\Models\Post;
 
 final class Category extends Model
 {
@@ -53,9 +54,57 @@ final class Category extends Model
 
     public function postCount(): int
     {
+        Post::ensurePublishingOptionsSchema();
         return (int) self::db()->fetchColumn(
-            'SELECT COUNT(*) FROM posts WHERE category_id = ? AND status = ?',
+            'SELECT COUNT(*) FROM posts WHERE category_id = ? AND status = ? AND COALESCE(is_private, 0) = 0',
             [$this->id, PostStatus::Published->value]
         );
+    }
+
+    public function getArticleStats(): array
+    {
+        Post::ensurePublishingOptionsSchema();
+        $published = PostStatus::Published->value;
+        $hasLikesColumn = (int) self::db()->fetchColumn(
+            "SELECT COUNT(*) FROM pragma_table_info('posts') WHERE name = 'likes_count'"
+        ) > 0;
+
+        $likesExpr = $hasLikesColumn
+            ? 'COALESCE(SUM(COALESCE(likes_count, 0)), 0) AS likes_count'
+            : '0 AS likes_count';
+
+        $row = self::db()->fetchOne(
+            "SELECT
+                COUNT(*) AS article_count,
+                COALESCE(SUM(COALESCE(views, 0)), 0) AS views,
+                COALESCE(SUM(
+                    LENGTH(COALESCE(summary, '')) +
+                    LENGTH(COALESCE(content, '')) +
+                    LENGTH(COALESCE(markdown_content, ''))
+                ), 0) AS words,
+                COALESCE(SUM(COALESCE(comments_count, 0)), 0) AS comments_count,
+                {$likesExpr}
+            FROM posts
+            WHERE category_id = ? AND status = ? AND COALESCE(is_private, 0) = 0",
+            [$this->id, $published]
+        );
+
+        if (!$row) {
+            return [
+                'article_count' => 0,
+                'views' => 0,
+                'words' => 0,
+                'comments_count' => 0,
+                'likes_count' => 0,
+            ];
+        }
+
+        return [
+            'article_count' => (int) $row['article_count'],
+            'views' => (int) $row['views'],
+            'words' => (int) $row['words'],
+            'comments_count' => (int) $row['comments_count'],
+            'likes_count' => (int) $row['likes_count'],
+        ];
     }
 }

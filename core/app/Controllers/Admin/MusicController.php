@@ -11,6 +11,8 @@ use App\Core\Session;
 use App\Core\View;
 use App\Enums\Toggle;
 use App\Models\Music;
+use App\Models\Talk;
+use App\Services\AttachmentCleanupService;
 use App\Services\MusicAssetCacheService;
 use App\Services\MetingService;
 
@@ -32,6 +34,17 @@ class MusicController
 
         $result = Music::paginate($page, $perPage, 'sort ASC, id DESC', $where, $params);
         $baseUrl = $keyword !== '' ? Helper::buildUrl('/admin/music', ['q' => $keyword]) : '/admin/music';
+        $sharedRows = Music::db()->fetchAll(
+            "SELECT music_id, COUNT(*) AS total
+             FROM talk
+             WHERE music_id > 0 AND COALESCE(post_type, 'talk') = 'music' AND is_public = ?
+             GROUP BY music_id",
+            [Toggle::On->value]
+        );
+        $sharedMusicIds = [];
+        foreach ($sharedRows as $row) {
+            $sharedMusicIds[(int)$row['music_id']] = (int)$row['total'];
+        }
 
         return View::render('music.index', [
             'list' => $result['items'],
@@ -39,6 +52,7 @@ class MusicController
             'page' => $page,
             'perPage' => $perPage,
             'keyword' => $keyword,
+            'sharedMusicIds' => $sharedMusicIds,
             'paginator' => Helper::paginate($page, $result['total'], $perPage, $baseUrl),
             'csrf' => Session::csrfToken(),
             'pageTitle' => '音乐管理',
@@ -88,6 +102,39 @@ class MusicController
     public function update(Request $request, array $params): never
     {
         $this->save($request, (int)($params['id'] ?? 0));
+    }
+
+    public function share(Request $request, array $params): never
+    {
+        $id = (int)($params['id'] ?? 0);
+        $music = $id > 0 ? Music::find($id) : null;
+        if (!$music) {
+            Session::flash('error', '音乐不存在');
+            Response::redirect('/admin/music');
+        }
+        if ((int)($music->is_public ?? 1) !== Toggle::On->value) {
+            Session::flash('error', '只能分享公开音乐');
+            Response::redirect('/admin/music');
+        }
+
+        $content = trim((string)$request->input('content', ''));
+        if ($content === '') {
+            $content = '分享一首音乐';
+        }
+
+        $item = new Talk([
+            'content' => $content,
+            'images' => '',
+            'mood' => '',
+            'music_id' => (int)$music->id,
+            'is_public' => Toggle::On->value,
+            'post_type' => 'music',
+            'published_at' => date('Y-m-d H:i:s'),
+        ]);
+        $item->save();
+
+        Session::flash('success', '音乐已分享到首页');
+        Response::redirect('/admin/music');
     }
 
     public function metingSearch(Request $request): never
@@ -245,8 +292,23 @@ class MusicController
         }
 
         $deleteTalks = (string)$request->input('delete_talks', '') === '1';
-        $talkRows = $db->fetchAll('SELECT id FROM talk WHERE music_id = ?', [$id]);
+        $talkRows = $db->fetchAll('SELECT id, content, images, music_cover, music FROM talk WHERE music_id = ?', [$id]);
         $talkIds = array_map(static fn(array $row): int => (int)$row['id'], $talkRows);
+        $attachmentValues = [
+            (string)($music->audio_url ?? ''),
+            (string)($music->cover_url ?? ''),
+            (string)($music->lyrics_url ?? ''),
+            (string)($music->lyrics ?? ''),
+            (string)($music->description ?? ''),
+        ];
+        if ($deleteTalks) {
+            foreach ($talkRows as $row) {
+                $attachmentValues[] = (string)($row['content'] ?? '');
+                $attachmentValues[] = (string)($row['images'] ?? '');
+                $attachmentValues[] = (string)($row['music_cover'] ?? '');
+                $attachmentValues[] = (string)($row['music'] ?? '');
+            }
+        }
 
         try {
             $db->beginTransaction();
@@ -269,6 +331,7 @@ class MusicController
             Session::flash('error', '删除失败，请稍后重试');
             Response::redirect("/admin/music/{$id}/edit");
         }
+        AttachmentCleanupService::deleteUnusedFromValues($attachmentValues);
 
         if ($talkIds !== [] && $deleteTalks) {
             Session::flash('success', '音乐已删除，相关音乐说说已一起删除');

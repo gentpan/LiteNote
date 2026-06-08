@@ -12,6 +12,33 @@ final class Markdown
 {
     public static function parse(string $text): string
     {
+        if (!class_exists('Parsedown', false)) {
+            $parsedownPath = dirname(__DIR__) . '/ThirdParty/Parsedown/Parsedown.php';
+            if (is_file($parsedownPath)) {
+                require_once $parsedownPath;
+            }
+        }
+
+        if (class_exists('Parsedown', false)) {
+            $parser = new \Parsedown();
+            if (method_exists($parser, 'setSafeMode')) {
+                $parser->setSafeMode(true);
+            }
+            if (method_exists($parser, 'setBreaksEnabled')) {
+                $parser->setBreaksEnabled(false);
+            }
+            if (method_exists($parser, 'setMarkupEscaped')) {
+                $parser->setMarkupEscaped(true);
+            }
+
+            return $parser->text($text);
+        }
+
+        return self::parseLegacy($text);
+    }
+
+    private static function parseLegacy(string $text): string
+    {
         $htmlPlaceholders = [];
         $text = str_replace(["\r\n", "\r"], "\n", $text);
         $text = self::extractCodeBlocks($text, $htmlPlaceholders);
@@ -184,23 +211,82 @@ final class Markdown
 
     private static function parseTable(string $text): string
     {
-        return preg_replace_callback(
-            '/((?:\|.*\n)+)\|[\s\-:|]+\|?\n((?:\|.*\n?)+)/',
-            function ($m) {
-                $header = $m[1];
-                $body = $m[2];
-                $headers = array_filter(array_map('trim', explode('|', trim($header))));
-                $headerHtml = '<tr>' . implode('', array_map(fn($h) => '<th>' . trim($h) . '</th>', $headers)) . '</tr>';
-                $rows = array_filter(explode("\n", trim($body)));
-                $bodyHtml = '';
-                foreach ($rows as $row) {
-                    $cells = array_filter(array_map('trim', explode('|', trim($row))));
-                    $bodyHtml .= '<tr>' . implode('', array_map(fn($c) => '<td>' . $c . '</td>', $cells)) . '</tr>';
+        $lines = explode("\n", $text);
+        $result = [];
+        $count = count($lines);
+
+        for ($i = 0; $i < $count; $i++) {
+            $line = $lines[$i];
+            $next = $lines[$i + 1] ?? null;
+
+            if ($next === null || !self::isTableRow($line) || !self::isTableDivider($next)) {
+                $result[] = $line;
+                continue;
+            }
+
+            $headers = self::tableCells($line);
+            if (count($headers) < 2) {
+                $result[] = $line;
+                continue;
+            }
+
+            $bodyRows = [];
+            $i += 2;
+            while ($i < $count && self::isTableRow($lines[$i])) {
+                $cells = self::tableCells($lines[$i]);
+                if (count($cells) >= 2) {
+                    $bodyRows[] = $cells;
                 }
-                return '<table>' . $headerHtml . $bodyHtml . '</table>';
-            },
-            $text
-        );
+                $i++;
+            }
+            $i--;
+
+            $thead = '<thead><tr>' . implode('', array_map(
+                static fn(string $cell): string => '<th>' . $cell . '</th>',
+                $headers
+            )) . '</tr></thead>';
+            $tbody = '';
+            foreach ($bodyRows as $cells) {
+                $tbody .= '<tr>' . implode('', array_map(
+                    static fn(string $cell): string => '<td>' . $cell . '</td>',
+                    $cells
+                )) . '</tr>';
+            }
+
+            $result[] = '<table>' . $thead . ($tbody !== '' ? '<tbody>' . $tbody . '</tbody>' : '') . '</table>';
+        }
+
+        return implode("\n", $result);
+    }
+
+    private static function isTableRow(string $line): bool
+    {
+        $line = trim($line);
+        return $line !== '' && str_contains($line, '|') && count(self::tableCells($line)) >= 2;
+    }
+
+    private static function isTableDivider(string $line): bool
+    {
+        $cells = self::tableCells($line);
+        if (count($cells) < 2) {
+            return false;
+        }
+        foreach ($cells as $cell) {
+            if (!preg_match('/^:?-{3,}:?$/', trim($cell))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function tableCells(string $line): array
+    {
+        $line = trim($line);
+        $line = trim($line, '|');
+        return array_map('trim', explode('|', $line));
     }
 
     /**

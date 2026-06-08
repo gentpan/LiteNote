@@ -10,6 +10,7 @@ use App\Core\Session;
 use App\Core\View;
 use App\Enums\CommentStatus;
 use App\Models\Comment;
+use App\Services\CommentModerationService;
 use App\Services\IpGeoService;
 use App\Traits\HasFlashRedirect;
 
@@ -49,14 +50,23 @@ class CommentController
             "SELECT c.*,
                     p.id AS target_post_id,
                     pc.slug AS target_category_slug,
-                    COALESCE(p.title, pg.title, '滔客 #' || s.id, '音乐：' || m.title) AS target_title,
-                    COALESCE(p.slug, pg.slug, s.id, m.id) AS target_slug
+                    CASE
+                        WHEN c.post_id > 0 THEN COALESCE(p.title, '文章 #' || c.post_id)
+                        WHEN c.page_id > 0 THEN COALESCE(pg.title, '页面 #' || c.page_id)
+                        WHEN c.talk_id > 0 THEN '滔客 #' || c.talk_id
+                        WHEN c.music_id > 0 THEN COALESCE(m.title, '音乐 #' || c.music_id)
+                        WHEN c.x_tweet_id > 0 THEN 'X #' || c.x_tweet_id
+                        ELSE ''
+                    END AS target_title,
+                    COALESCE(s.content, xt.content, '') AS target_content,
+                    COALESCE(p.slug, pg.slug, s.id, m.id, xt.id) AS target_slug
              FROM comments c
              LEFT JOIN posts p ON c.post_id = p.id
              LEFT JOIN categories pc ON p.category_id = pc.id
              LEFT JOIN pages pg ON c.page_id = pg.id
              LEFT JOIN talk s ON c.talk_id = s.id
              LEFT JOIN music m ON c.music_id = m.id
+             LEFT JOIN x_tweets xt ON c.x_tweet_id = xt.id
              " . ($whereSql ? ' WHERE ' . $whereSql : '') . "
              ORDER BY c.id DESC LIMIT {$perPage} OFFSET {$offset}",
             $params
@@ -101,6 +111,7 @@ class CommentController
         if ($cmt) {
             $cmt->status = CommentStatus::Approved->value;
             $cmt->save();
+            CommentModerationService::removeFromComment($cmt);
             $this->syncPostCommentCount($cmt);
         }
         Response::json(['code' => 0, 'msg' => '已通过']);
@@ -113,6 +124,7 @@ class CommentController
         if ($cmt) {
             $cmt->status = CommentStatus::Spam->value;
             $cmt->save();
+            CommentModerationService::markFromComment($cmt);
             $this->syncPostCommentCount($cmt);
         }
         Response::json(['code' => 0, 'msg' => '已标记垃圾']);

@@ -89,6 +89,7 @@ final class Installer
             category_id INTEGER DEFAULT 0,
             user_id INTEGER DEFAULT 1,
             views INTEGER DEFAULT 0,
+            likes_count INTEGER DEFAULT 0,
             comments_count INTEGER DEFAULT 0,
             is_top INTEGER DEFAULT 0,
             is_recommend INTEGER DEFAULT 0,
@@ -161,6 +162,19 @@ final class Installer
         )
         SQL);
 
+        $db->query(<<<SQL
+        CREATE TABLE IF NOT EXISTS comment_spam_identities (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            type VARCHAR(20) NOT NULL,
+            value VARCHAR(255) NOT NULL,
+            source_comment_id INTEGER DEFAULT 0,
+            hits INTEGER DEFAULT 0,
+            last_seen_at DATETIME,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(type, value)
+        )
+        SQL);
+
         // 友情链接
         $db->query(<<<SQL
         CREATE TABLE IF NOT EXISTS links (
@@ -194,16 +208,17 @@ final class Installer
             comments_count INTEGER DEFAULT 0,
             is_public INTEGER DEFAULT 1,
             post_type VARCHAR(20) DEFAULT 'talk',
-            tweet_id VARCHAR(40),
-            tweet_url TEXT,
-            tweet_author_name VARCHAR(120),
-            tweet_author_handle VARCHAR(120),
-            tweet_author_avatar TEXT,
-            tweet_author_verified INTEGER DEFAULT 0,
-            tweet_posted_at DATETIME,
-            tweet_likes_count INTEGER DEFAULT 0,
-            tweet_reposts_count INTEGER DEFAULT 0,
-            tweet_data TEXT,
+            location_name VARCHAR(160),
+            location_city VARCHAR(80),
+            location_lat VARCHAR(40),
+            location_lng VARCHAR(40),
+            location_provider VARCHAR(20),
+            location_data TEXT,
+            weather_label VARCHAR(40),
+            weather_icon VARCHAR(80),
+            weather_temp VARCHAR(20),
+            weather_code INTEGER DEFAULT 0,
+            weather_data TEXT,
             published_at DATETIME,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
@@ -310,6 +325,7 @@ final class Installer
             // 老库会在 selfUpgrade() 加列后再建一次索引
         }
         $db->query('CREATE INDEX IF NOT EXISTS idx_comments_status ON comments(status)');
+        $db->query('CREATE INDEX IF NOT EXISTS idx_comment_spam_identity ON comment_spam_identities(type, value)');
         $db->query('CREATE INDEX IF NOT EXISTS idx_music_public_sort ON music(is_public, sort, id)');
         $db->query('CREATE INDEX IF NOT EXISTS idx_music_public_published ON music(is_public, published_at, sort, id)');
         $db->query('CREATE INDEX IF NOT EXISTS idx_webauthn_user ON webauthn_credentials(user_id)');
@@ -340,22 +356,15 @@ final class Installer
                 ['k' => 'subtitle',      'v' => '记录、分享、思考',     'label' => '站点副标题','group_name' => 'basic',   'sort' => 2],
                 ['k' => 'description',   'v' => '一个用 PHP 8.5 写的个人博客', 'label' => '站点描述', 'group_name' => 'basic',   'sort' => 3],
                 ['k' => 'keywords',      'v' => 'PHP,博客,个人',       'label' => '关键词',   'group_name' => 'basic',   'sort' => 4],
-                ['k' => 'beian',         'v' => '',                     'label' => '备案号',   'group_name' => 'basic',   'sort' => 5],
-                ['k' => 'site_avatar_url','v' => '',                     'label' => '站点头像地址', 'group_name' => 'basic', 'sort' => 8],
+                ['k' => 'site_avatar_url','v' => '',                     'label' => '站点 Logo', 'group_name' => 'basic', 'sort' => 8],
                 ['k' => 'comment_need_audit',    'v' => '1', 'type' => 'bool', 'label' => '评论需要审核', 'group_name' => 'comment', 'sort' => 6],
                 ['k' => 'comment_captcha',       'v' => '0', 'type' => 'bool', 'label' => '启用验证码', 'group_name' => 'comment', 'sort' => 7],
-                ['k' => 'home_feed_mode',        'v' => 'mixed', 'type' => 'select', 'label' => '首页展示模式', 'group_name' => 'reading', 'sort' => 1],
-                ['k' => 'home_total_limit',      'v' => '12', 'type' => 'number', 'label' => '首页总数量', 'group_name' => 'reading', 'sort' => 2],
-                ['k' => 'home_post_limit',       'v' => '8', 'type' => 'number', 'label' => '首页文章读取数', 'group_name' => 'reading', 'sort' => 3],
-                ['k' => 'home_talk_limit',       'v' => '8', 'type' => 'number', 'label' => '首页说说读取数', 'group_name' => 'reading', 'sort' => 4],
-                ['k' => 'home_fixed_posts',      'v' => '', 'type' => 'textarea', 'label' => '固定显示文章', 'group_name' => 'reading', 'sort' => 5],
-                ['k' => 'home_fixed_talks',      'v' => '', 'type' => 'textarea', 'label' => '固定显示说说', 'group_name' => 'reading', 'sort' => 6],
-                ['k' => 'post_list_per_page',    'v' => '5', 'type' => 'number', 'label' => '文章列表每页数量', 'group_name' => 'reading', 'sort' => 7],
                 ['k' => 'permalink_mode', 'v' => 'default', 'type' => 'select', 'label' => '文章链接模式', 'group_name' => 'permalink', 'sort' => 1],
                 ['k' => 'permalink_numeric_prefix', 'v' => 'post', 'label' => '数字链接前缀', 'group_name' => 'permalink', 'sort' => 10],
                 ['k' => 'permalink_numeric_source', 'v' => 'six', 'type' => 'select', 'label' => '数字来源', 'group_name' => 'permalink', 'sort' => 11],
                 ['k' => 'permalink_numeric_suffix', 'v' => '.html', 'type' => 'select', 'label' => '数字链接后缀', 'group_name' => 'permalink', 'sort' => 12],
-                ['k' => 'site_icp',           'v' => '',                 'label' => 'ICP 备案',  'group_name' => 'basic',   'sort' => 7],
+                ['k' => 'site_analytics_code','v' => '', 'type' => 'textarea', 'label' => '统计代码', 'group_name' => 'basic', 'sort' => 10],
+                ['k' => 'site_mapbox_token','v' => '', 'type' => 'string', 'label' => 'Mapbox 公开 Token', 'group_name' => 'basic', 'sort' => 11],
                 ['k' => 'mail_enabled',       'v' => '0',                'type' => 'bool', 'label' => '启用邮件', 'group_name' => 'mail', 'sort' => 1],
                 ['k' => 'mail_driver',        'v' => 'sendflare',         'label' => '邮件驱动', 'group_name' => 'mail', 'sort' => 2],
                 ['k' => 'mail_from',          'v' => 'noreply@example.com','label' => '发件邮箱', 'group_name' => 'mail', 'sort' => 3],
@@ -447,6 +456,10 @@ final class Installer
             ['pages', 'url', 'VARCHAR(255)'],
             ['pages', 'icon', 'VARCHAR(80)'],
             ['pages', 'is_system', 'INTEGER DEFAULT 0'],
+            ['posts', 'likes_count', 'INTEGER DEFAULT 0'],
+            ['posts', 'allow_comments', 'INTEGER DEFAULT 1'],
+            ['posts', 'allow_rss', 'INTEGER DEFAULT 1'],
+            ['posts', 'is_private', 'INTEGER DEFAULT 0'],
             ['comments', 'talk_id', 'INTEGER DEFAULT 0'],
             ['comments', 'music_id', 'INTEGER DEFAULT 0'],
             ['comments', 'x_tweet_id', 'INTEGER DEFAULT 0'],
@@ -463,16 +476,17 @@ final class Installer
             ['talk', 'likes_count', 'INTEGER DEFAULT 0'],
             ['talk', 'comments_count', 'INTEGER DEFAULT 0'],
             ['talk', 'post_type', "VARCHAR(20) DEFAULT 'talk'"],
-            ['talk', 'tweet_id', 'VARCHAR(40)'],
-            ['talk', 'tweet_url', 'TEXT'],
-            ['talk', 'tweet_author_name', 'VARCHAR(120)'],
-            ['talk', 'tweet_author_handle', 'VARCHAR(120)'],
-            ['talk', 'tweet_author_avatar', 'TEXT'],
-            ['talk', 'tweet_author_verified', 'INTEGER DEFAULT 0'],
-            ['talk', 'tweet_posted_at', 'DATETIME'],
-            ['talk', 'tweet_likes_count', 'INTEGER DEFAULT 0'],
-            ['talk', 'tweet_reposts_count', 'INTEGER DEFAULT 0'],
-            ['talk', 'tweet_data', 'TEXT'],
+            ['talk', 'location_name', 'VARCHAR(160)'],
+            ['talk', 'location_city', 'VARCHAR(80)'],
+            ['talk', 'location_lat', 'VARCHAR(40)'],
+            ['talk', 'location_lng', 'VARCHAR(40)'],
+            ['talk', 'location_provider', 'VARCHAR(20)'],
+            ['talk', 'location_data', 'TEXT'],
+            ['talk', 'weather_label', 'VARCHAR(40)'],
+            ['talk', 'weather_icon', 'VARCHAR(80)'],
+            ['talk', 'weather_temp', 'VARCHAR(20)'],
+            ['talk', 'weather_code', 'INTEGER DEFAULT 0'],
+            ['talk', 'weather_data', 'TEXT'],
             ['talk', 'published_at', 'DATETIME'],
         ];
         foreach ($upgrades as [$table, $col, $type]) {

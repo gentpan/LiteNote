@@ -19,22 +19,28 @@ use App\Controllers\Front\CaptchaController;
 use App\Controllers\Front\FeedController;
 use App\Controllers\Front\ActivityController;
 use App\Controllers\Front\MailController;
+use App\Controllers\Front\TelegramController;
 use App\Controllers\Api\ActivityApiController;
 // 首页
 $router->get('/',                 [HomeController::class, 'index']);
+$router->get('/home/feed',        [HomeController::class, 'feed']);
 
 // 文章
 $router->get('/posts',            [HomeController::class, 'posts']);
 $router->get('/readers',          [HomeController::class, 'readers']);
 $router->get('/post/{slug}.html', [PostController::class, 'show']);
+$router->post('/post/{id}/like',  [PostController::class, 'like']);
 
 // 分类
+$router->get('/category/{slug}/feed', [CategoryController::class, 'feed']);
 $router->get('/category/{slug}',  [CategoryController::class, 'show']);
 
 // 滔客
 $router->get('/activity',         [ActivityController::class, 'index']);
 $router->get('/talk',             [TalkController::class, 'index']);
 $router->post('/talk/publish',    [TalkController::class, 'publish']);
+$router->get('/talk/weather',     [TalkController::class, 'weather']);
+$router->post('/talk/upload-image', [TalkController::class, 'uploadImage']);
 $router->post('/talk/{id}/like',  [TalkController::class, 'like']);
 
 // 音乐
@@ -70,6 +76,10 @@ $router->get('/mail/unsubscribe', [MailController::class, 'unsubscribe']);
 
 // llms.txt（AI / 大模型收录索引）
 $router->get('/llms.txt',         [FeedController::class, 'llms']);
+
+// Telegram Bot Webhook: use X-Telegram-Bot-Api-Secret-Token or /telegram/webhook/{TELEGRAM_WEBHOOK_SECRET}.
+$router->post('/telegram/webhook', [TelegramController::class, 'webhook']);
+$router->post('/telegram/webhook/{secret}', [TelegramController::class, 'webhook']);
 
 $router->get('/api/v1/activity/feed', [ActivityApiController::class, 'feed']);
 $router->get('/api/v1/activity/summary', [ActivityApiController::class, 'summary']);
