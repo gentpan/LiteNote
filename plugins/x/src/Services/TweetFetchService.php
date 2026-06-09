@@ -92,6 +92,18 @@ final class TweetFetchService
             $data['images'] = $this->localizeTweetImages($data['images'], (string)$data['id'], $forceImageRecache);
         }
 
+        // 头像本地化(中国无法访问 pbs.twimg.com;失败则保留远程作兜底)
+        $rawAvatar = trim((string)($data['author_avatar'] ?? ''));
+        if ($rawAvatar !== '') {
+            $local = $this->downloadRemoteImage($this->upscaleAvatarUrl($rawAvatar), (string)$data['id'], 900, $forceImageRecache);
+            if ($local === '') {
+                $local = $this->downloadRemoteImage($rawAvatar, (string)$data['id'], 900, $forceImageRecache);
+            }
+            if ($local !== '') {
+                $data['author_avatar'] = $local;
+            }
+        }
+
         return $data;
     }
 
@@ -412,6 +424,25 @@ final class TweetFetchService
         }
 
         return array_values(array_unique(array_filter($localized)));
+    }
+
+    /** 公开:把单个远程图片本地化为本地 webp,返回本地 URL;失败返回 ''。供同步等其他流程复用。 */
+    public function localizeImage(string $url, string $idHint, int $index = 0, bool $force = false): string
+    {
+        return $this->downloadRemoteImage($url, $idHint, $index, $force);
+    }
+
+    /** 公开:该远程图片地址是否国内不可达(twimg),不应直接对外渲染。 */
+    public function isRemoteImageBlocked(string $url): bool
+    {
+        return $this->isBlockedRemoteImage($url);
+    }
+
+    /** 把 X 头像升到较大尺寸再下载(_normal 仅 48px)。 */
+    public function upscaleAvatarUrl(string $url): string
+    {
+        $url = trim($url);
+        return preg_replace('/_normal\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i', '_400x400.$1$2', $url) ?? $url;
     }
 
     private function downloadRemoteImage(string $url, string $tweetId, int $index, bool $force = false): string
