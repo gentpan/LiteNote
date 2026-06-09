@@ -35,6 +35,7 @@
     $tweetShowReplies = !empty($tweetShowReplies);
     $tweetHideViews = !empty($tweetHideViews);
     $tweetLocalActions = !empty($tweetLocalActions);
+    $tweetBookmark = !empty($tweetBookmark);
     $localLikeCount = (int)($tweet->likes_count ?? 0);
     $localCommentCount = (int)($tweet->comments_count ?? 0);
     $linkifyTweetLine = static function (string $text): string {
@@ -126,7 +127,11 @@
                 @endif
             </div>
             <div class="home-card-actions x-card-footer-actions tweet-footer-actions">
-                @if($tweetLocalActions)
+                @if($tweetBookmark)
+                    <button type="button" class="home-action x-bookmark-like-btn" data-id="{{ $tweet->activityId() }}" aria-label="点赞">
+                        <i class="fa-regular fa-thumbs-up"></i><span class="like-count">{{ $tweet->localLikes() }}</span>
+                    </button>
+                @elseif($tweetLocalActions)
                     <button type="button" class="home-action x-tweet-like-btn" data-id="{{ $tweet->id }}" aria-label="点赞">
                         <i class="fa-regular fa-thumbs-up"></i><span class="like-count">{{ $localLikeCount }}</span>
                     </button>

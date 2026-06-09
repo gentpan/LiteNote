@@ -87,6 +87,7 @@ final class Plugin implements PluginInterface
         // 前台推文本地点赞(独立端点,不与核心 /talk/{id}/like 冲突)。
         $ctx->webRoutes(static function (Router $r): void {
             $r->post('/x/tweet/{id}/like', [XmarksController::class, 'like']);
+            $r->post('/xmarks/{id}/like', [XmarksController::class, 'likeBookmark']);
         });
 
         // 把推文混入首页时间线(核心 homeFeedItems 合并各贡献者产出后按时间排序)。
@@ -114,17 +115,20 @@ final class Plugin implements PluginInterface
         $ctx->frontHead(<<<'HTML'
 <script>
 (function(){
-  function bind(btn){
+  function bind(btn, endpoint){
     if(btn.dataset.xLikeBound){return;} btn.dataset.xLikeBound='1';
     btn.addEventListener('click', function(){
       var id = btn.getAttribute('data-id'); if(!id){return;}
-      fetch('/x/tweet/'+encodeURIComponent(id)+'/like', {method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}})
+      fetch(endpoint+encodeURIComponent(id)+'/like', {method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}})
         .then(function(r){return r.json();})
         .then(function(d){ if(d && typeof d.likes !== 'undefined'){ var c=btn.querySelector('.like-count'); if(c){c.textContent=d.likes;} btn.classList.add('liked'); } })
         .catch(function(){});
     });
   }
-  function init(){ document.querySelectorAll('.x-tweet-like-btn[data-id]').forEach(bind); }
+  function init(){
+    document.querySelectorAll('.x-tweet-like-btn[data-id]').forEach(function(b){ bind(b, '/x/tweet/'); });
+    document.querySelectorAll('.x-bookmark-like-btn[data-id]').forEach(function(b){ bind(b, '/xmarks/'); });
+  }
   if(document.readyState!=='loading'){ init(); } else { document.addEventListener('DOMContentLoaded', init); }
 })();
 </script>

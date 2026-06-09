@@ -9,11 +9,13 @@ final class TweetCardItem
 {
     private Activity $activity;
     private array $tweetData;
+    private int $localLikes = 0;
 
     public function __construct(Activity $activity)
     {
         $this->activity = $activity;
         $metadata = $activity->metadata();
+        $this->localLikes = (int)($metadata['local_likes'] ?? 0);
         $tweet = is_array($metadata['tweet'] ?? null) ? $metadata['tweet'] : [];
         $tweet['likes_count'] = (int)($tweet['likes_count'] ?? $metadata['likes'] ?? 0);
         $tweet['reposts_count'] = (int)($tweet['reposts_count'] ?? $metadata['reposts'] ?? 0);
@@ -55,6 +57,18 @@ final class TweetCardItem
     public function tweetData(): array
     {
         return $this->tweetData;
+    }
+
+    /** 书签对应的活动数值 id(用于本地点赞)。 */
+    public function activityId(): int
+    {
+        return (int)($this->activity->id ?? 0);
+    }
+
+    /** 本地点赞数(站点自己的,存于 activity metadata.local_likes)。 */
+    public function localLikes(): int
+    {
+        return $this->localLikes;
     }
 
     public function tweetUrl(): string
