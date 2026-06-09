@@ -2337,3 +2337,142 @@ html[data-theme="dark"] .activity-item-content {
         font-size: 13px;
     }
 }
+
+/* ============================================================
+   音乐页结构基础恢复
+   说明:display / position / 进度条等结构属性此前丢失,导致黑胶唱机、
+   封面、唱臂、进度条全部错位(偏移/尺寸/配色都还在,唯独结构层没了)。
+   此处集中恢复,仅作用于音乐"页面"(.music-page* / .music-disc-player),
+   不影响首页音乐卡片(.home-music-card)。
+   ============================================================ */
+.music-disc-player {
+    display: grid;
+    position: relative;
+}
+.music-disc-player::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+}
+.music-vinyl-side {
+    position: relative;
+}
+.music-record-shell {
+    position: absolute;
+}
+.music-record-border {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+.music-cover-disc {
+    position: absolute;
+    overflow: hidden;
+    border-radius: 50%;
+}
+.music-cover-disc img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.music-tonearm-img {
+    position: absolute;
+}
+.music-record-hole {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+}
+.music-progress-track {
+    position: relative;
+    display: block;
+    width: 100%;
+    cursor: pointer;
+}
+.music-progress-track::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
+}
+.music-progress-track span {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
+    background: var(--c-primary);
+    border-radius: 999px;
+}
+
+/* 播放器主体 flex 布局恢复 */
+.music-player-top {
+    display: flex;
+}
+.music-like-button {
+    display: inline-flex;
+    align-items: center;
+}
+.music-lyric-lines {
+    display: flex;
+    flex-direction: column;
+}
+.music-progress-time {
+    display: flex;
+    justify-content: space-between;
+}
+.music-control-row {
+    display: flex;
+    align-items: center;
+}
+.music-control-btn,
+.music-control-play {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 播放列表 grid 布局恢复(行:序号 | 封面 | 信息 | 右侧元数据) */
+.music-track-list-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.music-track-row {
+    display: grid;
+    grid-template-columns: auto 46px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 14px;
+}
+.music-track-cover {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 46px;
+    height: 46px;
+    overflow: hidden;
+    border-radius: 8px;
+}
+.music-track-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.music-track-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+.music-track-side {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
