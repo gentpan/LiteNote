@@ -20,7 +20,7 @@
                    class="{{ $activeFriendTab === 'links' ? 'active' : '' }}"
                    data-friend-tab="links"
                    aria-current="{{ $activeFriendTab === 'links' ? 'page' : 'false' }}">
-                    <i class="fa-solid fa-link"></i>
+                    <i class="fa-solid fa-user-group"></i>
                     <span>友情链接</span>
                 </a>
                 <a href="/subscribe"
@@ -37,7 +37,7 @@
             <div class="friend-panel">
                 <div class="friend-panel-head">
                     <div>
-                        <h3><i class="fa-solid fa-link"></i> 站点列表</h3>
+                        <h3><i class="fa-solid fa-user-group"></i> 站点列表</h3>
                         <p>{{ count($links) }} 个站点</p>
                     </div>
                 </div>

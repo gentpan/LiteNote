@@ -6118,46 +6118,159 @@ html[data-theme="dark"]
     }
 }
 
+@media (min-width: 769px) {
+    /* 桌面端只有「文章」显示图标(保持原样);新增的导航项图标仅移动端 tab bar 用 */
+    .site-nav-bar .nav-main-links .nav-link:not(.nav-dd-trigger) .nav-link-icon {
+        display: none;
+    }
+}
+
 @media (max-width: 768px) {
     .site-nav-bar .nav-pill {
         overflow: visible;
-        border-radius: 24px;
+        border-radius: 22px;
     }
 
+    /* === 移动端底部 tab bar:头像 + 5 导航项 + 动态 = 7 格等分,图标在上、小字在下 === */
     .site-nav-bar .nav-row {
+        box-sizing: border-box;
         display: flex;
-        align-items: center;
+        flex: 1 1 auto;
+        gap: 0;
+        align-items: stretch;
         justify-content: space-between;
+        width: 100%;
+        min-width: 0;
+        min-height: 50px;
+        padding: 4px 0;
+    }
+
+    .site-nav-bar .nav-identity-orb {
+        position: relative;
+        display: flex;
+        flex: 1 1 0;
+        align-items: stretch;
+        min-width: 0;
+        margin: 0;
     }
 
     .site-nav-bar .nav-main-links {
-        flex: 1 1 auto;
-        gap: 2px;
-        justify-content: center;
+        flex: 5 1 0;
+        gap: 0;
+        justify-content: space-between;
+        min-width: 0;
     }
 
     .site-nav-bar .nav-actions {
-        gap: 4px;
-        margin-left: 0;
+        flex: 1 1 0;
+        gap: 0;
+        min-width: 0;
+        margin: 0;
     }
 
-    .site-nav-bar .nav-main-links .nav-link {
-        padding: 8px 9px;
+    /* 每个 tab:列方向,等宽居中 */
+    .site-nav-bar .nav-avatar,
+    .site-nav-bar .nav-main-links .nav-link,
+    .site-nav-bar .nav-actions .nav-cta {
+        display: flex;
+        flex: 1 1 0;
+        flex-direction: column;
+        gap: 3px;
+        align-items: center;
+        justify-content: center;
+        min-width: 0;
+        padding: 5px 1px;
+        margin: 0;
+        line-height: 1;
+        border-radius: 12px;
     }
 
-    .site-nav-bar .nav-main-links .nav-link span {
+    /* tab 内容统一浅色(导航胶囊恒黑底) */
+    .site-nav-bar .nav-row a,
+    .site-nav-bar .nav-row a i,
+    .site-nav-bar .nav-actions .nav-cta {
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    /* 图标统一 18px,显示全部(含桌面隐藏的) */
+    .site-nav-bar .nav-main-links .nav-link .nav-link-icon {
+        display: inline-block;
+        flex: none;
+        margin: 0;
+        font-size: 18px;
+        line-height: 1;
+    }
+
+    /* 小字标签:导航项与动态显示,小号单行 */
+    .site-nav-bar .nav-main-links .nav-link span,
+    .site-nav-bar .nav-actions .nav-cta span {
+        display: block;
+        max-width: 100%;
+        overflow: hidden;
+        font-size: 10px;
+        font-weight: 500;
+        line-height: 1;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* 头像:仅作「点击回首页」的图标,缩小居中;
+       隐藏 house 叠加层 + 从侧边呼出的身份圆形菜单(登录/关于/归档),移动端只保留纯头像 */
+    .site-nav-bar .nav-avatar {
+        padding: 5px 1px;
+        margin: 0;
+    }
+
+    .site-nav-bar .nav-avatar .nav-avatar-img,
+    .site-nav-bar .nav-avatar .nav-avatar-fallback {
+        width: 26px !important;
+        height: 26px !important;
+    }
+
+    .site-nav-bar .nav-avatar-home,
+    .site-nav-bar .nav-identity-actions {
+        display: none !important;
+    }
+
+    /* 文章下拉箭头隐藏 */
+    .site-nav-bar .nav-dd-caret {
         display: none;
     }
 
-    .site-nav-bar .nav-cta {
+    /* 动态 CTA:取消红/绿底,做成与其它一致的图标 tab(保留活动条)。
+       桌面端有一堆主题专属高规格规则(html[data-theme] .site-nav-bar .nav-cta…
+       含 .active/:hover/.has-recent-activity 多变体)把它做成实心胶囊,
+       移动端 tab bar 用 !important 统一重置最稳妥。 */
+    .site-nav-bar .nav-actions .nav-cta {
+        color: rgba(255, 255, 255, 0.7) !important;
+        background: transparent !important;
+        border-color: transparent !important;
+        box-shadow: none !important;
+        filter: none !important;
+    }
+
+    .site-nav-bar .nav-actions .nav-cta.active {
+        color: #fff !important;
+    }
+
+    .site-nav-bar .nav-actions .nav-cta .nav-activity-bars {
+        flex: none;
+        width: 18px;
+        height: 16px;
+    }
+
+    /* 选中 tab 高亮 */
+    .site-nav-bar .nav-main-links .nav-link.active,
+    .site-nav-bar .nav-main-links .nav-link.active i,
+    .site-nav-bar .nav-actions .nav-cta.active {
         color: #fff;
-        background: var(--c-primary);
     }
 
-    .site-nav-bar .nav-cta span {
-        display: none;
+    .site-nav-bar .nav-main-links .nav-link.active .nav-link-icon {
+        color: var(--c-primary);
     }
 
+    /* 抽屉(分类)在 tab bar 模式下不展开 */
     .site-nav-bar .nav-drawer {
         display: none;
     }
