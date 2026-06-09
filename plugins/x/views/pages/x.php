@@ -16,8 +16,7 @@
             <div class="x-masonry js-list-items">
                 @foreach($list as $tweet)
                     @php
-                        $tweetShowReplies = true;
-                        $tweetHideViews = true;
+                        $tweetBookmark = true;
                     @endphp
                     <article class="x-masonry-item" id="xmark-{{ $tweet->id }}">
                         @include('partials.x-card')

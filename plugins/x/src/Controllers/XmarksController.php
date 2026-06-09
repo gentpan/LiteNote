@@ -56,4 +56,31 @@ final class XmarksController
         Session::set('liked_x_tweet', $liked);
         Response::json(['code' => 0, 'likes' => $count, 'liked' => true]);
     }
+
+    /** Xmarks 书签的本地点赞(站点自己的,计数存 activity metadata.local_likes)。 */
+    public function likeBookmark(Request $request, array $params): never
+    {
+        $id = (int)($params['id'] ?? 0);
+        $activity = Activity::find($id);
+        if (!$activity || (string)$activity->source !== 'x_bookmarks' || (string)$activity->visibility !== 'public') {
+            Response::json(['code' => 1, 'msg' => '书签不存在'], 404);
+        }
+
+        $meta = $activity->metadata();
+        $current = (int)($meta['local_likes'] ?? 0);
+
+        $liked = Session::get('liked_xmark', []);
+        $liked = is_array($liked) ? $liked : [];
+        if (!empty($liked[$id])) {
+            Response::json(['code' => 2, 'msg' => '已经点赞过了', 'likes' => $current, 'liked' => true]);
+        }
+
+        $meta['local_likes'] = $current + 1;
+        $activity->metadata = json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $activity->save();
+
+        $liked[$id] = 1;
+        Session::set('liked_xmark', $liked);
+        Response::json(['code' => 0, 'likes' => $current + 1, 'liked' => true]);
+    }
 }
