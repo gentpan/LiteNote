@@ -91,7 +91,7 @@ html[data-theme="light"] .category-shell {
 
 .category-page .category-hero-headline {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 16px;
 }
 
