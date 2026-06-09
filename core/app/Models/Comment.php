@@ -125,6 +125,21 @@ final class Comment extends Model
         return $rows;
     }
 
+    /**
+     * 按邮箱统计某访客的已审核评论数(用于侧边访客身份卡)。
+     */
+    public static function countApprovedByEmail(string $email): int
+    {
+        $email = trim($email);
+        if ($email === '') {
+            return 0;
+        }
+        return (int) self::db()->fetchColumn(
+            'SELECT COUNT(*) FROM comments WHERE email = ? AND status = ?',
+            [$email, CommentStatus::Approved->value]
+        );
+    }
+
     public static function countByPost(int $postId, string|CommentStatus $status = CommentStatus::Approved): int
     {
         $statusValue = $status instanceof CommentStatus ? $status->value : $status;

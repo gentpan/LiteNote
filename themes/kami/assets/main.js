@@ -155,3 +155,178 @@
         }, 1800);
     }
 })();
+
+/* kami: 访客身份卡 + 进入后台/登录 + 登录 dialog(密码+Passkey) —— 与 ember 同套,自含 md5/gravatar */
+(function () {
+    'use strict';
+    var IDENTITY_KEY = 'litenote_comment_identity';
+
+    function md5(input) {
+        function cmn(q, a, b, x, s, t) { a = add32(add32(a, q), add32(x, t)); return add32((a << s) | (a >>> (32 - s)), b); }
+        function ff(a, b, c, d, x, s, t) { return cmn((b & c) | ((~b) & d), a, b, x, s, t); }
+        function gg(a, b, c, d, x, s, t) { return cmn((b & d) | (c & (~d)), a, b, x, s, t); }
+        function hh(a, b, c, d, x, s, t) { return cmn(b ^ c ^ d, a, b, x, s, t); }
+        function ii(a, b, c, d, x, s, t) { return cmn(c ^ (b | (~d)), a, b, x, s, t); }
+        function add32(a, b) { return (a + b) & 0xffffffff; }
+        function md5blk(s) { var blocks = [], i; for (i = 0; i < 64; i += 4) { blocks[i >> 2] = s.charCodeAt(i) + (s.charCodeAt(i + 1) << 8) + (s.charCodeAt(i + 2) << 16) + (s.charCodeAt(i + 3) << 24); } return blocks; }
+        function md5cycle(x, k) {
+            var a = x[0], b = x[1], c = x[2], d = x[3];
+            a = ff(a, b, c, d, k[0], 7, -680876936); d = ff(d, a, b, c, k[1], 12, -389564586);
+            c = ff(c, d, a, b, k[2], 17, 606105819); b = ff(b, c, d, a, k[3], 22, -1044525330);
+            a = ff(a, b, c, d, k[4], 7, -176418897); d = ff(d, a, b, c, k[5], 12, 1200080426);
+            c = ff(c, d, a, b, k[6], 17, -1473231341); b = ff(b, c, d, a, k[7], 22, -45705983);
+            a = ff(a, b, c, d, k[8], 7, 1770035416); d = ff(d, a, b, c, k[9], 12, -1958414417);
+            c = ff(c, d, a, b, k[10], 17, -42063); b = ff(b, c, d, a, k[11], 22, -1990404162);
+            a = ff(a, b, c, d, k[12], 7, 1804603682); d = ff(d, a, b, c, k[13], 12, -40341101);
+            c = ff(c, d, a, b, k[14], 17, -1502002290); b = ff(b, c, d, a, k[15], 22, 1236535329);
+            a = gg(a, b, c, d, k[1], 5, -165796510); d = gg(d, a, b, c, k[6], 9, -1069501632);
+            c = gg(c, d, a, b, k[11], 14, 643717713); b = gg(b, c, d, a, k[0], 20, -373897302);
+            a = gg(a, b, c, d, k[5], 5, -701558691); d = gg(d, a, b, c, k[10], 9, 38016083);
+            c = gg(c, d, a, b, k[15], 14, -660478335); b = gg(b, c, d, a, k[4], 20, -405537848);
+            a = gg(a, b, c, d, k[9], 5, 568446438); d = gg(d, a, b, c, k[14], 9, -1019803690);
+            c = gg(c, d, a, b, k[3], 14, -187363961); b = gg(b, c, d, a, k[8], 20, 1163531501);
+            a = gg(a, b, c, d, k[13], 5, -1444681467); d = gg(d, a, b, c, k[2], 9, -51403784);
+            c = gg(c, d, a, b, k[7], 14, 1735328473); b = gg(b, c, d, a, k[12], 20, -1926607734);
+            a = hh(a, b, c, d, k[5], 4, -378558); d = hh(d, a, b, c, k[8], 11, -2022574463);
+            c = hh(c, d, a, b, k[11], 16, 1839030562); b = hh(b, c, d, a, k[14], 23, -35309556);
+            a = hh(a, b, c, d, k[1], 4, -1530992060); d = hh(d, a, b, c, k[4], 11, 1272893353);
+            c = hh(c, d, a, b, k[7], 16, -155497632); b = hh(b, c, d, a, k[10], 23, -1094730640);
+            a = hh(a, b, c, d, k[13], 4, 681279174); d = hh(d, a, b, c, k[0], 11, -358537222);
+            c = hh(c, d, a, b, k[3], 16, -722521979); b = hh(b, c, d, a, k[6], 23, 76029189);
+            a = hh(a, b, c, d, k[9], 4, -640364487); d = hh(d, a, b, c, k[12], 11, -421815835);
+            c = hh(c, d, a, b, k[15], 16, 530742520); b = hh(b, c, d, a, k[2], 23, -995338651);
+            a = ii(a, b, c, d, k[0], 6, -198630844); d = ii(d, a, b, c, k[7], 10, 1126891415);
+            c = ii(c, d, a, b, k[14], 15, -1416354905); b = ii(b, c, d, a, k[5], 21, -57434055);
+            a = ii(a, b, c, d, k[12], 6, 1700485571); d = ii(d, a, b, c, k[3], 10, -1894986606);
+            c = ii(c, d, a, b, k[10], 15, -1051523); b = ii(b, c, d, a, k[1], 21, -2054922799);
+            a = ii(a, b, c, d, k[8], 6, 1873313359); d = ii(d, a, b, c, k[15], 10, -30611744);
+            c = ii(c, d, a, b, k[6], 15, -1560198380); b = ii(b, c, d, a, k[13], 21, 1309151649);
+            a = ii(a, b, c, d, k[4], 6, -145523070); d = ii(d, a, b, c, k[11], 10, -1120210379);
+            c = ii(c, d, a, b, k[2], 15, 718787259); b = ii(b, c, d, a, k[9], 21, -343485551);
+            x[0] = add32(a, x[0]); x[1] = add32(b, x[1]); x[2] = add32(c, x[2]); x[3] = add32(d, x[3]);
+        }
+        function md51(s) {
+            s = unescape(encodeURIComponent(s));
+            var n = s.length, state = [1732584193, -271733879, -1732584194, 271733878], i, tail = new Array(16).fill(0);
+            for (i = 64; i <= n; i += 64) md5cycle(state, md5blk(s.substring(i - 64, i)));
+            s = s.substring(i - 64);
+            for (i = 0; i < s.length; i++) tail[i >> 2] |= s.charCodeAt(i) << ((i % 4) << 3);
+            tail[i >> 2] |= 0x80 << ((i % 4) << 3);
+            if (i > 55) { md5cycle(state, tail); tail = new Array(16).fill(0); }
+            tail[14] = n * 8;
+            md5cycle(state, tail);
+            return state;
+        }
+        function hex(x) { var out = '', i, j; for (i = 0; i < x.length; i++) for (j = 0; j < 4; j++) out += ('0' + ((x[i] >> (j * 8 + 4)) & 15).toString(16)).slice(-1) + ('0' + ((x[i] >> (j * 8)) & 15).toString(16)).slice(-1); return out; }
+        return hex(md51(input));
+    }
+
+    function gravatarUrl(email, size) {
+        email = String(email || '').trim().toLowerCase();
+        if (!email) return '';
+        return 'https://gravatar.bluecdn.com/avatar/' + md5(email) + '?s=' + (size || 80) + '&d=identicon&r=g&v=1.3';
+    }
+    function loadIdentity() { try { var raw = localStorage.getItem(IDENTITY_KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; } }
+    function saveIdentity(identity) { try { localStorage.setItem(IDENTITY_KEY, JSON.stringify(identity)); } catch (e) {} }
+    function clearIdentity() { try { localStorage.removeItem(IDENTITY_KEY); } catch (e) {} }
+
+    function updateSideIdentity(identity) {
+        var wrap = document.querySelector('[data-side-identity]');
+        if (!wrap) return;
+        var hasIdentity = !!(identity && (identity.nickname || identity.email));
+        wrap.classList.toggle('has-identity', hasIdentity);
+        var img = wrap.querySelector('[data-side-identity-avatar]');
+        var nameEl = wrap.querySelector('[data-side-identity-name]');
+        var statEl = wrap.querySelector('[data-side-identity-stat]');
+        var avatar = identity && (identity.avatar_url || gravatarUrl(identity.email, 80));
+        if (img) { if (avatar) { img.src = avatar; img.hidden = false; } else { img.removeAttribute('src'); img.hidden = true; } }
+        if (nameEl) nameEl.textContent = (identity && identity.nickname) ? identity.nickname : '';
+        if (!hasIdentity) { if (statEl) statEl.textContent = '设置评论身份，留下你的足迹'; return; }
+        if (statEl && identity.email) {
+            statEl.textContent = '统计中…';
+            fetch('/api/visitor/stats?email=' + encodeURIComponent(identity.email), { credentials: 'same-origin' })
+                .then(function (r) { return r.json(); })
+                .then(function (d) { var n = (d && d.comments) || 0; statEl.textContent = n > 0 ? ('已留下 ' + n + ' 条评论 · 欢迎回来 👋') : '期待你的第一条评论'; })
+                .catch(function () { statEl.textContent = '欢迎回来 👋'; });
+        } else if (statEl) { statEl.textContent = '欢迎回来 👋'; }
+    }
+
+    function openIdentityDialog() {
+        var identity = loadIdentity() || {};
+        var dialog = document.querySelector('.kami-identity-dialog');
+        if (!dialog) {
+            dialog = document.createElement('div');
+            dialog.className = 'kami-identity-dialog login-overlay';
+            dialog.innerHTML = '<div class="login-modal"><button type="button" class="login-modal-close" data-id-close aria-label="关闭"><i class="fa-solid fa-xmark"></i></button><div class="login-modal-head"><span class="login-modal-icon"><i class="fa-regular fa-user"></i></span><div><p class="login-modal-title">评论身份</p><p class="login-modal-subtitle">保存后评论会自动使用这份资料</p></div></div><form class="login-modal-form" data-id-form><label class="login-modal-field"><i class="fa-regular fa-user"></i><input name="nickname" placeholder="昵称 *" required></label><label class="login-modal-field"><i class="fa-regular fa-envelope"></i><input name="email" type="email" placeholder="邮箱 *" required></label><label class="login-modal-field"><i class="fa-solid fa-link"></i><input name="website" placeholder="网站(选填)"></label><button type="submit" class="login-modal-submit">保存</button><button type="button" class="login-modal-passkey" data-id-clear>清除身份</button></form></div>';
+            document.body.appendChild(dialog);
+            dialog.addEventListener('click', function (e) { if (e.target === dialog) closeIdentityDialog(); });
+            dialog.querySelector('[data-id-close]').addEventListener('click', closeIdentityDialog);
+            dialog.querySelector('[data-id-clear]').addEventListener('click', function () { clearIdentity(); updateSideIdentity(null); closeIdentityDialog(); });
+            dialog.querySelector('[data-id-form]').addEventListener('submit', function (e) {
+                e.preventDefault();
+                var f = e.currentTarget;
+                var next = { nickname: f.nickname.value.trim(), email: f.email.value.trim(), website: f.website.value.trim() };
+                if (!next.nickname && !next.email) { closeIdentityDialog(); return; }
+                next.avatar_url = gravatarUrl(next.email, 80);
+                saveIdentity(next); updateSideIdentity(next); closeIdentityDialog();
+            });
+        }
+        dialog.querySelector('[name=nickname]').value = identity.nickname || '';
+        dialog.querySelector('[name=email]').value = identity.email || '';
+        dialog.querySelector('[name=website]').value = identity.website || '';
+        dialog.hidden = false; dialog.classList.add('is-open');
+        document.body.classList.add('login-modal-open');
+    }
+    function closeIdentityDialog() {
+        var d = document.querySelector('.kami-identity-dialog');
+        if (d) { d.hidden = true; d.classList.remove('is-open'); }
+        document.body.classList.remove('login-modal-open');
+    }
+
+    function loginCsrf() { var f = document.querySelector('[data-login-form] input[name=_csrf]') || document.querySelector('input[name=_csrf]'); return f ? f.value : ''; }
+    function b64urlToBytes(v) { v = String(v || '').replace(/-/g, '+').replace(/_/g, '/'); while (v.length % 4) v += '='; return Uint8Array.from(atob(v), function (c) { return c.charCodeAt(0); }); }
+    function bytesToB64url(b) { var a = new Uint8Array(b), s = ''; for (var i = 0; i < a.length; i++) s += String.fromCharCode(a[i]); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, ''); }
+    function pkJson(res) { var t = res.headers.get('content-type') || ''; if (t.indexOf('application/json') === -1) { return res.text().then(function () { throw new Error('Passkey 接口返回非 JSON'); }); } return res.json().then(function (d) { if (!res.ok || d.success === false) throw new Error(d.message || d.error || 'Passkey 请求失败'); return d; }); }
+    function loginWithPasskey() {
+        if (!window.PublicKeyCredential || !navigator.credentials) return Promise.reject(new Error('当前浏览器不支持 Passkey'));
+        return fetch('/admin/passkey/login-options', { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
+            .then(pkJson).then(function (options) {
+                var allow = (options.allowCredentials || []).map(function (it) { return { type: it.type || 'public-key', id: b64urlToBytes(it.id) }; });
+                return navigator.credentials.get({ publicKey: { challenge: b64urlToBytes(options.challenge), timeout: options.timeout, rpId: options.rpId, allowCredentials: allow, userVerification: options.userVerification || 'preferred' } });
+            }).then(function (assertion) {
+                var data = { id: assertion.id, rawId: bytesToB64url(assertion.rawId), response: { clientDataJSON: bytesToB64url(assertion.response.clientDataJSON), authenticatorData: bytesToB64url(assertion.response.authenticatorData), signature: bytesToB64url(assertion.response.signature), userHandle: assertion.response.userHandle ? bytesToB64url(assertion.response.userHandle) : '' } };
+                return fetch('/admin/passkey/login', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': loginCsrf(), 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin', body: JSON.stringify({ credential: JSON.stringify(data) }) }).then(pkJson);
+            });
+    }
+    function loginOverlay() { return document.querySelector('[data-login-overlay]'); }
+    function loginErr(m) { var e = document.querySelector('[data-login-error]'); if (e) { e.textContent = m || ''; e.hidden = !m; } }
+    function openLogin() { var o = loginOverlay(); if (!o) return; o.hidden = false; document.body.classList.add('login-modal-open'); var u = o.querySelector('[name=username]'); if (u) setTimeout(function () { try { u.focus(); } catch (e) {} }, 60); }
+    function closeLogin() { var o = loginOverlay(); if (o) { o.hidden = true; document.body.classList.remove('login-modal-open'); loginErr(''); } }
+
+    document.addEventListener('click', function (e) {
+        var t = e.target;
+        if (t.closest('[data-login-open]')) { e.preventDefault(); openLogin(); return; }
+        if (t.closest('[data-login-close]')) { e.preventDefault(); closeLogin(); return; }
+        if (t.closest('[data-identity-open]')) { e.preventDefault(); openIdentityDialog(); return; }
+        var o = loginOverlay(); if (o && !o.hidden && t === o) closeLogin();
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeLogin(); closeIdentityDialog(); } });
+
+    // footer 注入,脚本运行时元素已存在,直接初始化
+    updateSideIdentity(loadIdentity());
+    var loginForm = document.querySelector('[data-login-form]');
+    if (loginForm) {
+        loginForm.addEventListener('submit', function (e) {
+            e.preventDefault(); loginErr('');
+            var btn = loginForm.querySelector('.login-modal-submit'); if (btn) btn.disabled = true;
+            var body = new URLSearchParams();
+            body.set('_csrf', loginCsrf()); body.set('username', (loginForm.username.value || '').trim()); body.set('password', loginForm.password.value || '');
+            fetch('/admin/login', { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded' }, credentials: 'same-origin', body: body.toString() })
+                .then(function (res) { return res.json().catch(function () { return {}; }).then(function (d) { return { ok: res.ok, data: d }; }); })
+                .then(function (r) { if (r.ok && r.data && r.data.ok) { window.location.href = r.data.redirect || '/admin'; } else { loginErr((r.data && r.data.message) || '用户名或密码错误'); if (btn) btn.disabled = false; } })
+                .catch(function (err) { loginErr('登录失败：' + err.message); if (btn) btn.disabled = false; });
+        });
+        var pk = document.querySelector('[data-login-passkey]');
+        if (pk) pk.addEventListener('click', function () { loginErr(''); loginWithPasskey().then(function (r) { if (r && r.success !== false) window.location.href = '/admin'; else loginErr((r && r.message) || 'Passkey 登录失败'); }).catch(function (err) { loginErr('Passkey 登录失败：' + err.message); }); });
+    }
+})();

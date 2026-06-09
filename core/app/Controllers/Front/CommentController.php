@@ -180,6 +180,18 @@ class CommentController
         $this->back();
     }
 
+    /**
+     * 访客身份统计:按邮箱返回已审核评论数,供侧边访客身份卡显示。
+     */
+    public function stats(Request $request): never
+    {
+        $email = trim((string)$request->input('email', ''));
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            Response::json(['code' => 0, 'comments' => 0]);
+        }
+        Response::json(['code' => 0, 'comments' => Comment::countApprovedByEmail($email)]);
+    }
+
     private function isSpam(string $content): bool
     {
         $linkCount = preg_match_all('#https?://#i', $content);

@@ -255,6 +255,11 @@
         return 'https://gravatar.bluecdn.com/avatar/' + md5(email) + '?s=' + (size || 80) + '&d=identicon&r=g&v=1.3';
     }
 
+    // 没有邮箱时的灰色默认头像(gravatar mystery-person),不再回退到博主头像
+    function grayGravatar(size) {
+        return 'https://gravatar.bluecdn.com/avatar/00000000000000000000000000000000?s=' + (size || 80) + '&d=mp&r=g&v=1.3';
+    }
+
     function normalizeCommentWebsite(value) {
         value = String(value || '').trim();
         if (!value) return '';
@@ -522,7 +527,40 @@
         });
     }
 
+    function updateSideIdentity(identity) {
+        var wrap = document.querySelector('[data-side-identity]');
+        if (!wrap) return;
+        var hasIdentity = !!(identity && (identity.nickname || identity.email));
+        wrap.classList.toggle('has-identity', hasIdentity);
+        var img = wrap.querySelector('[data-side-identity-avatar]');
+        var nameEl = wrap.querySelector('[data-side-identity-name]');
+        var statEl = wrap.querySelector('[data-side-identity-stat]');
+        var avatar = identity && (identity.avatar_url || gravatarUrl(identity.email, 80));
+        if (img) {
+            if (avatar) { img.src = avatar; img.hidden = false; }
+            else { img.removeAttribute('src'); img.hidden = true; }
+        }
+        if (nameEl) nameEl.textContent = (identity && identity.nickname) ? identity.nickname : '';
+        if (!hasIdentity) {
+            if (statEl) statEl.textContent = '设置评论身份，留下你的足迹';
+            return;
+        }
+        if (statEl && identity.email) {
+            statEl.textContent = '统计中…';
+            fetch('/api/visitor/stats?email=' + encodeURIComponent(identity.email), { credentials: 'same-origin' })
+                .then(function(r) { return r.json(); })
+                .then(function(d) {
+                    var n = (d && d.comments) || 0;
+                    statEl.textContent = n > 0 ? ('已留下 ' + n + ' 条评论 · 欢迎回来 👋') : '期待你的第一条评论';
+                })
+                .catch(function() { statEl.textContent = '欢迎回来 👋'; });
+        } else if (statEl) {
+            statEl.textContent = '欢迎回来 👋';
+        }
+    }
+
     function updateNavIdentity(identity) {
+        updateSideIdentity(identity);
         var orb = document.querySelector('[data-nav-identity]');
         if (orb && orb.dataset.navAdmin === '1') return;
         var img = document.querySelector('[data-nav-identity] .nav-avatar-img');
@@ -616,8 +654,7 @@
             });
             dialog.querySelector('[name=email]').addEventListener('input', function(e) {
                 var preview = dialog.querySelector('.nav-identity-preview');
-                var url = gravatarUrl(e.target.value, 80);
-                if (url) preview.src = url;
+                preview.src = gravatarUrl(e.target.value, 80) || grayGravatar(80);
             });
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape') closeNavIdentityDialog();
@@ -626,7 +663,7 @@
         dialog.querySelector('[name=nickname]').value = identity.nickname || '';
         dialog.querySelector('[name=email]').value = identity.email || '';
         dialog.querySelector('[name=website]').value = identity.website || '';
-        dialog.querySelector('.nav-identity-preview').src = identity.avatar_url || gravatarUrl(identity.email, 80) || (document.querySelector('.nav-avatar-img') || {}).src || '';
+        dialog.querySelector('.nav-identity-preview').src = identity.avatar_url || gravatarUrl(identity.email, 80) || grayGravatar(80);
         dialog.classList.add('is-open');
         var panel = dialog.querySelector('.nav-identity-panel');
         if (panel) panel.focus();
@@ -1014,6 +1051,17 @@
                 if (captchaRefreshed) return;
                 captchaRefreshed = true;
                 refreshCaptcha();
+            });
+        }
+
+        // 访客未保存身份时,聚焦评论输入框自动(再次)弹出身份表单
+        var contentField = form.querySelector('[name=content]');
+        if (contentField && form.dataset.commentAdmin !== '1') {
+            contentField.addEventListener('focus', function() {
+                if (hasUsableCommentIdentity()) return;
+                openNavIdentityDialog({
+                    onSave: function() { try { contentField.focus(); } catch (e) {} }
+                });
             });
         }
 
@@ -3859,4 +3907,113 @@
         if (btn) btn.addEventListener('click', loadMore);
     });
 
+})();
+
+/* 登录 dialog + Passkey(WebAuthn 逻辑移植自后台 admin.js) —— 头像菜单"登录"触发,不依赖独立登录页 */
+(function () {
+    function lnLoginCsrf() {
+        var f = document.querySelector('[data-login-form] input[name="_csrf"]') || document.querySelector('input[name="_csrf"]');
+        return f ? f.value : '';
+    }
+    function lnB64UrlToBytes(value) {
+        value = String(value || '').replace(/-/g, '+').replace(/_/g, '/');
+        while (value.length % 4) value += '=';
+        return Uint8Array.from(atob(value), function (c) { return c.charCodeAt(0); });
+    }
+    function lnBytesToB64Url(buffer) {
+        var bytes = new Uint8Array(buffer), s = '';
+        for (var i = 0; i < bytes.length; i += 1) s += String.fromCharCode(bytes[i]);
+        return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+    }
+    async function lnPkJson(res) {
+        var type = res.headers.get('content-type') || '';
+        if (type.indexOf('application/json') === -1) { await res.text(); throw new Error('Passkey 接口返回非 JSON 响应'); }
+        var data = await res.json();
+        if (!res.ok || data.success === false) throw new Error(data.message || data.error || 'Passkey 请求失败');
+        return data;
+    }
+    async function lnLoginWithPasskey() {
+        if (!window.PublicKeyCredential || !navigator.credentials) throw new Error('当前浏览器不支持 Passkey');
+        var res = await fetch('/admin/passkey/login-options', { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' });
+        var options = await lnPkJson(res);
+        var allow = (options.allowCredentials || []).map(function (it) { return { type: it.type || 'public-key', id: lnB64UrlToBytes(it.id) }; });
+        var assertion = await navigator.credentials.get({
+            publicKey: {
+                challenge: lnB64UrlToBytes(options.challenge),
+                timeout: options.timeout,
+                rpId: options.rpId,
+                allowCredentials: allow,
+                userVerification: options.userVerification || 'preferred'
+            }
+        });
+        var data = {
+            id: assertion.id,
+            rawId: lnBytesToB64Url(assertion.rawId),
+            response: {
+                clientDataJSON: lnBytesToB64Url(assertion.response.clientDataJSON),
+                authenticatorData: lnBytesToB64Url(assertion.response.authenticatorData),
+                signature: lnBytesToB64Url(assertion.response.signature),
+                userHandle: assertion.response.userHandle ? lnBytesToB64Url(assertion.response.userHandle) : ''
+            }
+        };
+        var loginRes = await fetch('/admin/passkey/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': lnLoginCsrf(), 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ credential: JSON.stringify(data) })
+        });
+        return await lnPkJson(loginRes);
+    }
+
+    function lnOverlay() { return document.querySelector('[data-login-overlay]'); }
+    function lnErr(msg) { var e = document.querySelector('[data-login-error]'); if (e) { e.textContent = msg || ''; e.hidden = !msg; } }
+    function lnOpen() {
+        var o = lnOverlay(); if (!o) return;
+        o.hidden = false; document.body.classList.add('login-modal-open');
+        var u = o.querySelector('[name=username]'); if (u) setTimeout(function () { try { u.focus(); } catch (e) {} }, 60);
+    }
+    function lnClose() { var o = lnOverlay(); if (o) { o.hidden = true; document.body.classList.remove('login-modal-open'); lnErr(''); } }
+
+    document.addEventListener('click', function (e) {
+        if (e.target.closest('[data-login-open]')) { e.preventDefault(); lnOpen(); return; }
+        if (e.target.closest('[data-login-close]')) { e.preventDefault(); lnClose(); return; }
+        var o = lnOverlay();
+        if (o && !o.hidden && e.target === o) lnClose();
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') lnClose(); });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var form = document.querySelector('[data-login-form]');
+        if (!form) return;
+        form.addEventListener('submit', function (e) {
+            e.preventDefault(); lnErr('');
+            var btn = form.querySelector('.login-modal-submit');
+            if (btn) btn.disabled = true;
+            var body = new URLSearchParams();
+            body.set('_csrf', lnLoginCsrf());
+            body.set('username', (form.username.value || '').trim());
+            body.set('password', form.password.value || '');
+            fetch('/admin/login', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded' },
+                credentials: 'same-origin',
+                body: body.toString()
+            }).then(function (res) {
+                return res.json().catch(function () { return {}; }).then(function (data) { return { ok: res.ok, data: data }; });
+            }).then(function (r) {
+                if (r.ok && r.data && r.data.ok) { window.location.href = r.data.redirect || '/admin'; }
+                else { lnErr((r.data && r.data.message) || '用户名或密码错误'); if (btn) btn.disabled = false; }
+            }).catch(function (err) { lnErr('登录失败：' + err.message); if (btn) btn.disabled = false; });
+        });
+        var pk = document.querySelector('[data-login-passkey]');
+        if (pk) {
+            pk.addEventListener('click', function () {
+                lnErr('');
+                lnLoginWithPasskey().then(function (r) {
+                    if (r && r.success !== false) window.location.href = '/admin';
+                    else lnErr((r && r.message) || 'Passkey 登录失败');
+                }).catch(function (err) { lnErr('Passkey 登录失败：' + err.message); });
+            });
+        }
+    });
 })();
