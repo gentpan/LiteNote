@@ -6161,11 +6161,18 @@ html[data-theme="dark"]
         margin: 0;
     }
 
+    /* 移动端底栏默认只显示 文章/滔客/Xmarks(音乐/友链 收进「更多」),故占 3 份 */
     .site-nav-bar .nav-main-links {
-        flex: 5 1 0;
+        flex: 3 1 0;
         gap: 0;
         justify-content: space-between;
         min-width: 0;
+    }
+
+    /* 音乐、友链 移动端从底栏隐藏(改由右侧「更多」浮层进入;桌面端仍显示) */
+    .site-nav-bar .nav-main-links .nav-link[href="/music"],
+    .site-nav-bar .nav-main-links .nav-link[href="/links"] {
+        display: none;
     }
 
     /* 动态 + 更多 两格,所以占 2 份 */
