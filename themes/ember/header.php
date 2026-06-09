@@ -101,6 +101,7 @@
                 </div>
                 <div class="nav-main-links">
                     <a href="/posts" class="nav-link nav-dd-trigger {{ ($activeNav ?? '') === 'posts' ? 'active' : '' }}" aria-haspopup="true">
+                        <i class="fa-regular fa-newspaper nav-link-icon" aria-hidden="true"></i>
                         <span>文章</span>
                         <i class="fa-solid fa-chevron-down nav-dd-caret"></i>
                     </a>
