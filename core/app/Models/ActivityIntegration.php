@@ -64,32 +64,6 @@ final class ActivityIntegration
                 'limit' => ['label' => '同步条数', 'placeholder' => '30'],
             ],
         ],
-        'openai' => [
-            'label' => 'OpenAI',
-            'icon' => 'fa-solid fa-robot',
-            'description' => '同步 Organization Usage，生成每日模型 Token 记录。',
-            'default_interval_minutes' => 240,
-            'token_label' => 'Admin Key',
-            'token_hint' => '需要 OpenAI Platform 管理员 Key。',
-            'refresh_label' => '',
-            'fields' => [
-                'days' => ['label' => '同步天数', 'placeholder' => '7'],
-                'public_usage' => ['label' => '公开用量', 'placeholder' => '1 公开 / 0 只统计'],
-            ],
-        ],
-        'anthropic' => [
-            'label' => 'Claude / Anthropic',
-            'icon' => 'fa-solid fa-brain',
-            'description' => '同步 Anthropic Admin Usage，生成每日 Claude Token 记录。',
-            'default_interval_minutes' => 240,
-            'token_label' => 'Admin API Key',
-            'token_hint' => '需要 sk-ant-admin 开头的 Anthropic Admin Key。',
-            'refresh_label' => '',
-            'fields' => [
-                'days' => ['label' => '同步天数', 'placeholder' => '7'],
-                'public_usage' => ['label' => '公开用量', 'placeholder' => '1 公开 / 0 只统计'],
-            ],
-        ],
         'bilibili' => [
             'label' => 'Bilibili',
             'icon' => 'fa-brands fa-bilibili',
