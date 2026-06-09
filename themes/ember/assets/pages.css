@@ -1387,3 +1387,143 @@ html[data-theme="dark"] .activity-item-content {
         gap: 10px;
     }
 }
+
+/* ============================================================
+   滔客页 hero(标题 + 活跃热力图 + 关键词组)
+   ============================================================ */
+.talk-list .talk-hero {
+    margin: 0 0 22px;
+    padding: 22px 24px;
+    border-radius: var(--radius-lg);
+    background: var(--c-card);
+    border: 1px solid var(--c-border);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.talk-hero-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.talk-hero-kicker {
+    display: block;
+    color: var(--c-primary);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.talk-hero-title {
+    margin: 4px 0 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--c-text);
+}
+
+.talk-hero-sub {
+    margin: 0;
+    color: var(--c-text-muted);
+    font-size: 13px;
+}
+
+.talk-heatmap {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.talk-heatmap-grid {
+    display: flex;
+    gap: 2px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+}
+
+.talk-heatmap-col {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.talk-heatmap-cell {
+    width: 11px;
+    height: 11px;
+    flex: 0 0 auto;
+    border-radius: 3px;
+}
+
+.talk-heatmap-cell.lv-0,
+.talk-heatmap-legend i.lv-0 { background: color-mix(in srgb, var(--c-primary) 8%, var(--c-card)); }
+.talk-heatmap-cell.lv-1,
+.talk-heatmap-legend i.lv-1 { background: color-mix(in srgb, var(--c-primary) 30%, transparent); }
+.talk-heatmap-cell.lv-2,
+.talk-heatmap-legend i.lv-2 { background: color-mix(in srgb, var(--c-primary) 52%, transparent); }
+.talk-heatmap-cell.lv-3,
+.talk-heatmap-legend i.lv-3 { background: color-mix(in srgb, var(--c-primary) 76%, transparent); }
+.talk-heatmap-cell.lv-4,
+.talk-heatmap-legend i.lv-4 { background: var(--c-primary); }
+
+.talk-heatmap-legend {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--c-text-muted);
+}
+
+.talk-heatmap-legend i {
+    width: 11px;
+    height: 11px;
+    border-radius: 3px;
+    display: inline-block;
+}
+
+.talk-keywords {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.talk-keywords-label {
+    color: var(--c-text-muted);
+    font-size: 13px;
+    margin-right: 2px;
+}
+
+.talk-keyword {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    border: 1px solid var(--c-border);
+    background: var(--c-bg);
+    color: var(--c-text-soft);
+    font-size: 13px;
+}
+
+.talk-keyword b {
+    color: var(--c-primary);
+    font-weight: 700;
+    font-size: 12px;
+}
+
+@media (max-width: 680px) {
+    .talk-list .talk-hero {
+        padding: 18px;
+        gap: 14px;
+    }
+    .talk-heatmap-cell,
+    .talk-heatmap-legend i {
+        width: 9px;
+        height: 9px;
+    }
+}
