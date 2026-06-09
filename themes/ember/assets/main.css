@@ -2562,17 +2562,9 @@ html.with-fancybox .fancybox__dialog {
         grid-template-columns: 1fr;
         gap: 14px;
     }
-    .post-feature-card {
-        display: grid;
-        grid-template-columns: 112px minmax(0, 1fr);
-    }
-    .post-feature-cover {
-        border-right: 1px solid var(--c-border-soft);
-        border-bottom: 0;
-    }
-    .post-feature-body {
-        padding: 13px 14px;
-    }
+    /* feature 卡片移动端统一为竖排(封面在上),布局见同断点下方的 .post-feature-card / -cover 规则。
+       此前这里的 display:grid + 112px 横排会与竖排规则冲突,且封面 aspect-ratio 在 grid 拉伸下
+       于 iOS Safari 会反算出超过列宽的宽度 → 卡片溢出(显示偏宽)。 */
     .post-feature-title {
         font-size: 16px;
     }
