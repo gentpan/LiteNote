@@ -2685,15 +2685,15 @@ html.with-fancybox .fancybox__dialog {
 .nav-pill {
     position: relative;
     isolation: isolate;
-    background: rgba(8, 8, 10, 0.96);
+    background: rgba(0, 0, 0, 0.78);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 24px;
     corner-shape: superellipse(1.125);
     padding: 7px 8px;
     gap: 4px;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35), 0 1px 0 rgba(255, 255, 255, 0.06) inset;
-    backdrop-filter: saturate(160%) blur(20px);
-    -webkit-backdrop-filter: saturate(160%) blur(20px);
+    backdrop-filter: saturate(160%) blur(22px);
+    -webkit-backdrop-filter: saturate(160%) blur(22px);
 }
 
 /* CodexIsland 风格:深色模式下导航胶囊的钴蓝流光边框(绕边旋转的彗星 + 柔光 halo) */
@@ -2703,8 +2703,8 @@ html.with-fancybox .fancybox__dialog {
     inherits: false;
 }
 html[data-theme="dark"] .nav-pill {
-    /* 磨砂玻璃(借鉴 codex-island 站点导航):深色半透明 + 强背景模糊,滚动时透出虚化内容 */
-    background: rgba(10, 10, 12, 0.6);
+    /* 黑色磨砂玻璃(借鉴 codex-island 导航):纯黑 + 强背景模糊,读作黑色、又透出虚化内容 */
+    background: rgba(0, 0, 0, 0.78);
     border-color: rgba(255, 255, 255, 0.08);
     backdrop-filter: saturate(150%) blur(26px);
     -webkit-backdrop-filter: saturate(150%) blur(26px);
