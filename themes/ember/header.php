@@ -150,6 +150,7 @@
         <i class="fa-solid fa-gauge-high" aria-hidden="true"></i>
     </a>
     @endif
+    @if(empty($currentAdmin))
     <div class="side-identity" data-side-identity>
         <button type="button" class="side-identity-trigger" data-nav-identity-edit aria-label="评论身份" title="评论身份">
             <img class="side-identity-avatar" data-side-identity-avatar alt="" hidden>
@@ -160,6 +161,7 @@
             <span class="side-identity-stat" data-side-identity-stat>设置评论身份，留下你的足迹</span>
         </div>
     </div>
+    @endif
     <button type="button" class="side-search-toggle" data-search-toggle aria-label="搜索" title="搜索">
         <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
     </button>

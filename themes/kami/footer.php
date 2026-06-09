@@ -34,6 +34,7 @@
         @else
         <button type="button" class="side-admin-entry" data-login-open aria-label="登录" title="登录"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i></button>
         @endif
+        @if(empty($currentAdmin))
         <div class="side-identity" data-side-identity>
             <button type="button" class="side-identity-trigger" data-identity-open aria-label="评论身份" title="评论身份">
                 <img class="side-identity-avatar" data-side-identity-avatar alt="" hidden>
@@ -44,6 +45,7 @@
                 <span class="side-identity-stat" data-side-identity-stat>设置评论身份，留下你的足迹</span>
             </div>
         </div>
+        @endif
         <button type="button" class="side-theme-toggle" data-theme-toggle aria-label="切换深色模式" title="切换深色模式">
             <span class="side-theme-icon" aria-hidden="true">
                 <i class="fa-solid fa-moon theme-icon-moon"></i>
