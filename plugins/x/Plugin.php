@@ -60,7 +60,7 @@ final class Plugin implements PluginInterface
         $ctx->navPage('xmarks', [
             'title' => 'Xmarks',
             'url' => '/xmarks',
-            'icon' => 'fa-brands fa-x-twitter',
+            'icon' => 'fa-solid fa-bookmark',
             'sort' => 25,
         ]);
 

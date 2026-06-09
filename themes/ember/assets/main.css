@@ -6118,6 +6118,13 @@ html[data-theme="dark"]
     }
 }
 
+/* 移动端 tab bar 专用元素:默认隐藏,仅 ≤768px 显示(更多按钮/上浮菜单/动态 gamepad 图标) */
+.nav-more-toggle,
+.nav-more-menu,
+.nav-cta-mobile-icon {
+    display: none;
+}
+
 @media (min-width: 769px) {
     /* 桌面端只有「文章」显示图标(保持原样);新增的导航项图标仅移动端 tab bar 用 */
     .site-nav-bar .nav-main-links .nav-link:not(.nav-dd-trigger) .nav-link-icon {
@@ -6161,8 +6168,9 @@ html[data-theme="dark"]
         min-width: 0;
     }
 
+    /* 动态 + 更多 两格,所以占 2 份 */
     .site-nav-bar .nav-actions {
-        flex: 1 1 0;
+        flex: 2 1 0;
         gap: 0;
         min-width: 0;
         margin: 0;
@@ -6171,7 +6179,8 @@ html[data-theme="dark"]
     /* 每个 tab:列方向,等宽居中 */
     .site-nav-bar .nav-avatar,
     .site-nav-bar .nav-main-links .nav-link,
-    .site-nav-bar .nav-actions .nav-cta {
+    .site-nav-bar .nav-actions .nav-cta,
+    .site-nav-bar .nav-actions .nav-more-toggle {
         display: flex;
         flex: 1 1 0;
         flex-direction: column;
@@ -6185,10 +6194,22 @@ html[data-theme="dark"]
         border-radius: 12px;
     }
 
+    /* 更多按钮:去掉原生 button 外观 */
+    .site-nav-bar .nav-actions .nav-more-toggle {
+        font: inherit;
+        cursor: pointer;
+        background: transparent;
+        border: 0;
+        appearance: none;
+        -webkit-appearance: none;
+    }
+
     /* tab 内容统一浅色(导航胶囊恒黑底) */
     .site-nav-bar .nav-row a,
     .site-nav-bar .nav-row a i,
-    .site-nav-bar .nav-actions .nav-cta {
+    .site-nav-bar .nav-actions .nav-cta,
+    .site-nav-bar .nav-actions .nav-more-toggle,
+    .site-nav-bar .nav-actions .nav-more-toggle i {
         color: rgba(255, 255, 255, 0.7);
     }
 
@@ -6201,9 +6222,10 @@ html[data-theme="dark"]
         line-height: 1;
     }
 
-    /* 小字标签:导航项与动态显示,小号单行 */
+    /* 小字标签:导航项 / 动态 / 更多 显示,小号单行 */
     .site-nav-bar .nav-main-links .nav-link span,
-    .site-nav-bar .nav-actions .nav-cta span {
+    .site-nav-bar .nav-actions .nav-cta span,
+    .site-nav-bar .nav-actions .nav-more-toggle span {
         display: block;
         max-width: 100%;
         overflow: hidden;
@@ -6253,10 +6275,87 @@ html[data-theme="dark"]
         color: #fff !important;
     }
 
+    /* 动态 CTA 移动端用 gamepad 图标取代活动条 */
     .site-nav-bar .nav-actions .nav-cta .nav-activity-bars {
+        display: none;
+    }
+
+    .site-nav-bar .nav-actions .nav-cta .nav-cta-mobile-icon {
+        display: inline-block;
         flex: none;
+        margin: 0;
+        font-size: 18px;
+        line-height: 1;
+    }
+
+    /* 更多按钮:bars / xmark 切换 */
+    .site-nav-bar .nav-actions .nav-more-toggle .nav-more-bars,
+    .site-nav-bar .nav-actions .nav-more-toggle .nav-more-close {
+        flex: none;
+        margin: 0;
+        font-size: 18px;
+        line-height: 1;
+    }
+
+    .site-nav-bar .nav-actions .nav-more-toggle .nav-more-close {
+        display: none;
+    }
+
+    .site-nav-bar .nav-actions .nav-more-toggle.is-open .nav-more-bars {
+        display: none;
+    }
+
+    .site-nav-bar .nav-actions .nav-more-toggle.is-open .nav-more-close {
+        display: inline-block;
+    }
+
+    .site-nav-bar .nav-actions .nav-more-toggle.is-open,
+    .site-nav-bar .nav-actions .nav-more-toggle.is-open i {
+        color: #fff;
+    }
+
+    /* 更多上浮菜单:从底栏右侧上方弹出 */
+    .site-nav-bar .nav-more-menu {
+        position: absolute;
+        right: 0;
+        bottom: calc(100% + 10px);
+        z-index: 5;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 150px;
+        padding: 6px;
+        background: #000;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 14px;
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+    }
+
+    .site-nav-bar .nav-more-menu.is-open {
+        display: flex;
+    }
+
+    .site-nav-bar .nav-more-item {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        padding: 9px 12px;
+        font-size: 13px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.82);
+        text-decoration: none;
+        border-radius: 9px;
+    }
+
+    .site-nav-bar .nav-more-item i {
         width: 18px;
-        height: 16px;
+        font-size: 14px;
+        text-align: center;
+    }
+
+    .site-nav-bar .nav-more-item:hover,
+    .site-nav-bar .nav-more-item:active {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.1);
     }
 
     /* 选中 tab 高亮 */

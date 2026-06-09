@@ -27,7 +27,7 @@ final class Page extends Model
             'talk' => [
                 'title' => '滔客',
                 'url' => '/talk',
-                'icon' => 'fa-regular fa-comments',
+                'icon' => 'fa-solid fa-head-side-speak',
                 'sort' => 20,
             ],
             'music' => [
