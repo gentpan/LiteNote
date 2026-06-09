@@ -49,11 +49,11 @@ final class Gravatar
         $scheme = $secure ? 'https' : 'http';
         $host = self::host();
 
+        // 仅保留标准且有用的参数:s(尺寸) + d(无头像时的兜底图,如 identicon)。
+        // r(评级)不写时 Gravatar 默认即 g,冗余;原 v=1.3 是写死的固定值,刷不了缓存,已移除。
         $query = http_build_query(array_filter([
             's' => max(1, min(2048, $size)),
             'd' => $default,
-            'r' => $rating,
-            'v' => '1.3',  // cache buster,任填,这里固定 1.3 即可
         ]));
 
         return sprintf('%s://%s/avatar/%s?%s', $scheme, $host, $hash, $query);
