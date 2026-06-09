@@ -81,6 +81,14 @@ html[data-theme="light"] .category-shell {
     box-shadow: var(--shadow-sm);
 }
 
+.category-page .category-hero-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+}
+
 .category-page .category-hero-headline {
     display: flex;
     align-items: flex-start;
