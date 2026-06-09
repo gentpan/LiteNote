@@ -52,7 +52,8 @@ final class TemplateMap
             || str_starts_with($template, 'search.')
             || str_starts_with($template, 'friend.')
             || str_starts_with($template, 'front.')
-            || str_starts_with($template, 'partials.');
+            || str_starts_with($template, 'partials.')
+            || str_starts_with($template, 'errors.');
     }
 
     private static function matchesAny(string $template, array $prefixes): bool
