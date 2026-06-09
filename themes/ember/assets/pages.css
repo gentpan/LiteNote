@@ -83,7 +83,7 @@ html[data-theme="light"] .category-shell {
 
 .category-page .category-hero-headline {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 16px;
 }
 
@@ -114,7 +114,7 @@ html[data-theme="light"] .category-shell {
     color: var(--c-text-soft);
     font-size: 15px;
     line-height: 1.7;
-    text-align: right;
+    text-align: left;
 }
 
 .category-page .category-hero-meta {
