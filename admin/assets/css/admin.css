@@ -1116,7 +1116,6 @@ body.admin-body.auth-body {
 }
 
 .login-card label {
-    color: #374151;
     font-weight: 700;
 }
 
@@ -3692,10 +3691,6 @@ body.admin-body.auth-body {
     color: #fff;
 }
 
-.music-share-dialog[hidden] {
-    display: none;
-}
-
 .music-share-dialog-panel textarea {
     width: 100%;
     min-height: 112px;
@@ -3891,10 +3886,6 @@ body.admin-body.auth-body {
     border-radius: var(--radius-sm);
     background: #fff;
     box-shadow: var(--shadow-md);
-}
-
-.editor-heading-dropdown[hidden] {
-    display: none !important;
 }
 
 .editor-toolbar .editor-heading-dropdown button {
@@ -4659,10 +4650,6 @@ body.admin-body.auth-body {
     height: var(--control-height);
 }
 
-.avatar-upload-row input[type="file"][hidden] {
-    display: none !important;
-}
-
 #socials-list {
     display: grid;
     gap: 10px;
@@ -4897,10 +4884,6 @@ body.admin-body.auth-body {
     background: rgba(15, 23, 42, .42);
 }
 
-.admin-modal-backdrop[hidden] {
-    display: none !important;
-}
-
 .admin-modal {
     width: min(1120px, 100%);
     max-height: min(86vh, 860px);
@@ -5107,10 +5090,6 @@ body.admin-body.auth-body {
     color: #fff;
 }
 
-.talk-edit-dialog[hidden] {
-    display: none !important;
-}
-
 .talk-keyword-badge {
     display: inline-flex;
     align-items: center;
@@ -5186,7 +5165,6 @@ body.admin-body.auth-body {
 
 .talk-edit-public {
     display: inline-flex !important;
-    grid-auto-flow: column;
     justify-content: start;
     align-items: center;
     gap: 8px !important;
