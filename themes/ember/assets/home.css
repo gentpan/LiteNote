@@ -1893,6 +1893,13 @@ html[data-theme="dark"] .home-card.home-music-card {
         color-mix(in srgb, var(--home-music-bg) 42%, transparent);
 }
 
+/* 深色模式:音乐卡片背景改为深色渐变(原白色渐变未适配深色,导致卡片在深色下仍发白) */
+html[data-theme="dark"] .home-music-bg::after {
+    background:
+        linear-gradient(90deg, rgba(14, 14, 16, .82), rgba(14, 14, 16, .92)),
+        color-mix(in srgb, var(--home-music-bg) 40%, transparent);
+}
+
 .home-music-card .home-music-layout {
     position: relative;
     z-index: 1;
