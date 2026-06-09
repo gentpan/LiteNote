@@ -6,11 +6,9 @@ namespace App\Services;
 use App\Models\Activity;
 use App\Models\ActivityIntegration;
 use App\Services\ActivityAdapters\ActivityAdapter;
-use App\Services\ActivityAdapters\AnthropicUsageAdapter;
 use App\Services\ActivityAdapters\BilibiliAdapter;
 use App\Services\ActivityAdapters\GitHubAdapter;
 use App\Services\ActivityAdapters\NeoDbAdapter;
-use App\Services\ActivityAdapters\OpenAiUsageAdapter;
 use App\Services\ActivityAdapters\SpotifyAdapter;
 use App\Services\ActivityAdapters\WakaTimeAdapter;
 
@@ -27,8 +25,6 @@ final class ActivitySyncService
             new WakaTimeAdapter(),
             new SpotifyAdapter(),
             new NeoDbAdapter(),
-            new OpenAiUsageAdapter(),
-            new AnthropicUsageAdapter(),
             new BilibiliAdapter(),
         ] as $adapter) {
             $this->adapters[$adapter->provider()] = $adapter;
