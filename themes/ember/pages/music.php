@@ -210,7 +210,6 @@
                             <span class="music-track-side">
                                 <span><i class="fa-regular fa-calendar"></i> {{ $songPublishedLabel }}</span>
                                 <span><i class="fa-regular fa-comment"></i> <b data-music-track-comments>{{ count($song->getRelation('comments') ?: []) }}</b></span>
-                                <span>{{ $song->duration ?: '试听' }}</span>
                             </span>
                         </button>
                     @endforeach
