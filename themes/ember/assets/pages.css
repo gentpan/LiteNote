@@ -1441,21 +1441,21 @@ html[data-theme="dark"] .activity-item-content {
 
 .talk-heatmap-grid {
     display: flex;
-    gap: 2px;
-    overflow-x: auto;
+    gap: 3px;
     padding-bottom: 2px;
 }
 
 .talk-heatmap-col {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 3px;
+    flex: 1 1 0;
+    min-width: 0;
 }
 
 .talk-heatmap-cell {
-    width: 11px;
-    height: 11px;
-    flex: 0 0 auto;
+    width: 100%;
+    aspect-ratio: 1 / 1;
     border-radius: 3px;
 }
 
@@ -1521,7 +1521,6 @@ html[data-theme="dark"] .activity-item-content {
         padding: 18px;
         gap: 14px;
     }
-    .talk-heatmap-cell,
     .talk-heatmap-legend i {
         width: 9px;
         height: 9px;
