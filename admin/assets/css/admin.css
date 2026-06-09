@@ -3797,23 +3797,6 @@ body.admin-body.auth-body {
     color: var(--danger);
 }
 
-.music-delete-option {
-    display: inline-flex;
-    gap: 8px;
-    align-items: center;
-    margin-top: 10px;
-    font-size: 13px;
-    font-weight: 680;
-    color: var(--text);
-    cursor: pointer;
-}
-
-.music-delete-option input {
-    width: 16px;
-    height: 16px;
-    accent-color: var(--danger);
-}
-
 @media (max-width: 1180px) {
     .music-admin-shell {
         width: 100%;
