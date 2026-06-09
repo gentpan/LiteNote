@@ -121,9 +121,9 @@
         <footer class="x-card-footer tweet-footer home-card-footer home-card-meta-bar">
             <div class="home-card-meta x-card-footer-meta tweet-footer-meta">
                 @if($postedAt !== '')
-                    {!! \App\Core\Helper::timeTag($postedAt) !!}
+                    {!! \App\Core\Helper::dateTimeTag($postedAt) !!}
                 @else
-                    {!! \App\Core\Helper::timeTag($tweet->publishedAt()) !!}
+                    {!! \App\Core\Helper::dateTimeTag($tweet->publishedAt()) !!}
                 @endif
             </div>
             <div class="home-card-actions x-card-footer-actions tweet-footer-actions">
