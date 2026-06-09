@@ -44,7 +44,7 @@
         if (empty($navItems)) {
             $navItems = [
                 ['title' => '动态', 'slug' => 'activity', 'url' => '/activity', 'icon' => 'fa-solid fa-chart-simple'],
-                ['title' => '滔客', 'slug' => 'talk', 'url' => '/talk', 'icon' => 'fa-regular fa-comments'],
+                ['title' => '滔客', 'slug' => 'talk', 'url' => '/talk', 'icon' => 'fa-solid fa-head-side-speak'],
                 ['title' => '音乐', 'slug' => 'music', 'url' => '/music', 'icon' => 'fa-solid fa-music'],
                 ['title' => '归档', 'slug' => 'archives', 'url' => '/archives', 'icon' => 'fa-solid fa-box-archive'],
                 ['title' => '友链', 'slug' => 'friends', 'url' => '/links', 'icon' => 'fa-solid fa-user-group'],
@@ -52,6 +52,7 @@
             ];
         }
         $navMainItems = [];
+        $navMoreItems = [];
         $navCtaItem = ['title' => '动态', 'slug' => 'activity', 'url' => '/activity', 'icon' => 'fa-solid fa-chart-simple'];
         foreach ($navItems as $navItem) {
             if (($navItem['slug'] ?? '') === 'activity') {
@@ -59,6 +60,8 @@
                 continue;
             }
             if (in_array(($navItem['slug'] ?? ''), ['about', 'archives', 'feeds'], true)) {
+                // 移动端底部「更多」上浮菜单收纳的次级页面
+                $navMoreItems[] = $navItem;
                 continue;
             }
             $navMainItems[] = $navItem;
@@ -122,11 +125,27 @@
                         <a href="{{ $navCtaItem['url'] ?? '#' }}" class="nav-cta {{ $navCtaActive ? 'active' : '' }} {{ $hasRecentActivity ? 'has-recent-activity' : '' }}">
                             @if($navCtaSlug === 'activity')
                                 <span class="nav-activity-bars" aria-hidden="true"><i></i><i></i><i></i></span>
+                                <i class="fa-solid fa-gamepad nav-cta-mobile-icon" aria-hidden="true"></i>
                             @else
                                 <i class="{{ $navCtaItem['icon'] ?? 'fa-solid fa-chart-simple' }}"></i>
                             @endif
                             <span>{{ $navCtaItem['title'] ?? '动态' }}</span>
                         </a>
+                    @endif
+                    @if(!empty($navMoreItems))
+                        <button type="button" class="nav-more-toggle" data-nav-more aria-label="更多" aria-expanded="false" aria-haspopup="true">
+                            <i class="fa-solid fa-bars nav-more-bars" aria-hidden="true"></i>
+                            <i class="fa-solid fa-xmark nav-more-close" aria-hidden="true"></i>
+                            <span>更多</span>
+                        </button>
+                        <div class="nav-more-menu" data-nav-more-menu role="menu" aria-label="更多页面">
+                            @foreach($navMoreItems as $moreItem)
+                                <a href="{{ $moreItem['url'] ?? '#' }}" class="nav-more-item" role="menuitem">
+                                    @if(!empty($moreItem['icon']))<i class="{{ $moreItem['icon'] }}" aria-hidden="true"></i>@endif
+                                    <span>{{ $moreItem['title'] ?? '' }}</span>
+                                </a>
+                            @endforeach
+                        </div>
                     @endif
                 </div>
             </div>

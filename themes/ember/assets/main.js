@@ -756,6 +756,26 @@
                 openNavIdentityDialog();
             });
         });
+        // 移动端底部「更多」上浮菜单开关
+        root.querySelectorAll('[data-nav-more]').forEach(function(btn) {
+            if (btn.dataset.lnBound) return; btn.dataset.lnBound = '1';
+            var menu = btn.parentElement ? btn.parentElement.querySelector('[data-nav-more-menu]') : null;
+            function setOpen(open) {
+                btn.classList.toggle('is-open', open);
+                btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+                if (menu) menu.classList.toggle('is-open', open);
+            }
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                setOpen(!btn.classList.contains('is-open'));
+            });
+            document.addEventListener('click', function(e) {
+                if (!btn.classList.contains('is-open')) return;
+                if (btn.contains(e.target) || (menu && menu.contains(e.target))) return;
+                setOpen(false);
+            });
+        });
     }
 
     // AJAX 提交后把新评论插入列表(说说 / 文章两种结构)
