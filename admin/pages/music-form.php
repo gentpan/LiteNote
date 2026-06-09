@@ -99,7 +99,7 @@
 
     @if($item)
         <form method="post" action="/admin/music/delete" class="admin-form music-delete-panel"
-              data-confirm="确定删除这首音乐？此操作不可撤销。"
+              data-confirm="确定删除这首音乐？@if((int)($linkedTalkCount ?? 0) > 0)将一并删除 {{ (int)$linkedTalkCount }} 条关联音乐说说及其评论、点赞，@endif此操作不可撤销。"
               data-confirm-title="删除音乐"
               data-confirm-text="确认删除">
             <input type="hidden" name="_csrf" value="{{ $csrf }}">
@@ -109,11 +109,7 @@
                     <h3>删除音乐</h3>
                     @if((int)($linkedTalkCount ?? 0) > 0)
                         <p class="music-delete-warning">这首音乐已被 {{ (int)$linkedTalkCount }} 条音乐说说使用。</p>
-                        <label class="music-delete-option">
-                            <input type="checkbox" name="delete_talks" value="1">
-                            同时删除这些音乐说说
-                        </label>
-                        <p>不勾选时，只删除音乐，并保留说说内容、取消音乐关联。</p>
+                        <p>删除将一并移除这些音乐说说，以及它们的评论、点赞数据，操作不可撤销。</p>
                     @else
                         <p>删除后，这首音乐不会再出现在音乐库和说说音乐选择里。</p>
                     @endif

@@ -291,7 +291,7 @@ class MusicController
             Response::redirect('/admin/music');
         }
 
-        $deleteTalks = (string)$request->input('delete_talks', '') === '1';
+        // 删除音乐 = 连带删除其关联的音乐说说及评论/点赞(说说点赞数存于 talk 行,随行删除)
         $talkRows = $db->fetchAll('SELECT id, content, images, music_cover, music FROM talk WHERE music_id = ?', [$id]);
         $talkIds = array_map(static fn(array $row): int => (int)$row['id'], $talkRows);
         $attachmentValues = [
@@ -301,26 +301,20 @@ class MusicController
             (string)($music->lyrics ?? ''),
             (string)($music->description ?? ''),
         ];
-        if ($deleteTalks) {
-            foreach ($talkRows as $row) {
-                $attachmentValues[] = (string)($row['content'] ?? '');
-                $attachmentValues[] = (string)($row['images'] ?? '');
-                $attachmentValues[] = (string)($row['music_cover'] ?? '');
-                $attachmentValues[] = (string)($row['music'] ?? '');
-            }
+        foreach ($talkRows as $row) {
+            $attachmentValues[] = (string)($row['content'] ?? '');
+            $attachmentValues[] = (string)($row['images'] ?? '');
+            $attachmentValues[] = (string)($row['music_cover'] ?? '');
+            $attachmentValues[] = (string)($row['music'] ?? '');
         }
 
         try {
             $db->beginTransaction();
 
             if ($talkIds !== []) {
-                if ($deleteTalks) {
-                    $placeholders = implode(',', array_fill(0, count($talkIds), '?'));
-                    $db->delete('comments', 'talk_id IN (' . $placeholders . ')', $talkIds);
-                    $db->delete('talk', 'id IN (' . $placeholders . ')', $talkIds);
-                } else {
-                    $db->query("UPDATE talk SET music_id = 0, post_type = 'talk' WHERE music_id = ?", [$id]);
-                }
+                $placeholders = implode(',', array_fill(0, count($talkIds), '?'));
+                $db->delete('comments', 'talk_id IN (' . $placeholders . ')', $talkIds);
+                $db->delete('talk', 'id IN (' . $placeholders . ')', $talkIds);
             }
 
             $db->delete('comments', 'music_id = ?', [$id]);
@@ -333,10 +327,8 @@ class MusicController
         }
         AttachmentCleanupService::deleteUnusedFromValues($attachmentValues);
 
-        if ($talkIds !== [] && $deleteTalks) {
-            Session::flash('success', '音乐已删除，相关音乐说说已一起删除');
-        } elseif ($talkIds !== []) {
-            Session::flash('success', '音乐已删除，相关说说已保留并取消音乐关联');
+        if ($talkIds !== []) {
+            Session::flash('success', '音乐已删除，关联的音乐说说及其评论、点赞已一并删除');
         } else {
             Session::flash('success', '音乐已删除');
         }
