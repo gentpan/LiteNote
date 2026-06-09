@@ -888,13 +888,13 @@ html[data-theme="dark"] .activity-item-content {
     width: 152px;
     height: auto;
     transform-origin: 20% 17%;
-    transform: rotate(-8deg);
-    transition: transform .45s cubic-bezier(.2, .8, .2, 1);
+    transform: rotate(-46deg);
+    transition: transform .5s cubic-bezier(.2, .8, .2, 1);
     filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .4));
     z-index: 3;
 }
 .music-disc-player.is-playing .music-tonearm-img {
-    transform: rotate(4deg);
+    transform: rotate(-6deg);
 }
 @keyframes music-spin {
     to { transform: rotate(360deg); }
