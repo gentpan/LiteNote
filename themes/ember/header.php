@@ -52,20 +52,28 @@
             ];
         }
         $navMainItems = [];
-        $navMoreItems = [];
+        $navMoreItems = [];      // 次级页面(关于/归档/订阅)
+        $navMoreDemoted = [];    // 移动端从底栏挪到「更多」的项(音乐/友链)
         $navCtaItem = ['title' => '动态', 'slug' => 'activity', 'url' => '/activity', 'icon' => 'fa-solid fa-chart-simple'];
         foreach ($navItems as $navItem) {
-            if (($navItem['slug'] ?? '') === 'activity') {
+            $navItemSlug = $navItem['slug'] ?? '';
+            if ($navItemSlug === 'activity') {
                 $navCtaItem = $navItem;
                 continue;
             }
-            if (in_array(($navItem['slug'] ?? ''), ['about', 'archives', 'feeds'], true)) {
+            if (in_array($navItemSlug, ['about', 'archives', 'feeds'], true)) {
                 // 移动端底部「更多」上浮菜单收纳的次级页面
                 $navMoreItems[] = $navItem;
                 continue;
             }
             $navMainItems[] = $navItem;
+            // 移动端底栏默认只显示 文章/滔客/Xmarks/动态;音乐、友链 收进「更多」(桌面端仍在导航条)
+            if (in_array($navItemSlug, ['music', 'friends'], true)) {
+                $navMoreDemoted[] = $navItem;
+            }
         }
+        // 「更多」浮层顺序:被挪下来的(音乐/友链) 在前,次级页面在后
+        $navMoreItems = array_merge($navMoreDemoted, $navMoreItems);
         $hasRecentActivity = false;
         try {
             $recentActivitySince = date('Y-m-d H:i:s', time() - 6 * 3600);
