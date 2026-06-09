@@ -883,18 +883,18 @@ html[data-theme="dark"] .activity-item-content {
 }
 .music-tonearm-img {
     position: absolute;
-    top: -4px;
-    right: 4px;
-    width: 44%;
+    top: -52px;
+    left: -54px;
+    width: 152px;
     height: auto;
-    transform-origin: 84% 16%;
-    transform: rotate(-28deg);
+    transform-origin: 20% 17%;
+    transform: rotate(-8deg);
     transition: transform .45s cubic-bezier(.2, .8, .2, 1);
     filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .4));
     z-index: 3;
 }
 .music-disc-player.is-playing .music-tonearm-img {
-    transform: rotate(-8deg);
+    transform: rotate(4deg);
 }
 @keyframes music-spin {
     to { transform: rotate(360deg); }
@@ -1165,6 +1165,28 @@ html[data-theme="dark"] .activity-item-content {
 }
 .music-comment-form {
     margin-top: 4px;
+}
+/* 管理员头像:移到左侧、去掉按钮默认背景 */
+.music-comment-form .comment-actions {
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+}
+.music-comment-form .comment-profile-toggle-admin {
+    margin-right: auto;
+    width: auto;
+    height: auto;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+    cursor: default;
+}
+.music-comment-form .comment-profile-toggle-admin .comment-admin-avatar {
+    display: block;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
 }
 
 /* —— 播放列表 —— */

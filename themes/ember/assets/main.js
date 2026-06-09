@@ -2357,10 +2357,34 @@
             });
         }
 
+        var rafId = 0;
+        function renderProgress() {
+            var t = formatDuration(audio.currentTime);
+            var liveCur = player.querySelectorAll('[data-music-current]');
+            for (var ci = 0; ci < liveCur.length; ci += 1) { liveCur[ci].textContent = t; }
+            if (audio.duration && Number.isFinite(audio.duration)) {
+                var w = (audio.currentTime / audio.duration * 100) + '%';
+                var livePlayed = player.querySelectorAll('[data-music-progress-played]');
+                for (var pi = 0; pi < livePlayed.length; pi += 1) { livePlayed[pi].style.width = w; }
+            }
+            updateLyric(audio.currentTime, false);
+        }
+        function startRaf() {
+            if (rafId) return;
+            (function loop() {
+                renderProgress();
+                rafId = (!audio.paused && !audio.ended) ? window.requestAnimationFrame(loop) : 0;
+            })();
+        }
+        function stopRaf() {
+            if (rafId) { window.cancelAnimationFrame(rafId); rafId = 0; }
+        }
+
         audio.addEventListener('play', function() {
             player.classList.remove('is-error');
             player.classList.add('is-playing');
             setPlayIcon('fa-solid fa-pause');
+            startRaf();
             var id = player.dataset.currentId || '';
             if (id && !playedIds[id]) {
                 playedIds[id] = true;
@@ -2374,11 +2398,14 @@
         audio.addEventListener('pause', function() {
             player.classList.remove('is-playing');
             setPlayIcon('fa-solid fa-play');
+            stopRaf();
+            renderProgress();
         });
 
         audio.addEventListener('ended', function() {
             player.classList.remove('is-playing');
             setPlayIcon('fa-solid fa-play');
+            stopRaf();
             if (tracks.length > 1) {
                 applyTrack(currentIndex + 1, true);
             } else {
@@ -2393,12 +2420,9 @@
             }
         });
 
-        audio.addEventListener('timeupdate', function() {
-            if (!audio.duration) return;
-            setTextAll(currentEls, formatDuration(audio.currentTime));
-            setProgressWidth((audio.currentTime / audio.duration * 100) + '%');
-            updateLyric(audio.currentTime, false);
-        });
+        audio.addEventListener('timeupdate', renderProgress);
+        audio.addEventListener('seeked', renderProgress);
+        audio.addEventListener('loadeddata', renderProgress);
 
         audio.addEventListener('error', function() {
             player.classList.remove('is-playing');
