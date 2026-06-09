@@ -827,7 +827,8 @@ html[data-theme] .talk-card.home-x-card:hover {
 }
 
 .x-page {
-    max-width: 1180px;
+    width: min(100%, 1120px);
+    max-width: 1120px;
 }
 
 .x-page-head {
@@ -850,18 +851,50 @@ html[data-theme] .talk-card.home-x-card:hover {
 
 .x-bookmarks-head {
     align-items: center;
-    padding: 18px 0;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding: 20px 26px;
+    border: 1px solid var(--c-border);
+    border-radius: 18px;
+    background: var(--c-card);
+    box-shadow: var(--shadow-sm);
+}
+.x-bookmarks-head .section-title {
+    margin: 0;
+    font-size: 23px;
+}
+.x-bookmarks-head p {
+    margin: 6px 0 0;
+    color: var(--c-text-muted);
+    font-size: 14px;
+}
+.x-bookmarks-head-badge {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 18px;
+    border-radius: 999px;
+    background: var(--c-text);
+    color: var(--c-bg, #fff);
+    font-size: 15px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+.x-bookmarks-head-badge i {
+    font-size: 13px;
 }
 
 .x-masonry {
-    column-count: 3;
-    column-gap: 18px;
+    column-count: 2;
+    column-gap: 24px;
 }
 
 .x-masonry-item {
     display: inline-block;
     width: 100%;
-    margin: 0 0 18px;
+    margin: 0 0 24px;
     break-inside: avoid;
     vertical-align: top;
 }

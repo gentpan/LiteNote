@@ -3,10 +3,11 @@
 @section('content')
     <section class="x-page x-bookmarks-page">
         <header class="x-page-head x-bookmarks-head">
-            <div>
+            <div class="x-bookmarks-head-text">
                 <h2 class="section-title">Xmarks</h2>
-                <p>{{ (int)$total }} 条 X 书签</p>
+                <p>我在 X 上收藏的内容 · 共 {{ (int)$total }} 条</p>
             </div>
+            <span class="x-bookmarks-head-badge"><i class="fa-brands fa-x-twitter" aria-hidden="true"></i> {{ (int)$total }}</span>
         </header>
 
         @if(empty($list))
