@@ -2209,3 +2209,37 @@ body.login-modal-open {
     object-fit: cover;
     background: var(--c-bg-soft, rgba(0, 0, 0, .05));
 }
+
+/* 主题自带 404(kami 油墨/衬线风) */
+html[data-site-theme="kami"] .kami-error {
+    text-align: center;
+    padding: 100px 20px 120px;
+}
+html[data-site-theme="kami"] .kami-error-code {
+    margin: 0;
+    font-family: "Luo", serif;
+    font-size: 96px;
+    line-height: 1;
+    font-weight: 700;
+    color: var(--c-primary);
+    opacity: .85;
+}
+html[data-site-theme="kami"] .kami-error-title {
+    margin: 18px 0 6px;
+    font-size: 20px;
+    font-weight: 650;
+    color: var(--c-text);
+}
+html[data-site-theme="kami"] .kami-error-msg {
+    margin: 0 0 24px;
+    font-size: 14px;
+    color: var(--c-text-muted);
+}
+html[data-site-theme="kami"] .kami-error-home {
+    font-size: 14px;
+    color: var(--c-primary);
+    text-decoration: none;
+}
+html[data-site-theme="kami"] .kami-error-home:hover {
+    text-decoration: underline;
+}

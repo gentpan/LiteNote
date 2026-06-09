@@ -233,6 +233,9 @@ final class ThemeManager
         if (str_starts_with($template, 'partials.')) {
             return 'inc/' . substr($template, strlen('partials.')) . '.php';
         }
+        if (str_starts_with($template, 'errors.')) {
+            return 'inc/error-' . substr($template, strlen('errors.')) . '.php';
+        }
 
         $map = [
             'home.index' => 'index.php',
