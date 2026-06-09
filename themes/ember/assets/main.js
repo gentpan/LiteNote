@@ -1980,6 +1980,15 @@
         var playBtns = Array.prototype.slice.call(player.querySelectorAll('[data-music-play]'));
         if (!audio || !playBtns.length) return;
 
+        // 本地时间格式化:外层 formatDuration 在另一个 IIFE 闭包中,此处取不到
+        function formatDuration(seconds) {
+            seconds = Math.floor(seconds || 0);
+            if (!isFinite(seconds) || seconds < 0) seconds = 0;
+            var minutes = Math.floor(seconds / 60);
+            var remaining = seconds % 60;
+            return minutes + ':' + (remaining < 10 ? '0' : '') + remaining;
+        }
+
         var tracks = Array.prototype.slice.call(document.querySelectorAll('[data-music-track]'));
         var prevBtns = Array.prototype.slice.call(player.querySelectorAll('[data-music-prev]'));
         var nextBtns = Array.prototype.slice.call(player.querySelectorAll('[data-music-next]'));
@@ -2379,6 +2388,7 @@
         function stopRaf() {
             if (rafId) { window.cancelAnimationFrame(rafId); rafId = 0; }
         }
+        player.__lnRenderProgress = renderProgress;
 
         audio.addEventListener('play', function() {
             player.classList.remove('is-error');
@@ -3339,6 +3349,19 @@
         bindImages(root);
     }
     bindDynamic(document);
+
+    // 兜底:全局轮询驱动正在播放的唱机刷新时间/进度/歌词
+    // (不依赖各播放器自身的 timeupdate/rAF,规避其在某些环境下不触发的问题)
+    window.setInterval(function() {
+        var players = document.querySelectorAll('.music-disc-player');
+        for (var i = 0; i < players.length; i += 1) {
+            var p = players[i];
+            var a = p.querySelector('audio');
+            if (a && !a.paused && !a.ended && typeof p.__lnRenderProgress === 'function') {
+                p.__lnRenderProgress();
+            }
+        }
+    }, 250);
 
     function initPjax() {
         if (!window.fetch || !window.DOMParser || !window.history || document.documentElement.dataset.lnPjaxBound === '1') {
