@@ -2201,3 +2201,11 @@ html[data-site-theme="kami"] .side-identity-stat {
 body.login-modal-open {
     overflow: hidden;
 }
+.login-modal-avatar {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--c-bg-soft, rgba(0, 0, 0, .05));
+}
