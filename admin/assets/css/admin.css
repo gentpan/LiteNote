@@ -3595,6 +3595,8 @@ body.admin-body.auth-body {
 }
 
 .music-admin-card {
+    position: relative;
+    cursor: pointer;
     display: grid;
     grid-template-columns: 92px minmax(0, 1fr);
     gap: 14px;
@@ -3662,6 +3664,19 @@ body.admin-body.auth-body {
     gap: 3px;
     min-width: 0;
     text-decoration: none;
+}
+
+/* 整张卡片可点击进入编辑:把标题链接拉伸覆盖整卡;操作按钮置于其上保持可点 */
+.music-admin-title-block::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+}
+
+.music-admin-card-actions {
+    position: relative;
+    z-index: 2;
 }
 
 .music-admin-title-block strong,
