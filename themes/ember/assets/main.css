@@ -920,7 +920,6 @@ button.feed-action:disabled {
     overflow: hidden;
 }
 .post-detail.has-cover .post-body-card { padding: 0; }
-.post-detail.has-cover .post-detail-content { padding: 36px 44px; }
 .post-detail.no-cover .post-detail-content { padding: 0; }
 .post-detail-content { position: relative; }
 .post-header { border-bottom: 1px solid var(--c-border); padding-bottom: 20px; margin-bottom: 28px; }
@@ -1459,7 +1458,6 @@ html.with-fancybox .fancybox__dialog {
 }
 .page-content { font-size: 16px; line-height: 1.9; color: var(--c-text); }
 
-.talk-list { margin: 0 auto; }
 .talk-content { margin: 0 0 10px; line-height: 1.7; white-space: pre-wrap; }
 .talk-meta {
     margin: 0;
@@ -2751,7 +2749,6 @@ html[data-theme="dark"] .nav-pill::after {
 }
 .nav-dd-trigger:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
 .nav-dd-caret { font-size: 11px; opacity: .7; transition: transform .25s ease; }
-.nav-dropdown:hover .nav-dd-trigger { background: rgba(255, 255, 255, 0.10); color: #fff; }
 .nav-dropdown:hover .nav-dd-caret { transform: rotate(180deg); }
 
 .nav-dd-panel {
@@ -2839,7 +2836,6 @@ html[data-theme="dark"] .nav-pill::after {
 .nav-dd-panel-list::before { left: 34px; transform: rotate(45deg); }
 .nav-dd-panel-list::after { content: ""; position: absolute; left: 0; right: 0; top: -14px; height: 14px; }
 
-.nav-cat-list { display: flex; flex-direction: column; gap: 2px; }
 .nav-cat-item {
     display: flex; align-items: center; gap: 10px;
     padding: 9px 10px; border-radius: 12px; corner-shape: superellipse(1.125); text-decoration: none;
@@ -4736,17 +4732,7 @@ html[data-theme="dark"] .site-nav-bar .nav-identity-orb.is-menu-open .nav-identi
     pointer-events: none;
 }
 
-.site-nav-bar .nav-identity-orb.is-menu-open .nav-avatar-img,
-.site-nav-bar .nav-identity-orb.is-menu-open .nav-avatar-fallback {
-    opacity: 0;
-    transform: scale(.88);
-}
 
-.site-nav-bar .nav-identity-orb.is-menu-open .nav-avatar-home {
-    opacity: 1;
-    transform: scale(1);
-    background: rgba(255, 255, 255, 0.12);
-}
 
 .site-nav-bar .nav-pill.nav-open {
     border-radius: 24px;
