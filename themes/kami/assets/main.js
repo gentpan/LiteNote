@@ -226,6 +226,10 @@
         if (!email) return '';
         return 'https://gravatar.bluecdn.com/avatar/' + md5(email) + '?s=' + (size || 80) + '&d=identicon&r=g&v=1.3';
     }
+    // 无邮箱时的灰色默认头像(gravatar mystery-person),不回退到博主头像
+    function grayGravatar(size) {
+        return 'https://gravatar.bluecdn.com/avatar/00000000000000000000000000000000?s=' + (size || 80) + '&d=mp&r=g&v=1.3';
+    }
     function loadIdentity() { try { var raw = localStorage.getItem(IDENTITY_KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; } }
     function saveIdentity(identity) { try { localStorage.setItem(IDENTITY_KEY, JSON.stringify(identity)); } catch (e) {} }
     function clearIdentity() { try { localStorage.removeItem(IDENTITY_KEY); } catch (e) {} }
@@ -251,36 +255,95 @@
         } else if (statEl) { statEl.textContent = '欢迎回来 👋'; }
     }
 
-    function openIdentityDialog() {
+    var identitySaveCb = null;
+    function openIdentityDialog(options) {
+        options = options || {};
+        identitySaveCb = typeof options.onSave === 'function' ? options.onSave : null;
         var identity = loadIdentity() || {};
         var dialog = document.querySelector('.kami-identity-dialog');
         if (!dialog) {
             dialog = document.createElement('div');
             dialog.className = 'kami-identity-dialog login-overlay';
-            dialog.innerHTML = '<div class="login-modal"><button type="button" class="login-modal-close" data-id-close aria-label="关闭"><i class="fa-solid fa-xmark"></i></button><div class="login-modal-head"><span class="login-modal-icon"><i class="fa-regular fa-user"></i></span><div><p class="login-modal-title">评论身份</p><p class="login-modal-subtitle">保存后评论会自动使用这份资料</p></div></div><form class="login-modal-form" data-id-form><label class="login-modal-field"><i class="fa-regular fa-user"></i><input name="nickname" placeholder="昵称 *" required></label><label class="login-modal-field"><i class="fa-regular fa-envelope"></i><input name="email" type="email" placeholder="邮箱 *" required></label><label class="login-modal-field"><i class="fa-solid fa-link"></i><input name="website" placeholder="网站(选填)"></label><button type="submit" class="login-modal-submit">保存</button><button type="button" class="login-modal-passkey" data-id-clear>清除身份</button></form></div>';
+            dialog.innerHTML = '<div class="login-modal"><button type="button" class="login-modal-close" data-id-close aria-label="关闭"><i class="fa-solid fa-xmark"></i></button><div class="login-modal-head"><img class="kami-id-preview login-modal-avatar" alt=""><div><p class="login-modal-title">评论身份</p><p class="login-modal-subtitle">保存后评论会自动使用这份资料</p></div></div><form class="login-modal-form" data-id-form><label class="login-modal-field"><i class="fa-regular fa-user"></i><input name="nickname" placeholder="昵称 *" required></label><label class="login-modal-field"><i class="fa-regular fa-envelope"></i><input name="email" type="email" placeholder="邮箱 *" required></label><label class="login-modal-field"><i class="fa-solid fa-link"></i><input name="website" placeholder="网站(选填)"></label><button type="submit" class="login-modal-submit">保存</button><button type="button" class="login-modal-passkey" data-id-clear>清除身份</button></form></div>';
             document.body.appendChild(dialog);
             dialog.addEventListener('click', function (e) { if (e.target === dialog) closeIdentityDialog(); });
             dialog.querySelector('[data-id-close]').addEventListener('click', closeIdentityDialog);
-            dialog.querySelector('[data-id-clear]').addEventListener('click', function () { clearIdentity(); updateSideIdentity(null); closeIdentityDialog(); });
+            dialog.querySelector('[data-id-clear]').addEventListener('click', function () { clearIdentity(); updateSideIdentity(null); applyIdentityToForms(null); closeIdentityDialog(); });
+            dialog.querySelector('[name=email]').addEventListener('input', function (e) {
+                dialog.querySelector('.kami-id-preview').src = gravatarUrl(e.target.value, 80) || grayGravatar(80);
+            });
             dialog.querySelector('[data-id-form]').addEventListener('submit', function (e) {
                 e.preventDefault();
                 var f = e.currentTarget;
                 var next = { nickname: f.nickname.value.trim(), email: f.email.value.trim(), website: f.website.value.trim() };
                 if (!next.nickname && !next.email) { closeIdentityDialog(); return; }
                 next.avatar_url = gravatarUrl(next.email, 80);
-                saveIdentity(next); updateSideIdentity(next); closeIdentityDialog();
+                saveIdentity(next); updateSideIdentity(next); applyIdentityToForms(next);
+                var cb = identitySaveCb; identitySaveCb = null;
+                closeIdentityDialog();
+                if (cb) cb(next);
             });
         }
         dialog.querySelector('[name=nickname]').value = identity.nickname || '';
         dialog.querySelector('[name=email]').value = identity.email || '';
         dialog.querySelector('[name=website]').value = identity.website || '';
+        dialog.querySelector('.kami-id-preview').src = identity.avatar_url || gravatarUrl(identity.email, 80) || grayGravatar(80);
         dialog.hidden = false; dialog.classList.add('is-open');
         document.body.classList.add('login-modal-open');
     }
     function closeIdentityDialog() {
+        identitySaveCb = null;
         var d = document.querySelector('.kami-identity-dialog');
         if (d) { d.hidden = true; d.classList.remove('is-open'); }
         document.body.classList.remove('login-modal-open');
+    }
+
+    function hasUsableIdentity() {
+        var id = loadIdentity();
+        return !!(id && id.nickname && id.email);
+    }
+    function applyIdentityToForms(identity) {
+        document.querySelectorAll('.comment-form').forEach(function (form) {
+            if (form.dataset.commentAdmin === '1') return;
+            var n = form.querySelector('[name=nickname]'), em = form.querySelector('[name=email]'), w = form.querySelector('[name=website]');
+            if (n) n.value = (identity && identity.nickname) || '';
+            if (em) em.value = (identity && identity.email) || '';
+            if (w) w.value = (identity && identity.website) || '';
+        });
+    }
+    function bindCommentForms() {
+        document.querySelectorAll('.comment-form').forEach(function (form) {
+            if (form.dataset.lnCommentBound) return; form.dataset.lnCommentBound = '1';
+            if (form.dataset.commentAdmin === '1') return;
+            var ta = form.querySelector('[name=content]');
+            if (ta) {
+                ta.addEventListener('focus', function () {
+                    if (hasUsableIdentity()) return;
+                    openIdentityDialog({ onSave: function () { try { ta.focus(); } catch (e) {} } });
+                });
+            }
+            // 原生提交前把内联填写的身份存到本地,下次自动带出
+            form.addEventListener('submit', function () {
+                var n = form.querySelector('[name=nickname]'), em = form.querySelector('[name=email]'), w = form.querySelector('[name=website]');
+                var id = { nickname: n ? n.value.trim() : '', email: em ? em.value.trim() : '', website: w ? w.value.trim() : '' };
+                if (id.nickname || id.email) { id.avatar_url = gravatarUrl(id.email, 80); saveIdentity(id); }
+            });
+        });
+        // 滚动到评论区,访客无身份时自动弹一次身份表单
+        var section = document.querySelector('.comment-form');
+        if (section && !section.dataset.lnPromptBound && section.dataset.commentAdmin !== '1') {
+            section.dataset.lnPromptBound = '1';
+            if (!hasUsableIdentity() && 'IntersectionObserver' in window) {
+                var ob = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (en) {
+                        if (!en.isIntersecting) return;
+                        ob.disconnect();
+                        if (!hasUsableIdentity()) openIdentityDialog();
+                    });
+                }, { rootMargin: '0px 0px -20% 0px', threshold: 0.16 });
+                ob.observe(section);
+            }
+        }
     }
 
     function loginCsrf() { var f = document.querySelector('[data-login-form] input[name=_csrf]') || document.querySelector('input[name=_csrf]'); return f ? f.value : ''; }
@@ -314,6 +377,8 @@
 
     // footer 注入,脚本运行时元素已存在,直接初始化
     updateSideIdentity(loadIdentity());
+    applyIdentityToForms(loadIdentity());
+    bindCommentForms();
     var loginForm = document.querySelector('[data-login-form]');
     if (loginForm) {
         loginForm.addEventListener('submit', function (e) {
