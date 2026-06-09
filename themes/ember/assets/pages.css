@@ -34,25 +34,21 @@ html[data-theme="dark"] .archive-category-card {
     box-shadow: var(--shadow-sm);
 }
 
-@media (max-width: 1040px) {
-.x-masonry {
-        column-count: 2;
-    }}
-
-@media (max-width: 640px) {
-.x-page-head {
+@media (max-width: 760px) {
+    .x-page-head {
         align-items: flex-start;
         flex-direction: column;
         gap: 6px;
     }
 
-.x-masonry {
+    .x-masonry {
         column-count: 1;
     }
 
     .x-masonry-item {
-        margin-bottom: 14px;
-    }}
+        margin-bottom: 16px;
+    }
+}
 
 /* Category page */
 .category-page {
