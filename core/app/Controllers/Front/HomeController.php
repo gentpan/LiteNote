@@ -66,16 +66,25 @@ class HomeController
 
     public function posts(): string
     {
-        $perPage = ReadingSettingsService::postsPerPage();
+        // 第 1 页:3 篇带图(feature) + 10 篇长条(compact) = 13;之后每页 10 篇。
+        $featured = 3;
+        $perPage = 10;
+        $firstPageSize = $featured + $perPage; // 13
         $page = max(1, (int)($_GET['page'] ?? 1));
-        ['items' => $posts, 'total' => $total] = Post::paginatePublished($page, $perPage);
+
+        $offset = $page === 1 ? 0 : $firstPageSize + ($page - 2) * $perPage;
+        $limit = $page === 1 ? $firstPageSize : $perPage;
+        ['items' => $posts, 'total' => $total] = Post::paginatePublishedRange($offset, $limit);
+
+        // 总页数:第 1 页装 13,其余每页 10。
+        $totalPages = $total <= 0 ? 0 : ($total <= $firstPageSize ? 1 : 1 + (int) ceil(($total - $firstPageSize) / $perPage));
 
         return View::render('home.posts', [
             'posts'     => $posts,
             'total'     => $total,
             'page'      => $page,
             'perPage'   => $perPage,
-            'paginator' => Helper::loadMore($page, $total, $perPage, Helper::url('/posts')),
+            'paginator' => Helper::loadMore($page, $totalPages, 1, Helper::url('/posts')),
             'pageTitle' => '文章',
             'activeNav' => 'posts',
         ]);

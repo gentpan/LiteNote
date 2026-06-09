@@ -3833,15 +3833,15 @@
         var loading = lm.querySelector('.load-more-loading');
         var endEl = lm.querySelector('.load-more-end');
         var container = (lm.parentNode && lm.parentNode.querySelector('.js-list-items')) || document.querySelector('.js-list-items');
-        var busy = false, autoUsed = false;
+        var busy = false;
 
         function showEnd() {
             if (btn) btn.hidden = true;
             if (loading) loading.hidden = true;
             if (endEl) endEl.hidden = false;
-            window.removeEventListener('scroll', onScroll);
         }
         if (page >= pages || !container) { showEnd(); return; }
+        if (btn) btn.hidden = false; // 手动点击加载,与首页加载更多一致
 
         function load() {
             if (busy || page >= pages) return;
@@ -3866,7 +3866,7 @@
                     if (loading) loading.hidden = true;
                     busy = false;
                     if (page >= pages) showEnd();
-                    else if (autoUsed && btn) btn.hidden = false;
+                    else if (btn) btn.hidden = false;
                 })
                 .catch(function() {
                     busy = false;
@@ -3875,18 +3875,6 @@
                 });
         }
 
-        // 首次:滚动到接近时自动加载(初始也检测一次,短页面直接自动)
-        function onScroll() {
-            if (autoUsed || busy) return;
-            var r = lm.getBoundingClientRect();
-            if (r.top < window.innerHeight + 300) {
-                autoUsed = true;
-                window.removeEventListener('scroll', onScroll);
-                load();
-            }
-        }
-        window.addEventListener('scroll', onScroll, { passive: true });
-        onScroll();
         if (btn) btn.addEventListener('click', function() { load(); });
     });
 

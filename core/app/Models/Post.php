@@ -44,8 +44,15 @@ final class Post extends Model
      */
     public static function paginatePublished(int $page, int $perPage, ?int $categoryId = null): array
     {
+        return self::paginatePublishedRange(max(0, ($page - 1) * $perPage), max(1, $perPage), $categoryId);
+    }
+
+    /** 按显式 offset/limit 取已发布文章(支持首页非均匀分页:第1页13、之后10)。 */
+    public static function paginatePublishedRange(int $offset, int $limit, ?int $categoryId = null): array
+    {
         self::ensurePublishingOptionsSchema();
-        $offset = max(0, ($page - 1) * $perPage);
+        $offset = max(0, $offset);
+        $limit = max(1, $limit);
 
         $where = ["p.status = '" . PostStatus::Published->value . "'", 'COALESCE(p.is_private, 0) = 0'];
         $params = [];
@@ -74,7 +81,7 @@ final class Post extends Model
                 WHERE {$whereSql}
                 GROUP BY p.id
                 ORDER BY p.is_top DESC, p.published_at DESC
-                LIMIT {$perPage} OFFSET {$offset}";
+                LIMIT {$limit} OFFSET {$offset}";
         $rows = self::db()->fetchAll($sql, $params);
 
         $items = [];
