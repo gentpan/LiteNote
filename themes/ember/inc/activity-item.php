@@ -17,6 +17,21 @@
         $full = max(0, min(5, (int)round($rating)));
         $ratingText = str_repeat('★', $full) . str_repeat('☆', 5 - $full);
     }
+    // X 书签:精简为「收藏了 谁 的帖子」+ 去链接开头摘要,跳 /xmarks(不外链 x.com、不显示图片链接)
+    $isXmark = $source === 'x_bookmarks';
+    $xmarkTitle = $xmarkExcerpt = $xmarkUrl = '';
+    if ($isXmark) {
+        $tw = is_array($meta['tweet'] ?? null) ? $meta['tweet'] : [];
+        $handle = ltrim(trim((string)($tw['author_handle'] ?? '')), '@');
+        $authorName = trim((string)($tw['author_name'] ?? ''));
+        $who = $authorName !== '' ? $authorName : ($handle !== '' ? '@' . $handle : 'X 用户');
+        $xmarkTitle = '收藏了 ' . $who . ' 的帖子';
+        $raw = trim((string)($tw['text'] ?? $activity->content ?? ''));
+        $raw = preg_replace('~https?://\S+~u', '', $raw) ?? $raw;
+        $raw = trim(preg_replace('~\s+~u', ' ', $raw) ?? $raw);
+        $xmarkExcerpt = mb_strimwidth($raw, 0, 46, '…', 'UTF-8');
+        $xmarkUrl = '/xmarks#xmark-activity-' . (int)$activity->id;
+    }
 @endphp
 <article class="activity-item activity-type-{{ $type }}" id="activity-{{ $activity->id }}">
     <time class="activity-item-time" datetime="{{ $activity->happened_at }}">
@@ -33,14 +48,18 @@
             @if($source !== '')<span>{{ $source }}</span>@endif
         </div>
         <div class="activity-item-title">
-            @if($activity->url)
+            @if($isXmark)
+                <a href="{{ $xmarkUrl }}">{{ $xmarkTitle }}</a>
+            @elseif($activity->url)
                 <a href="{{ $activity->url }}" target="{{ str_starts_with((string)$activity->url, '/') ? '_self' : '_blank' }}" rel="nofollow noopener">{{ $activity->title }}</a>
             @else
                 <span>{{ $activity->title }}</span>
             @endif
             @if($ratingText !== '')<em class="activity-rating">{{ $ratingText }}</em>@endif
         </div>
-        @if(trim((string)$activity->content) !== '')
+        @if($isXmark)
+            @if($xmarkExcerpt !== '')<div class="activity-item-content activity-item-excerpt">{{ $xmarkExcerpt }}</div>@endif
+        @elseif(trim((string)$activity->content) !== '')
             <div class="activity-item-content">{{ $activity->content }}</div>
         @endif
     </div>
