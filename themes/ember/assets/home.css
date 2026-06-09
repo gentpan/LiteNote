@@ -3166,6 +3166,11 @@ html[data-theme] .home-list .home-x-card.x-card:hover {
     margin-top: 12px !important;
 }
 
+/* 说说页脚按钮与 X 一致(padding-block 5px -> 高 28px,页脚整体高度对齐 X 的 37px) */
+.home-list .home-talk-card:not(.music-talk-card) .home-card-footer .home-card-actions > .home-action {
+    padding-block: 5px !important;
+}
+
 .home-list
     .home-talk-card:not(.music-talk-card)
     .home-card-footer
