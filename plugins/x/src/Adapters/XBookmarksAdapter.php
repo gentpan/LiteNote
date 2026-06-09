@@ -7,12 +7,20 @@ use App\Core\Config;
 use App\Core\Http;
 use App\Models\ActivityIntegration;
 use App\Services\ActivityAdapters\BaseAdapter;
+use LiteNotePlugin\X\Services\TweetFetchService;
 
 final class XBookmarksAdapter extends BaseAdapter
 {
+    private ?TweetFetchService $imageFetcher = null;
+
     public function provider(): string
     {
         return 'x_bookmarks';
+    }
+
+    private function imageFetcher(): TweetFetchService
+    {
+        return $this->imageFetcher ??= new TweetFetchService();
     }
 
     public function sync(ActivityIntegration $integration): array
@@ -214,20 +222,44 @@ final class XBookmarksAdapter extends BaseAdapter
         }
 
         $handle = ltrim((string)($user['username'] ?? ''), '@');
+
+        // 本地化:把头像与图片下载到本地(中国无法访问 pbs.twimg.com / x 媒体地址)
+        $fetcher = $this->imageFetcher();
+        $localImages = [];
+        foreach (array_values(array_unique(array_filter($images))) as $i => $img) {
+            $local = $fetcher->localizeImage($img, $id, $i);
+            if ($local !== '') {
+                $localImages[] = $local;
+            } elseif (!$fetcher->isRemoteImageBlocked($img)) {
+                $localImages[] = $img;
+            }
+        }
+        $rawAvatar = (string)($user['profile_image_url'] ?? '');
+        $avatar = '';
+        if ($rawAvatar !== '') {
+            $avatar = $fetcher->localizeImage($fetcher->upscaleAvatarUrl($rawAvatar), $id, 900);
+            if ($avatar === '') {
+                $avatar = $fetcher->localizeImage($rawAvatar, $id, 900);
+            }
+            if ($avatar === '' && !$fetcher->isRemoteImageBlocked($rawAvatar)) {
+                $avatar = $rawAvatar;
+            }
+        }
+
         return [
             'id' => $id,
             'url' => $handle !== '' && $id !== '' ? 'https://x.com/' . rawurlencode($handle) . '/status/' . rawurlencode($id) : '',
             'text' => $text,
             'author_name' => (string)($user['name'] ?? ''),
             'author_handle' => $handle,
-            'author_avatar' => (string)($user['profile_image_url'] ?? ''),
+            'author_avatar' => $avatar,
             'author_verified' => !empty($user['verified']),
             'posted_at' => $postedAt,
             'likes_count' => (int)($metrics['like_count'] ?? 0),
             'reposts_count' => (int)($metrics['retweet_count'] ?? 0),
             'replies_count' => (int)($metrics['reply_count'] ?? 0),
             'views_count' => (int)($metrics['impression_count'] ?? 0),
-            'images' => array_values(array_unique(array_filter($images))),
+            'images' => array_values(array_unique(array_filter($localImages))),
             'source' => 'x-bookmarks-api',
         ];
     }
