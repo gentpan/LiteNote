@@ -45,7 +45,7 @@ final class Page extends Model
             'friends' => [
                 'title' => '友链',
                 'url' => '/links',
-                'icon' => 'fa-solid fa-link',
+                'icon' => 'fa-solid fa-user-group',
                 'sort' => 50,
             ],
             'feeds' => [

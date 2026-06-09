@@ -47,7 +47,7 @@
                 ['title' => '滔客', 'slug' => 'talk', 'url' => '/talk', 'icon' => 'fa-regular fa-comments'],
                 ['title' => '音乐', 'slug' => 'music', 'url' => '/music', 'icon' => 'fa-solid fa-music'],
                 ['title' => '归档', 'slug' => 'archives', 'url' => '/archives', 'icon' => 'fa-solid fa-box-archive'],
-                ['title' => '友链', 'slug' => 'friends', 'url' => '/links', 'icon' => 'fa-solid fa-link'],
+                ['title' => '友链', 'slug' => 'friends', 'url' => '/links', 'icon' => 'fa-solid fa-user-group'],
                 ['title' => '订阅', 'slug' => 'feeds', 'url' => '/subscribe', 'icon' => 'fa-solid fa-square-rss'],
             ];
         }
@@ -108,6 +108,7 @@
                     @foreach($navMainItems as $navItem)
                         @php $navItemActive = ($activeNav ?? '') === ($navItem['slug'] ?? ''); @endphp
                         <a href="{{ $navItem['url'] ?? '#' }}" class="nav-link {{ $navItemActive ? 'active' : '' }}">
+                            @if(!empty($navItem['icon']))<i class="{{ $navItem['icon'] }} nav-link-icon" aria-hidden="true"></i>@endif
                             <span>{{ $navItem['title'] ?? '' }}</span>
                         </a>
                     @endforeach
