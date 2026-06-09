@@ -3125,7 +3125,7 @@ html[data-theme] .home-list .home-x-card.x-card:hover {
     min-height: 0 !important;
     max-height: none !important;
     padding-top: 22px !important;
-    padding-bottom: 18px !important;
+    padding-bottom: 0 !important;
     overflow: visible !important;
 }
 
@@ -3160,9 +3160,9 @@ html[data-theme] .home-list .home-x-card.x-card:hover {
     align-items: center !important;
     justify-content: space-between !important;
     height: auto !important;
-    min-height: 40px !important;
-    padding-top: 10px !important;
-    padding-bottom: 8px !important;
+    min-height: 30px !important;
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
     margin-top: 12px !important;
 }
 
