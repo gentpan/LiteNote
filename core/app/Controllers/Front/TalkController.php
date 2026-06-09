@@ -30,6 +30,8 @@ class TalkController
         );
         $this->attachTalkComments($list);
 
+        $hero = $this->talkHero();
+
         return View::render('front.talk.index', [
             'list' => $list,
             'total' => $total,
@@ -38,7 +40,54 @@ class TalkController
             'paginator' => Helper::loadMore($page, $total, $perPage, Helper::url('/talk')),
             'pageTitle' => '滔客',
             'activeNav' => 'talk',
+            'heroWeeks' => $hero['weeks'],
+            'heroMoods' => $hero['moods'],
+            'heroTotal' => $hero['total'],
+            'heroActiveDays' => $hero['activeDays'],
         ]);
+    }
+
+    /** 滔客页 hero 数据:活跃热力图(按日计数) + 关键词组(mood) + 统计。 */
+    private function talkHero(): array
+    {
+        $where = "COALESCE(music_id, 0) = 0 AND (COALESCE(post_type, '') = '' OR post_type = 'talk') AND is_public = 1";
+
+        $moodRows = Talk::db()->fetchAll(
+            "SELECT mood, COUNT(*) c FROM talk WHERE mood != '' AND {$where} GROUP BY mood ORDER BY c DESC, mood ASC LIMIT 16"
+        );
+        $moods = array_map(
+            static fn(array $r): array => ['name' => (string)$r['mood'], 'count' => (int)$r['c']],
+            $moodRows
+        );
+
+        $counts = [];
+        foreach (Talk::db()->fetchAll("SELECT date(published_at) d, COUNT(*) c FROM talk WHERE published_at != '' AND {$where} GROUP BY d") as $r) {
+            if (!empty($r['d'])) {
+                $counts[(string)$r['d']] = (int)$r['c'];
+            }
+        }
+
+        $today = new \DateTimeImmutable('today');
+        $cursor = $today->modify('-' . ((53 * 7) - 1) . ' days');
+        $cursor = $cursor->modify('-' . (int)$cursor->format('w') . ' days'); // 对齐到周日起始
+        $days = [];
+        while ($cursor <= $today) {
+            $ds = $cursor->format('Y-m-d');
+            $c = $counts[$ds] ?? 0;
+            $days[] = [
+                'date'  => $ds,
+                'count' => $c,
+                'level' => $c <= 0 ? 0 : ($c === 1 ? 1 : ($c <= 3 ? 2 : ($c <= 6 ? 3 : 4))),
+            ];
+            $cursor = $cursor->modify('+1 day');
+        }
+
+        return [
+            'weeks' => array_chunk($days, 7),
+            'moods' => $moods,
+            'total' => (int)Talk::db()->fetchColumn("SELECT COUNT(*) FROM talk WHERE {$where}"),
+            'activeDays' => count($counts),
+        ];
     }
 
     public function like(Request $request, array $params): never
