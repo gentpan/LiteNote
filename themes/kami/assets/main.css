@@ -1952,3 +1952,252 @@ html[data-site-theme="kami"] .activity-item-content {
         grid-row: 2;
     }
 }
+
+/* ============================================================
+   kami: 侧边访客身份 / 进入后台·登录 / 登录弹窗（新增组件,干净写法,无 !important）
+   ============================================================ */
+html[data-site-theme="kami"] .kami-side-actions {
+    position: fixed;
+    top: 50%;
+    right: 0;
+    z-index: 30;
+    display: grid;
+    gap: 8px;
+    justify-items: end;
+    transform: translateY(-50%);
+}
+html[data-site-theme="kami"] .kami-side-actions .side-theme-toggle {
+    position: static;
+    transform: none;
+    top: auto;
+}
+html[data-site-theme="kami"] .side-admin-entry,
+html[data-site-theme="kami"] .side-identity-trigger {
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid var(--c-border);
+    border-right: 0;
+    border-radius: 20px 0 0 20px;
+    background: var(--c-card);
+    color: var(--c-text-muted);
+    box-shadow: 0 0 0 1px var(--c-border);
+    cursor: pointer;
+    overflow: hidden;
+    transition: color .15s ease, border-color .15s ease;
+}
+html[data-site-theme="kami"] .side-admin-entry:hover,
+html[data-site-theme="kami"] .side-admin-entry:focus-visible,
+html[data-site-theme="kami"] .side-identity-trigger:hover,
+html[data-site-theme="kami"] .side-identity-trigger:focus-visible {
+    color: var(--c-primary);
+    border-color: var(--c-primary);
+    outline: none;
+}
+html[data-site-theme="kami"] .side-identity {
+    position: relative;
+    display: inline-flex;
+    justify-content: flex-end;
+}
+html[data-site-theme="kami"] .side-identity-avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+html[data-site-theme="kami"] .side-identity-fallback {
+    display: inline-flex;
+}
+html[data-site-theme="kami"] .side-identity.has-identity .side-identity-fallback {
+    display: none;
+}
+html[data-site-theme="kami"] .side-identity-card {
+    position: absolute;
+    right: 48px;
+    top: 50%;
+    transform: translateY(-50%) translateX(6px);
+    min-width: 168px;
+    max-width: 240px;
+    padding: 10px 14px;
+    display: grid;
+    gap: 3px;
+    border: 1px solid var(--c-border);
+    border-radius: 12px;
+    background: var(--c-card);
+    color: var(--c-text);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, .16);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease, transform .18s ease;
+}
+html[data-site-theme="kami"] .side-identity:hover .side-identity-card,
+html[data-site-theme="kami"] .side-identity:focus-within .side-identity-card {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+}
+html[data-site-theme="kami"] .side-identity-name {
+    font-weight: 650;
+    font-size: 14px;
+}
+html[data-site-theme="kami"] .side-identity-name:empty {
+    display: none;
+}
+html[data-site-theme="kami"] .side-identity-stat {
+    font-size: 12.5px;
+    color: var(--c-text-muted);
+    line-height: 1.5;
+}
+
+.login-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(8, 8, 10, .5);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+}
+.login-overlay[hidden] {
+    display: none;
+}
+.login-modal {
+    position: relative;
+    width: 100%;
+    max-width: 360px;
+    padding: 26px 24px 24px;
+    border: 1px solid var(--c-border, rgba(0, 0, 0, .08));
+    border-radius: 20px;
+    background: var(--c-card, #fff);
+    color: var(--c-text, #1c1c1e);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, .3);
+}
+.login-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--c-text-muted, #8a8a8e);
+    cursor: pointer;
+}
+.login-modal-close:hover {
+    color: var(--c-text, #1c1c1e);
+}
+.login-modal-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+.login-modal-icon {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    background: var(--c-primary-soft, rgba(60, 90, 150, .14));
+    color: var(--c-primary, #3c5a96);
+    font-size: 18px;
+}
+.login-modal-title {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+}
+.login-modal-subtitle {
+    margin: 2px 0 0;
+    font-size: 12.5px;
+    color: var(--c-text-muted, #8a8a8e);
+}
+.login-modal-form {
+    display: grid;
+    gap: 12px;
+}
+.login-modal-field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+    height: 46px;
+    border: 1px solid var(--c-border, rgba(0, 0, 0, .12));
+    border-radius: 12px;
+    background: var(--c-bg-soft, rgba(0, 0, 0, .03));
+}
+.login-modal-field:focus-within {
+    border-color: var(--c-primary, #3c5a96);
+}
+.login-modal-field i {
+    color: var(--c-text-muted, #8a8a8e);
+    font-size: 14px;
+}
+.login-modal-field input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: inherit;
+    font-size: 14px;
+}
+.login-modal-error {
+    margin: 0;
+    font-size: 12.5px;
+    color: #e5484d;
+}
+.login-modal-error[hidden] {
+    display: none;
+}
+.login-modal-submit,
+.login-modal-passkey {
+    height: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color .18s ease, color .18s ease, opacity .18s ease;
+}
+.login-modal-submit {
+    border: 0;
+    background: var(--c-primary, #3c5a96);
+    color: #fff;
+}
+.login-modal-submit:disabled {
+    opacity: .6;
+    cursor: progress;
+}
+.login-modal-passkey {
+    border: 1px solid var(--c-border, rgba(0, 0, 0, .14));
+    background: transparent;
+    color: var(--c-text, #1c1c1e);
+}
+.login-modal-passkey:hover {
+    border-color: var(--c-primary, #3c5a96);
+    color: var(--c-primary, #3c5a96);
+}
+.login-modal-forgot {
+    justify-self: center;
+    margin-top: 2px;
+    font-size: 12.5px;
+    color: var(--c-text-muted, #8a8a8e);
+    text-decoration: none;
+}
+.login-modal-forgot:hover {
+    color: var(--c-primary, #3c5a96);
+}
+body.login-modal-open {
+    overflow: hidden;
+}

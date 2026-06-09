@@ -64,6 +64,9 @@ $router->post('/links/modify',    [FriendController::class, 'modify']);
 // 评论提交
 $router->post('/comment/submit',  [CommentController::class, 'submit']);
 
+// 访客身份统计（按邮箱查评论数,供侧边身份卡）
+$router->get('/api/visitor/stats', [CommentController::class, 'stats']);
+
 // 评论验证码图片
 $router->get('/captcha',          [CaptchaController::class, 'image']);
 

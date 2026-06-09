@@ -26,9 +26,13 @@ class AuthController
     {
         $username = trim((string) $request->input('username', ''));
         $password = (string) $request->input('password', '');
+        $isAjax = $request->isAjax();
 
         $user = User::byUsername($username);
         if (!$user || !$user->verifyPassword($password)) {
+            if ($isAjax) {
+                Response::json(['ok' => false, 'message' => '用户名或密码错误'], 401);
+            }
             Session::flash('login_error', '用户名或密码错误');
             Response::redirect('/admin/login');
         }
@@ -45,6 +49,10 @@ class AuthController
             'role'     => $user->role,
         ]);
         Session::regenerate();
+
+        if ($isAjax) {
+            Response::json(['ok' => true, 'redirect' => '/admin']);
+        }
         Response::redirect('/admin');
     }
 
