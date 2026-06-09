@@ -2168,11 +2168,13 @@
                 var spans = Array.prototype.slice.call(lyricsEl.querySelectorAll('span'));
                 spans.forEach(function(span, index) {
                     span.classList.toggle('is-active', index === next);
-                    span.hidden = currentLyrics.length > 4 && Math.abs(index - next) > 2;
                 });
                 var active = spans[next];
-                if (active && typeof active.scrollIntoView === 'function') {
-                    active.scrollIntoView({ block: 'center', behavior: force ? 'auto' : 'smooth' });
+                if (active) {
+                    // 在固定高度的歌词窗口内滚动,让当前行居中(不滚动整页/不撑大卡片)
+                    // 用 scrollTop 直接赋值(overflow:hidden 不支持 scrollTo 的 smooth 行为),
+                    // 平滑由 CSS scroll-behavior:smooth 提供
+                    lyricsEl.scrollTop = Math.max(0, active.offsetTop - (lyricsEl.clientHeight / 2) + (active.offsetHeight / 2));
                 }
             });
         }
