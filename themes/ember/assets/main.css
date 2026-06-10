@@ -3903,12 +3903,16 @@ html[data-theme="dark"] .nav-pill::after {
     color: var(--c-primary);
 }
 
+/* "加载更多"距上方最后一个卡片与距下方页脚分割线均为 20px(桌面与移动同构):
+   上 = margin-top 9 + padding-top 8 + 按钮居中余量 3((46-40)/2);
+   下 = 余量 3 + padding-bottom 8 + 页脚 margin-top 28 - 19。 */
 .home-feed-more {
     display: flex;
     align-items: center;
     justify-content: center;
     min-height: 46px;
     padding: 8px 0 8px;
+    margin: 9px 0 -19px;
 }
 .home-feed-more-btn {
     display: inline-flex;
@@ -3951,7 +3955,6 @@ html[data-theme="dark"] .nav-pill::after {
 .home-feed-more-end[hidden] {
     display: none !important;
 }
-
 .container {
     box-sizing: border-box;
     display: flex;
@@ -4159,6 +4162,8 @@ html[data-theme="dark"] .nav-pill::after {
     box-sizing: border-box;
     width: min(390px, 100%);
     padding: 20px;
+    /* 弹出时 JS 会 focus 面板(tabindex=-1),去掉浏览器默认 focus 蓝圈 */
+    outline: none;
     color: var(--c-text);
     background: var(--c-card);
     border: 1px solid var(--c-border);
@@ -4250,6 +4255,36 @@ html[data-theme="dark"] .nav-pill::after {
     outline: none;
     border-color: var(--c-primary);
     box-shadow: 0 0 0 3px var(--c-primary-soft);
+}
+
+/* 身份表单里的验证码:验证码图嵌在输入框内右侧 */
+/* .nav-identity-field 的 display:block 会压过浏览器 [hidden] 默认样式,这里显式兜底 */
+.nav-identity-captcha[hidden],
+.nav-identity-captcha-tip[hidden] {
+    display: none !important;
+}
+.nav-identity-captcha input {
+    padding-right: 104px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+.nav-identity-captcha-img {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    z-index: 2;
+    width: 88px;
+    height: 30px;
+    cursor: pointer;
+    transform: translateY(-50%);
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+}
+.nav-identity-captcha-tip {
+    margin: 6px 2px 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--c-text-muted);
 }
 
 .nav-identity-buttons {
@@ -5373,124 +5408,101 @@ html {
     margin-left: 0;
 }
 
+/* ===== 侧边工具组 Dock:统一胶囊容器(身份/进入后台 + 搜索 | 主题切换) =====
+   容器承担玻璃底/边框/阴影,内部按钮为透明圆钮,hover 高亮 */
 .side-quick-actions {
     position: fixed;
     top: 50%;
-    right: 0;
+    right: 14px;
     z-index: 1200;
     display: grid;
-    gap: 10px;
-    justify-items: end;
-    transform: translateY(-50%);
-}
-
-.side-search-toggle {
-    display: inline-grid;
-    place-items: center;
-    width: 40px;
-    height: 40px;
-    color: rgba(255, 255, 255, 0.88);
-    cursor: pointer;
+    gap: 4px;
+    justify-items: center;
+    padding: 7px 6px;
     background: rgba(18, 18, 20, 0.82);
     border: 1px solid rgba(217, 119, 87, 0.34);
     border-radius: 999px;
     box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
     -webkit-backdrop-filter: blur(18px) saturate(145%);
     backdrop-filter: blur(18px) saturate(145%);
+    transform: translateY(-50%);
+}
+
+.side-search-toggle {
+    display: inline-grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.88);
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
     transition:
-        border-color 0.18s ease,
         background-color 0.18s ease,
-        color 0.18s ease,
-        transform 0.18s ease,
-        box-shadow 0.18s ease;
+        color 0.18s ease;
 }
 
 .side-search-toggle:hover,
 .side-search-toggle:focus-visible {
     color: #fff;
     outline: none;
-    background: rgba(18, 18, 20, 0.92);
-    border-color: rgba(217, 119, 87, 0.64);
-    box-shadow:
-        0 24px 56px rgba(0, 0, 0, 0.3),
-        0 0 0 1px rgba(217, 119, 87, 0.1) inset;
-    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.12);
 }
 
+/* 主题切换:与组内其他按钮同款圆钮,上方一条分割线 */
 .side-theme-toggle {
-    display: inline-flex;
-    gap: 10px;
-    align-items: center;
-    justify-content: flex-start;
-    width: 110px;
-    height: 40px;
-    padding: 0 13px;
-    margin-right: -68px;
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    margin-top: 6px;
     color: rgba(255, 255, 255, 0.88);
     cursor: pointer;
-    background: rgba(18, 18, 20, 0.82);
-    border: 1px solid rgba(217, 119, 87, 0.34);
-    border-right: 0;
-    border-radius: 20px 0 0 20px;
-    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
-    -webkit-backdrop-filter: blur(18px) saturate(145%);
-    backdrop-filter: blur(18px) saturate(145%);
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
     transition:
-        margin-right 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-        width 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-        border-color 0.18s ease,
         background-color 0.18s ease,
-        color 0.18s ease,
-        box-shadow 0.18s ease;
+        color 0.18s ease;
+}
+
+.side-theme-toggle::before {
+    position: absolute;
+    top: -5px;
+    right: 5px;
+    left: 5px;
+    height: 1px;
+    content: "";
+    background: rgba(255, 255, 255, 0.16);
 }
 
 .side-theme-toggle:hover,
 .side-theme-toggle:focus-visible {
-    width: 126px;
-    margin-right: 0;
     color: #fff;
     outline: none;
-    background: rgba(18, 18, 20, 0.92);
-    border-color: rgba(217, 119, 87, 0.64);
-    box-shadow:
-        0 24px 56px rgba(0, 0, 0, 0.3),
-        0 0 0 1px rgba(217, 119, 87, 0.1) inset;
+    background: rgba(255, 255, 255, 0.12);
 }
 
 .side-theme-toggle:active {
-    transform: scale(0.98);
+    transform: scale(0.96);
 }
 
 .side-theme-icon {
     display: inline-grid;
-    flex: 0 0 20px;
     place-items: center;
     width: 20px;
     height: 20px;
-    font-size: 17px;
+    font-size: 16px;
     line-height: 1;
 }
 
+/* dock 模式下不展示文字 label,语义留给 title/aria-label */
 .side-theme-label {
-    min-width: 58px;
-    overflow: hidden;
-    font-size: 13px;
-    font-weight: 750;
-    line-height: 1;
-    color: inherit;
-    letter-spacing: 0;
-    white-space: nowrap;
-    opacity: 0;
-    transform: translateX(8px);
-    transition:
-        opacity 0.18s ease,
-        transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.side-theme-toggle:hover .side-theme-label,
-.side-theme-toggle:focus-visible .side-theme-label {
-    opacity: 1;
-    transform: translateX(0);
+    display: none;
 }
 
 .side-theme-toggle .theme-icon-sun {
@@ -5507,38 +5519,28 @@ html[data-theme="dark"] .side-theme-toggle .theme-icon-sun {
 
 @media (max-width: 768px) {
     .side-quick-actions {
-        gap: 8px;
+        right: 10px;
+        gap: 3px;
+        padding: 6px 5px;
     }
 
-    .side-search-toggle {
-        width: 36px;
-        height: 36px;
+    .side-search-toggle,
+    .side-theme-toggle,
+    .side-admin-entry,
+    .side-identity-trigger {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
     }
 
     .side-theme-toggle {
-        gap: 9px;
-        width: 100px;
-        height: 36px;
-        padding: 0 12px;
-        margin-right: -62px;
-        border-radius: 18px 0 0 18px;
-    }
-
-    .side-theme-toggle:hover,
-    .side-theme-toggle:focus-visible {
-        width: 116px;
-        margin-right: 0;
+        margin-top: 5px;
     }
 
     .side-theme-icon {
-        flex-basis: 18px;
         width: 18px;
         height: 18px;
         font-size: 15px;
-    }
-
-    .side-theme-label {
-        font-size: 12px;
     }
 }
 
@@ -6244,8 +6246,8 @@ html[data-theme="dark"]
 
     .site-nav-bar .nav-avatar .nav-avatar-img,
     .site-nav-bar .nav-avatar .nav-avatar-fallback {
-        width: 26px !important;
-        height: 26px !important;
+        width: 30px !important;
+        height: 30px !important;
     }
 
     .site-nav-bar .nav-avatar-home,
@@ -7907,12 +7909,14 @@ html[data-theme="light"] .post-detail .post-hero-card,
 html[data-theme="light"] .post-detail .post-hero-card .post-cover {
     background: transparent;
     border: 0;
-    border-radius: 0;
+    /* 顶部两角与卡片圆角(8px)一致,底部直角与正文衔接 */
+    border-radius: 8px 8px 0 0;
     box-shadow: none;
 }
 
 .post-detail .post-hero-card {
     margin: 0;
+    overflow: hidden;
 }
 
 @media (max-width: 640px) {
@@ -8863,33 +8867,27 @@ html[data-theme="dark"]
    侧边访客身份 / 进入后台 / 登录弹窗（新增组件,干净写法,无 !important）
    ============================================================ */
 
+/* dock 内统一圆钮:进入后台 */
 .side-admin-entry {
     display: inline-grid;
     place-items: center;
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
+    font-size: 15px;
     color: rgba(255, 255, 255, 0.88);
     text-decoration: none;
-    background: rgba(18, 18, 20, 0.82);
-    border: 1px solid rgba(217, 119, 87, 0.34);
+    background: transparent;
+    border: 0;
     border-radius: 999px;
-    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
-    -webkit-backdrop-filter: blur(18px) saturate(145%);
-    backdrop-filter: blur(18px) saturate(145%);
     transition:
-        border-color 0.18s ease,
         background-color 0.18s ease,
-        color 0.18s ease,
-        transform 0.18s ease,
-        box-shadow 0.18s ease;
+        color 0.18s ease;
 }
 .side-admin-entry:hover,
 .side-admin-entry:focus-visible {
     color: #fff;
     outline: none;
-    background: rgba(18, 18, 20, 0.92);
-    border-color: rgba(217, 119, 87, 0.64);
-    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.12);
 }
 
 .side-identity {
@@ -8897,32 +8895,32 @@ html[data-theme="dark"]
     display: inline-flex;
     justify-content: flex-end;
 }
+/* dock 内统一圆钮:评论身份(无头像时图标,有头像时填充) */
 .side-identity-trigger {
     position: relative;
     display: inline-grid;
     place-items: center;
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     padding: 0;
     overflow: hidden;
     color: rgba(255, 255, 255, 0.88);
     cursor: pointer;
-    background: rgba(18, 18, 20, 0.82);
-    border: 1px solid rgba(217, 119, 87, 0.34);
+    background: transparent;
+    border: 0;
     border-radius: 999px;
-    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
-    -webkit-backdrop-filter: blur(18px) saturate(145%);
-    backdrop-filter: blur(18px) saturate(145%);
     transition:
-        border-color 0.18s ease,
-        transform 0.18s ease,
+        background-color 0.18s ease,
         box-shadow 0.18s ease;
 }
 .side-identity-trigger:hover,
 .side-identity-trigger:focus-visible {
     outline: none;
-    border-color: rgba(217, 119, 87, 0.64);
-    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.12);
+}
+.side-identity.has-identity .side-identity-trigger:hover,
+.side-identity.has-identity .side-identity-trigger:focus-visible {
+    box-shadow: 0 0 0 2px rgba(217, 119, 87, 0.55);
 }
 .side-identity-avatar {
     width: 100%;
@@ -8942,7 +8940,7 @@ html[data-theme="dark"]
 .side-identity-card {
     position: absolute;
     top: 50%;
-    right: 50px;
+    right: 48px;
     display: grid;
     gap: 3px;
     min-width: 168px;
@@ -9153,4 +9151,128 @@ html[data-theme="dark"]
 }
 body.login-modal-open {
     overflow: hidden;
+}
+
+/* ============ 移动端:验证码改 dialog,身份头像走侧边栏 ============ */
+/* 移动端评论框内只保留「输入框 + 提交按钮」:验证码与头像在此隐藏,
+   验证码改由提交时弹出的 .captcha-dialog 输入,身份/头像统一走右侧侧边栏 side-identity */
+/* 评论框头像统一走右侧侧边栏 side-identity:评论框内不显示头像(桌面 + 移动) */
+.comment-form .comment-profile-toggle {
+    display: none !important;
+}
+
+@media (max-width: 768px) {
+    .comment-form .captcha-row {
+        display: none !important;
+    }
+    .comment-form .comment-actions {
+        justify-content: flex-end !important;
+    }
+}
+
+/* 可信邮箱(已有审核通过的评论):桌面端也隐藏验证码框,直接提交即可 */
+.comment-form.is-captcha-trusted .captcha-row {
+    display: none !important;
+}
+
+.captcha-dialog {
+    position: fixed;
+    inset: 0;
+    z-index: 1600;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    pointer-events: none;
+    background: rgba(26, 26, 26, 0.32);
+    opacity: 0;
+    transition: opacity 0.16s ease;
+}
+.captcha-dialog.is-open {
+    pointer-events: auto;
+    opacity: 1;
+}
+.captcha-dialog-panel {
+    box-sizing: border-box;
+    width: min(320px, 100%);
+    padding: 20px;
+    color: var(--c-text);
+    background: var(--c-card);
+    border: 1px solid var(--c-border);
+    border-radius: 14px;
+    box-shadow: 0 18px 42px rgba(26, 26, 26, 0.22);
+    transform: translateY(8px) scale(0.98);
+    transition: transform 0.18s ease;
+}
+.captcha-dialog.is-open .captcha-dialog-panel {
+    transform: translateY(0) scale(1);
+}
+.captcha-dialog-title {
+    margin: 0 0 14px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--c-text);
+}
+.captcha-dialog-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+.captcha-dialog-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 42px;
+    padding: 0 12px;
+    font-size: 16px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--c-text);
+    background: var(--c-card-soft);
+    border: 1px solid var(--c-border);
+    border-radius: 8px;
+}
+.captcha-dialog-input:focus {
+    outline: none;
+    border-color: var(--c-primary);
+    box-shadow: 0 0 0 3px var(--c-primary-soft);
+}
+.captcha-dialog-img {
+    flex: 0 0 auto;
+    width: 104px;
+    height: 42px;
+    cursor: pointer;
+    border: 1px solid var(--c-border);
+    border-radius: 8px;
+}
+.captcha-dialog-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 18px;
+}
+.captcha-dialog-buttons button {
+    padding: 9px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 999px;
+    transition:
+        background 0.16s ease,
+        border-color 0.16s ease;
+}
+.captcha-dialog-buttons [data-captcha-cancel] {
+    color: var(--c-text-muted);
+    background: var(--c-card-soft);
+    border: 1px solid var(--c-border);
+}
+.captcha-dialog-buttons [data-captcha-cancel]:hover {
+    color: var(--c-text);
+}
+.captcha-dialog-submit {
+    color: #fff;
+    background: var(--c-primary);
+    border: 1px solid var(--c-primary);
+}
+.captcha-dialog-submit:hover {
+    background: var(--c-primary-dark);
+    border-color: var(--c-primary-dark);
 }

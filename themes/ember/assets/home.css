@@ -2943,50 +2943,123 @@ html[data-theme] .home-music-card .music-share-comment-form input {
 }
 
 @media (max-width: 720px) {
+    /* 移动端音乐卡片(独立样式):
+       取消桌面端的固定卡高(250px 裁切)与唱臂,改为紧凑横排 ——
+       左侧封面圆(播放/暂停按钮压在正中心),右侧标题/歌词/进度居中,点赞固定右上角;
+       高度自适应,点击播放后评论面板可正常展开显示。 */
+    .home-music-card {
+        height: auto;
+        min-height: 0;
+        max-height: none;
+    }
+
+    .home-music-card
+        .talk-music-player.music-card.music-card-lyric-skin.home-music-player {
+        height: auto;
+        min-height: 0;
+    }
+
     .home-music-layout {
-        grid-template-columns: 1fr;
+        grid-template-columns: 84px minmax(0, 1fr);
+        gap: 16px;
+        align-items: center;
+        min-height: 0;
+        padding: 16px;
     }
 
+    /* 左列:隐藏唱臂,封面盘缩成纯封面圆(去黑胶纹理与轴心),封面图填满圆 */
     .home-music-visual {
-        padding: 44px 24px 8px;
+        padding: 0;
+        background: none;
     }
 
+    .home-music-tonearm-img {
+        display: none;
+    }
+
+    .home-music-turntable {
+        width: 84px;
+        height: 84px;
+    }
+
+    .home-music-card
+        .talk-music-player.music-card.music-card-lyric-skin
+        .home-music-record {
+        box-shadow:
+            inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+            0 6px 16px rgba(0, 0, 0, 0.24);
+    }
+
+    .home-music-record::before,
+    .home-music-record::after,
+    .home-music-spindle {
+        display: none;
+    }
+
+    .home-music-cover {
+        width: 100%;
+        height: 100%;
+    }
+
+    /* 播放/暂停按钮:压在封面圆的绝对中心(尺寸略缩,适配 84px 圆) */
+    .home-music-card
+        .talk-music-player.music-card.music-card-lyric-skin
+        .home-music-play.music-card-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 13px;
+    }
+
+    /* 播放三角形居中:桌面端为大圆加了 margin-left:3px 的光学补偿,
+       小圆上会把三角推偏右,这里归零让它落在按钮正中心。 */
+    .home-music-card
+        .talk-music-player.music-card.music-card-lyric-skin
+        .home-music-play.music-card-btn
+        .fa-play {
+        margin-left: 0;
+    }
+
+    /* 右列:标题/歌手、歌词、进度整体居中 */
     .home-music-copy {
-        padding: 4px 22px 24px;
+        gap: 6px;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
         text-align: center;
     }
 
     .home-music-head {
-        flex-direction: row;
-        gap: 8px;
-        align-items: center;
+        position: static;
+        justify-content: center;
         padding-right: 0;
     }
 
     .home-music-title-block {
-        max-width: 100%;
-    }
-
-    .home-music-actions {
-        position: absolute;
-        top: 18px;
-        right: 18px;
         justify-content: center;
-    }
-
-    .home-music-lyrics {
-        margin-left: 0;
-    }
-}
-
-@media (max-width: 480px) {
-    .home-music-turntable {
-        width: 166px;
-        height: 166px;
+        text-align: center;
     }
 
     .home-music-title {
-        font-size: 17px;
+        font-size: 15px;
+    }
+
+    .home-music-card .music-card-lyric-skin .home-music-lyrics {
+        height: 64px;
+        max-height: 64px;
+        margin-top: 2px;
+        text-align: center;
+    }
+
+    .home-music-card
+        .talk-music-player.music-card.music-card-lyric-skin
+        .home-music-progress.music-card-progress {
+        margin-top: 6px;
+    }
+
+    /* 点赞固定在卡片右上角 */
+    .home-music-actions {
+        top: 14px;
+        right: 14px;
     }
 }
 
@@ -3337,8 +3410,13 @@ html[data-theme] .home-list .home-x-card.x-card:hover {
 }
 
 @media (max-width: 640px) {
+    /* 移动端:宽度显式 100%,并解除桌面端的 270px 高度锁(min/max);
+       否则 iOS Safari 会用 aspect-ratio 按被锁的 270px 高反推出 480px 宽,撑破视口 */
     .home-list .post-card.has-cover {
+        width: 100%;
         height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
         aspect-ratio: 16 / 9;
     }
 

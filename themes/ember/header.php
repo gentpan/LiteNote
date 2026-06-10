@@ -8,13 +8,11 @@
     <meta name="keywords" content="{{ $site['keywords'] ?? '' }}">
     {!! \App\Services\FaviconService::headHtml($site ?? []) !!}
     <link rel="alternate" type="application/rss+xml" title="{{ $site['title'] ?? 'LiteNote' }} RSS" href="/rss.xml">
-    <link rel="stylesheet" href="https://static.bluecdn.com/fonts/SourceHanSerifCN/result.css">
-    <link rel="stylesheet" href="https://static.bluecdn.com/fonts/kuaikanshijieti/result.css">
+    <link rel="stylesheet" href="https://static.bluecdn.com/fonts/cn/kuaikanshijieti/result.css">
     @yield('head')
     <link rel="stylesheet" href="https://static.bluecdn.com/libs/fontawesome/7.2.0/css/all.min.css">
     @php
         $themeCssFiles = [
-            '/themes/ember/assets/vendor/fancybox/fancybox.css',
             '/themes/ember/assets/main.css',
             '/themes/ember/assets/pages.css',
             '/themes/ember/assets/home.css',
@@ -35,6 +33,7 @@
     @foreach($themeCssFiles as $themeCss)
         <link rel="stylesheet" href="{{ $themeCss }}?v={{ \App\Services\ThemeManager::assetVersion($themeCss) }}">
     @endforeach
+    <link rel="stylesheet" href="https://jsd.bluecdn.com/npm/@fancyapps/ui@5/dist/fancybox/fancybox.css">
     {!! $__pluginFrontHead ?? '' !!}
 </head>
 <body>

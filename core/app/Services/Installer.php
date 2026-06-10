@@ -157,6 +157,7 @@ final class Installer
             geo_region VARCHAR(80),
             geo_city VARCHAR(80),
             geo_data TEXT,
+            is_author INTEGER DEFAULT 0,
             status VARCHAR(20) DEFAULT 'pending',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
@@ -358,7 +359,6 @@ final class Installer
                 ['k' => 'keywords',      'v' => 'PHP,博客,个人',       'label' => '关键词',   'group_name' => 'basic',   'sort' => 4],
                 ['k' => 'site_avatar_url','v' => '',                     'label' => '站点 Logo', 'group_name' => 'basic', 'sort' => 8],
                 ['k' => 'comment_need_audit',    'v' => '1', 'type' => 'bool', 'label' => '评论需要审核', 'group_name' => 'comment', 'sort' => 6],
-                ['k' => 'comment_captcha',       'v' => '0', 'type' => 'bool', 'label' => '启用验证码', 'group_name' => 'comment', 'sort' => 7],
                 ['k' => 'permalink_mode', 'v' => 'default', 'type' => 'select', 'label' => '文章链接模式', 'group_name' => 'permalink', 'sort' => 1],
                 ['k' => 'permalink_numeric_prefix', 'v' => 'post', 'label' => '数字链接前缀', 'group_name' => 'permalink', 'sort' => 10],
                 ['k' => 'permalink_numeric_source', 'v' => 'six', 'type' => 'select', 'label' => '数字来源', 'group_name' => 'permalink', 'sort' => 11],
@@ -468,6 +468,7 @@ final class Installer
             ['comments', 'talk_id', 'INTEGER DEFAULT 0'],
             ['comments', 'music_id', 'INTEGER DEFAULT 0'],
             ['comments', 'x_tweet_id', 'INTEGER DEFAULT 0'],
+            ['comments', 'is_author', 'INTEGER DEFAULT 0'],
             ['comments', 'geo_country_code', 'VARCHAR(2)'],
             ['comments', 'geo_country', 'VARCHAR(64)'],
             ['comments', 'geo_region', 'VARCHAR(80)'],

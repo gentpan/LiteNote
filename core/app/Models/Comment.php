@@ -19,6 +19,7 @@ final class Comment extends Model
     protected static string $table = 'comments';
     protected static array $sortable = ['id', 'created_at', 'post_id', 'page_id', 'talk_id', 'music_id', 'status'];
     private static bool $geoSchemaChecked = false;
+    private static bool $trustedTableChecked = false;
 
     /**
      * 向后兼容 alias —— 旧代码可能引用了 Comment::STATUS_*
@@ -40,12 +41,58 @@ final class Comment extends Model
             ['geo_region', 'VARCHAR(80)'],
             ['geo_city', 'VARCHAR(80)'],
             ['geo_data', 'TEXT'],
+            ['is_author', 'INTEGER DEFAULT 0'],
         ] as [$column, $type]) {
             try {
                 self::db()->query("ALTER TABLE comments ADD COLUMN {$column} {$type}");
             } catch (\Throwable) {
                 // Column already exists or database is not ready.
             }
+        }
+    }
+
+    /** 受信任邮箱表:身份表单验证码验证过的邮箱写入此表,等同白名单(与"审核通过"并列)。 */
+    public static function ensureTrustedEmailsTable(): void
+    {
+        if (self::$trustedTableChecked) {
+            return;
+        }
+        self::$trustedTableChecked = true;
+        try {
+            self::db()->query("CREATE TABLE IF NOT EXISTS comment_trusted_emails (\n                email VARCHAR(255) PRIMARY KEY,\n                created_at DATETIME DEFAULT CURRENT_TIMESTAMP\n            )");
+        } catch (\Throwable) {
+        }
+    }
+
+    /** 把邮箱写入受信任白名单(身份表单验证码通过后调用)。 */
+    public static function markEmailVerified(string $email): void
+    {
+        $email = trim($email);
+        if ($email === '') {
+            return;
+        }
+        self::ensureTrustedEmailsTable();
+        try {
+            self::db()->query(
+                'INSERT OR IGNORE INTO comment_trusted_emails (email, created_at) VALUES (?, ?)',
+                [$email, date('Y-m-d H:i:s')]
+            );
+        } catch (\Throwable) {
+        }
+    }
+
+    /** 邮箱是否在受信任白名单(已通过身份表单验证码)。 */
+    public static function isEmailVerified(string $email): bool
+    {
+        $email = trim($email);
+        if ($email === '') {
+            return false;
+        }
+        self::ensureTrustedEmailsTable();
+        try {
+            return (bool) self::db()->fetchColumn('SELECT 1 FROM comment_trusted_emails WHERE email = ?', [$email]);
+        } catch (\Throwable) {
+            return false;
         }
     }
 

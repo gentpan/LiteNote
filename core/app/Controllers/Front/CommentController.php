@@ -65,9 +65,11 @@ class CommentController
             $this->backWithError('当前不允许回复评论');
         }
 
-        // 评论验证码(开关开启且非登录管理员时校验,一次性使用)
+        // 评论验证码(恒启用,无后台开关):管理员与白名单邮箱豁免,其余必须先通过验证码。
+        // 白名单 = 有审核通过的评论,或已通过身份表单验证码。
         $isAdmin = (int) Session::get('admin_user.id', 0) > 0;
-        if (!$isAdmin && CommentSettingsService::captchaEnabled()) {
+        $emailTrusted = $this->isTrustedEmail((string)$data['email']);
+        if (!$isAdmin && !$emailTrusted) {
             $captchaInput = strtolower(trim((string) $request->input('captcha', '')));
             $captchaCode  = (string) Session::get('_captcha', '');
             Session::forget('_captcha');
@@ -122,6 +124,7 @@ class CommentController
             'geo_region' => $geo['geo_region'] ?? '',
             'geo_city' => $geo['geo_city'] ?? '',
             'geo_data' => $geo['geo_data'] ?? '',
+            'is_author' => $isAdmin ? 1 : 0,
             'status'    => $status,
         ]);
         $cmt->save();
@@ -156,6 +159,7 @@ class CommentController
                 'code' => 0,
                 'msg' => $successMsg,
                 'pending' => $isPending,
+                'trusted' => $emailTrusted || $status === CommentStatus::Approved->value,
                 'avatar_url' => $cmt->getAvatarUrl(80),
                 'comment' => [
                     'id'       => (int) $cmt->id,
@@ -187,15 +191,55 @@ class CommentController
     {
         $email = trim((string)$request->input('email', ''));
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            Response::json(['code' => 0, 'comments' => 0]);
+            Response::json(['code' => 0, 'comments' => 0, 'trusted' => false]);
         }
-        Response::json(['code' => 0, 'comments' => Comment::countApprovedByEmail($email)]);
+        Response::json([
+            'code' => 0,
+            'comments' => Comment::countApprovedByEmail($email),
+            'trusted' => $this->isTrustedEmail($email),
+        ]);
+    }
+
+    /** 身份表单验证码校验:通过后把邮箱写入白名单,之后任何设备评论都免验证码。 */
+    public function verifyIdentity(Request $request): never
+    {
+        $email = trim((string)$request->input('email', ''));
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            Response::json(['ok' => false, 'msg' => '邮箱格式不正确']);
+        }
+        // 已在白名单:无需验证码,直接通过
+        if ($this->isTrustedEmail($email)) {
+            Response::json(['ok' => true, 'trusted' => true]);
+        }
+        // 校验验证码(恒启用,一次性使用)
+        $captchaInput = strtolower(trim((string) $request->input('captcha', '')));
+        $captchaCode  = (string) Session::get('_captcha', '');
+        Session::forget('_captcha');
+        if ($captchaCode === '' || $captchaInput !== $captchaCode) {
+            Response::json(['ok' => false, 'msg' => '验证码错误，请重新输入']);
+        }
+        Comment::markEmailVerified($email);
+        Response::json(['ok' => true, 'trusted' => true]);
     }
 
     private function isSpam(string $content): bool
     {
         $linkCount = preg_match_all('#https?://#i', $content);
         return $linkCount > 3;
+    }
+
+    /** 可信邮箱(白名单):该邮箱有审核通过的评论,或已通过身份表单验证码 —— 都免验证码。 */
+    private function isTrustedEmail(string $email): bool
+    {
+        $email = trim($email);
+        if ($email === '') {
+            return false;
+        }
+        $approved = (int) Comment::db()->fetchColumn(
+            'SELECT COUNT(*) FROM comments WHERE email = ? AND status = ?',
+            [$email, CommentStatus::Approved->value]
+        ) > 0;
+        return $approved || Comment::isEmailVerified($email);
     }
 
     private function resolveTarget(int $postId, int $pageId, int $talkId, int $musicId, int $xTweetId = 0): ?object

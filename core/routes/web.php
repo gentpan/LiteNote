@@ -63,6 +63,8 @@ $router->post('/links/modify',    [FriendController::class, 'modify']);
 
 // 评论提交
 $router->post('/comment/submit',  [CommentController::class, 'submit']);
+// 身份表单验证码校验:通过后该邮箱进白名单,之后免验证码
+$router->post('/comment/verify-identity', [CommentController::class, 'verifyIdentity']);
 
 // 访客身份统计（按邮箱查评论数,供侧边身份卡）
 $router->get('/api/visitor/stats', [CommentController::class, 'stats']);
