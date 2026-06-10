@@ -84,7 +84,6 @@
                     <img class="comment-admin-avatar" src="{{ \App\Services\Gravatar::url('', 80, 'mp') }}" alt="" data-comment-profile-avatar data-comment-avatar-default="{{ \App\Services\Gravatar::url('', 80, 'mp') }}">
                 </button>
             @endif
-            @include('partials.comment-captcha')
             <button type="submit">提交乐评</button>
         </div>
     </form>

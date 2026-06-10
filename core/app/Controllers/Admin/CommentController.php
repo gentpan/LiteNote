@@ -94,7 +94,6 @@ class CommentController
         $key = (string)$request->input('key', '');
         $allowed = [
             'comment_need_audit' => '评论需审核',
-            'comment_captcha' => '评论验证码',
         ];
         if (!array_key_exists($key, $allowed)) {
             Response::json(['code' => 1, 'msg' => '不支持的评论设置']);

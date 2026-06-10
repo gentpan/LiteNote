@@ -159,7 +159,6 @@
                                         <img class="comment-admin-avatar" src="{{ \App\Services\Gravatar::url('', 80) }}" alt="" data-comment-profile-avatar data-comment-avatar-default="{{ \App\Services\Gravatar::url('', 80) }}">
                                     </button>
                                 @endif
-                                @include('partials.comment-captcha')
                                 <button type="submit">提交评论</button>
                             </div>
                         </div>
@@ -173,10 +172,6 @@
                         <span>{{ $songCount }} 首</span>
                     </div>
                     @foreach($list as $index => $song)
-                        @php
-                            $songPublishedAt = $song->publishedAt();
-                            $songPublishedLabel = \App\Core\Helper::formatDate($songPublishedAt, 'Y-m-d');
-                        @endphp
                         <button type="button"
                                 id="music-{{ $song->id }}"
                                 class="music-track-row {{ (int)$index === 0 ? 'is-active' : '' }}"
@@ -191,10 +186,8 @@
                                 data-duration="{{ $song->duration ?? '' }}"
                                 data-likes="{{ (int)($song->likes_count ?? 0) }}"
                                 data-comments="{{ count($song->getRelation('comments') ?: []) }}"
-                                data-published="{{ $songPublishedAt }}"
                                 data-lyrics-url="{{ $song->lyrics_url ?? '' }}"
                                 data-lyrics="{{ base64_encode((string)($song->lyrics ?? '')) }}">
-                            <span class="music-track-number">{{ str_pad((string)((int)$index + 1), 2, '0', STR_PAD_LEFT) }}</span>
                             <span class="music-track-cover">
                                 @if($song->cover_url)
                                     <img src="{{ $song->cover_url }}" alt="" loading="lazy">
@@ -207,7 +200,6 @@
                                 <small>{{ $song->artist ?: '未知歌手' }}</small>
                             </span>
                             <span class="music-track-side">
-                                <span><i class="fa-regular fa-calendar"></i> {{ $songPublishedLabel }}</span>
                                 <span><i class="fa-regular fa-comment"></i> <b data-music-track-comments>{{ count($song->getRelation('comments') ?: []) }}</b></span>
                                 <span>{{ $song->duration ?: '试听' }}</span>
                             </span>

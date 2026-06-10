@@ -2289,3 +2289,29 @@ html[data-site-theme="kami"] .kami-error-home {
 html[data-site-theme="kami"] .kami-error-home:hover {
     text-decoration: underline;
 }
+
+/* ============ 身份弹窗验证码(与 ember 同策略:白名单/管理员免验) ============ */
+/* login-modal-field 的 display:flex 会压过浏览器 [hidden] 默认样式,这里显式兜底 */
+.kami-id-captcha[hidden] {
+    display: none !important;
+}
+.kami-id-captcha {
+    position: relative;
+}
+.kami-id-captcha input {
+    padding-right: 104px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+.kami-id-captcha-img {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    z-index: 2;
+    width: 88px;
+    height: 30px;
+    cursor: pointer;
+    transform: translateY(-50%);
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+}

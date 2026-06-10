@@ -524,6 +524,8 @@
         document.querySelectorAll('.comment-form').forEach(function(form) {
             fillCommentIdentity(form);
             refreshCommentComposerStatus(form);
+            form.classList.toggle('is-captcha-trusted', isEmailTrusted(formEmailValue(form)));
+            checkEmailTrust(formEmailValue(form));
         });
     }
 
@@ -622,7 +624,7 @@
         if (!dialog) {
             dialog = document.createElement('div');
             dialog.className = 'nav-identity-dialog';
-            dialog.innerHTML = '<div class="nav-identity-panel" role="dialog" aria-modal="true" tabindex="-1"><div class="nav-identity-head"><img class="nav-identity-preview" alt=""><div><p class="nav-identity-title">评论身份</p><p class="nav-identity-subtitle">保存后评论表单会自动使用这份资料</p></div></div><form class="nav-identity-form"><label class="nav-identity-field"><i class="fa-regular fa-user" aria-hidden="true"></i><input name="nickname" placeholder="昵称 *" required></label><label class="nav-identity-field"><i class="fa-regular fa-envelope" aria-hidden="true"></i><input name="email" type="email" placeholder="邮箱 *" required></label><label class="nav-identity-field"><i class="fa-solid fa-link" aria-hidden="true"></i><input name="website" placeholder="网站(选填)"></label><div class="nav-identity-buttons"><button type="button" data-nav-identity-clear>清除</button><button type="button" data-nav-identity-close>取消</button><button type="submit">保存</button></div></form></div>';
+            dialog.innerHTML = '<div class="nav-identity-panel" role="dialog" aria-modal="true" tabindex="-1"><div class="nav-identity-head"><img class="nav-identity-preview" alt=""><div><p class="nav-identity-title">评论身份</p><p class="nav-identity-subtitle">保存后评论表单会自动使用这份资料</p></div></div><form class="nav-identity-form"><label class="nav-identity-field"><i class="fa-regular fa-user" aria-hidden="true"></i><input name="nickname" placeholder="昵称 *" required></label><label class="nav-identity-field"><i class="fa-regular fa-envelope" aria-hidden="true"></i><input name="email" type="email" placeholder="邮箱 *" required></label><label class="nav-identity-field"><i class="fa-solid fa-link" aria-hidden="true"></i><input name="website" placeholder="网站(选填)"></label><label class="nav-identity-field nav-identity-captcha" data-nav-identity-captcha hidden><i class="fa-solid fa-shield-halved" aria-hidden="true"></i><input name="captcha" placeholder="验证码 *" autocomplete="off" maxlength="4"><img class="nav-identity-captcha-img" data-nav-identity-captcha-img src="" alt="点击刷新验证码" title="看不清?点击刷新"></label><p class="nav-identity-captcha-tip" data-nav-identity-captcha-tip hidden>首次用此邮箱评论需填验证码，通过后以后免验。</p><div class="nav-identity-buttons"><button type="button" data-nav-identity-clear>清除</button><button type="button" data-nav-identity-close>取消</button><button type="submit">保存</button></div></form></div>';
             document.body.appendChild(dialog);
             dialog.addEventListener('click', function(e) {
                 if (e.target === dialog) closeNavIdentityDialog();
@@ -632,6 +634,9 @@
                 clearCommentIdentity();
                 closeNavIdentityDialog();
             });
+            dialog.querySelector('[data-nav-identity-captcha-img]').addEventListener('click', function() {
+                this.src = '/captcha?t=' + Date.now();
+            });
             dialog.querySelector('.nav-identity-form').addEventListener('submit', function(e) {
                 e.preventDefault();
                 var form = e.currentTarget;
@@ -640,21 +645,52 @@
                     email: form.email.value.trim(),
                     website: form.website.value.trim()
                 };
-                next.avatar_url = gravatarUrl(next.email, 80);
-                try { localStorage.setItem(commentIdentityKey, JSON.stringify(next)); } catch (err) {}
-                updateNavIdentity(next);
-                syncAllCommentForms();
-                closeNavIdentityDialog(false);
-                showNavIdentityHint();
-                if (navIdentitySaveCallback) {
-                    var cb = navIdentitySaveCallback;
-                    navIdentitySaveCallback = null;
-                    cb(next);
-                }
+                if (!next.nickname || !next.email) { return; }
+                var finishSave = function() {
+                    next.avatar_url = gravatarUrl(next.email, 80);
+                    try { localStorage.setItem(commentIdentityKey, JSON.stringify(next)); } catch (err) {}
+                    addTrustedEmail(next.email);
+                    updateNavIdentity(next);
+                    syncAllCommentForms();
+                    closeNavIdentityDialog(false);
+                    showNavIdentityHint();
+                    if (navIdentitySaveCallback) {
+                        var cb = navIdentitySaveCallback;
+                        navIdentitySaveCallback = null;
+                        cb(next);
+                    }
+                };
+                var captchaWrap = dialog.querySelector('[data-nav-identity-captcha]');
+                var needCaptcha = captchaWrap && !captchaWrap.hidden;
+                if (!needCaptcha) { finishSave(); return; }
+                // 非白名单邮箱:把验证码交后端校验,通过后该邮箱进白名单
+                var captchaVal = (form.captcha.value || '').trim();
+                if (captchaVal.length < 4) { form.captcha.focus(); return; }
+                var saveBtn = form.querySelector('button[type=submit]');
+                if (saveBtn) saveBtn.disabled = true;
+                var body = new FormData();
+                body.append('email', next.email);
+                body.append('captcha', captchaVal);
+                fetch('/comment/verify-identity', { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: body, credentials: 'same-origin' })
+                    .then(function(r) { return r.json(); })
+                    .then(function(d) {
+                        if (saveBtn) saveBtn.disabled = false;
+                        if (d && d.ok) { finishSave(); return; }
+                        frontToast((d && d.msg) || '验证码错误', 'error');
+                        var img = dialog.querySelector('[data-nav-identity-captcha-img]');
+                        if (img) img.src = '/captcha?t=' + Date.now();
+                        form.captcha.value = '';
+                        form.captcha.focus();
+                    })
+                    .catch(function() {
+                        if (saveBtn) saveBtn.disabled = false;
+                        frontToast('网络错误,请重试', 'error');
+                    });
             });
             dialog.querySelector('[name=email]').addEventListener('input', function(e) {
                 var preview = dialog.querySelector('.nav-identity-preview');
                 preview.src = gravatarUrl(e.target.value, 80) || grayGravatar(80);
+                navIdentityRefreshCaptcha(dialog, e.target.value);
             });
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape') closeNavIdentityDialog();
@@ -663,10 +699,47 @@
         dialog.querySelector('[name=nickname]').value = identity.nickname || '';
         dialog.querySelector('[name=email]').value = identity.email || '';
         dialog.querySelector('[name=website]').value = identity.website || '';
+        var capInput = dialog.querySelector('[name=captcha]');
+        if (capInput) capInput.value = '';
         dialog.querySelector('.nav-identity-preview').src = identity.avatar_url || gravatarUrl(identity.email, 80) || grayGravatar(80);
+        navIdentityRefreshCaptcha(dialog, identity.email || '');
         dialog.classList.add('is-open');
         var panel = dialog.querySelector('.nav-identity-panel');
         if (panel) panel.focus();
+    }
+
+    // 身份表单里的验证码:默认显示(后台开了验证码时),只有确认邮箱在白名单才隐藏(免验)
+    function navIdentityRefreshCaptcha(dialog, email) {
+        var wrap = dialog.querySelector('[data-nav-identity-captcha]');
+        var tip = dialog.querySelector('[data-nav-identity-captcha-tip]');
+        if (!wrap) return;
+        email = (email || '').trim();
+        function show(visible) {
+            var wasHidden = wrap.hidden;
+            wrap.hidden = !visible;
+            if (tip) tip.hidden = !visible;
+            if (visible) {
+                var img = dialog.querySelector('[data-nav-identity-captcha-img]');
+                // 从隐藏变可见(或还没加载过)时刷新验证码图,保证初次显示就有图
+                if (img && (wasHidden || !img.getAttribute('src'))) img.src = '/captcha?t=' + Date.now();
+            }
+        }
+        // 已确认白名单邮箱:免验,隐藏
+        if (email && email.indexOf('@') !== -1 && isEmailTrusted(email)) { show(false); return; }
+        // 其余情况(没填邮箱 / 新邮箱):默认显示
+        show(true);
+        if (!email || email.indexOf('@') === -1) return;
+        fetch('/api/visitor/stats?email=' + encodeURIComponent(email), { credentials: 'same-origin' })
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                if (d && d.trusted) {
+                    addTrustedEmail(email);
+                    applyCaptchaTrustToForms();
+                    var cur = dialog.querySelector('[name=email]');
+                    if (cur && (cur.value || '').trim() === email) show(false);
+                }
+            })
+            .catch(function() {});
     }
 
     function closeNavIdentityDialog(clearCallback) {
@@ -675,6 +748,109 @@
         }
         var dialog = document.querySelector('.nav-identity-dialog');
         if (dialog) dialog.classList.remove('is-open');
+    }
+
+    // 移动端验证码 dialog:评论框内不显示验证码,提交时弹出输入,确认后写回表单 captcha 字段并继续提交。
+    var captchaDialogState = { onDone: null, captchaInput: null };
+    function openCaptchaDialog(form, onDone) {
+        var captchaInput = form.querySelector('[name=captcha]');
+        if (!captchaInput) { if (onDone) onDone(); return; }
+        captchaDialogState.onDone = onDone || null;
+        captchaDialogState.captchaInput = captchaInput;
+        var dialog = document.querySelector('.captcha-dialog');
+        if (!dialog) {
+            dialog = document.createElement('div');
+            dialog.className = 'captcha-dialog';
+            dialog.innerHTML = '<div class="captcha-dialog-panel" role="dialog" aria-modal="true" tabindex="-1">'
+                + '<p class="captcha-dialog-title">请输入验证码</p>'
+                + '<div class="captcha-dialog-row">'
+                + '<input class="captcha-dialog-input" type="text" inputmode="latin" autocomplete="off" maxlength="4" placeholder="验证码">'
+                + '<img class="captcha-dialog-img" src="/captcha" alt="点击刷新验证码" title="看不清?点击刷新">'
+                + '</div>'
+                + '<div class="captcha-dialog-buttons">'
+                + '<button type="button" data-captcha-cancel>取消</button>'
+                + '<button type="button" class="captcha-dialog-submit" data-captcha-ok>确认并提交</button>'
+                + '</div></div>';
+            document.body.appendChild(dialog);
+            var inputEl = dialog.querySelector('.captcha-dialog-input');
+            var imgEl = dialog.querySelector('.captcha-dialog-img');
+            var confirmFn = function() {
+                var val = inputEl.value.trim();
+                if (val.length < 4) { inputEl.focus(); return; }
+                if (captchaDialogState.captchaInput) captchaDialogState.captchaInput.value = val;
+                var cb = captchaDialogState.onDone;
+                closeCaptchaDialog();
+                if (cb) cb();
+            };
+            dialog.addEventListener('click', function(e) { if (e.target === dialog) closeCaptchaDialog(); });
+            imgEl.addEventListener('click', function() { this.src = '/captcha?t=' + Date.now(); });
+            dialog.querySelector('[data-captcha-cancel]').addEventListener('click', closeCaptchaDialog);
+            dialog.querySelector('[data-captcha-ok]').addEventListener('click', confirmFn);
+            inputEl.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); confirmFn(); } });
+            document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeCaptchaDialog(); });
+        }
+        var img = dialog.querySelector('.captcha-dialog-img');
+        var input = dialog.querySelector('.captcha-dialog-input');
+        img.src = '/captcha?t=' + Date.now();
+        input.value = '';
+        dialog.classList.add('is-open');
+        window.setTimeout(function() { try { input.focus(); } catch (e) {} }, 50);
+    }
+    function closeCaptchaDialog() {
+        captchaDialogState.onDone = null;
+        var dialog = document.querySelector('.captcha-dialog');
+        if (dialog) dialog.classList.remove('is-open');
+    }
+
+    // 可信邮箱(后端确认有审核通过评论)免验证码:本地缓存一份,提交时跳过验证码并隐藏验证码框。
+    var trustedEmailsKey = 'litenote_trusted_emails';
+    function loadTrustedEmails() {
+        try { var v = JSON.parse(localStorage.getItem(trustedEmailsKey) || '[]'); return Array.isArray(v) ? v : []; }
+        catch (e) { return []; }
+    }
+    function isEmailTrusted(email) {
+        email = (email || '').trim().toLowerCase();
+        return !!email && loadTrustedEmails().indexOf(email) !== -1;
+    }
+    function addTrustedEmail(email) {
+        email = (email || '').trim().toLowerCase();
+        if (!email) return;
+        var list = loadTrustedEmails();
+        if (list.indexOf(email) === -1) {
+            list.push(email);
+            try { localStorage.setItem(trustedEmailsKey, JSON.stringify(list)); } catch (e) {}
+        }
+    }
+    function formEmailValue(form) {
+        var em = form.querySelector('[name=email]');
+        if (em && em.value.trim()) return em.value.trim();
+        var id = loadCommentIdentity() || {};
+        return id.email || '';
+    }
+    function applyCaptchaTrustToForms(root) {
+        (root || document).querySelectorAll('.comment-form').forEach(function(form) {
+            form.classList.toggle('is-captcha-trusted', isEmailTrusted(formEmailValue(form)));
+        });
+    }
+    // 换设备/清缓存后本地不知道该邮箱是否在白名单:问一次后端(复用访客统计接口,审核通过数>0 即白名单),
+    // 命中则写入本地并隐藏验证码,做到"白名单邮箱在任何设备都不显示验证码"。
+    var trustChecking = {};
+    function checkEmailTrust(email) {
+        email = (email || '').trim().toLowerCase();
+        if (!email || email.indexOf('@') === -1) return;
+        if (isEmailTrusted(email)) return;
+        if (trustChecking[email]) return;
+        trustChecking[email] = true;
+        fetch('/api/visitor/stats?email=' + encodeURIComponent(email), { credentials: 'same-origin' })
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                if (d && (d.comments || 0) > 0) {
+                    addTrustedEmail(email);
+                    applyCaptchaTrustToForms();
+                }
+            })
+            .catch(function() {})
+            .then(function() { delete trustChecking[email]; });
     }
 
     function bindNavIdentityOrb(root) {
@@ -917,26 +1093,19 @@
                     musicList.className = 'music-song-comment-list';
                     listScope.insertBefore(musicList, listScope.firstChild);
                 }
-                var isFirstMusicComment = !musicList.querySelector('.music-song-comment');
                 var musicItem = document.createElement('li');
-                musicItem.className = 'music-song-comment' + (isFirstMusicComment ? ' is-featured' : '');
+                musicItem.className = 'music-song-comment';
                 musicItem.setAttribute('data-id', c.id);
 
                 var musicAvatar = document.createElement('span');
                 musicAvatar.className = 'music-song-comment-avatar';
-                if (isFirstMusicComment && c.avatar_url) {
-                    var musicAvatarImg = document.createElement('img');
-                    musicAvatarImg.src = c.avatar_url;
-                    musicAvatarImg.alt = '';
-                    musicAvatarImg.loading = 'lazy';
-                    musicAvatarImg.width = 48;
-                    musicAvatarImg.height = 48;
-                    musicAvatar.appendChild(musicAvatarImg);
-                } else {
-                    var musicIcon = document.createElement('i');
-                    musicIcon.className = 'fa-solid fa-music';
-                    musicAvatar.appendChild(musicIcon);
-                }
+                var musicAvatarImg = document.createElement('img');
+                musicAvatarImg.src = c.avatar_url || '';
+                musicAvatarImg.alt = c.nickname || '';
+                musicAvatarImg.loading = 'lazy';
+                musicAvatarImg.width = 48;
+                musicAvatarImg.height = 48;
+                musicAvatar.appendChild(musicAvatarImg);
 
                 var musicBody = document.createElement('div');
                 musicBody.className = 'music-song-comment-body';
@@ -1044,6 +1213,8 @@
         form.noValidate = true;
         fillCommentIdentity(form);
         refreshCommentComposerStatus(form);
+        form.classList.toggle('is-captcha-trusted', isEmailTrusted(formEmailValue(form)));
+        checkEmailTrust(formEmailValue(form));
 
         var profileToggle = form.querySelector('[data-comment-profile-toggle]');
         if (profileToggle) {
@@ -1092,7 +1263,8 @@
             var content = form.querySelector('[name=content]');
             var identity = loadCommentIdentity();
             if (form.dataset.commentAdmin !== '1') {
-                if (!hasUsableCommentIdentity()) {
+                // 无身份,或邮箱还没进白名单(没验证过验证码)→ 弹身份表单,在那里填/验证码,通过后再提交
+                if (!hasUsableCommentIdentity() || !isEmailTrusted(formEmailValue(form))) {
                     openNavIdentityDialog({
                         onSave: function(savedIdentity) {
                             applyCommentIdentityToForm(form, savedIdentity);
@@ -1125,6 +1297,10 @@
                 if (captchaInput) captchaInput.value = '';
                 if (!d || d.code !== 0) { frontToast((d && d.msg) || '提交失败', 'error'); return; }
 
+                if (d.trusted) {
+                    addTrustedEmail(formEmailValue(form));
+                    applyCaptchaTrustToForms();
+                }
                 if (content) content.value = '';
                 var pid = form.querySelector('[name=parent_id]');
                 if (pid) pid.value = '0';

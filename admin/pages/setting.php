@@ -82,7 +82,6 @@
                             $type = (string)($item['type'] ?? 'string');
                             $toggleKeys = [
                                 'comment_need_audit',
-                                'comment_captcha',
                             ];
                             $isToggle = $type === 'bool' || in_array((string)$item['k'], $toggleKeys, true);
                             $selectOptions = [

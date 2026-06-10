@@ -5,7 +5,6 @@
         $commentStatusLabels = \App\Enums\CommentStatus::options();
         $commentSettings = $commentSettings ?? [];
         $needAuditOn = !empty($commentSettings['need_audit']);
-        $captchaOn = !empty($commentSettings['captcha']);
         $statusTabs = [
             'all' => '全部',
             'pending' => '待审核',
@@ -25,16 +24,6 @@
                 <span class="comment-toggle-label">评论需审核</span>
                 <label class="cat-switch" title="{{ $needAuditOn ? '点击关闭评论审核' : '点击开启评论审核' }}">
                     <input type="checkbox" name="comment_need_audit" value="1" {{ $needAuditOn ? 'checked' : '' }}>
-                    <span class="cat-switch-slider"></span>
-                </label>
-            </form>
-            <form method="post" action="/admin/comments/settings" class="comment-toggle-form" data-ajax-toggle>
-                <input type="hidden" name="_csrf" value="{{ $csrf }}">
-                <input type="hidden" name="key" value="comment_captcha">
-                <input type="hidden" name="comment_captcha" value="0">
-                <span class="comment-toggle-label">评论验证码</span>
-                <label class="cat-switch" title="{{ $captchaOn ? '点击关闭评论验证码' : '点击开启评论验证码' }}">
-                    <input type="checkbox" name="comment_captcha" value="1" {{ $captchaOn ? 'checked' : '' }}>
                     <span class="cat-switch-slider"></span>
                 </label>
             </form>

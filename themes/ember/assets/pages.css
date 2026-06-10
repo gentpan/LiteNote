@@ -1160,6 +1160,7 @@ html[data-theme="dark"] .activity-item-content {
     box-shadow: 0 12px 26px rgba(0, 0, 0, 0.28);
 }
 .music-control-play:hover {
+    background: #fff;
     transform: scale(1.05);
 }
 
@@ -1269,13 +1270,54 @@ html[data-theme="dark"] .activity-item-content {
     border-radius: 12px;
 }
 .music-comment-form {
-    margin-top: 4px;
+    /* 去掉通用 .comment-form 的外层卡片框(背景 / 边框 / 内边距),
+       只保留:输入框 + 底部的验证码与提交按钮 */
+    padding: 0;
+    margin-top: 16px;
+    background: none;
+    border: 0;
 }
-/* 管理员头像:移到左侧、去掉按钮默认背景 */
+/* 验证码(输入框 + 图)与提交按钮同一行,整组靠右、高度统一,移动端也不换行 */
 .music-comment-form .comment-actions {
     flex-wrap: nowrap;
+    gap: 8px;
+    align-items: center;
     justify-content: flex-end;
+    margin-top: 10px;
 }
+/* 验证码图叠在输入框内部右侧,节省横向空间 */
+.music-comment-form .captcha-row {
+    position: relative;
+    flex: 0 1 auto;
+    min-width: 0;
+}
+/* 高特异性覆盖 .comment-form .form-row input 的 flex:1 1 150px;右侧留出验证码图的位置 */
+.music-comment-form .captcha-row .captcha-input {
+    flex: 0 0 auto;
+    width: 160px;
+    height: 36px;
+    padding: 0 88px 0 12px;
+}
+.music-comment-form .captcha-row .captcha-img {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    width: 74px;
+    height: 26px;
+    transform: translateY(-50%);
+    border-radius: 5px;
+}
+.music-comment-form .comment-actions button[type="submit"] {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    height: 36px;
+    margin: 0;
+    padding: 0 20px;
+}
+/* 管理员头像:移到左侧、去掉按钮默认背景 */
 .music-comment-form .comment-profile-toggle-admin {
     width: auto;
     height: auto;
@@ -1316,7 +1358,7 @@ html[data-theme="dark"] .activity-item-content {
 }
 .music-track-row {
     display: grid;
-    grid-template-columns: 28px 46px minmax(0, 1fr) auto;
+    grid-template-columns: 46px minmax(0, 1fr) auto;
     gap: 14px;
     align-items: center;
     width: 100%;
@@ -1332,11 +1374,6 @@ html[data-theme="dark"] .activity-item-content {
 }
 .music-track-row.is-active {
     background: color-mix(in srgb, var(--c-primary) 8%, transparent);
-}
-.music-track-number {
-    font-family: var(--font-mono);
-    font-size: 13px;
-    color: var(--c-text-muted);
 }
 .music-track-cover {
     display: flex;
@@ -1431,6 +1468,10 @@ html[data-theme="dark"] .activity-item-content {
 
 /* —— 响应式 —— */
 @media (max-width: 768px) {
+    /* 移动端:音乐页顶部留出空隙,避免唱机卡片贴到页面顶部 */
+    .music-page {
+        padding-top: 12px;
+    }
     .music-disc-player {
         grid-template-columns: 1fr;
         gap: 26px;

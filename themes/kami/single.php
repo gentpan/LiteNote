@@ -123,7 +123,6 @@
                         @endif
                         <textarea name="content" rows="5" placeholder="说点什么... *" required></textarea>
                         <div class="comment-actions">
-                            @include('partials.comment-captcha')
                             <button type="submit">提交评论</button>
                         </div>
                     </form>

@@ -22,7 +22,6 @@ final class CommentSettingsService
         'talk_enabled' => true,
         'music_enabled' => true,
         'need_audit' => true,
-        'captcha' => false,
         'email_required' => true,
         'replies_enabled' => true,
         'close_old_days' => 0,
@@ -32,7 +31,6 @@ final class CommentSettingsService
     {
         Setting::ensureDefaults([
             ['k' => 'comment_need_audit', 'v' => '1', 'type' => 'bool', 'label' => '评论需要审核', 'group_name' => 'comment', 'sort' => 6],
-            ['k' => 'comment_captcha', 'v' => '0', 'type' => 'bool', 'label' => '启用验证码', 'group_name' => 'comment', 'sort' => 7],
         ]);
     }
 
@@ -43,7 +41,6 @@ final class CommentSettingsService
         try {
             self::ensureDefaults();
             $settings['need_audit'] = self::bool('comment_need_audit', true);
-            $settings['captcha'] = self::bool('comment_captcha', false);
         } catch (\Throwable) {
             return $settings;
         }
@@ -51,9 +48,10 @@ final class CommentSettingsService
         return $settings;
     }
 
+    /** 验证码恒启用(无后台开关);白名单邮箱与管理员在调用点豁免。 */
     public static function captchaEnabled(): bool
     {
-        return (bool) self::settings()['captcha'];
+        return true;
     }
 
     public static function emailRequired(): bool
