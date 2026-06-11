@@ -1474,36 +1474,11 @@ a.post-side-stat:hover {
     display: block;
     margin: var(--sp-14) auto;
 }
-.fancybox-image-link {
-    position: relative;
-    display: block;
-    max-width: 100%;
-    line-height: 0;
+/* LiteZoom:可点击放大的图片光标提示 */
+.post-content img,
+.page-content img,
+.talk-images img {
     cursor: zoom-in;
-    border-bottom: 0 !important;
-}
-.image-inline-caption {
-    position: absolute;
-    right: var(--sp-12);
-    bottom: var(--sp-12);
-    z-index: 2;
-    max-width: min(72%, 420px);
-    padding: 8px var(--sp-12);
-    overflow: hidden;
-    font-family: var(--font-sans);
-    font-size: var(--fs-sm);
-    font-weight: 600;
-    line-height: 1.45;
-    color: var(--c-white);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    pointer-events: none;
-    background: rgba(34, 34, 34, 0.48);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: var(--radius-xs);
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
-    -webkit-backdrop-filter: blur(14px) saturate(120%);
-    backdrop-filter: blur(14px) saturate(120%);
 }
 .talk-images img,
 .talk-card .talk-images img {
