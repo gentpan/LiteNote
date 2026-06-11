@@ -55,7 +55,6 @@
     <style>
         :root { --article-font-family: {!! $articleFontFamily !!}; }
     </style>
-    <link rel="stylesheet" href="https://static.bluecdn.com/libs/fancyapps/ui/6.1.14/dist/fancybox/fancybox.css">
     {!! $__pluginFrontHead ?? '' !!}
 </head>
 <body>

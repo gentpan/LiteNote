@@ -3689,7 +3689,7 @@
     }
     initPjax();
 
-    // 图片懒加载 + Fancybox 分组灯箱
+    // 图片懒加载 + LiteZoom 分组灯箱
     function finishImageLoad(img, wrapper) {
         img.classList.remove('is-image-loading');
         wrapper.classList.remove('is-loading');
@@ -3763,62 +3763,40 @@
         }, { once: true });
     }
 
-    function imageViewerSrc(img) {
-        return img.currentSrc || img.getAttribute('src') || img.src || '';
+    // 说说图片分组:每条说说一个画廊
+    function liteZoomTalkGroup(img) {
+        var card = img.closest('.home-talk-card, .talk-card, article[id]');
+        var id = card && card.id ? card.id : '';
+        return id ? ('talk-' + id) : 'talk';
     }
 
-    function bindFancyboxImage(img, groupName) {
-        if (!img || img.closest('.post-hero-card')) {
-            return;
+    // 文章/页面正文图片分组
+    function liteZoomPostGroup(img) {
+        if (img.closest('.page-content')) {
+            return 'page';
         }
-        if (img.dataset.fancyboxReady === '1') {
-            return;
-        }
-        var src = imageViewerSrc(img);
-        if (!src) {
-            return;
-        }
-
-        var link = img.closest('a');
-        if (!link || link.querySelectorAll('img').length !== 1) {
-            link = document.createElement('a');
-            img.parentNode.insertBefore(link, img);
-            link.appendChild(img);
-        }
-
-        link.href = link.href || src;
-        if (!/\.(?:png|jpe?g|gif|webp|avif|svg)(?:[?#].*)?$/i.test(link.href)) {
-            link.href = src;
-        }
-        link.setAttribute('data-fancybox', groupName || 'ember-images');
-        var caption = (img.getAttribute('alt') || '').trim();
-        link.setAttribute('data-caption', caption);
-        if (caption && (img.closest('.post-content') || img.closest('.page-content')) && !link.querySelector('.image-inline-caption')) {
-            var captionNode = document.createElement('span');
-            captionNode.className = 'image-inline-caption';
-            captionNode.textContent = caption;
-            link.appendChild(captionNode);
-        }
-        link.classList.add('fancybox-image-link');
-        img.dataset.fancyboxReady = '1';
+        var card = img.closest('.post-detail, article[id]');
+        var id = card && card.id ? card.id : '';
+        return id ? ('post-' + id) : 'post';
     }
 
-    function refreshFancybox(root) {
-        if (!window.Fancybox || typeof window.Fancybox.bind !== 'function') {
+    // 向 LiteZoom 注册两套绑定(委托式,只需注册一次)
+    var liteZoomBound = false;
+    function bindLiteZoom() {
+        if (liteZoomBound || !window.LiteZoom) {
             return;
         }
-        window.Fancybox.bind('[data-fancybox]', {
-            animated: true,
-            compact: false,
-            dragToClose: true,
-            hideScrollbar: false,
-            Toolbar: {
-                display: {
-                    left: ['infobar'],
-                    middle: [],
-                    right: ['zoomIn', 'zoomOut', 'close']
-                }
-            }
+        liteZoomBound = true;
+        // 首页/说说:简单模式 —— 点开放大 + 左右切换 + 关闭
+        window.LiteZoom.bind('.talk-images img', {
+            mode: 'simple',
+            group: liteZoomTalkGroup
+        });
+        // 文章/页面正文:完整模式 —— 缩放/平移 + 缩略图 + caption
+        window.LiteZoom.bind('.post-content img, .page-content img', {
+            mode: 'full',
+            group: liteZoomPostGroup,
+            caption: function(img) { return (img.getAttribute('alt') || '').trim(); }
         });
     }
 
@@ -3828,30 +3806,11 @@
         var postCoverImages = Array.prototype.slice.call(root.querySelectorAll('.post-hero-card .post-cover img'));
         var avatarImages = Array.prototype.slice.call(root.querySelectorAll('.comment-avatar, .music-share-comment-avatar, .music-song-comment-avatar img'));
 
-        function fancyboxGroupForImage(img) {
-            if (img.closest('.talk-images')) {
-                var talkCard = img.closest('.home-talk-card, .talk-card, article[id]');
-                var talkId = talkCard && talkCard.id ? talkCard.id : '';
-                return talkId ? ('talk-images-' + talkId) : 'talk-images';
-            }
-            if (img.closest('.page-content')) {
-                return 'page-images';
-            }
-            var postCard = img.closest('.post-detail, article[id]');
-            var postId = postCard && postCard.id ? postCard.id : '';
-            return postId ? ('post-images-' + postId) : 'post-images';
-        }
-
         images.forEach(function(img) {
             if (!img.hasAttribute('loading')) {
                 img.setAttribute('loading', 'lazy');
             }
             img.setAttribute('decoding', 'async');
-            if (img.closest('.post-hero-card') || img.closest('.home-post-cover')) {
-                img.dataset.fancyboxDisabled = '1';
-            } else {
-                bindFancyboxImage(img, fancyboxGroupForImage(img));
-            }
             prepareImageLoading(img);
         });
 
@@ -3869,7 +3828,7 @@
 
         avatarImages.forEach(prepareAvatarLoading);
 
-        refreshFancybox(root);
+        bindLiteZoom();
     }
 
     // 导航:悬停「文章」时整体盒子向下展开分类
