@@ -30,6 +30,17 @@
     box-shadow: var(--shadow-sm);
 }
 
+@supports (content-visibility: auto) {
+    .home-list > .home-card {
+        content-visibility: auto;
+        contain-intrinsic-size: auto 320px;
+    }
+
+    .home-list > .home-music-card {
+        contain-intrinsic-size: auto 250px;
+    }
+}
+
 html[data-theme="dark"] .home-card {
     background: rgba(255, 255, 255, 0.025);
     border-color: var(--c-border);
@@ -3028,7 +3039,7 @@ html[data-theme] .home-list .home-x-card.x-card:hover {
 
 .home-list .x-card:hover .x-card-logo-link,
 .home-list .home-x-card.x-card:hover .x-card-logo-link {
-    transform: scale(1.2) !important;
+    transform: none !important;
 }
 
 .home-list .x-card-logo-link {
@@ -3377,4 +3388,204 @@ html[data-theme] .home-list .home-x-card.x-card:hover {
         right: 22px;
         left: 22px;
     }
+}
+
+/* Card hover reset: keep cards visually stable; only article cover images may zoom. */
+.home-card:hover,
+.post-card:hover,
+.home-talk-card:hover,
+.talk-card:hover,
+.home-x-card:hover,
+.x-card:hover,
+.home-music-card:hover,
+.music-card:hover,
+.post-compact-row:hover,
+.front-publish-form:hover,
+.post-body-card:hover,
+.post-hero-card:hover,
+.page-detail:hover,
+.widget:hover,
+.subscribe-feed-card:hover,
+.reader-tile-link:hover,
+.archive-hero:hover,
+.archive-year:hover,
+.archive-category-card:hover,
+.archive-post-row:hover,
+.search-result-card:hover,
+.friend-row:hover,
+.post-feature-card:hover,
+.category-hero:hover,
+.archive-heat-panel:hover,
+.activity-item-body:hover,
+.category-page .category-post-list .category-post-card:hover,
+html[data-theme] .home-card:hover,
+html[data-theme] .post-card:hover,
+html[data-theme] .home-talk-card:hover,
+html[data-theme] .talk-card:hover,
+html[data-theme] .home-x-card:hover,
+html[data-theme] .x-card:hover,
+html[data-theme] .home-music-card:hover,
+html[data-theme] .music-card:hover,
+html[data-theme] .post-compact-row:hover,
+html[data-theme] .front-publish-form:hover,
+html[data-theme] .post-body-card:hover,
+html[data-theme] .post-hero-card:hover,
+html[data-theme] .page-detail:hover,
+html[data-theme] .widget:hover,
+html[data-theme] .subscribe-feed-card:hover,
+html[data-theme] .reader-tile-link:hover,
+html[data-theme] .archive-hero:hover,
+html[data-theme] .archive-year:hover,
+html[data-theme] .archive-category-card:hover,
+html[data-theme] .archive-post-row:hover,
+html[data-theme] .search-result-card:hover,
+html[data-theme] .friend-row:hover,
+html[data-theme] .post-feature-card:hover,
+html[data-theme] .category-hero:hover,
+html[data-theme] .archive-heat-panel:hover,
+html[data-theme] .activity-item-body:hover,
+html[data-theme] .category-page .category-post-list .category-post-card:hover {
+    border-color: var(--c-border) !important;
+    box-shadow: var(--shadow-sm) !important;
+    transform: none !important;
+}
+
+.home-card:hover img,
+.home-talk-card:hover img,
+.talk-card:hover img,
+.home-x-card:hover img,
+.x-card:hover img,
+.home-music-card:hover img,
+.music-card:hover img,
+.reader-tile-link:hover img,
+.friend-row:hover img,
+html[data-theme] .archive-post-row:hover img,
+html[data-theme] .post-feature-card:hover img,
+html[data-theme] .home-card:hover img,
+html[data-theme] .home-talk-card:hover img,
+html[data-theme] .talk-card:hover img,
+html[data-theme] .home-x-card:hover img,
+html[data-theme] .x-card:hover img,
+html[data-theme] .home-music-card:hover img,
+html[data-theme] .music-card:hover img,
+html[data-theme] .reader-tile-link:hover img,
+html[data-theme] .friend-row:hover img {
+    transform: none !important;
+}
+
+.friend-row:hover,
+.archive-post-row:hover,
+html[data-theme] .friend-row:hover,
+html[data-theme] .archive-post-row:hover {
+    color: var(--c-text) !important;
+    background: transparent !important;
+}
+
+.friend-row:hover .friend-info span,
+html[data-theme] .friend-row:hover .friend-info span {
+    color: var(--c-text-muted) !important;
+    background: transparent !important;
+}
+
+.friend-row:hover .friend-rss-indicator,
+html[data-theme] .friend-row:hover .friend-rss-indicator {
+    color: var(--c-text-muted) !important;
+    background: var(--c-card-soft) !important;
+}
+
+.friend-row:hover .friend-info em,
+html[data-theme] .friend-row:hover .friend-info em {
+    color: var(--c-text-soft) !important;
+    background: transparent !important;
+}
+
+.friend-row:hover .friend-rss-indicator,
+html[data-theme] .friend-row:hover .friend-rss-indicator {
+    border-color: var(--c-border-soft) !important;
+}
+
+.post-compact-link:hover .post-compact-title,
+html[data-theme] .post-compact-link:hover .post-compact-title {
+    color: inherit !important;
+}
+
+.post-compact-row:hover .post-compact-date,
+html[data-theme] .post-compact-row:hover .post-compact-date {
+    opacity: 1 !important;
+    transform: none !important;
+}
+
+.reader-tile-link:hover::before,
+html[data-theme] .reader-tile-link:hover::before {
+    opacity: 0 !important;
+    transform: translateX(-100%) !important;
+}
+
+.reader-tile-link:hover img,
+html[data-theme] .reader-tile-link:hover img {
+    filter: saturate(0.9) contrast(1.02) !important;
+    transform: none !important;
+}
+
+.archive-page .archive-category-panel .archive-category-card:hover,
+html[data-theme] .archive-page .archive-category-panel .archive-category-card:hover {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.archive-page .archive-shell .archive-hero:hover,
+.archive-page .archive-shell .archive-heat-panel:hover,
+.archive-page .archive-shell .archive-year:hover,
+html[data-theme] .archive-page .archive-shell .archive-hero:hover,
+html[data-theme] .archive-page .archive-shell .archive-heat-panel:hover,
+html[data-theme] .archive-page .archive-shell .archive-year:hover {
+    border-color: var(--c-border-soft) !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.archive-post-row:hover,
+html[data-theme] .archive-post-row:hover {
+    color: var(--c-text) !important;
+    background: transparent !important;
+    border-color: var(--c-border-soft) !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.post-card.has-cover:hover .home-post-cover img,
+.post-feature-card:hover .post-feature-cover img,
+html[data-theme] .post-card.has-cover:hover .home-post-cover img,
+html[data-theme] .post-feature-card:hover .post-feature-cover img {
+    transform: scale(1.05) !important;
+}
+
+.home-music-player .home-music-tonearm-img,
+.home-music-card:hover .home-music-tonearm-img,
+html[data-theme] .home-music-player .home-music-tonearm-img,
+html[data-theme] .home-music-card:hover .home-music-tonearm-img {
+    transform: rotate(-65deg) !important;
+}
+
+.home-music-player.playing .home-music-tonearm-img,
+.home-music-card:hover .home-music-player.playing .home-music-tonearm-img,
+html[data-theme] .home-music-player.playing .home-music-tonearm-img,
+html[data-theme] .home-music-card:hover .home-music-player.playing .home-music-tonearm-img {
+    transform: rotate(-45deg) !important;
+}
+
+.music-disc-player .music-tonearm-img,
+.music-disc-player:hover .music-tonearm-img,
+html[data-theme] .music-disc-player .music-tonearm-img,
+html[data-theme] .music-disc-player:hover .music-tonearm-img {
+    transform: rotate(-46deg) !important;
+}
+
+.music-disc-player.is-playing .music-tonearm-img,
+.music-disc-player.is-playing:hover .music-tonearm-img,
+html[data-theme] .music-disc-player.is-playing .music-tonearm-img,
+html[data-theme] .music-disc-player.is-playing:hover .music-tonearm-img {
+    transform: rotate(-6deg) !important;
 }

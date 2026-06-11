@@ -76,11 +76,13 @@
         '.litezoom__nav--next{right:16px;}',
         '.litezoom__nav svg{width:24px;height:24px;display:block;}',
         '.litezoom.is-single .litezoom__nav{display:none;}',
-        // caption 说明文字(full 模式)
-        '.litezoom__caption{position:absolute;left:0;right:0;bottom:0;padding:14px 22px;text-align:center;',
-        'color:rgba(255,255,255,.92);font-size:14px;line-height:1.5;z-index:3;pointer-events:none;',
-        'text-shadow:0 1px 3px rgba(0,0,0,.55);}',
-        '.litezoom.has-thumbs .litezoom__caption{bottom:88px;}',
+        // caption 说明文字(full 模式):右下角磨砂标签
+        '.litezoom__caption{position:absolute;right:24px;bottom:24px;left:auto;max-width:min(520px,calc(100vw - 48px));',
+        'padding:10px 14px;text-align:left;color:rgba(255,255,255,.94);font-size:14px;line-height:1.55;z-index:3;',
+        'pointer-events:none;background:rgba(31,41,55,.62);border:1px solid rgba(255,255,255,.14);border-radius:10px;',
+        '-webkit-backdrop-filter:blur(14px) saturate(145%);backdrop-filter:blur(14px) saturate(145%);',
+        'box-shadow:0 10px 28px rgba(0,0,0,.24);text-shadow:0 1px 2px rgba(0,0,0,.35);}',
+        '.litezoom.has-thumbs .litezoom__caption{bottom:92px;}',
         '.litezoom__caption:empty{display:none;}',
         '.litezoom[data-mode="simple"] .litezoom__caption{display:none;}',
         // 底部缩略图条(full 模式,多图)
@@ -101,6 +103,8 @@
         '.litezoom__img{max-width:100vw;max-height:82vh;}',
         '.litezoom__nav{width:38px;height:38px;}',
         '.litezoom__thumb{width:48px;height:48px;}',
+        '.litezoom__caption{right:12px;bottom:14px;max-width:calc(100vw - 24px);font-size:13px;padding:8px 11px;border-radius:8px;}',
+        '.litezoom.has-thumbs .litezoom__caption{bottom:74px;}',
         '}'
     ].join('');
 

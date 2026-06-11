@@ -27,7 +27,7 @@
         @if(!empty($images))
             <div class="home-card-media talk-images talk-images-count-{{ min($imageCount, 10) }}">
                 @foreach($images as $img)
-                    <img src="{{ trim($img) }}" alt="" loading="lazy">
+                    <img src="{{ trim($img) }}" alt="" loading="lazy" decoding="async">
                 @endforeach
             </div>
         @endif

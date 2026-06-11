@@ -3523,6 +3523,32 @@
     }
 
     // 统一绑定动态交互(初始 + 加载更多后的新内容,带去重守卫)
+    var discPlayerFallbackLoop = 0;
+    function ensureDiscPlayerFallbackLoop(root) {
+        root = root || document;
+        if (discPlayerFallbackLoop) {
+            return;
+        }
+        if (!root.querySelector || !root.querySelector('.music-disc-player')) {
+            if (root !== document && !document.querySelector('.music-disc-player')) {
+                return;
+            }
+            if (root === document) {
+                return;
+            }
+        }
+        discPlayerFallbackLoop = window.setInterval(function() {
+            var players = document.querySelectorAll('.music-disc-player');
+            for (var i = 0; i < players.length; i += 1) {
+                var p = players[i];
+                var a = p.querySelector('audio');
+                if (a && !a.paused && !a.ended && typeof p.__lnRenderProgress === 'function') {
+                    p.__lnRenderProgress();
+                }
+            }
+        }, 250);
+    }
+
     function bindDynamic(root) {
         root = root || document;
         bindToastSeeds(root);
@@ -3539,6 +3565,7 @@
         root.querySelectorAll('.home-music-card .music-share-comments .comment-item').forEach(bindMusicCommentCard);
         root.querySelectorAll('.music-card').forEach(bindMusicCard);
         root.querySelectorAll('.music-disc-player').forEach(bindMusicDiscPlayer);
+        ensureDiscPlayerFallbackLoop(root);
         root.querySelectorAll('[data-music-comments-toggle]').forEach(bindMusicCommentsToggle);
         root.querySelectorAll('[data-music-comments-close]').forEach(bindMusicCommentsClose);
         root.querySelectorAll('.front-publish-form').forEach(bindPublishForm);
@@ -3551,19 +3578,6 @@
         bindTalkKeywordFilter(root);
     }
     bindDynamic(document);
-
-    // 兜底:全局轮询驱动正在播放的唱机刷新时间/进度/歌词
-    // (不依赖各播放器自身的 timeupdate/rAF,规避其在某些环境下不触发的问题)
-    window.setInterval(function() {
-        var players = document.querySelectorAll('.music-disc-player');
-        for (var i = 0; i < players.length; i += 1) {
-            var p = players[i];
-            var a = p.querySelector('audio');
-            if (a && !a.paused && !a.ended && typeof p.__lnRenderProgress === 'function') {
-                p.__lnRenderProgress();
-            }
-        }
-    }, 250);
 
     function initPjax() {
         if (!window.fetch || !window.DOMParser || !window.history || document.documentElement.dataset.lnPjaxBound === '1') {
@@ -3973,7 +3987,6 @@
                 requestAnimationFrame(function() {
                     scrollTicking = false;
                     updateScrolledNav();
-                    syncShellWidth();
                     hideIndicator();
                 });
             }, { passive: true });
