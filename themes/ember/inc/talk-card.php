@@ -21,7 +21,7 @@
     @if(!empty($images))
         <div class="talk-images">
             @foreach($images as $img)
-                <img src="{{ trim($img) }}" alt="" loading="lazy">
+                <img src="{{ trim($img) }}" alt="" loading="lazy" decoding="async">
             @endforeach
         </div>
     @endif

@@ -9,8 +9,6 @@
         $categoryCounts = $categoryCounts ?? [];
         $allCount = array_sum(array_map('intval', $categoryCounts));
     @endphp
-    <link rel="stylesheet" href="https://static.bluecdn.com/libs/fancyapps/ui/6.1.14/dist/fancybox/fancybox.css">
-
     <div class="upload-area" id="upload-area">
         <button type="button" id="upload-btn" class="btn btn-primary"><i class="fa-solid fa-arrow-up-from-bracket"></i> 点击上传</button>
         <p class="field-hint"><i class="fa-solid fa-paperclip"></i> 拖拽文件到此处，图片上传{{ $webpEnabled ? '后会自动转换为 WebP' : '会保留原始格式' }}；音乐、视频、歌词和其他文件保持原格式。</p>
@@ -49,11 +47,11 @@
                     <span class="attachment-name" title="{{ $caption }}">{{ $caption }}</span>
                 </div>
                 @if($a->isImage())
-                    <a href="{{ $publicUrl }}" class="attachment-preview-link" data-fancybox="admin-attachments" data-caption="{{ $caption }}">
-                        <img src="{{ $publicUrl }}" alt="{{ $caption }}" loading="lazy">
+                    <a href="{{ $publicUrl }}" class="attachment-preview-link">
+                        <img src="{{ $publicUrl }}" alt="{{ $caption }}" loading="lazy" data-litezoom-caption="{{ $caption }}">
                     </a>
                 @elseif($a->isVideo())
-                    <a href="{{ $publicUrl }}" class="attachment-preview-link attachment-file-icon attachment-video-preview" data-fancybox="admin-attachments" data-type="html5video" data-caption="{{ $caption }}">
+                    <a href="{{ $publicUrl }}" class="attachment-preview-link attachment-file-icon attachment-video-preview" target="_blank" rel="noopener" title="{{ $caption }}">
                         <i class="fa-regular fa-circle-play"></i>
                     </a>
                 @else
@@ -77,17 +75,21 @@
     </div>
     {!! $paginator ?? '' !!}
 
-    <script src="https://static.bluecdn.com/libs/fancyapps/ui/6.1.14/dist/fancybox/fancybox.umd.js"></script>
+    @php $__liteZoomJs = '/themes/ember/assets/litezoom.js'; @endphp
+    <script src="{{ $__liteZoomJs }}?v={{ @filemtime(BASE_PATH . $__liteZoomJs) ?: time() }}"></script>
     <script>
     const csrf = '{{ $csrf }}';
     const uploadBtn = document.getElementById('upload-btn');
     const fileInput = document.getElementById('file-input');
     const uploadArea = document.getElementById('upload-area');
 
-    if (window.Fancybox && typeof window.Fancybox.bind === 'function') {
-        window.Fancybox.bind('[data-fancybox="admin-attachments"]', {
-            dragToClose: true,
-            animated: true,
+    if (window.LiteZoom && typeof window.LiteZoom.bind === 'function') {
+        window.LiteZoom.bind('.attachment-grid .attachment-preview-link img', {
+            mode: 'full',
+            group: function() { return 'admin-attachments'; },
+            caption: function(img) {
+                return (img.getAttribute('data-litezoom-caption') || img.getAttribute('alt') || '').trim();
+            }
         });
     }
 
