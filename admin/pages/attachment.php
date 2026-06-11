@@ -9,11 +9,11 @@
         $categoryCounts = $categoryCounts ?? [];
         $allCount = array_sum(array_map('intval', $categoryCounts));
     @endphp
-    <link rel="stylesheet" href="/themes/ember/assets/vendor/fancybox/fancybox.css?v={{ \App\Services\ThemeManager::assetVersion('/themes/ember/assets/vendor/fancybox/fancybox.css') }}">
+    <link rel="stylesheet" href="https://static.bluecdn.com/libs/fancyapps/ui/6.1.14/dist/fancybox/fancybox.css">
 
     <div class="upload-area" id="upload-area">
-        <p><i class="fa-solid fa-paperclip"></i> 拖拽文件到此处，或 <button type="button" id="upload-btn" class="btn btn-primary">点击上传</button></p>
-        <p class="field-hint">图片上传{{ $webpEnabled ? '后会自动转换为 WebP' : '会保留原始格式' }}；音乐、视频、歌词和其他文件保持原格式。</p>
+        <button type="button" id="upload-btn" class="btn btn-primary"><i class="fa-solid fa-arrow-up-from-bracket"></i> 点击上传</button>
+        <p class="field-hint"><i class="fa-solid fa-paperclip"></i> 拖拽文件到此处，图片上传{{ $webpEnabled ? '后会自动转换为 WebP' : '会保留原始格式' }}；音乐、视频、歌词和其他文件保持原格式。</p>
         <input type="file" id="file-input" multiple style="display:none">
     </div>
 
@@ -44,6 +44,10 @@
                 };
             @endphp
             <div class="attachment-card" data-id="{{ $a->id }}">
+                <div class="attachment-card-head">
+                    <span class="attachment-type-badge attachment-type-{{ $categoryKey }}">{{ $categoryLabel }}</span>
+                    <span class="attachment-name" title="{{ $caption }}">{{ $caption }}</span>
+                </div>
                 @if($a->isImage())
                     <a href="{{ $publicUrl }}" class="attachment-preview-link" data-fancybox="admin-attachments" data-caption="{{ $caption }}">
                         <img src="{{ $publicUrl }}" alt="{{ $caption }}" loading="lazy">
@@ -56,14 +60,16 @@
                     <div class="attachment-file-icon attachment-type-{{ $categoryKey }}"><i class="{{ $icon }}"></i></div>
                 @endif
                 <div class="attachment-info">
-                    <div class="attachment-name" title="{{ $caption }}">{{ $caption }}</div>
                     <div class="attachment-meta">
-                        <span class="attachment-type-badge attachment-type-{{ $categoryKey }}">{{ $categoryLabel }}</span>
                         <span>{{ \App\Core\Helper::bytesToHuman((int)$a->filesize) }}</span>
-                    </div>
-                    <div class="attachment-actions">
-                        <button type="button" class="link-btn copy-url" data-url="{{ $publicUrl }}">复制URL</button>
-                        <button type="button" class="link-btn link-danger delete-att" data-id="{{ $a->id }}">删除</button>
+                        <div class="attachment-actions">
+                            <button type="button" class="admin-action-btn admin-action-copy copy-url" data-url="{{ $publicUrl }}" title="复制 URL" aria-label="复制 URL">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                            <button type="button" class="admin-action-btn admin-action-delete delete-att" data-id="{{ $a->id }}" title="删除" aria-label="删除">
+                                <i class="fa-regular fa-trash-can"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -71,7 +77,7 @@
     </div>
     {!! $paginator ?? '' !!}
 
-    <script src="/themes/ember/assets/vendor/fancybox/fancybox.umd.js?v={{ \App\Services\ThemeManager::assetVersion('/themes/ember/assets/vendor/fancybox/fancybox.umd.js') }}"></script>
+    <script src="https://static.bluecdn.com/libs/fancyapps/ui/6.1.14/dist/fancybox/fancybox.umd.js"></script>
     <script>
     const csrf = '{{ $csrf }}';
     const uploadBtn = document.getElementById('upload-btn');
@@ -130,8 +136,11 @@
             const url = this.dataset.url;
             const fullUrl = /^https?:\/\//i.test(url) ? url : window.location.origin + url;
             navigator.clipboard.writeText(fullUrl).then(() => {
-                this.textContent = '已复制';
-                setTimeout(() => this.textContent = '复制URL', 2000);
+                const icon = this.querySelector('i');
+                if (icon) icon.className = 'fa-solid fa-check';
+                setTimeout(() => {
+                    if (icon) icon.className = 'fa-regular fa-copy';
+                }, 2000);
             });
         });
     });

@@ -1368,6 +1368,30 @@
         });
     }
 
+    function initAdminMobileMenu() {
+        var sidebar = document.querySelector('.admin-sidebar');
+        var toggle = document.querySelector('[data-admin-mobile-menu-toggle]');
+        if (!sidebar || !toggle || toggle.dataset.bound === '1') {
+            return;
+        }
+        toggle.dataset.bound = '1';
+        var label = toggle.querySelector('span');
+        var icon = toggle.querySelector('i');
+
+        function sync() {
+            var open = sidebar.classList.contains('is-mobile-menu-open');
+            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            if (label) label.textContent = open ? '收起菜单' : '展开菜单';
+            if (icon) icon.className = open ? 'fa-solid fa-chevron-up' : 'fa-solid fa-ellipsis';
+        }
+
+        toggle.addEventListener('click', function() {
+            sidebar.classList.toggle('is-mobile-menu-open');
+            sync();
+        });
+        sync();
+    }
+
     function initMusicShareDialog() {
         var dialog = document.querySelector('[data-music-share-dialog]');
         var form = dialog ? dialog.querySelector('[data-music-share-form]') : null;
@@ -1437,6 +1461,7 @@
     }
 
     initAdminMenuBranches();
+    initAdminMobileMenu();
     initAdminSidebarSearch();
     initMusicShareDialog();
     initCoverUpload();

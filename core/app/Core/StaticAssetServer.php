@@ -43,16 +43,7 @@ final class StaticAssetServer
         if (isset($rootFavicons[$path])) {
             return $rootFavicons[$path];
         }
-        if (str_starts_with($path, '/assets/uploads/')) {
-            return '/uploads/' . substr($path, strlen('/assets/uploads/'));
-        }
         return $path;
-    }
-
-    public static function isLegacyUploadPath(string $requestPath): bool
-    {
-        $path = '/' . ltrim(rawurldecode($requestPath), '/');
-        return str_starts_with($path, '/assets/uploads/') || str_starts_with($path, '/uploads/');
     }
 
     public static function isAllowedPath(string $path): bool

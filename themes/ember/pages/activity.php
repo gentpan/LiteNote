@@ -31,9 +31,9 @@
                 <small>输入 {{ number_format((int)($todayStats['ai_input_tokens'] ?? 0)) }} · 输出 {{ number_format((int)($todayStats['ai_output_tokens'] ?? 0)) }}</small>
             </article>
             <article class="activity-stat-card">
-                <strong>{{ count(array_filter($heatmap, static fn($cell) => (int)($cell['total'] ?? 0) > 0)) }}</strong>
+                <strong>{{ (int)($heatmap['activeDays'] ?? 0) }}</strong>
                 <span>活跃天数</span>
-                <small>最近 180 天</small>
+                <small>最近一年</small>
             </article>
         </div>
 
@@ -61,13 +61,40 @@
             <section class="activity-panel activity-heat-panel">
                 <div class="activity-panel-head">
                     <h3>年度点阵</h3>
-                    <span>180d</span>
+                    <span class="activity-heat-range">
+                        <b class="activity-heat-range-full">365D</b>
+                        <b class="activity-heat-range-mobile">120D</b>
+                    </span>
                 </div>
-                <div class="activity-heatmap" aria-label="最近 180 天动态点阵">
-                    @foreach($heatmap as $cell)
-                        <span class="activity-dot activity-dot-{{ $cell['dominant_type'] ?? 'none' }} activity-dot-level-{{ min(4, (int)($cell['total'] ?? 0)) }}"
-                              title="{{ $cell['date'] }} · {{ (int)($cell['total'] ?? 0) }} 条"></span>
-                    @endforeach
+                <div class="site-heatmap activity-heatmap" aria-label="近一年动态热力图">
+                    <div class="site-heatmap-scroll">
+                        <div class="site-heatmap-inner" style="--weeks: {{ $heatmap['weeks'] ?? 53 }}">
+                            <div class="site-heatmap-months">
+                                @foreach(($heatmap['months'] ?? []) as $month)
+                                    <span style="grid-column: {{ $month['week'] }}">{{ $month['label'] }}</span>
+                                @endforeach
+                            </div>
+                            <div class="site-heatmap-cells">
+                                @foreach(($heatmap['days'] ?? []) as $cell)
+                                    @php
+                                        $eventCount = (int)($cell['total'] ?? 0);
+                                        $heatTitle = $eventCount > 0 ? $eventCount . ' 条动态' : '没有动态';
+                                    @endphp
+                                    <span class="site-heatmap-cell level-{{ $cell['level'] }} {{ !empty($cell['muted']) ? 'is-muted' : '' }}"
+                                          title="{{ $cell['date'] }}：{{ $heatTitle }}"></span>
+                                @endforeach
+                            </div>
+                            <div class="site-heatmap-legend">
+                                <span>少</span>
+                                <i class="level-0"></i>
+                                <i class="level-1"></i>
+                                <i class="level-2"></i>
+                                <i class="level-3"></i>
+                                <i class="level-4"></i>
+                                <span>多</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
         </div>

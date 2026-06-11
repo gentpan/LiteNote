@@ -24,10 +24,12 @@ final class XmarksController
         $page = max(1, (int)($_GET['page'] ?? 1));
         ['items' => $items, 'total' => $total] = Activity::paginate($page, $perPage, ['source' => 'x_bookmarks'], true);
         $list = array_map(static fn(Activity $activity): TweetCardItem => new TweetCardItem($activity), $items);
+        $lastUpdatedAt = !empty($list) ? $list[0]->publishedAt() : '';
 
         return View::render('front.x.index', [
             'list' => $list,
             'total' => $total,
+            'lastUpdatedAt' => $lastUpdatedAt,
             'page' => $page,
             'perPage' => $perPage,
             'paginator' => Helper::loadMore($page, $total, $perPage, Helper::url('/xmarks')),

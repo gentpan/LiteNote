@@ -82,12 +82,105 @@ class HomeController
         return View::render('home.posts', [
             'posts'     => $posts,
             'total'     => $total,
+            'heatmap'   => $this->postsHeatmap(),
             'page'      => $page,
             'perPage'   => $perPage,
             'paginator' => Helper::loadMore($page, $totalPages, 1, Helper::url('/posts')),
             'pageTitle' => '文章',
             'activeNav' => 'posts',
         ]);
+    }
+
+    private function postsHeatmap(): array
+    {
+        $wordsByDay = [];
+        $articlesByDay = [];
+        $totalWords = 0;
+        $activeDays = [];
+        $firstPublishedTs = null;
+
+        foreach (Post::archives() as $row) {
+            $day = substr((string)($row['published_at'] ?? ''), 0, 10);
+            if ($day === '') {
+                continue;
+            }
+            $dayTs = strtotime($day);
+            if ($dayTs !== false && ($firstPublishedTs === null || $dayTs < $firstPublishedTs)) {
+                $firstPublishedTs = $dayTs;
+            }
+
+            $post = new Post($row);
+            $words = $this->wordCount($post->markdown() ?: (string)($row['summary'] ?? ''));
+            $wordsByDay[$day] = ($wordsByDay[$day] ?? 0) + $words;
+            $articlesByDay[$day] = ($articlesByDay[$day] ?? 0) + 1;
+            $totalWords += $words;
+            $activeDays[$day] = true;
+        }
+
+        $today = strtotime(date('Y-m-d')) ?: time();
+        $rangeStart = strtotime('-364 days', $today) ?: $today;
+        $startDow = (int)date('w', $rangeStart);
+        $gridStart = strtotime("-{$startDow} days", $rangeStart) ?: $rangeStart;
+        $endDow = (int)date('w', $today);
+        $gridEnd = strtotime('+' . (6 - $endDow) . ' days', $today) ?: $today;
+
+        $days = [];
+        $months = [];
+        $monthSeen = [];
+        $i = 0;
+        for ($ts = $gridStart; $ts <= $gridEnd; $ts += 86400, $i++) {
+            $date = date('Y-m-d', $ts);
+            $inRange = $ts >= $rangeStart && $ts <= $today;
+            $week = intdiv($i, 7) + 1;
+            if ($inRange) {
+                $monthKey = date('Y-m', $ts);
+                if (!isset($monthSeen[$monthKey]) && ((int)date('j', $ts) <= 7 || $date === date('Y-m-d', $rangeStart))) {
+                    $monthSeen[$monthKey] = true;
+                    $months[] = ['label' => date('n月', $ts), 'week' => $week];
+                }
+            }
+
+            $words = $wordsByDay[$date] ?? 0;
+            $days[] = [
+                'date' => $date,
+                'words' => $inRange ? $words : 0,
+                'articles' => $inRange ? ($articlesByDay[$date] ?? 0) : 0,
+                'level' => $inRange ? $this->heatmapLevel($words) : 0,
+                'muted' => !$inRange,
+            ];
+        }
+
+        return [
+            'days' => $days,
+            'months' => $months,
+            'weeks' => max(1, (int)ceil(count($days) / 7)),
+            'articles' => array_sum($articlesByDay),
+            'activeDays' => count($activeDays),
+            'firstDate' => $firstPublishedTs ? date('Y-m-d', $firstPublishedTs) : null,
+            'spanDays' => $firstPublishedTs ? max(1, (int)floor(($today - $firstPublishedTs) / 86400) + 1) : 0,
+            'words' => $totalWords,
+        ];
+    }
+
+    private function wordCount(string $markdown): int
+    {
+        $plain = preg_replace('/```.*?```/s', ' ', $markdown) ?? $markdown;
+        $plain = preg_replace('/!\[(.*?)\]\((.*?)\)/', '$1', $plain) ?? $plain;
+        $plain = preg_replace('/\[(.*?)\]\((.*?)\)/', '$1', $plain) ?? $plain;
+        $plain = preg_replace('/[#>*_`\-\[\](){ }|~!]+/u', ' ', $plain) ?? $plain;
+        $plain = trim(preg_replace('/\s+/u', '', strip_tags($plain)) ?? '');
+        return $plain === '' ? 0 : mb_strlen($plain);
+    }
+
+    private function heatmapLevel(int $words): int
+    {
+        return match (true) {
+            $words >= 1500 => 4,
+            $words >= 1000 => 3,
+            $words >= 500 => 2,
+            $words > 0 => 1,
+            default => 0,
+        };
     }
 
     public function readers(): string

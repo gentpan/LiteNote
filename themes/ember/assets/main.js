@@ -1905,7 +1905,8 @@
             var windowStart = Math.max(0, next - 2);
             var windowEnd = Math.min(spans.length - 1, next + 2);
             var missingBefore = Math.max(0, 2 - next);
-            lyricsEl.style.setProperty('--home-music-lyric-pad-top', (missingBefore * 18) + 'px');
+            var lyricLineHeight = parseFloat(getComputedStyle(lyricsEl).getPropertyValue('--home-music-lyric-line')) || 18;
+            lyricsEl.style.setProperty('--home-music-lyric-pad-top', (missingBefore * lyricLineHeight) + 'px');
             spans.forEach(function(span, index) {
                 var distance = Math.abs(index - next);
                 span.classList.toggle('is-active', index === next);
@@ -3545,6 +3546,9 @@
         bindArticleCommentIdentityPrompt(root);
         hydrateStoredLikeStates(root);
         bindImages(root);
+        bindLoadMore(root);
+        bindHomeFeedMore(root);
+        bindTalkKeywordFilter(root);
     }
     bindDynamic(document);
 
@@ -3692,6 +3696,37 @@
         wrapper.classList.add('is-loaded');
     }
 
+    function finishAvatarLoad(img) {
+        img.classList.remove('is-avatar-loading');
+        img.classList.add('is-avatar-loaded');
+    }
+
+    function prepareAvatarLoading(img) {
+        if (!img || img.dataset.avatarLoadingReady === '1') {
+            return;
+        }
+
+        img.dataset.avatarLoadingReady = '1';
+        if (!img.hasAttribute('loading')) {
+            img.setAttribute('loading', 'lazy');
+        }
+        img.setAttribute('decoding', 'async');
+        img.classList.add('is-avatar-loading');
+
+        if (img.complete) {
+            finishAvatarLoad(img);
+            return;
+        }
+
+        img.addEventListener('load', function() {
+            finishAvatarLoad(img);
+        }, { once: true });
+
+        img.addEventListener('error', function() {
+            finishAvatarLoad(img);
+        }, { once: true });
+    }
+
     function prepareImageLoading(img) {
         if (img.dataset.imageLoadingReady === '1') {
             return;
@@ -3756,7 +3791,14 @@
             link.href = src;
         }
         link.setAttribute('data-fancybox', groupName || 'ember-images');
-        link.setAttribute('data-caption', img.getAttribute('alt') || '');
+        var caption = (img.getAttribute('alt') || '').trim();
+        link.setAttribute('data-caption', caption);
+        if (caption && (img.closest('.post-content') || img.closest('.page-content')) && !link.querySelector('.image-inline-caption')) {
+            var captionNode = document.createElement('span');
+            captionNode.className = 'image-inline-caption';
+            captionNode.textContent = caption;
+            link.appendChild(captionNode);
+        }
         link.classList.add('fancybox-image-link');
         img.dataset.fancyboxReady = '1';
     }
@@ -3782,8 +3824,9 @@
 
     function bindImages(root) {
         root = root || document;
-        var images = Array.prototype.slice.call(root.querySelectorAll('.post-cover img, .post-content img, .page-content img, .talk-images img'));
+        var images = Array.prototype.slice.call(root.querySelectorAll('.post-cover img, .home-post-cover img, .post-content img, .page-content img, .talk-images img'));
         var postCoverImages = Array.prototype.slice.call(root.querySelectorAll('.post-hero-card .post-cover img'));
+        var avatarImages = Array.prototype.slice.call(root.querySelectorAll('.comment-avatar, .music-share-comment-avatar, .music-song-comment-avatar img'));
 
         function fancyboxGroupForImage(img) {
             if (img.closest('.talk-images')) {
@@ -3804,7 +3847,7 @@
                 img.setAttribute('loading', 'lazy');
             }
             img.setAttribute('decoding', 'async');
-            if (img.closest('.post-hero-card')) {
+            if (img.closest('.post-hero-card') || img.closest('.home-post-cover')) {
                 img.dataset.fancyboxDisabled = '1';
             } else {
                 bindFancyboxImage(img, fancyboxGroupForImage(img));
@@ -3823,6 +3866,8 @@
                 event.preventDefault();
             });
         });
+
+        avatarImages.forEach(prepareAvatarLoading);
 
         refreshFancybox(root);
     }
@@ -4021,7 +4066,11 @@
     }
 
     // 加载更多:首次自动加载,之后手动;到底显示"没有更多内容"
-    document.querySelectorAll('.load-more').forEach(function(lm) {
+    // 包成可重入函数并由 bindDynamic 调用,确保 PJAX 切页后新列表的按钮也能绑定
+    function bindLoadMore(root) {
+        (root || document).querySelectorAll('.load-more').forEach(function(lm) {
+        if (lm.dataset.lnLoadmore) return;
+        lm.dataset.lnLoadmore = '1';
         var pages = parseInt(lm.dataset.pages, 10) || 1;
         var page = parseInt(lm.dataset.page, 10) || 1;
         var base = lm.dataset.base || '';
@@ -4072,9 +4121,62 @@
         }
 
         if (btn) btn.addEventListener('click', function() { load(); });
-    });
+        });
+    }
+    bindLoadMore(document);
 
-    document.querySelectorAll('[data-home-feed-more]').forEach(function(box) {
+    // 滔客关键词筛选:点击侧栏 #关键词 → AJAX 拉取完整筛选结果换列表,地址栏保持 /talk 不变
+    function bindTalkKeywordFilter(root) {
+        var rail = (root || document).querySelector('[data-talk-keyword-rail]');
+        if (!rail || rail.dataset.lnFilter === '1') return;
+        rail.dataset.lnFilter = '1';
+        var section = rail.closest('.talk-list');
+        if (!section) return;
+        var chips = Array.prototype.slice.call(rail.querySelectorAll('.talk-keyword-chip'));
+
+        chips.forEach(function(chip) {
+            chip.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (chip.classList.contains('is-active')) return;
+                var href = chip.getAttribute('href');
+                var list = section.querySelector('.js-list-items');
+                if (!href || !list) return;
+
+                chips.forEach(function(c) { c.classList.remove('is-active'); });
+                chip.classList.add('is-active');
+                list.style.opacity = '0.45';
+
+                fetch(href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(function(r) { return r.text(); })
+                    .then(function(html) {
+                        var doc = new DOMParser().parseFromString(html, 'text/html');
+                        var newList = doc.querySelector('.js-list-items');
+                        var newMore = doc.querySelector('.load-more');
+                        if (newList) {
+                            list.innerHTML = newList.innerHTML;
+                            bindDynamic(list);
+                        }
+                        var oldMore = section.querySelector('.load-more');
+                        if (oldMore) oldMore.remove();
+                        if (newMore && list.parentNode) {
+                            list.parentNode.insertBefore(document.importNode(newMore, true), list.nextSibling);
+                            bindLoadMore(section);
+                        }
+                        list.style.opacity = '';
+                    })
+                    .catch(function() {
+                        list.style.opacity = '';
+                    });
+            });
+        });
+    }
+    bindTalkKeywordFilter(document);
+
+    function bindHomeFeedMore(root) {
+        root = root || document;
+        root.querySelectorAll('[data-home-feed-more]').forEach(function(box) {
+        if (box.dataset.lnHomeFeedMoreBound === '1') return;
+        box.dataset.lnHomeFeedMoreBound = '1';
         var listSelector = box.dataset.listSelector || '[data-home-feed-list]';
         var list = document.querySelector(listSelector);
         var btn = box.querySelector('.home-feed-more-btn');
@@ -4138,7 +4240,9 @@
         }
         setState('idle');
         if (btn) btn.addEventListener('click', loadMore);
-    });
+        });
+    }
+    bindHomeFeedMore(document);
 
 })();
 

@@ -5,22 +5,21 @@
         $s = $settings ?? [];
         $driver = (string)($s['driver'] ?? 'sendflare');
         $statusText = $configured ? '已配置' : '未就绪';
-        $statusClass = $configured ? 'status-published' : 'status-draft';
         $driverLabels = [
-            'sendflare' => 'SendFlare API',
+            'sendflare' => 'SendFlare',
             'smtp' => 'SMTP',
         ];
     @endphp
 
-    <div class="settings-page-shell">
+    <div class="settings-page-shell mail-settings-page">
         @include('partials.admin-settings-tabs')
 
         <div class="mail-status-grid">
             <div class="mail-status-card">
-                <span class="mail-status-icon"><i class="fa-regular fa-envelope"></i></span>
+                <span class="mail-status-icon {{ $configured ? 'mail-status-icon-success' : '' }}"><i class="fa-regular fa-envelope"></i></span>
                 <div>
                     <strong>{{ $driverLabels[$driver] ?? $driver }}</strong>
-                    <span class="status {{ $statusClass }}">{{ $statusText }}</span>
+                    <small>{{ $statusText }}</small>
                 </div>
             </div>
             <div class="mail-status-card">
@@ -124,6 +123,11 @@
                     <label>API Token</label>
                     <input type="password" name="mail[mail_sendflare_token]" value="" placeholder="{{ !empty($s['sendflare_token']) ? '已保存，留空不修改' : 'Bearer token' }}" autocomplete="off" data-no-dirty>
                 </div>
+                <div class="mail-provider-actions">
+                    <button type="submit" name="mail_scope" value="sendflare" class="btn btn-primary">
+                        <i class="fa-regular fa-floppy-disk"></i> 保存 SendFlare
+                    </button>
+                </div>
             </section>
 
             <section class="mail-provider-card">
@@ -135,13 +139,13 @@
                     </div>
                     <div class="form-group">
                         <label>Port</label>
-                        <input type="number" name="mail[mail_smtp_port]" value="{{ $s['smtp_port'] ?? 587 }}">
+                        <input type="number" id="mail-smtp-port" name="mail[mail_smtp_port]" value="{{ $s['smtp_port'] ?? 587 }}">
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label>加密</label>
-                        <select name="mail[mail_smtp_secure]">
+                        <select id="mail-smtp-secure" name="mail[mail_smtp_secure]">
                             @foreach(['tls' => 'TLS / STARTTLS', 'ssl' => 'SSL', 'none' => '不加密'] as $key => $label)
                                 <option value="{{ $key }}" {{ ($s['smtp_secure'] ?? 'tls') === $key ? 'selected' : '' }}>{{ $label }}</option>
                             @endforeach
@@ -155,6 +159,11 @@
                 <div class="form-group">
                     <label>密码</label>
                     <input type="password" name="mail[mail_smtp_password]" value="" placeholder="{{ !empty($s['smtp_password']) ? '已保存，留空不修改' : 'SMTP password' }}" autocomplete="off" data-no-dirty>
+                </div>
+                <div class="mail-provider-actions">
+                    <button type="submit" name="mail_scope" value="smtp" class="btn btn-primary">
+                        <i class="fa-regular fa-floppy-disk"></i> 保存 SMTP
+                    </button>
                 </div>
             </section>
         </div>
@@ -180,7 +189,7 @@
 
         <section class="admin-form mail-log-panel">
         <h3 class="settings-group-title"><i class="fa-regular fa-rectangle-list"></i> 最近邮件日志</h3>
-        <table class="admin-table">
+        <table class="admin-table mail-log-table">
             <thead>
                 <tr>
                     <th>时间</th>
@@ -215,5 +224,30 @@
             </tbody>
         </table>
         </section>
+        <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var secure = document.getElementById('mail-smtp-secure');
+            var port = document.getElementById('mail-smtp-port');
+            if (!secure || !port) {
+                return;
+            }
+
+            var ports = {
+                ssl: '465',
+                tls: '587',
+                none: '25'
+            };
+
+            secure.addEventListener('change', function () {
+                var nextPort = ports[secure.value];
+                if (!nextPort || port.value === nextPort) {
+                    return;
+                }
+                port.value = nextPort;
+                port.dispatchEvent(new Event('input', { bubbles: true }));
+                port.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+        });
+        </script>
     </div>
 @endsection

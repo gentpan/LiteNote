@@ -4,6 +4,19 @@
     @php
         $postCover = $post->displayCover();
         $commentsOpen = (int)($post->allow_comments ?? 1) === 1;
+        $postPublishedTs = strtotime((string)$post->published_at) ?: time();
+        $postPublishedFull = date('Y-m-d H:i', $postPublishedTs);
+        $postMonthLabels = ['', '一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+        $postDayLabels = [
+            1 => '初一', 2 => '初二', 3 => '初三', 4 => '初四', 5 => '初五', 6 => '初六', 7 => '初七', 8 => '初八', 9 => '初九',
+            10 => '初十', 11 => '十一', 12 => '十二', 13 => '十三', 14 => '十四', 15 => '十五', 16 => '十六', 17 => '十七',
+            18 => '十八', 19 => '十九', 20 => '廿', 21 => '廿一', 22 => '廿二', 23 => '廿三', 24 => '廿四', 25 => '廿五',
+            26 => '廿六', 27 => '廿七', 28 => '廿八', 29 => '廿九', 30 => '三十', 31 => '卅一',
+        ];
+        $postPublishedMonth = $postMonthLabels[(int)date('n', $postPublishedTs)] ?? date('m月', $postPublishedTs);
+        $postPublishedDay = $postDayLabels[(int)date('j', $postPublishedTs)] ?? date('d日', $postPublishedTs);
+        $postAuthorName = !empty($author) ? ($author->nickname ?: $author->username) : ($site['title'] ?? '作者');
+        $postAuthorAvatar = !empty($author) ? $author->getAvatarUrl(40) : '';
     @endphp
     <article class="post-detail has-cover">
         <div class="post-body-card post-detail-card">
@@ -31,6 +44,18 @@
                     }
                 @endphp
                 <aside class="post-side-stats" aria-label="文章数据">
+                    <time class="post-side-stat post-side-stat--date" datetime="{{ date('c', $postPublishedTs) }}" title="{{ $postPublishedFull }}">
+                        <span class="post-side-date">
+                            <span>{{ $postPublishedMonth }}</span>
+                            <span>{{ $postPublishedDay }}</span>
+                        </span>
+                    </time>
+                    @if($category)
+                        <a class="post-side-stat post-side-category" href="/category/{{ $category->slug }}" title="分类：{{ $category->name }}">
+                            <i class="{{ $category->iconClass() }}" aria-hidden="true"></i>
+                            <span>{{ $category->name }}</span>
+                        </a>
+                    @endif
                     <span class="post-side-stat" title="{{ (int)$post->views }} 浏览">
                         <i class="fa-regular fa-eye" aria-hidden="true"></i>
                         <span>{{ \App\Core\Helper::compactNumber((int)$post->views) }}</span>
@@ -48,26 +73,53 @@
                     </button>
                 </div>
                 <div class="post-end-divider" aria-hidden="true"><span>THE END</span></div>
-                @php
-                    $postAuthorName = !empty($author) ? ($author->nickname ?: $author->username) : ($site['title'] ?? '作者');
-                    $postAuthorAvatar = !empty($author) ? $author->getAvatarUrl(48) : '';
-                @endphp
                 <div class="post-license-card">
                     <div class="post-license-info">
                         @if($postAuthorAvatar !== '')
                             <img class="post-license-avatar" src="{{ $postAuthorAvatar }}" alt="{{ $postAuthorName }}" loading="lazy" width="28" height="28">
                         @endif
                         <strong class="post-license-author">{{ $postAuthorName }}</strong>
-                        <span class="post-license-text">
-                            本文于 {!! \App\Core\Helper::dateTimeTag($post->published_at) !!} 发布@if($category)在 <a class="post-license-inline-link" href="/category/{{ $category->slug }}">{{ $category->name }}</a> 下@endif，采用 <i class="fa-brands fa-creative-commons" aria-hidden="true"></i> <a class="post-license-inline-link" href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-NC-SA 4.0</a> 许可协议，转载请注明来源。
-                        </span>
+                        @if($category)
+                            <span class="post-license-category">发布在 <a class="post-license-inline-link post-license-category-link" href="/category/{{ $category->slug }}"><i class="{{ $category->iconClass() }}" aria-hidden="true"></i>{{ $category->name }}</a></span>
+                        @endif
+                        <span class="post-license-terms">本文采用 <i class="fa-brands fa-creative-commons" aria-hidden="true"></i> <a class="post-license-inline-link" href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-NC-SA 4.0</a> 许可协议，转载请注明来源。</span>
                     </div>
                 </div>
                 {{-- 标签功能已下线,UI 隐藏(数据 + 代码保留) --}}
                 {{-- 文章底部 author block 已删除(2026-06) --}}
 
                 <section class="comments" id="comments">
-                    <h3>评论 ({{ count($comments) }})</h3>
+                    @php
+                        $commentTotal = count($comments);
+                        $commentParticipants = [];
+                        foreach ($comments as $commentItem) {
+                            $participantKey = trim((string)($commentItem->email ?? ''));
+                            if ($participantKey !== '') {
+                                $participantKey = 'email:' . strtolower($participantKey);
+                            } else {
+                                $participantKey = trim((string)($commentItem->ip ?? ''));
+                                if ($participantKey !== '') {
+                                    $participantKey = 'ip:' . $participantKey;
+                                } else {
+                                    $participantKey = 'name:' . trim((string)($commentItem->nickname ?? ''));
+                                }
+                            }
+                            if ($participantKey !== 'name:') {
+                                $commentParticipants[$participantKey] = true;
+                            }
+                        }
+                        $commentParticipantTotal = count($commentParticipants);
+                    @endphp
+                    <h3>
+                        <span class="comments-title-label">
+                            <i class="fa-regular fa-comments" aria-hidden="true"></i>
+                            <span>{{ $post->title }}</span>
+                        </span>
+                        <span class="comments-title-stats">
+                            <span><i class="fa-solid fa-people-group" aria-hidden="true"></i>{{ $commentParticipantTotal }} 人参与</span>
+                            <span><i class="fa-regular fa-message" aria-hidden="true"></i>{{ $commentTotal }} 条评论</span>
+                        </span>
+                    </h3>
                     @if(\App\Core\Session::hasFlash('comment_success'))
                         <div hidden data-toast-type="success" data-toast-message="{{ \App\Core\Session::getFlash('comment_success') }}"></div>
                     @endif
@@ -78,12 +130,19 @@
                         @foreach(\App\Core\Helper::nestComments($comments) as $thread)
                             @php $cmt = $thread['comment']; @endphp
                             <li class="comment-item" data-id="{{ $cmt->id }}">
-                                <img class="comment-avatar" src="{{ $cmt->getAvatarUrl(44) }}" alt="{{ $cmt->nickname }}" loading="lazy" width="32" height="32">
+                                <img class="comment-avatar" src="{{ $cmt->getAvatarUrl(40) }}" alt="{{ $cmt->nickname }}" loading="lazy" width="32" height="32">
                                 <div class="comment-body">
                                     <div class="comment-meta">
                                         @php $commentAuthor = $cmt; @endphp
                                     @include('partials.comment-author-link')
                                         <span>· {!! \App\Core\Helper::timeTag($cmt->created_at) !!}</span>
+                                        @php
+                                            $commentCity = trim((string)($cmt->geo_city ?? ''));
+                                            $commentLocationTitle = method_exists($cmt, 'locationLabel') ? $cmt->locationLabel() : $commentCity;
+                                        @endphp
+                                        @if($commentCity !== '')
+                                            <span class="comment-location" title="{{ $commentLocationTitle }}">· {{ $commentCity }}</span>
+                                        @endif
                                         @if($commentsOpen)<button type="button" class="comment-reply-btn" data-parent-id="{{ $cmt->id }}" data-nickname="{{ $cmt->nickname }}">回复</button>@endif
                                     </div>
                                     <div class="comment-content">{{ $cmt->content }}</div>
@@ -99,6 +158,13 @@
                                                     @include('partials.comment-author-link')
                                                         @if(!empty($reply->reply_to_name))<span class="reply-arrow">›</span><span class="reply-target">{{ $reply->reply_to_name }}</span>@endif
                                                         <span>· {!! \App\Core\Helper::timeTag($reply->created_at) !!}</span>
+                                                        @php
+                                                            $replyCity = trim((string)($reply->geo_city ?? ''));
+                                                            $replyLocationTitle = method_exists($reply, 'locationLabel') ? $reply->locationLabel() : $replyCity;
+                                                        @endphp
+                                                        @if($replyCity !== '')
+                                                            <span class="comment-location" title="{{ $replyLocationTitle }}">· {{ $replyCity }}</span>
+                                                        @endif
                                                         @if($commentsOpen)<button type="button" class="comment-reply-btn" data-parent-id="{{ $reply->id }}" data-nickname="{{ $reply->nickname }}">回复</button>@endif
                                                     </div>
                                                     <div class="comment-content">{{ preg_replace('/^@\S+\s*/u', '', (string) $reply->content) }}</div>

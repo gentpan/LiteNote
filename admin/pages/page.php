@@ -4,7 +4,7 @@
     <div class="admin-toolbar">
         <a class="btn btn-primary" href="/admin/pages/create">+ 新建页面</a>
     </div>
-    <table class="admin-table admin-action-table">
+    <table class="admin-table admin-action-table page-admin-table">
         <thead>
             <tr>
                 <th>ID</th>

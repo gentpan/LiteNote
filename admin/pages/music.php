@@ -9,7 +9,7 @@
         </div>
         <form method="get" class="admin-search music-admin-search">
             <input type="search" name="q" value="{{ $keyword ?? '' }}" placeholder="搜索歌名 / 歌手 / 专辑">
-            <button type="submit"><i class="fa-solid fa-magnifying-glass"></i> 搜索</button>
+            <button type="submit"><i class="fa-solid fa-magnifying-glass"></i> <span>搜索</span></button>
             @if(!empty($keyword))
                 <a class="btn" href="/admin/music">清除</a>
             @endif

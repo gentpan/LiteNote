@@ -24,7 +24,7 @@ final class FriendRssService
 
     /**
      * 抓取并返回诊断信息,用于后台显示失败原因。
-     * @return array{ok:bool, items:array<int, array{title:string,link:string,pubDate:string,description:string}>, error:string, from_cache:bool, http_code:int|null}
+     * @return array{ok:bool, items:array<int, array{title:string,link:string,pubDate:string,description:string}>, error:string, from_cache:bool, http_code:int|null, updated_at:int|null}
      */
     public static function fetchResult(string $rssUrl, int $limit = 5, int $cacheTtl = 21600, bool $force = false): array
     {
@@ -44,7 +44,7 @@ final class FriendRssService
         if (!$force && is_file($cacheFile) && (time() - filemtime($cacheFile)) < $cacheTtl) {
             $data = json_decode((string)file_get_contents($cacheFile), true);
             if (is_array($data)) {
-                return self::result(count($data) > 0, $data, count($data) > 0 ? '' : '缓存中没有解析到文章', true);
+                return self::result(count($data) > 0, $data, count($data) > 0 ? '' : '缓存中没有解析到文章', true, null, filemtime($cacheFile) ?: null);
             }
         }
 
@@ -85,7 +85,7 @@ final class FriendRssService
         }
 
         @file_put_contents($cacheFile, json_encode($items, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
-        return self::result(true, $items, '', false, $httpCode ?? null);
+        return self::result(true, $items, '', false, $httpCode ?? null, filemtime($cacheFile) ?: time());
     }
 
     /**
@@ -109,10 +109,10 @@ final class FriendRssService
 
         $data = json_decode((string)file_get_contents($cacheFile), true);
         if (!is_array($data)) {
-            return self::result(false, [], 'RSS 缓存文件无效，请重新刷新', true);
+            return self::result(false, [], 'RSS 缓存文件无效，请重新刷新', true, null, filemtime($cacheFile) ?: null);
         }
 
-        return self::result(count($data) > 0, $data, count($data) > 0 ? '' : '缓存中没有解析到文章', true);
+        return self::result(count($data) > 0, $data, count($data) > 0 ? '' : '缓存中没有解析到文章', true, null, filemtime($cacheFile) ?: null);
     }
 
     /**
@@ -161,7 +161,7 @@ final class FriendRssService
         return $items;
     }
 
-    private static function result(bool $ok, array $items, string $error = '', bool $fromCache = false, ?int $httpCode = null): array
+    private static function result(bool $ok, array $items, string $error = '', bool $fromCache = false, ?int $httpCode = null, ?int $updatedAt = null): array
     {
         return [
             'ok' => $ok,
@@ -169,6 +169,7 @@ final class FriendRssService
             'error' => $error,
             'from_cache' => $fromCache,
             'http_code' => $httpCode,
+            'updated_at' => $updatedAt,
         ];
     }
 

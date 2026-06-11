@@ -564,7 +564,7 @@ final class TweetFetchService
                     imagealphablending($resource, true);
                     imagesavealpha($resource, true);
                     $ok = imagewebp($resource, $target, self::WEBP_QUALITY);
-                    imagedestroy($resource);
+                    unset($resource);
                     if ($ok) {
                         return true;
                     }

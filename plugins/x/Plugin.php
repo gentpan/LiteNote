@@ -30,15 +30,16 @@ final class Plugin implements PluginInterface
             'label' => 'X Bookmarks',
             'icon' => 'fa-solid fa-bookmark',
             'description' => '同步我的 X 书签，允许保存别人的公开内容。',
-            'default_interval_minutes' => 360,
+            'default_interval_minutes' => 1440,
             'token_label' => 'OAuth 用户 Access Token',
             'token_hint' => '需要 OAuth 2.0 用户授权，scope 至少包含 tweet.read、users.read、bookmark.read。',
             'refresh_label' => '',
             'fields' => [
                 'username' => ['label' => '用户名', 'placeholder' => 'gentpan'],
                 'user_id' => ['label' => '用户 ID', 'placeholder' => '可选；填写后不再按用户名查询'],
-                'limit' => ['label' => '每页条数', 'placeholder' => '50'],
-                'pages' => ['label' => '同步页数', 'placeholder' => '1'],
+                'limit' => ['label' => '每次拉取条数', 'placeholder' => '10'],
+                'pages' => ['label' => '最多检查页数', 'placeholder' => '10；开启只补新增时，遇到已有书签会提前停止'],
+                'sync_new_only' => ['label' => '只补新增书签', 'placeholder' => '1 开启 / 0 关闭；遇到本地已有书签即停止'],
             ],
         ]);
 

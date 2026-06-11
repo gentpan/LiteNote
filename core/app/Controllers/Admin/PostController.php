@@ -14,6 +14,7 @@ use App\Enums\PostStatus;
 use App\Enums\Toggle;
 use App\Models\Category;
 use App\Models\Post;
+use App\Models\Setting;
 use App\Services\AiSummaryService;
 use App\Services\ActivityService;
 use App\Services\AttachmentCleanupService;
@@ -36,6 +37,34 @@ class PostController
 {
     use HasSlug, HasFlashRedirect;
 
+    private const ARTICLE_FONT_OPTIONS = [
+        'source-han-serif' => [
+            'label' => '思源宋体',
+            'description' => '适合长文阅读，偏正式的宋体风格。',
+            'family' => '"Source Han Serif CN VF", "Source Han Serif CN", "Source Han Serif SC", "Noto Serif CJK SC", "Songti SC", "SimSun", serif',
+        ],
+        'noto-sans-sc' => [
+            'label' => 'Noto Sans SC',
+            'description' => '现代无衬线，正文更清爽。',
+            'family' => '"Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif',
+        ],
+        'lxgw-wenkai' => [
+            'label' => '霞鹜文楷',
+            'description' => '更柔和的文楷风格，适合随笔类内容。',
+            'family' => '"LXGW WenKai", "LXGW WenKai Screen", "Noto Sans SC", "PingFang SC", sans-serif',
+        ],
+        'kuaikan' => [
+            'label' => '快看世界体',
+            'description' => '展示感更强，适合轻松内容。',
+            'family' => '"快看世界体", "Source Han Serif CN VF", "Source Han Serif SC", "Songti SC", serif',
+        ],
+        'luo' => [
+            'label' => 'Luo 字体',
+            'description' => 'Luo 字体，适合做个性化正文尝试。',
+            'family' => '"Luo", "LXGW WenKai", "Noto Sans SC", "PingFang SC", sans-serif',
+        ],
+    ];
+
     public function index(): string
     {
         $page = max(1, (int)($_GET['page'] ?? 1));
@@ -57,6 +86,7 @@ class PostController
         $whereSql = $where ? implode(' AND ', $where) : null;
 
         $result = Post::paginate($page, $perPage, 'id DESC', $whereSql, $params);
+        $result['items'] = Post::withRealCommentCounts($result['items']);
         $categories = Category::allEnabled();
         $categoryCounts = [];
         foreach ($categories as $category) {
@@ -75,12 +105,32 @@ class PostController
             'status'    => $status,
             'csrf'      => Session::csrfToken(),
             'pageTitle' => '文章管理',
+            'articleFontOptions' => self::ARTICLE_FONT_OPTIONS,
+            'articleFontCurrent' => $this->currentArticleFont(),
         ], 'layouts.admin');
+    }
+
+    public function saveFontSettings(Request $request): never
+    {
+        $font = (string)$request->input('article_font', 'source-han-serif');
+        if (!array_key_exists($font, self::ARTICLE_FONT_OPTIONS)) {
+            $font = 'source-han-serif';
+        }
+
+        Setting::set('post_article_font', $font);
+        $this->flashSuccess('文章主用字体已更新');
+        $this->redirect('/admin/posts');
     }
 
     public function create(): string
     {
         return $this->form(null);
+    }
+
+    private function currentArticleFont(): string
+    {
+        $font = (string)Setting::get('post_article_font', 'source-han-serif');
+        return array_key_exists($font, self::ARTICLE_FONT_OPTIONS) ? $font : 'source-han-serif';
     }
 
     public function importForm(): string

@@ -82,10 +82,17 @@ final class Category extends Model
                     LENGTH(COALESCE(content, '')) +
                     LENGTH(COALESCE(markdown_content, ''))
                 ), 0) AS words,
-                COALESCE(SUM(COALESCE(comments_count, 0)), 0) AS comments_count,
                 {$likesExpr}
             FROM posts
             WHERE category_id = ? AND status = ? AND COALESCE(is_private, 0) = 0",
+            [$this->id, $published]
+        );
+
+        $commentsCount = (int) self::db()->fetchColumn(
+            "SELECT COUNT(*)
+             FROM comments cm
+             INNER JOIN posts p ON p.id = cm.post_id
+             WHERE p.category_id = ? AND p.status = ? AND COALESCE(p.is_private, 0) = 0 AND cm.status = 'approved'",
             [$this->id, $published]
         );
 
@@ -103,7 +110,7 @@ final class Category extends Model
             'article_count' => (int) $row['article_count'],
             'views' => (int) $row['views'],
             'words' => (int) $row['words'],
-            'comments_count' => (int) $row['comments_count'],
+            'comments_count' => $commentsCount,
             'likes_count' => (int) $row['likes_count'],
         ];
     }

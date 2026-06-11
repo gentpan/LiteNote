@@ -75,6 +75,11 @@ final class Post extends Model
                         OR (pn.published_at = p.published_at AND pn.id <= p.id)
                       )
                   ) as article_number,
+                  (
+                    SELECT COUNT(*)
+                    FROM comments cm
+                    WHERE cm.post_id = p.id AND cm.status = 'approved'
+                  ) AS __comments_count,
                   c.name as __category_name, c.slug as __category_slug
                 FROM posts p
                 LEFT JOIN categories c ON p.category_id = c.id
@@ -86,6 +91,7 @@ final class Post extends Model
 
         $items = [];
         foreach ($rows as $r) {
+            $r['comments_count'] = (int)($r['__comments_count'] ?? 0);
             $post = new self($r);
             if (!empty($r['__category_name'])) {
                 $post->setRelation('category', new Category([
@@ -97,6 +103,38 @@ final class Post extends Model
             $items[] = $post;
         }
         return ['items' => $items, 'total' => $total];
+    }
+
+    /**
+     * @param self[] $items
+     * @return self[]
+     */
+    public static function withRealCommentCounts(array $items): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map(
+            static fn(self $item): int => (int)$item->id,
+            $items
+        ))));
+        if ($ids === []) {
+            return $items;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $rows = self::db()->fetchAll(
+            "SELECT post_id, COUNT(*) AS total
+             FROM comments
+             WHERE status = ? AND post_id IN ({$placeholders})
+             GROUP BY post_id",
+            array_merge([\App\Enums\CommentStatus::Approved->value], $ids)
+        );
+        $counts = [];
+        foreach ($rows as $row) {
+            $counts[(int)$row['post_id']] = (int)$row['total'];
+        }
+        foreach ($items as $item) {
+            $item->comments_count = $counts[(int)$item->id] ?? 0;
+        }
+        return $items;
     }
 
     public static function search(string $keyword, int $page, int $perPage): array
@@ -154,7 +192,12 @@ final class Post extends Model
         self::ensurePublishingOptionsSchema();
         $published = PostStatus::Published->value;
         return self::db()->fetchAll(
-            "SELECT p.id, p.title, p.slug, p.summary, p.category_id, p.views, p.comments_count, p.published_at,
+            "SELECT p.id, p.title, p.slug, p.summary, p.category_id, p.views, p.published_at,
+                    (
+                        SELECT COUNT(*)
+                        FROM comments cm
+                        WHERE cm.post_id = p.id AND cm.status = 'approved'
+                    ) AS comments_count,
                     c.name AS category_name, c.slug AS category_slug, c.icon AS category_icon, c.color AS category_color
              FROM posts p
              LEFT JOIN categories c ON p.category_id = c.id

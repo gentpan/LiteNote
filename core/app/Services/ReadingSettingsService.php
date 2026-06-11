@@ -88,7 +88,13 @@ final class ReadingSettingsService
         }
 
         $rows = Post::db()->fetchAll(
-            "SELECT p.*, c.name AS __category_name, c.slug AS __category_slug
+            "SELECT p.*,
+                    (
+                        SELECT COUNT(*)
+                        FROM comments cm
+                        WHERE cm.post_id = p.id AND cm.status = 'approved'
+                    ) AS __comments_count,
+                    c.name AS __category_name, c.slug AS __category_slug
              FROM posts p
              LEFT JOIN categories c ON p.category_id = c.id
              WHERE {$where}
@@ -99,6 +105,7 @@ final class ReadingSettingsService
 
         $posts = [];
         foreach ($rows as $row) {
+            $row['comments_count'] = (int)($row['__comments_count'] ?? 0);
             $post = new Post($row);
             if (!empty($row['__category_name'])) {
                 $post->setRelation('category', new Category([
@@ -135,7 +142,7 @@ final class ReadingSettingsService
              LIMIT " . max(1, $limit),
             $params
         );
-        return array_map(static fn(array $row): Talk => new Talk($row), $rows);
+        return Talk::withRealCommentCounts(array_map(static fn(array $row): Talk => new Talk($row), $rows));
     }
 
     private static function attachCategory(Post $post): void
@@ -158,9 +165,13 @@ final class ReadingSettingsService
             $music = $musicMap[(int)($item->music_id ?? 0)] ?? null;
             if ($music && (int)$music->is_public === Toggle::On->value) {
                 $item->setRelation('music', $music);
-                $item->setRelation('comments', Comment::forMusic((int)$music->id));
+                $comments = Comment::forMusic((int)$music->id);
+                $music->comments_count = count($comments);
+                $item->setRelation('comments', $comments);
             } else {
-                $item->setRelation('comments', Comment::forTalk((int)$item->id));
+                $comments = Comment::forTalk((int)$item->id);
+                $item->comments_count = count($comments);
+                $item->setRelation('comments', $comments);
             }
         }
     }

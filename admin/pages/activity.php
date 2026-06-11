@@ -1,12 +1,13 @@
 @extends('layouts.admin')
 
 @section('content')
-    <div class="admin-toolbar">
+<div class="activity-admin-page">
+    <div class="admin-toolbar activity-admin-toolbar">
         <a class="btn btn-primary" href="/admin/activities/integrations"><i class="fa-solid fa-rotate"></i> 平台同步</a>
         <a class="btn" href="/activity" target="_blank"><i class="fa-solid fa-arrow-up-right-from-square"></i> 查看前台</a>
     </div>
 
-    <table class="admin-table admin-action-table">
+    <table class="admin-table admin-action-table activity-admin-table">
         <thead>
             <tr>
                 <th>ID</th>
@@ -20,6 +21,10 @@
         </thead>
         <tbody>
             @foreach($list as $item)
+                @php
+                    $visibility = (string)($item->visibility ?? 'public');
+                    $visibilityLabel = $visibility === 'public' ? '公开' : '隐藏';
+                @endphp
                 <tr>
                     <td>{{ $item->id }}</td>
                     <td>
@@ -30,7 +35,7 @@
                     </td>
                     <td>{{ $types[$item->type]['label'] ?? $item->type }}</td>
                     <td>{{ $item->source }}</td>
-                    <td><span class="status status-{{ $item->visibility === 'public' ? 'published' : 'draft' }}">{{ $item->visibility }}</span></td>
+                    <td><span class="status status-{{ $visibility === 'public' ? 'published' : 'draft' }}">{{ $visibilityLabel }}</span></td>
                     <td>{!! \App\Core\Helper::dateTimeTag((string)$item->happened_at) !!}</td>
                     <td>
                         <div class="admin-action-bar">
@@ -54,4 +59,5 @@
     @endforeach
 
     {!! $paginator ?? '' !!}
+</div>
 @endsection

@@ -37,6 +37,7 @@ final class MailController
     {
         $this->ensureDefaults();
         $data = (array)$request->input('mail', []);
+        $scope = (string)$request->input('mail_scope', 'all');
         $allowed = [
             'mail_enabled',
             'mail_driver',
@@ -57,10 +58,30 @@ final class MailController
             'mail_event_post',
             'mail_event_link',
         ];
+        $scopedAllowed = [
+            'sendflare' => [
+                'mail_driver',
+                'mail_sendflare_endpoint',
+                'mail_sendflare_token',
+            ],
+            'smtp' => [
+                'mail_driver',
+                'mail_smtp_host',
+                'mail_smtp_port',
+                'mail_smtp_secure',
+                'mail_smtp_username',
+                'mail_smtp_password',
+            ],
+        ];
         $secrets = [
             'mail_sendflare_token',
             'mail_smtp_password',
         ];
+
+        if (isset($scopedAllowed[$scope])) {
+            $allowed = $scopedAllowed[$scope];
+            $data['mail_driver'] = $scope;
+        }
 
         foreach ($allowed as $key) {
             $value = $data[$key] ?? null;
@@ -80,7 +101,12 @@ final class MailController
             Setting::set($key, $value);
         }
 
-        Session::flash('success', '邮件设置已保存');
+        $message = match ($scope) {
+            'sendflare' => 'SendFlare 设置已保存',
+            'smtp' => 'SMTP 设置已保存',
+            default => '邮件设置已保存',
+        };
+        Session::flash('success', $message);
         Response::redirect(self::MAIL_SETTINGS_URL);
     }
 

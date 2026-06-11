@@ -20,7 +20,9 @@ class MusicController
         $page = max(1, (int)($_GET['page'] ?? 1));
         ['items' => $list, 'total' => $total] = Music::paginate($page, $perPage, 'published_at DESC, sort ASC, id DESC');
         foreach ($list as $item) {
-            $item->setRelation('comments', Comment::forMusic((int)$item->id));
+            $comments = Comment::forMusic((int)$item->id);
+            $item->comments_count = count($comments);
+            $item->setRelation('comments', $comments);
         }
 
         return View::render('front.music.index', [

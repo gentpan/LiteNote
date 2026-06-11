@@ -15,7 +15,6 @@
 <body class="admin-body">
     @php
         $__path = parse_url($_SERVER['REQUEST_URI'] ?? '/admin', PHP_URL_PATH) ?: '/admin';
-        $__sidebarSearchQuery = trim((string)($_GET['q'] ?? ''));
         $__isActive = static function (string $href) use ($__path): bool {
             if ($href === '/admin') {
                 return $__path === '/admin' || $__path === '/admin/';
@@ -121,11 +120,6 @@
                 </div>
             </a>
         </div>
-        <form class="admin-sidebar-search" method="get" action="/admin/posts" role="search">
-            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-            <input type="search" name="q" value="{{ $__sidebarSearchQuery }}" placeholder="Search" aria-label="搜索文章">
-            <button type="submit" title="搜索文章">⌘K</button>
-        </form>
         <nav class="admin-menu">
             <a href="/admin" class="{{ $__isActive('/admin') ? 'active' : '' }}"><i class="fa-solid fa-house"></i><span>仪表盘</span></a>
             <div class="menu-group">内容</div>

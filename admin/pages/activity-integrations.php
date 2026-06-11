@@ -80,7 +80,7 @@
 
     <section class="admin-form activity-sync-log">
         <h3 class="admin-form-title"><i class="fa-solid fa-clock-rotate-left"></i> 同步日志</h3>
-        <table class="admin-table">
+        <table class="admin-table activity-sync-log-table">
             <thead>
                 <tr>
                     <th>平台</th>

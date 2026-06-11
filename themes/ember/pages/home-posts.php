@@ -2,7 +2,49 @@
 
 @section('content')
     <section class="post-list">
-        <h2 class="section-title">文章</h2>
+        <header class="posts-hero">
+            <div class="posts-hero-head">
+                <div class="posts-hero-kicker-row">
+                    <span class="posts-hero-kicker">POSTS<span class="posts-hero-mobile-label"> · 文章</span></span>
+                    <p class="posts-hero-sub">
+                        共 {{ number_format((int)($heatmap['articles'] ?? $total ?? 0)) }} 篇 · 记录 {{ number_format((int)($heatmap['spanDays'] ?? 0)) }} 天
+                    </p>
+                </div>
+                <h2 class="posts-hero-title">文章</h2>
+            </div>
+            @if(!empty($heatmap['days']))
+                <div class="posts-heatmap">
+                    <div class="posts-heatmap-scroll">
+                        <div class="posts-heatmap-inner" style="--weeks: {{ $heatmap['weeks'] ?? 53 }}">
+                            <div class="posts-heatmap-months">
+                                @foreach(($heatmap['months'] ?? []) as $month)
+                                    <span style="grid-column: {{ $month['week'] }}">{{ $month['label'] }}</span>
+                                @endforeach
+                            </div>
+                            <div class="posts-heatmap-cells" aria-label="近一年文章写作热力图">
+                                @foreach(($heatmap['days'] ?? []) as $day)
+                                    @php
+                                        $articleCount = (int)($day['articles'] ?? 0);
+                                        $heatTitle = $articleCount > 0 ? $articleCount . ' 篇文章' : '没有文章';
+                                    @endphp
+                                    <span class="posts-heatmap-cell level-{{ $day['level'] }} {{ !empty($day['muted']) ? 'is-muted' : '' }}"
+                                          title="{{ $day['date'] }}：{{ $heatTitle }}"></span>
+                                @endforeach
+                            </div>
+                            <div class="posts-heatmap-legend">
+                                <span>少</span>
+                                <i class="level-0"></i>
+                                <i class="level-1"></i>
+                                <i class="level-2"></i>
+                                <i class="level-3"></i>
+                                <i class="level-4"></i>
+                                <span>多</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+        </header>
         @if(empty($posts))
             <p class="empty">还没有文章，<a href="/admin">去后台发布</a></p>
         @endif

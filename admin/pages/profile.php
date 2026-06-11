@@ -155,15 +155,16 @@
 
         function renderRow(idx, data) {
             data = data || { key: '', url: '', icon: '', label: '' };
+            var label = data.label || data.key || '';
             var wrap = document.createElement('div');
             wrap.className = 'social-row';
             wrap.innerHTML = ''
                 + '<div class="social-row-grid">'
                 +   '<div class="social-row-preview">' + renderIcon(data.icon) + '</div>'
-                +   '<input type="text" name="socials[' + idx + '][key]"   placeholder="平台 key(github / x / email …)" value="' + escapeAttr(data.key) + '" class="input-key">'
+                +   '<input type="hidden" name="socials[' + idx + '][key]" value="' + escapeAttr(data.key) + '" class="input-key">'
+                +   '<input type="text" name="socials[' + idx + '][label]" placeholder="平台名称" value="' + escapeAttr(label) + '" class="input-label">'
                 +   '<input type="text" name="socials[' + idx + '][url]"   placeholder="https://…" value="' + escapeAttr(data.url) + '" class="input-url">'
                 +   '<input type="text" name="socials[' + idx + '][icon]"  placeholder="fa-brands fa-github" value="' + escapeAttr(data.icon) + '" class="input-icon">'
-                +   '<input type="text" name="socials[' + idx + '][label]" placeholder="显示名(选填)" value="' + escapeAttr(data.label) + '" class="input-label">'
                 +   '<button type="button" class="btn-icon btn-remove" title="删除" aria-label="删除"><i class="fa-solid fa-trash"></i></button>'
                 + '</div>';
             wrap.querySelector('.btn-remove').addEventListener('click', function () {
@@ -192,6 +193,31 @@
             return '<span class="text-danger" title="非法图标">⚠</span>';
         }
 
+        function inferKey(row) {
+            var keyInput = row.querySelector('.input-key');
+            if (keyInput && keyInput.value.trim()) return;
+
+            var label = (row.querySelector('.input-label')?.value || '').trim().toLowerCase();
+            var url = (row.querySelector('.input-url')?.value || '').trim().toLowerCase();
+            var icon = (row.querySelector('.input-icon')?.value || '').trim().toLowerCase();
+            var source = [label, url, icon].join(' ');
+            var key = '';
+
+            if (source.indexOf('github') >= 0) key = 'github';
+            else if (source.indexOf('twitter') >= 0 || source.indexOf('x.com') >= 0 || source.indexOf('fa-x-twitter') >= 0 || label === 'x') key = 'x';
+            else if (source.indexOf('mail') >= 0 || source.indexOf('邮箱') >= 0 || source.indexOf('mailto:') >= 0 || source.indexOf('envelope') >= 0) key = 'email';
+            else if (source.indexOf('rss') >= 0 || source.indexOf('feed') >= 0) key = 'rss';
+            else if (source.indexOf('telegram') >= 0) key = 'telegram';
+            else if (source.indexOf('mastodon') >= 0) key = 'mastodon';
+            else if (source.indexOf('weibo') >= 0 || source.indexOf('微博') >= 0) key = 'weibo';
+            else if (source.indexOf('wechat') >= 0 || source.indexOf('微信') >= 0) key = 'wechat';
+            else if (source.indexOf('bilibili') >= 0 || source.indexOf('哔哩') >= 0) key = 'bilibili';
+            else if (label) key = label.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+            else if (url) key = url.replace(/^https?:\/\//, '').replace(/^www\./, '').split(/[/.?#]/)[0];
+
+            if (keyInput) keyInput.value = key;
+        }
+
         function reindex() {
             // 重新编号 socials[i] 避免删除后出现空隙
             var rows = list.querySelectorAll('.social-row');
@@ -203,6 +229,10 @@
                 });
             });
         }
+
+        list.closest('form')?.addEventListener('submit', function () {
+            list.querySelectorAll('.social-row').forEach(inferKey);
+        });
 
         // 添加空白行
         addBtn.addEventListener('click', function () {

@@ -27,6 +27,7 @@ class LinkController
                     'count' => count($result['items']),
                     'error' => $result['error'],
                     'from_cache' => $result['from_cache'],
+                    'updated_at' => $result['updated_at'] ?? null,
                 ];
             } else {
                 $rssStatus[$l->id] = null;
@@ -185,12 +186,11 @@ class LinkController
             Session::flash('error', '友链未配置 RSS');
             Response::redirect('/admin/links');
         }
-        // 删除缓存后重新抓取
-        $key = md5($link->rss_url);
-        @unlink(BASE_PATH . '/runtime/storage/cache/friend_' . $key . '.json');
+        $previousCache = FriendRssService::cachedResult((string)$link->rss_url);
         $result = FriendRssService::fetchResult((string)$link->rss_url, 5, 60, true);
         $items = $result['items'];
         $ok = $result['ok'];
+        $updatedAt = $result['updated_at'] ?? ($previousCache['updated_at'] ?? null);
         $message = $ok ? 'RSS 缓存已刷新' : ('RSS 刷新失败：' . ($result['error'] ?: '未知错误'));
         if ($isAjax) {
             Response::json([
@@ -201,6 +201,7 @@ class LinkController
                 'id' => (int)$link->id,
                 'name' => (string)$link->name,
                 'rss_url' => (string)$link->rss_url,
+                'updated_at' => $updatedAt,
             ], $ok ? 200 : 422);
         }
         Session::flash($ok ? 'success' : 'error', $message);

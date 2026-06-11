@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
 @section('content')
-    <form method="post" action="/admin/posts/import" class="admin-form" enctype="multipart/form-data" data-dirty-watch>
+    <form method="post" action="/admin/posts/import" class="admin-form post-import-form" enctype="multipart/form-data" data-dirty-watch>
         <input type="hidden" name="_csrf" value="{{ $csrf }}">
 
         <div class="import-panel">
@@ -9,10 +9,9 @@
                 <h3><i class="fa-brands fa-markdown"></i> 导入 Markdown</h3>
                 <p>上传 `.md` 文件，或选择服务器 `runtime/storage/imports/` 里的 Markdown。导入后会生成正式文章记录，正文保存到 `runtime/storage/posts/{slug}.md`。</p>
             </div>
-            <a href="/admin/posts/create" class="btn"><i class="fa-solid fa-pen"></i> 直接写文章</a>
         </div>
 
-        <div class="form-row">
+        <div class="form-row post-import-source-row">
             <div class="form-group">
                 <label>上传 Markdown 文件</label>
                 <input type="file" name="md_file" accept=".md,text/markdown,text/plain">
@@ -29,7 +28,7 @@
             </div>
         </div>
 
-        <div class="form-row">
+        <div class="form-row post-import-title-row">
             <div class="form-group flex-2">
                 <label>标题</label>
                 <input type="text" name="title" placeholder="留空则读取 front matter、一级标题或文件名">
@@ -40,11 +39,11 @@
             </div>
         </div>
 
-        <div class="form-row">
+        <div class="form-row post-import-meta-row">
             <div class="form-group">
                 <label>分类</label>
                 <select name="category_id">
-                    <option value="0">未分类</option>
+                    <option value="0">默认分类</option>
                     @foreach($categories as $c)
                         <option value="{{ $c->id }}">{{ $c->name }}</option>
                     @endforeach
@@ -59,7 +58,7 @@
             </div>
         </div>
 
-        <div class="form-row">
+        <div class="form-row post-import-content-row">
             <div class="form-group flex-2">
                 <label>摘要</label>
                 <textarea name="summary" rows="2"></textarea>
@@ -79,7 +78,7 @@
             </div>
         </div>
 
-        <div class="form-row compact-flags">
+        <div class="form-row compact-flags post-import-flags">
             <label><input type="checkbox" name="delete_source" value="1"> 导入后删除服务器源文件</label>
         </div>
 

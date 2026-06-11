@@ -37,7 +37,8 @@
     $tweetLocalActions = !empty($tweetLocalActions);
     $tweetBookmark = !empty($tweetBookmark);
     $localLikeCount = (int)($tweet->likes_count ?? 0);
-    $localCommentCount = (int)($tweet->comments_count ?? 0);
+    $loadedComments = method_exists($tweet, 'getRelation') ? ($tweet->getRelation('comments') ?: null) : null;
+    $localCommentCount = is_array($loadedComments) ? count($loadedComments) : (int)($tweet->comments_count ?? 0);
     $linkifyTweetLine = static function (string $text): string {
         $parts = preg_split('~(https?://[^\s<]+)~u', $text, -1, PREG_SPLIT_DELIM_CAPTURE);
         if (!is_array($parts)) {

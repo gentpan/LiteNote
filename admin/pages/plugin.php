@@ -18,32 +18,26 @@
     @else
         <div class="resource-card-grid plugin-card-grid">
             @foreach($plugins as $plugin)
-                <article class="resource-card plugin-card">
+                <form method="post"
+                      action="/admin/plugins/{{ $plugin['key'] }}/toggle"
+                      class="resource-card plugin-card plugin-card-form {{ ($plugin['enabled'] ?? false) ? 'is-enabled' : '' }}"
+                      title="{{ ($plugin['enabled'] ?? false) ? '点击禁用插件' : '点击启用插件' }}"
+                      data-confirm="{{ ($plugin['enabled'] ?? false) ? '确认关闭这个插件？关闭后相关功能将不可用。' : '确认启用这个插件？' }}"
+                      data-confirm-title="{{ ($plugin['enabled'] ?? false) ? '关闭插件' : '启用插件' }}"
+                      data-confirm-text="{{ ($plugin['enabled'] ?? false) ? '确认关闭' : '确认启用' }}">
+                    <input type="hidden" name="_csrf" value="{{ $csrf }}">
                     <div class="resource-card-body">
                         <div class="plugin-main">
                             <strong class="plugin-name">{{ $plugin['name'] }}</strong>
                             <span class="plugin-desc">{{ $plugin['description'] ?: '这个插件暂未填写描述。' }}</span>
                         </div>
-                        <div class="plugin-meta plugin-key" title="插件目录">{{ $plugin['key'] }}</div>
-                        <div class="plugin-meta plugin-version" title="版本">{{ $plugin['version'] ?: '-' }}</div>
-                        <div class="plugin-meta plugin-author" title="作者">{{ $plugin['author'] ?: '-' }}</div>
-                        <div class="plugin-state">
-                            @if($plugin['enabled'] ?? false)
-                                <span class="status status-published">已启用</span>
-                            @else
-                                <span class="status status-draft">未启用</span>
-                            @endif
+                        <div class="plugin-meta-row">
+                            <div class="plugin-meta plugin-version" title="版本">{{ $plugin['version'] ?: '-' }}</div>
                         </div>
-                        <form method="post" action="/admin/plugins/{{ $plugin['key'] }}/toggle" class="plugin-toggle-form">
-                            <input type="hidden" name="_csrf" value="{{ $csrf }}">
-                            @if($plugin['enabled'] ?? false)
-                                <button type="submit" class="btn btn-danger">禁用</button>
-                            @else
-                                <button type="submit" class="btn btn-primary">启用</button>
-                            @endif
-                        </form>
+                        <span class="plugin-state-text">{{ ($plugin['enabled'] ?? false) ? '已启用' : '未启用' }}</span>
                     </div>
-                </article>
+                    <button type="submit" class="plugin-card-submit" aria-label="{{ ($plugin['enabled'] ?? false) ? '禁用插件 ' . $plugin['name'] : '启用插件 ' . $plugin['name'] }}"></button>
+                </form>
             @endforeach
         </div>
     @endif

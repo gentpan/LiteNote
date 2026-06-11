@@ -8,7 +8,6 @@
 .post-list,
 .talk-list,
 .x-page,
-.subscribe-page,
 .reader-wall-page {
     width: min(100%, var(--content-width));
     max-width: var(--content-width);
@@ -16,24 +15,18 @@
     margin-left: auto;
 }
 
-.home-layout {
-    display: block;
-    max-width: var(--content-width);
-    margin: 0 auto;
-}
-
 .home-list {
     display: flex;
     flex-direction: column;
-    gap: 18px;
-    margin-top: 10px;
+    gap: var(--sp-18);
+    margin-top: var(--sp-10);
 }
 
 .home-card {
-    padding: 24px 28px;
+    padding: var(--sp-24) var(--sp-28);
     background: var(--c-card);
     border: 1px solid var(--c-border);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-card);
     box-shadow: var(--shadow-sm);
 }
 
@@ -93,14 +86,14 @@ html[data-theme="light"] .home-talk-card .home-actions {
     box-sizing: border-box;
     display: inline-flex;
     align-items: center;
-    padding-block: 5px;
+    padding-block: var(--sp-5);
 }
 
 .post-card {
     position: relative;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    gap: 14px;
+    gap: var(--sp-14);
     align-items: stretch;
     min-height: 0;
 }
@@ -118,20 +111,19 @@ html[data-theme="light"] .home-talk-card .home-actions {
 
 .home-post-meta {
     display: inline-flex;
-    flex-wrap: wrap;
     flex-wrap: nowrap;
-    gap: 7px;
+    gap: var(--sp-7);
     align-items: center;
     min-width: 0;
     margin: 0;
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: var(--fs-xs);
     color: var(--c-text-muted);
 }
 
 .home-post-stats {
     display: inline-flex;
-    gap: 5px;
+    gap: var(--sp-5);
     align-items: center;
     white-space: nowrap;
 }
@@ -142,31 +134,31 @@ html[data-theme="light"] .home-talk-card .home-actions {
     right: 0;
     z-index: 2;
     display: inline-flex;
-    gap: 6px;
+    gap: var(--sp-6);
     align-items: center;
     max-width: 32%;
     min-height: 30px;
     padding: 0 13px;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     font-weight: 700;
     line-height: 1;
-    color: #fff;
+    color: var(--c-white);
     white-space: nowrap;
     background: var(--c-primary);
     border-bottom: none;
-    border-radius: 0 var(--radius-lg) 0 12px;
+    border-radius: 0 var(--radius-card) 0 var(--radius-md);
 }
 
 .home-post-category:hover {
-    color: #fff;
+    color: var(--c-white);
     background: var(--c-primary-hover);
 }
 
 .home-post-category i {
     flex: 0 0 auto;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     color: currentColor;
 }
 
@@ -177,19 +169,19 @@ html[data-theme="light"] .home-talk-card .home-actions {
 
 .home-post-title-row {
     display: flex;
-    gap: 14px;
+    gap: var(--sp-14);
     align-items: baseline;
     justify-content: space-between;
     min-width: 0;
     padding-right: min(220px, 34%);
-    margin: 0 0 10px;
+    margin: 0 0 var(--sp-10);
 }
 
 .home-post-title {
     flex: 1 1 auto;
     min-width: 0;
     margin: 0;
-    font-size: 20px;
+    font-size: var(--fs-2xl);
     line-height: 1.42;
 }
 
@@ -205,7 +197,7 @@ html[data-theme="light"] .home-talk-card .home-actions {
 .home-post-content-row {
     display: grid;
     grid-template-columns: minmax(144px, 20%) minmax(0, 1fr);
-    gap: 28px;
+    gap: var(--sp-28);
     align-items: start;
     min-width: 0;
 }
@@ -219,7 +211,7 @@ html[data-theme="light"] .home-talk-card .home-actions {
     margin: 0;
     overflow: hidden;
     -webkit-line-clamp: 3;
-    font-size: 15px;
+    font-size: var(--fs-base);
     line-height: 1.78;
     color: var(--c-text-soft);
     -webkit-box-orient: vertical;
@@ -236,7 +228,7 @@ html[data-theme="light"] .home-talk-card .home-actions {
     min-height: 40px;
     padding-top: 0;
     margin-top: 0;
-    font-size: 13px;
+    font-size: var(--fs-sm);
     line-height: 1.35;
     color: var(--c-text-muted);
     border-top: 1px solid var(--c-border-soft);
@@ -248,15 +240,15 @@ html[data-theme="light"] .home-talk-card .home-actions {
 }
 
 .home-post-actions {
-    gap: 14px;
+    gap: var(--sp-14);
 }
 
 .home-post-actions .home-action {
-    gap: 6px;
+    gap: var(--sp-6);
 }
 
 .home-post-actions .home-action i {
-    font-size: 15px;
+    font-size: var(--fs-base);
     line-height: 1;
 }
 
@@ -267,12 +259,12 @@ html[data-theme="light"] .home-talk-card .home-actions {
 
 .home-talk-card .home-actions {
     display: flex;
-    gap: 14px;
+    gap: var(--sp-14);
     align-items: center;
     justify-content: space-between;
-    padding-top: 12px;
-    margin-top: 14px;
-    font-size: 13px;
+    padding-top: var(--sp-12);
+    margin-top: var(--sp-14);
+    font-size: var(--fs-sm);
     color: var(--c-text-muted);
     border-top: 1px solid var(--c-border-soft);
 }
@@ -280,7 +272,7 @@ html[data-theme="light"] .home-talk-card .home-actions {
 .home-talk-meta,
 .home-talk-side {
     display: inline-flex;
-    gap: 7px;
+    gap: var(--sp-7);
     align-items: center;
     min-width: 0;
 }
@@ -288,16 +280,6 @@ html[data-theme="light"] .home-talk-card .home-actions {
 .home-talk-meta {
     flex: 1 1 auto;
     color: var(--c-text-soft);
-}
-
-.home-talk-keywords {
-    display: inline-flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    align-items: center;
-    min-width: 0;
-    font-weight: 600;
-    color: var(--c-primary);
 }
 
 .home-talk-meta > span:last-child {
@@ -312,16 +294,11 @@ html[data-theme="light"] .home-talk-card .home-actions {
     white-space: nowrap;
 }
 
-.home-talk-dot {
-    font-weight: 400;
-    color: var(--c-text-subtle);
-}
-
 .home-talk-location,
 .home-talk-weather {
     display: inline-flex;
     flex: 0 1 auto;
-    gap: 4px;
+    gap: var(--sp-4);
     align-items: center;
     min-width: 0;
     font-weight: 600;
@@ -335,7 +312,7 @@ html[data-theme="light"] .home-talk-card .home-actions {
 
 .home-talk-card .talk-content {
     margin: 0;
-    font-size: 16px;
+    font-size: var(--fs-lg);
     line-height: 1.9;
     color: var(--c-text);
     white-space: pre-wrap;
@@ -344,8 +321,8 @@ html[data-theme="light"] .home-talk-card .home-actions {
 .home-talk-card .talk-images {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 8px;
-    margin: 14px 0 0;
+    gap: var(--sp-8);
+    margin: var(--sp-14) 0 0;
 }
 
 .home-talk-card .talk-images-count-1 {
@@ -359,7 +336,7 @@ html[data-theme="light"] .home-talk-card .home-actions {
     object-fit: cover;
     background: var(--c-card-soft);
     border: 1px solid var(--c-border-soft);
-    border-radius: 6px;
+    border-radius: var(--radius-xs);
 }
 
 .home-post-cover {
@@ -370,7 +347,7 @@ html[data-theme="light"] .home-talk-card .home-actions {
     overflow: hidden;
     background: var(--c-card-soft);
     border: 1px solid var(--c-border-soft);
-    border-radius: 6px;
+    border-radius: var(--radius-xs);
 }
 
 .home-post-cover img {
@@ -380,19 +357,27 @@ html[data-theme="light"] .home-talk-card .home-actions {
     min-height: 0;
     aspect-ratio: 16 / 9;
     object-fit: cover;
-    border-radius: 6px;
+    border-radius: var(--radius-xs);
+}
+
+.home-post-cover .image-loading-wrap {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    margin: 0;
+    border-radius: var(--radius-xs);
 }
 
 @media (max-width: 560px) {
     .post-card {
         grid-template-columns: minmax(0, 1fr);
-        gap: 12px;
-        padding: 20px;
+        gap: var(--sp-12);
+        padding: var(--sp-20);
     }
 
     .home-post-content-row {
         grid-template-columns: minmax(0, 1fr);
-        gap: 12px;
+        gap: var(--sp-12);
     }
 
     .home-post-cover {
@@ -401,7 +386,7 @@ html[data-theme="light"] .home-talk-card .home-actions {
 
     .home-post-title-row {
         flex-direction: column;
-        gap: 8px;
+        gap: var(--sp-8);
         align-items: flex-start;
     }
 
@@ -410,7 +395,7 @@ html[data-theme="light"] .home-talk-card .home-actions {
     }
 
     .home-post-meta {
-        gap: 8px;
+        gap: var(--sp-8);
     }
 
     .home-post-title {
@@ -418,32 +403,32 @@ html[data-theme="light"] .home-talk-card .home-actions {
     }
 
     .home-list {
-        gap: 14px;
+        gap: var(--sp-14);
     }
 
     .home-card {
-        padding: 18px 18px;
+        padding: var(--sp-18) var(--sp-18);
     }
 
     .home-talk-card .home-actions {
-        gap: 8px;
+        gap: var(--sp-8);
         align-items: flex-start;
-        font-size: 12px;
+        font-size: var(--fs-xs);
     }
 
     .home-talk-side {
-        gap: 6px;
+        gap: var(--sp-6);
     }
 
     .home-talk-card .talk-content {
-        font-size: 15px;
+        font-size: var(--fs-base);
         line-height: 1.8;
     }
 
     .home-talk-card .talk-images,
     .home-talk-card .talk-images-count-1 {
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 6px;
+        gap: var(--sp-6);
     }
 }
 
@@ -453,26 +438,14 @@ html[data-theme="light"] .home-talk-card .home-actions {
     color: var(--c-primary);
 }
 
-.talk-music-share {
-    padding: 10px;
-    margin-top: 28px;
-    background: linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.64),
-        rgba(255, 255, 255, 0.34)
-    );
-    border: 1px solid var(--c-border);
-    border-radius: var(--radius-sm);
-}
-
 .talk-music-player.music-card {
     --music-tint: 126, 143, 139;
-    gap: 12px;
+    gap: var(--sp-12);
     width: 100%;
     min-height: 68px;
-    padding: 8px 12px 8px 8px;
+    padding: var(--sp-8) var(--sp-12) var(--sp-8) var(--sp-8);
     margin: 0;
-    border-radius: 8px;
+    border-radius: 8px; /* 迷你播放条,非页面卡片,不随 --radius-card 走 */
     box-shadow:
         0 10px 22px rgba(15, 23, 42, 0.13),
         0 0 0 1px rgba(255, 255, 255, 0.18) inset;
@@ -490,22 +463,22 @@ html[data-theme="light"] .home-talk-card .home-actions {
     z-index: 1;
     display: grid;
     place-items: center;
-    font-size: 20px;
+    font-size: var(--fs-2xl);
     font-weight: 800;
-    color: #fff;
+    color: var(--c-white);
 }
 
 .talk-music-player .music-card-title {
-    font-size: 16px;
+    font-size: var(--fs-lg);
 }
 
 .talk-music-player .music-card-artist {
-    font-size: 13px;
+    font-size: var(--fs-sm);
     font-weight: 600;
 }
 
 .talk-music-player .music-card-line {
-    gap: 10px;
+    gap: var(--sp-10);
 }
 
 .talk-music-player .music-card-track {
@@ -513,17 +486,17 @@ html[data-theme="light"] .home-talk-card .home-actions {
 }
 
 .talk-music-player .music-card-controls {
-    gap: 6px;
+    gap: var(--sp-6);
 }
 
 .talk-music-player .music-card-control {
     width: 28px;
     height: 28px;
-    font-size: 15px;
+    font-size: var(--fs-base);
 }
 
 .talk-music-player .music-card-btn {
-    font-size: 18px;
+    font-size: var(--fs-xl);
 }
 
 .music-share-like-btn.is-liked {
@@ -531,8 +504,8 @@ html[data-theme="light"] .home-talk-card .home-actions {
 }
 
 .talk-comments.music-share-comments.comments {
-    padding-top: 16px;
-    margin-top: 16px;
+    padding-top: var(--sp-16);
+    margin-top: var(--sp-16);
     border-top: 1px solid var(--c-border-soft);
 }
 
@@ -546,28 +519,28 @@ html[data-theme="light"] .home-talk-card .home-actions {
 
 .music-share-comments-head {
     display: flex;
-    gap: 10px;
+    gap: var(--sp-10);
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 12px;
-    font-size: 14px;
+    margin-bottom: var(--sp-12);
+    font-size: var(--fs-md);
     font-weight: 800;
     color: var(--c-text);
 }
 
 .music-share-comments-head em {
-    font-size: 12px;
+    font-size: var(--fs-xs);
     font-style: normal;
     font-weight: 600;
     color: var(--c-text-muted);
 }
 
 .music-share-comments .comment-list {
-    margin: 0 0 14px;
+    margin: 0 0 var(--sp-14);
 }
 
 .music-share-comments .comment-item {
-    padding: 12px 14px;
+    padding: var(--sp-12) var(--sp-14);
     border-radius: var(--radius-sm);
 }
 
@@ -581,10 +554,10 @@ html[data-theme="light"] .home-talk-card .home-actions {
 .x-card {
     box-sizing: border-box;
     width: 100%;
-    padding: 16px 16px 0;
+    padding: var(--sp-16) var(--sp-16) 0;
     background: var(--c-card);
     border: 1px solid var(--c-border-soft);
-    border-radius: 20px;
+    border-radius: var(--radius-card);
     box-shadow:
         0 0 0 1px rgba(26, 26, 26, 0.03),
         0 2px 2px rgba(26, 26, 26, 0.035);
@@ -592,7 +565,7 @@ html[data-theme="light"] .home-talk-card .home-actions {
 
 .home-card.home-x-card.x-card,
 .talk-card.home-x-card .x-card {
-    padding: 24px 28px;
+    padding: var(--sp-24) var(--sp-28);
 }
 
 .home-card.home-x-card:not(.x-card),
@@ -619,12 +592,12 @@ html[data-theme="light"] .home-talk-card .home-actions {
 }
 
 .x-card-head {
-    gap: 16px;
+    gap: var(--sp-16);
     justify-content: space-between;
 }
 
 .x-card-author {
-    gap: 10px;
+    gap: var(--sp-10);
     min-width: 0;
 }
 
@@ -640,7 +613,7 @@ html[data-theme="light"] .home-talk-card .home-actions {
     display: inline-grid;
     place-items: center;
     font-weight: 800;
-    color: #fff;
+    color: var(--c-white);
     background: linear-gradient(135deg, #1d1d1f, #555);
 }
 
@@ -652,24 +625,24 @@ html[data-theme="light"] .home-talk-card .home-actions {
 
 .x-card-author-text strong {
     display: inline-flex;
-    gap: 5px;
+    gap: var(--sp-5);
     align-items: center;
     min-width: 0;
-    font-size: 15px;
+    font-size: var(--fs-base);
     font-weight: 760;
     line-height: 1.25;
     color: var(--c-text);
 }
 
 .x-card-author-text em {
-    font-size: 13px;
+    font-size: var(--fs-sm);
     font-style: normal;
     color: var(--c-text-muted);
 }
 
 .x-card-verified {
-    font-size: 14px;
-    color: #1c9bf1;
+    font-size: var(--fs-md);
+    color: var(--c-x-accent);
 }
 
 .x-card-logo-link {
@@ -679,15 +652,15 @@ html[data-theme="light"] .home-talk-card .home-actions {
     align-self: flex-start;
     justify-content: center;
     margin-top: -2px;
-    font-size: 18px;
+    font-size: var(--fs-xl);
     color: var(--c-text);
     border: 0;
     transform-origin: center;
 }
 
 .x-card-body {
-    margin-top: 28px;
-    font-size: 15px;
+    margin-top: var(--sp-28);
+    font-size: var(--fs-base);
     line-height: 1.7;
     color: var(--c-text);
     white-space: pre-wrap;
@@ -705,17 +678,17 @@ html[data-theme="light"] .home-talk-card .home-actions {
 
 .x-card-body-link {
     display: inline-flex;
-    gap: 8px;
+    gap: var(--sp-8);
     align-items: center;
     width: fit-content;
-    padding: 8px 12px;
+    padding: var(--sp-8) var(--sp-12);
     font-weight: 700;
     line-height: 1.2;
     color: var(--c-text);
     white-space: nowrap;
     background: var(--c-card-soft);
     border: 1px solid var(--c-border-soft);
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
 }
 
 .x-card-body-link:hover {
@@ -725,8 +698,8 @@ html[data-theme="light"] .home-talk-card .home-actions {
 
 .x-card-media {
     display: grid;
-    gap: 6px;
-    margin-top: 14px;
+    gap: var(--sp-6);
+    margin-top: var(--sp-14);
 }
 
 .x-card-media-count-2,
@@ -744,7 +717,7 @@ html[data-theme="light"] .home-talk-card .home-actions {
     aspect-ratio: 16 / 9;
     object-fit: cover;
     background: var(--c-card-soft);
-    border-radius: 6px;
+    border-radius: var(--radius-xs);
 }
 
 .x-card-media-count-3 img:first-child {
@@ -752,16 +725,16 @@ html[data-theme="light"] .home-talk-card .home-actions {
 }
 
 .x-card-footer {
-    gap: 14px;
-    padding-top: 12px;
-    margin-top: 14px;
-    font-size: 13px;
+    gap: var(--sp-14);
+    padding-top: var(--sp-12);
+    margin-top: var(--sp-14);
+    font-size: var(--fs-sm);
     color: var(--c-text-muted);
     border-top: 1px solid var(--c-border-soft);
 }
 
 .x-card-footer-actions {
-    gap: 14px;
+    gap: var(--sp-14);
 }
 
 .x-card-footer-spacer {
@@ -769,7 +742,7 @@ html[data-theme="light"] .home-talk-card .home-actions {
 }
 
 .x-card-action {
-    gap: 6px;
+    gap: var(--sp-6);
     padding: 0;
     font: inherit;
     color: var(--c-text-muted);
@@ -800,9 +773,9 @@ html[data-theme] .talk-card.home-x-card:hover {
 
 @media (max-width: 560px) {
     .talk-music-player.music-card {
-        gap: 9px;
+        gap: var(--sp-9);
         min-height: 62px;
-        padding: 7px 9px 7px 7px;
+        padding: var(--sp-7) var(--sp-9) var(--sp-7) var(--sp-7);
     }
 
     .talk-music-player .music-card-cover {
@@ -821,17 +794,17 @@ html[data-theme] .talk-card.home-x-card:hover {
     }
 
     .x-card {
-        padding: 14px 14px 0;
+        padding: var(--sp-14) var(--sp-14) 0;
     }
 
     .home-card.home-x-card.x-card,
     .talk-card.home-x-card .x-card {
-        padding: 18px;
+        padding: var(--sp-18);
     }
 
     .x-card-footer {
         flex-wrap: wrap;
-        gap: 10px;
+        gap: var(--sp-10);
         align-items: flex-start;
     }
 }
@@ -843,10 +816,10 @@ html[data-theme] .talk-card.home-x-card:hover {
 
 .x-page-head {
     display: flex;
-    gap: 16px;
+    gap: var(--sp-16);
     align-items: baseline;
     justify-content: space-between;
-    margin-bottom: 18px;
+    margin-bottom: var(--sp-18);
 }
 
 .x-page-head .section-title {
@@ -855,19 +828,19 @@ html[data-theme] .talk-card.home-x-card:hover {
 
 .x-page-head p {
     margin: 0;
-    font-size: 14px;
+    font-size: var(--fs-md);
     color: var(--c-text-muted);
 }
 
 .x-bookmarks-head {
-    gap: 16px;
+    gap: var(--sp-16);
     align-items: center;
     justify-content: space-between;
-    padding: 20px 26px;
-    margin-bottom: 24px;
+    padding: var(--sp-20) 26px;
+    margin-bottom: var(--sp-24);
     background: var(--c-card);
     border: 1px solid var(--c-border);
-    border-radius: 18px;
+    border-radius: var(--radius-card);
     box-shadow: var(--shadow-sm);
 }
 .x-bookmarks-head .section-title {
@@ -875,49 +848,132 @@ html[data-theme] .talk-card.home-x-card:hover {
     font-size: 23px;
 }
 .x-bookmarks-head p {
-    margin: 6px 0 0;
-    font-size: 14px;
+    margin: var(--sp-6) 0 0;
+    font-size: var(--fs-md);
     color: var(--c-text-muted);
 }
+.x-bookmarks-head-stats {
+    display: flex;
+    flex: 0 0 auto;
+    gap: var(--sp-10);
+    align-items: center;
+}
+.x-bookmarks-head-stat,
 .x-bookmarks-head-badge {
     display: inline-flex;
-    flex: 0 0 auto;
-    gap: 8px;
+    gap: var(--sp-8);
     align-items: center;
-    padding: 9px 18px;
-    font-size: 15px;
+    padding: var(--sp-9) var(--sp-18);
+    font-size: var(--fs-base);
     font-weight: 800;
     font-variant-numeric: tabular-nums;
-    color: var(--c-bg, #fff);
+    color: var(--c-bg, var(--c-white));
     background: var(--c-text);
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
 }
+.x-bookmarks-head-stat strong {
+    line-height: 1;
+}
+.x-bookmarks-head-stat small {
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    line-height: 1;
+    opacity: .76;
+}
+.x-bookmarks-head-stat i,
 .x-bookmarks-head-badge i {
-    font-size: 13px;
+    font-size: var(--fs-sm);
 }
 
 .x-masonry {
     column-count: 2;
-    column-gap: 24px;
+    column-gap: var(--sp-24);
 }
 
 .x-masonry-item {
     display: inline-block;
     width: 100%;
-    margin: 0 0 24px;
+    margin: 0 0 var(--sp-24);
     vertical-align: top;
     break-inside: avoid;
 }
 
 .x-masonry-item .x-card {
-    border-radius: 20px;
+    border-radius: var(--radius-card);
+}
+
+/* xmarks 移动端:瀑布流改单列,hero 紧凑化 */
+@media (max-width: 680px) {
+    .x-page {
+        width: 100%;
+    }
+    .x-masonry {
+        column-count: 1;
+        column-gap: 0;
+    }
+    .x-masonry-item {
+        margin-bottom: var(--sp-14);
+    }
+    .x-bookmarks-head {
+        gap: var(--sp-12);
+        align-items: flex-start;
+        padding: var(--sp-18) var(--sp-20);
+        margin-bottom: var(--sp-18);
+    }
+    .x-bookmarks-head-text {
+        display: flex;
+        gap: var(--sp-8);
+        align-items: baseline;
+        min-width: 0;
+        width: 100%;
+    }
+    .x-bookmarks-head .section-title {
+        flex: 0 0 auto;
+        font-size: var(--fs-2xl);
+    }
+    .x-bookmarks-head p {
+        min-width: 0;
+        margin: 0;
+        overflow: hidden;
+        font-size: var(--fs-sm);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .x-bookmarks-head-stats {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        width: 100%;
+        gap: var(--sp-8);
+    }
+    .x-bookmarks-head-stat,
+    .x-bookmarks-head-badge {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        gap: var(--sp-6);
+        justify-content: center;
+        min-width: 0;
+        padding: var(--sp-7) var(--sp-10);
+        font-size: var(--fs-sm);
+    }
+    .x-bookmarks-head-stat strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--c-bg, var(--c-white));
+        text-align: center;
+        opacity: 1;
+    }
+    .x-bookmarks-head-stat small {
+        color: var(--c-bg, var(--c-white));
+        opacity: .76;
+    }
 }
 
 .home-card.home-x-card .talk-images img,
 .home-card.home-x-card .talk-images .image-loading-wrap,
 .talk-card.home-x-card .talk-images img,
 .talk-card.home-x-card .talk-images .image-loading-wrap {
-    border-radius: 6px !important;
+    border-radius: var(--radius-xs) !important;
 }
 
 /* ============================================================
@@ -927,19 +983,19 @@ html[data-theme] .talk-card.home-x-card:hover {
     --music-tint: 124, 148, 148;
     position: relative;
     display: flex;
-    gap: 16px;
+    gap: var(--sp-16);
     align-items: center;
     width: min(100%, 720px);
     min-height: 76px;
-    padding: 10px 16px 10px 12px;
-    margin: 16px 0 12px;
+    padding: var(--sp-10) var(--sp-16) var(--sp-10) var(--sp-12);
+    margin: var(--sp-16) 0 var(--sp-12);
     overflow: hidden;
-    color: #fff;
+    color: var(--c-white);
     cursor: pointer;
     user-select: none;
     background: rgba(var(--music-tint), 0.74);
     border: 1px solid rgba(255, 255, 255, 0.28);
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     box-shadow:
         0 16px 36px rgba(15, 23, 42, 0.18),
         0 0 0 1px rgba(0, 0, 0, 0.06) inset;
@@ -1020,7 +1076,7 @@ html[data-theme] .talk-card.home-x-card:hover {
     display: grid;
     place-items: center;
     font-family: "Font Awesome 7 Pro", "FontAwesome";
-    font-size: 20px;
+    font-size: var(--fs-2xl);
     font-weight: 900;
     color: rgba(255, 255, 255, 0.56);
     content: "\f001";
@@ -1038,7 +1094,7 @@ html[data-theme] .talk-card.home-x-card:hover {
 .music-card-controls {
     display: inline-flex;
     flex: 0 0 auto;
-    gap: 14px;
+    gap: var(--sp-14);
     align-items: center;
     margin-left: auto;
 }
@@ -1050,7 +1106,7 @@ html[data-theme] .talk-card.home-x-card:hover {
     width: 34px;
     height: 34px;
     padding: 0;
-    font-size: 20px;
+    font-size: var(--fs-2xl);
     line-height: 1;
     color: rgba(255, 255, 255, 0.92);
     cursor: pointer;
@@ -1065,7 +1121,7 @@ html[data-theme] .talk-card.home-x-card:hover {
 }
 
 .music-card-control:hover {
-    color: #fff;
+    color: var(--c-white);
     background: rgba(255, 255, 255, 0.16);
     transform: translateY(-1px);
 }
@@ -1086,14 +1142,14 @@ html[data-theme] .talk-card.home-x-card:hover {
     display: flex;
     flex: 1 1 auto;
     flex-direction: column;
-    gap: 5px;
+    gap: var(--sp-5);
     justify-content: center;
     min-width: 0;
 }
 
 .music-card-line {
     display: flex;
-    gap: 16px;
+    gap: var(--sp-16);
     align-items: center;
     min-width: 0;
 }
@@ -1103,10 +1159,10 @@ html[data-theme] .talk-card.home-x-card:hover {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: 20px;
+    font-size: var(--fs-2xl);
     font-weight: 800;
     line-height: 1.2;
-    color: #fff;
+    color: var(--c-white);
     white-space: nowrap;
     text-shadow: 0 1px 8px rgba(0, 0, 0, 0.1);
 }
@@ -1116,7 +1172,7 @@ html[data-theme] .talk-card.home-x-card:hover {
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: 16px;
+    font-size: var(--fs-lg);
     font-weight: 700;
     line-height: 1.3;
     color: rgba(255, 255, 255, 0.68);
@@ -1126,7 +1182,7 @@ html[data-theme] .talk-card.home-x-card:hover {
 .music-card-cur,
 .music-card-dur {
     flex: 0 0 auto;
-    font-size: 11px;
+    font-size: var(--fs-2xs);
     font-variant-numeric: tabular-nums;
     color: rgba(255, 255, 255, 0.62);
 }
@@ -1139,14 +1195,14 @@ html[data-theme] .talk-card.home-x-card:hover {
     overflow: hidden;
     cursor: pointer;
     background: rgba(255, 255, 255, 0.16);
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
 }
 
 .music-card-played {
     width: 0%;
     height: 100%;
     background: rgba(255, 255, 255, 0.74);
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     transition: width 0.1s linear;
 }
 
@@ -1161,9 +1217,9 @@ html[data-theme] .talk-card.home-x-card:hover {
 
 @media (max-width: 640px) {
     .music-card {
-        gap: 10px;
+        gap: var(--sp-10);
         min-height: 64px;
-        padding: 8px 10px;
+        padding: var(--sp-8) var(--sp-10);
     }
 
     .music-card-cover {
@@ -1173,15 +1229,15 @@ html[data-theme] .talk-card.home-x-card:hover {
     }
 
     .music-card-title {
-        font-size: 16px;
+        font-size: var(--fs-lg);
     }
 
     .music-card-artist {
-        font-size: 13px;
+        font-size: var(--fs-sm);
     }
 
     .music-card-line {
-        gap: 10px;
+        gap: var(--sp-10);
     }
 
     .music-card-track {
@@ -1189,21 +1245,14 @@ html[data-theme] .talk-card.home-x-card:hover {
     }
 
     .music-card-controls {
-        gap: 4px;
+        gap: var(--sp-4);
     }
 
     .music-card-control {
         width: 30px;
         height: 30px;
-        font-size: 16px;
+        font-size: var(--fs-lg);
     }
-}
-
-/* Music share lyric card final overrides. */
-.talk-music-share {
-    padding: 0;
-    background: transparent;
-    border: 0;
 }
 
 .talk-music-player.music-card.music-card-lyric-skin {
@@ -1213,11 +1262,11 @@ html[data-theme] .talk-card.home-x-card:hover {
     display: grid;
     grid-template-rows: 1fr auto auto;
     grid-template-columns: minmax(0, 1fr) 220px;
-    gap: 18px 24px;
+    gap: var(--sp-18) var(--sp-24);
     align-items: stretch;
     width: 100%;
     min-height: 360px;
-    padding: 34px 34px 24px;
+    padding: 34px 34px var(--sp-24);
     margin: 0;
     overflow: hidden;
     color: var(--c-text);
@@ -1234,7 +1283,7 @@ html[data-theme] .talk-card.home-x-card:hover {
             rgba(var(--music-tint), 0.1) 100%
         );
     border: 1px solid var(--c-border);
-    border-radius: 14px;
+    border-radius: var(--radius);
     box-shadow: var(--shadow-sm);
 }
 
@@ -1242,26 +1291,9 @@ html[data-theme] .talk-card.home-x-card:hover {
     display: none;
 }
 
-.music-card-lyric-skin .music-card-lyric-copy {
-    position: relative;
-    z-index: 2;
-    display: grid;
-    gap: 24px;
-    align-content: center;
-    min-width: 0;
-    padding-top: 18px;
-}
-
-.music-card-lyric-skin .music-card-title-row {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    min-width: 0;
-}
-
 .talk-music-player.music-card.music-card-lyric-skin .music-card-info {
     display: grid;
-    gap: 8px;
+    gap: var(--sp-8);
 }
 
 .talk-music-player.music-card.music-card-lyric-skin .music-card-title {
@@ -1281,7 +1313,7 @@ html[data-theme] .talk-card.home-x-card:hover {
 
 .music-card-lyric-skin .music-card-lyrics {
     display: grid;
-    gap: 14px;
+    gap: var(--sp-14);
     max-width: 520px;
     font-size: clamp(18px, 2.6vw, 28px);
     font-weight: 760;
@@ -1310,42 +1342,6 @@ html[data-theme] .talk-card.home-x-card:hover {
     opacity: 0.34;
 }
 
-.music-card-lyric-skin .music-card-art {
-    position: relative;
-    z-index: 1;
-    grid-row: 1 / 3;
-    grid-column: 2;
-    min-height: 220px;
-    pointer-events: none;
-}
-
-.music-card-lyric-skin .music-card-vinyl {
-    position: absolute;
-    top: -134px;
-    right: -130px;
-    display: grid;
-    place-items: center;
-    width: 360px;
-    aspect-ratio: 1;
-    overflow: hidden;
-    background:
-        repeating-radial-gradient(
-            circle,
-            rgba(var(--music-tint), 0.13) 0 2px,
-            rgba(var(--music-tint), 0.22) 3px 6px
-        ),
-        rgba(var(--music-tint), 0.16);
-    border-radius: 50%;
-    box-shadow:
-        inset 0 0 0 34px rgba(var(--music-tint), 0.72),
-        inset 0 0 0 88px rgba(255, 255, 255, 0.42),
-        0 26px 66px rgba(var(--music-tint), 0.18);
-}
-
-.music-card-lyric-skin.playing .music-card-vinyl {
-    animation: music-record-spin 16s linear infinite;
-}
-
 .talk-music-player.music-card.music-card-lyric-skin .music-card-cover {
     position: relative;
     flex: none;
@@ -1365,7 +1361,7 @@ html[data-theme] .talk-card.home-x-card:hover {
 .talk-music-player.music-card.music-card-lyric-skin .music-card-cover > span {
     font-size: 54px;
     color: var(--c-primary);
-    background: #fff;
+    background: var(--c-white);
 }
 
 .talk-music-player.music-card.music-card-lyric-skin .music-card-controls {
@@ -1384,7 +1380,7 @@ html[data-theme] .talk-card.home-x-card:hover {
 .talk-music-player.music-card.music-card-lyric-skin .music-card-btn {
     width: 50px;
     height: 50px;
-    color: #fff;
+    color: var(--c-white);
     background: var(--c-primary);
     box-shadow: 0 12px 28px rgba(var(--music-tint), 0.22);
 }
@@ -1400,7 +1396,7 @@ html[data-theme] .talk-card.home-x-card:hover {
     grid-template-columns: auto minmax(0, 1fr) auto;
     grid-row: 3;
     grid-column: 1 / -1;
-    gap: 14px;
+    gap: var(--sp-14);
     align-items: center;
 }
 
@@ -1410,7 +1406,7 @@ html[data-theme] .talk-card.home-x-card:hover {
     width: auto;
     height: auto;
     overflow: visible;
-    font-size: 13px;
+    font-size: var(--fs-sm);
     font-weight: 760;
     color: var(--c-text-muted);
     white-space: nowrap;
@@ -1447,41 +1443,22 @@ html[data-theme="dark"] .talk-music-player.music-card.music-card-lyric-skin {
     .talk-music-player.music-card.music-card-lyric-skin {
         grid-template-rows: auto 1fr auto auto;
         grid-template-columns: 1fr;
-        gap: 18px;
+        gap: var(--sp-18);
         min-height: 500px;
-        padding: 54px 18px 22px;
-    }
-
-    .music-card-lyric-skin .music-card-lyric-copy {
-        gap: 20px;
-        order: 2;
-        padding: 0;
-    }
-
-    .music-card-lyric-skin .music-card-art {
-        grid-row: auto;
-        grid-column: 1;
-        order: 1;
-        min-height: 150px;
-    }
-
-    .music-card-lyric-skin .music-card-vinyl {
-        top: -164px;
-        right: -104px;
-        width: 300px;
+        padding: 54px var(--sp-18) var(--sp-22);
     }
 
     .talk-music-player.music-card.music-card-lyric-skin .music-card-controls {
         grid-row: auto;
         grid-column: 1;
-        gap: 20px;
+        gap: var(--sp-20);
         order: 3;
     }
 
     .talk-music-player.music-card.music-card-lyric-skin .music-card-progress {
         grid-row: auto;
         grid-column: 1;
-        gap: 10px;
+        gap: var(--sp-10);
         order: 4;
     }
 
@@ -1508,14 +1485,6 @@ html[data-theme="dark"] .talk-music-player.music-card.music-card-lyric-skin {
     border-color: var(--c-primary-light);
 }
 
-.music-talk-card .talk-music-share {
-    padding: 0;
-    margin: 0;
-    background: transparent;
-    border: 0;
-    border-radius: 0;
-}
-
 .music-talk-card .talk-music-player.music-card.music-card-lyric-skin {
     min-height: 360px;
     background:
@@ -1537,49 +1506,37 @@ html[data-theme="dark"] .talk-music-player.music-card.music-card-lyric-skin {
 
 .music-talk-card .home-actions {
     min-height: 34px;
-    padding: 13px 28px 0;
+    padding: 13px var(--sp-28) 0;
     margin: 0;
     background: rgba(255, 255, 255, 0.48);
     border-top: 0;
 }
 
 .music-talk-card .home-talk-side {
-    gap: 7px;
+    gap: var(--sp-7);
 }
 
 .music-talk-card .home-action {
-    gap: 5px;
+    gap: var(--sp-5);
     font-size: inherit;
     line-height: inherit;
 }
 
 .music-talk-card .home-action i {
-    font-size: 13px;
+    font-size: var(--fs-sm);
     line-height: 1;
 }
 
-.music-talk-card .home-talk-music-label {
-    display: inline-flex;
-    gap: 6px;
-    align-items: center;
-    font-weight: 760;
-    color: var(--c-primary);
-}
-
-.music-talk-card .home-talk-music-label i {
-    font-size: 0.92em;
-}
-
 .music-talk-card .talk-comments.music-share-comments.comments {
-    padding: 18px 28px 24px;
+    padding: var(--sp-18) var(--sp-28) var(--sp-24);
     margin: 0;
     background: rgba(255, 255, 255, 0.42);
     border-top: 1px solid var(--c-border-soft);
 }
 
 .music-share-comment-note {
-    margin: -3px 0 14px;
-    font-size: 15px;
+    margin: -3px 0 var(--sp-14);
+    font-size: var(--fs-base);
     line-height: 1.7;
     color: var(--c-text-soft);
     white-space: pre-wrap;
@@ -1621,7 +1578,7 @@ html[data-theme="dark"]
 
 @media (max-width: 560px) {
     .music-talk-card .home-actions {
-        padding: 13px 18px 0;
+        padding: 13px var(--sp-18) 0;
     }
 
     .music-talk-card .talk-music-player.music-card.music-card-lyric-skin {
@@ -1656,32 +1613,32 @@ html[data-theme="dark"]
 /* Home feed card rhythm cleanup: keep talk, X and music cards visually aligned. */
 .home-card.home-talk-card:not(.home-x-card):not(.music-talk-card),
 .home-card.home-x-card.x-card {
-    padding: 22px 28px 0;
+    padding: var(--sp-22) var(--sp-28) 0;
 }
 
 .home-talk-card .talk-content {
-    font-size: 15px;
+    font-size: var(--fs-base);
     line-height: 1.78;
 }
 
 .x-card-body {
-    margin-top: 12px;
-    font-size: 15px;
+    margin-top: var(--sp-12);
+    font-size: var(--fs-base);
     line-height: 1.58;
 }
 
 .home-talk-card .home-actions,
 .x-card-footer {
-    gap: 12px;
+    gap: var(--sp-12);
     min-height: 30px;
-    padding: 4px 0;
-    margin-top: 12px;
-    font-size: 13px;
+    padding: var(--sp-4) 0;
+    margin-top: var(--sp-12);
+    font-size: var(--fs-sm);
 }
 
 .home-card.home-talk-card:not(.music-talk-card)
     .talk-comments.is-open:not(.music-share-comments) {
-    padding-bottom: 22px;
+    padding-bottom: var(--sp-22);
 }
 
 .home-talk-side,
@@ -1697,33 +1654,27 @@ html[data-theme="dark"]
 .home-talk-side .home-action,
 .x-card-footer-actions .home-action,
 .x-card-action {
-    gap: 6px;
+    gap: var(--sp-6);
 }
 
 .home-card-actions > .home-action,
 .x-card-footer-actions > .x-card-action {
-    padding-block: 5px;
+    padding-block: var(--sp-5);
 }
 
 .home-talk-side .home-action i,
 .x-card-footer-actions .home-action i,
 .x-card-action i {
-    font-size: 15px;
+    font-size: var(--fs-base);
     line-height: 1;
 }
 
 .music-talk-card .talk-music-player.music-card.music-card-lyric-skin {
     grid-template-rows: 1fr auto;
     grid-template-columns: minmax(0, 1fr) 116px;
-    gap: 6px 10px;
+    gap: var(--sp-6) var(--sp-10);
     min-height: 171px;
-    padding: 14px 25px 32px;
-}
-
-.music-talk-card .music-card-lyric-skin .music-card-lyric-copy {
-    gap: 7px;
-    align-content: center;
-    padding: 0 96px 0 0;
+    padding: var(--sp-14) 25px 32px;
 }
 
 .music-talk-card
@@ -1760,24 +1711,6 @@ html[data-theme="dark"]
     white-space: nowrap;
 }
 
-.music-talk-card .music-card-lyric-skin .music-card-art {
-    position: absolute;
-    inset: 0 0 0 auto;
-    width: 168px;
-    min-height: 0;
-}
-
-.music-talk-card .music-card-lyric-skin .music-card-vinyl {
-    top: 50%;
-    right: -82px;
-    width: 174px;
-    transform: translateY(-50%) rotate(12deg);
-}
-
-.music-talk-card .music-card-lyric-skin.playing .music-card-vinyl {
-    animation: music-share-quarter-spin 16s linear infinite;
-}
-
 @keyframes music-share-quarter-spin {
     from {
         transform: translateY(-50%) rotate(12deg);
@@ -1796,7 +1729,7 @@ html[data-theme="dark"]
     z-index: 5;
     width: 30px;
     height: 30px;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     color: var(--c-primary);
     background: rgba(255, 255, 255, 0.92);
     box-shadow: 0 10px 24px rgba(var(--music-tint), 0.18);
@@ -1832,7 +1765,7 @@ html[data-theme="dark"]
     .music-card-dur {
     position: absolute;
     bottom: 0;
-    font-size: 11px;
+    font-size: var(--fs-2xs);
 }
 
 .music-talk-card
@@ -1849,7 +1782,7 @@ html[data-theme="dark"]
 
 .music-talk-card .home-actions {
     min-height: 30px;
-    padding: 4px 0;
+    padding: var(--sp-4) 0;
     margin: 0 25px;
     background: transparent;
     border-top: 1px solid var(--c-border-soft);
@@ -1872,7 +1805,7 @@ html[data-theme="dark"] .music-talk-card .home-actions {
 @media (max-width: 560px) {
     .home-card.home-talk-card:not(.home-x-card):not(.music-talk-card),
     .home-card.home-x-card.x-card {
-        padding: 18px 18px 0;
+        padding: var(--sp-18) var(--sp-18) 0;
     }
 
     .home-talk-card .home-actions,
@@ -1885,16 +1818,7 @@ html[data-theme="dark"] .music-talk-card .home-actions {
 
     .music-talk-card .talk-music-player.music-card.music-card-lyric-skin {
         min-height: 220px;
-        padding: 16px 18px 31px;
-    }
-
-    .music-talk-card .music-card-lyric-skin .music-card-lyric-copy {
-        padding-right: 76px;
-    }
-
-    .music-talk-card .music-card-lyric-skin .music-card-vinyl {
-        right: -74px;
-        width: 156px;
+        padding: var(--sp-16) var(--sp-18) 31px;
     }
 
     .music-talk-card
@@ -1913,13 +1837,13 @@ html[data-theme="dark"] .music-talk-card .home-actions {
     .music-talk-card .home-actions {
         min-height: 28px;
         padding: 3px 0;
-        margin-right: 18px;
-        margin-left: 18px;
+        margin-right: var(--sp-18);
+        margin-left: var(--sp-18);
     }
 
     .music-talk-card .talk-comments.music-share-comments.comments {
-        padding-right: 18px;
-        padding-left: 18px;
+        padding-right: var(--sp-18);
+        padding-left: var(--sp-18);
     }
 }
 
@@ -1936,7 +1860,6 @@ html[data-theme="dark"] .music-talk-card .home-actions {
     min-height: 250px;
     max-height: 250px;
     padding: 0;
-    overflow: hidden;
     overflow: hidden;
     color: var(--home-music-fg);
     background: var(--home-music-bg);
@@ -2055,7 +1978,7 @@ html[data-theme="dark"] .home-music-bg::after {
     align-items: center;
     justify-content: center;
     min-width: 0;
-    padding: 38px 22px 28px;
+    padding: 38px var(--sp-22) var(--sp-28);
     background:
         radial-gradient(
             circle at 52% 62%,
@@ -2122,10 +2045,10 @@ html[data-theme="dark"] .home-music-bg::after {
             circle at center,
             #202020 0%,
             #111 38%,
-            #050505 78%,
+            var(--music-vinyl) 78%,
             #000 100%
         ),
-        #050505;
+        var(--music-vinyl);
     border-radius: 50%;
     box-shadow:
         inset 0 0 0 1px rgba(255, 255, 255, 0.06),
@@ -2200,7 +2123,7 @@ html[data-theme="dark"] .home-music-bg::after {
     width: 48%;
     height: 48%;
     overflow: hidden;
-    font-size: 24px;
+    font-size: var(--fs-3xl);
     font-weight: 800;
     color: var(--home-music-fg);
     background: #151515;
@@ -2225,10 +2148,10 @@ html[data-theme="dark"] .home-music-bg::after {
     z-index: 3;
     width: 10px;
     height: 10px;
-    background: #fff;
+    background: var(--c-white);
     border-radius: 50%;
     box-shadow:
-        0 0 0 2px #050505,
+        0 0 0 2px var(--music-vinyl),
         inset 0 0 0 3px #0a0a0a;
     transform: translate(-50%, -50%);
 }
@@ -2249,8 +2172,8 @@ html[data-theme="dark"] .home-music-bg::after {
     height: 44px;
     padding: 0;
     margin: 0;
-    font-size: 14px;
-    color: #fff;
+    font-size: var(--fs-md);
+    color: var(--c-white);
     background: rgba(0, 0, 0, 0.65);
     border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 50%;
@@ -2287,11 +2210,11 @@ html[data-theme="dark"] .home-music-bg::after {
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: 9px;
+    gap: var(--sp-9);
     align-items: center;
     justify-content: center;
     min-width: 0;
-    padding: 18px 28px 24px 18px;
+    padding: var(--sp-18) var(--sp-28) var(--sp-24) var(--sp-18);
 }
 
 .home-music-head {
@@ -2301,7 +2224,7 @@ html[data-theme="dark"] .home-music-bg::after {
     left: 18px;
     box-sizing: border-box;
     display: flex;
-    gap: 14px;
+    gap: var(--sp-14);
     align-items: center;
     justify-content: center;
     width: auto;
@@ -2311,7 +2234,7 @@ html[data-theme="dark"] .home-music-bg::after {
 
 .home-music-title-block {
     display: flex;
-    gap: 10px;
+    gap: var(--sp-10);
     align-items: baseline;
     justify-content: center;
     min-width: 0;
@@ -2322,7 +2245,7 @@ html[data-theme="dark"] .home-music-bg::after {
     margin: 0;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: 18px;
+    font-size: var(--fs-xl);
     font-weight: 650;
     line-height: 1.25;
     color: var(--home-music-fg);
@@ -2332,7 +2255,7 @@ html[data-theme="dark"] .home-music-bg::after {
 
 .home-music-artist {
     margin: 0;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     line-height: 1.5;
     color: var(--home-music-soft);
     white-space: nowrap;
@@ -2344,14 +2267,14 @@ html[data-theme="dark"] .home-music-bg::after {
     right: 18px;
     z-index: 20;
     display: inline-flex;
-    gap: 12px;
+    gap: var(--sp-12);
     align-items: center;
     color: var(--home-music-soft);
 }
 
 .home-music-actions .home-action {
-    gap: 6px;
-    font-size: 12px;
+    gap: var(--sp-6);
+    font-size: var(--fs-xs);
     line-height: 1;
     color: var(--home-music-soft);
 }
@@ -2361,10 +2284,12 @@ html[data-theme="dark"] .home-music-bg::after {
 }
 
 .home-music-actions .home-action i {
-    font-size: 15px;
+    font-size: var(--fs-base);
 }
 
 .home-music-card .music-card-lyric-skin .home-music-lyrics {
+    /* 单行歌词槽高:JS(updateCardLyric)按此值计算补位 padding,改行高/字号/gap 时同步调整 */
+    --home-music-lyric-line: 18px;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -2374,10 +2299,10 @@ html[data-theme="dark"] .home-music-bg::after {
     height: 86px;
     max-height: 86px;
     padding-top: var(--home-music-lyric-pad-top, 0px);
-    margin-top: 18px;
+    margin-top: var(--sp-18);
     margin-left: 0;
     overflow: hidden;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     line-height: 1.42;
     color: var(--home-music-dim);
     text-align: center;
@@ -2418,7 +2343,7 @@ html[data-theme="dark"] .home-music-bg::after {
 }
 
 .home-music-card .music-card-lyric-skin .home-music-lyrics span.is-active {
-    font-size: 14px;
+    font-size: var(--fs-md);
     font-weight: 650;
     color: var(--home-music-accent);
     opacity: 1 !important;
@@ -2428,11 +2353,11 @@ html[data-theme="dark"] .home-music-bg::after {
 .home-music-progress {
     display: grid;
     grid-template-columns: auto minmax(80px, 1fr) auto;
-    gap: 8px;
+    gap: var(--sp-8);
     align-items: center;
     width: min(100%, 520px);
     margin-top: 46px;
-    font-size: 11px;
+    font-size: var(--fs-2xs);
     font-variant-numeric: tabular-nums;
     color: var(--home-music-soft);
 }
@@ -2446,7 +2371,7 @@ html[data-theme="dark"] .home-music-bg::after {
     left: auto !important;
     display: grid !important;
     grid-template-columns: auto minmax(80px, 1fr) auto;
-    gap: 8px;
+    gap: var(--sp-8);
     align-items: center;
     order: 3;
     width: 100%;
@@ -2467,7 +2392,7 @@ html[data-theme="dark"] .home-music-bg::after {
     touch-action: none;
     cursor: pointer;
     background: transparent;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
 }
 
 .home-music-card
@@ -2481,7 +2406,7 @@ html[data-theme="dark"] .home-music-bg::after {
     height: 3px;
     content: "";
     background: color-mix(in srgb, var(--home-music-soft) 38%, transparent);
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     transform: translateY(-50%);
 }
 
@@ -2510,7 +2435,7 @@ html[data-theme="dark"] .home-music-bg::after {
     width: 10px;
     height: 10px;
     content: "";
-    background: #fff;
+    background: var(--c-white);
     border-radius: 50%;
     box-shadow:
         0 0 0 2px color-mix(in srgb, var(--home-music-accent) 32%, transparent),
@@ -2529,33 +2454,33 @@ html[data-theme="dark"] .home-music-bg::after {
     position: static;
     width: auto;
     height: auto;
-    font-size: 11px;
+    font-size: var(--fs-2xs);
     font-weight: 650;
     color: var(--home-music-soft);
 }
 
 .home-music-card .talk-comments.music-share-comments.comments {
-    padding: 26px 30px 28px;
+    padding: 26px 30px var(--sp-28);
     margin: 0;
     color: var(--home-music-fg);
     background: var(--home-music-panel);
     border-top: 1px solid var(--home-music-line);
-    border-radius: 0 0 12px 12px;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
 }
 
 .home-music-card .music-share-comments-head {
     display: flex;
-    gap: 10px;
+    gap: var(--sp-10);
     align-items: center;
-    margin-bottom: 18px;
-    font-size: 18px;
+    margin-bottom: var(--sp-18);
+    font-size: var(--fs-xl);
     font-weight: 760;
     color: var(--home-music-fg);
 }
 
 .home-music-card .music-share-comments-head em {
     margin-left: auto;
-    font-size: 14px;
+    font-size: var(--fs-md);
     color: var(--home-music-soft);
 }
 
@@ -2588,10 +2513,10 @@ html[data-theme="dark"] .home-music-bg::after {
 .home-music-card .music-share-owner-card {
     display: grid;
     grid-template-columns: 48px minmax(0, 1fr);
-    gap: 14px;
+    gap: var(--sp-14);
     align-items: center;
-    padding: 18px 20px;
-    margin-bottom: 18px;
+    padding: var(--sp-18) var(--sp-20);
+    margin-bottom: var(--sp-18);
     background: color-mix(
         in srgb,
         var(--home-music-accent) 6%,
@@ -2599,7 +2524,7 @@ html[data-theme="dark"] .home-music-bg::after {
     );
     border: 1px solid
         color-mix(in srgb, var(--home-music-accent) 18%, var(--home-music-line));
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
 
@@ -2612,7 +2537,7 @@ html[data-theme="dark"] .home-music-bg::after {
     height: 34px;
     aspect-ratio: 1 / 1;
     overflow: hidden;
-    font-size: 15px;
+    font-size: var(--fs-base);
     font-weight: 800;
     color: var(--home-music-accent);
     background: color-mix(
@@ -2650,6 +2575,9 @@ html[data-theme="dark"] .home-music-bg::after {
     width: 34px;
     height: 34px;
     object-fit: cover;
+    transition:
+        opacity 0.34s ease,
+        filter 0.42s ease;
     background: color-mix(
         in srgb,
         var(--home-music-accent) 18%,
@@ -2663,13 +2591,13 @@ html[data-theme="dark"] .home-music-bg::after {
 
 .home-music-card .music-share-comments .comment-meta {
     display: flex;
-    gap: 10px;
+    gap: var(--sp-10);
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: var(--sp-8);
 }
 
 .home-music-card .music-share-comments .comment-meta strong {
-    font-size: 13px;
+    font-size: var(--fs-sm);
     font-weight: 400;
     color: var(--home-music-fg);
 }
@@ -2677,7 +2605,7 @@ html[data-theme="dark"] .home-music-bg::after {
 .home-music-card .music-share-comment-note {
     display: block;
     margin: 0;
-    font-size: 14px;
+    font-size: var(--fs-md);
     line-height: 1.65;
     color: var(--c-text-soft);
     white-space: pre-wrap;
@@ -2686,27 +2614,27 @@ html[data-theme="dark"] .home-music-bg::after {
 .home-music-card .music-share-comments .comment-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: var(--sp-10);
     align-items: flex-start;
-    margin: 0 0 16px;
+    margin: 0 0 var(--sp-16);
 }
 
 .home-music-card .music-share-comments .comment-item {
     box-sizing: border-box;
     display: grid;
     grid-template-columns: 34px minmax(0, 1fr);
-    gap: 10px;
+    gap: var(--sp-10);
     align-items: center;
     width: fit-content;
     min-width: 220px;
     max-width: min(100%, 430px);
     height: 68px;
-    padding: 10px 12px;
+    padding: var(--sp-10) var(--sp-12);
     overflow: hidden;
     cursor: pointer;
     background: var(--home-music-bg);
     border: 1px solid var(--home-music-line);
-    border-radius: 10px;
+    border-radius: var(--radius-sm);
     box-shadow: 0 6px 16px rgba(26, 26, 26, 0.06);
     transition:
         transform 0.18s ease,
@@ -2737,7 +2665,7 @@ html[data-theme="dark"] .home-music-bg::after {
 
 .home-music-card .music-share-comments .comment-meta {
     min-width: 0;
-    margin-bottom: 4px;
+    margin-bottom: var(--sp-4);
 }
 
 .home-music-card .music-share-comments .comment-meta strong {
@@ -2749,14 +2677,14 @@ html[data-theme="dark"] .home-music-bg::after {
 
 .home-music-card .music-share-comments .comment-meta .ct {
     flex: 0 0 auto;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     color: var(--home-music-soft);
 }
 
 .home-music-card .music-share-comments .comment-content {
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: 13px;
+    font-size: var(--fs-sm);
     line-height: 1.35;
     color: var(--home-music-fg);
     white-space: nowrap;
@@ -2768,12 +2696,12 @@ html[data-theme="dark"] .home-music-bg::after {
 }
 
 .home-music-card .music-share-comments .music-comment-empty {
-    margin: 0 0 18px;
+    margin: 0 0 var(--sp-18);
     color: var(--home-music-soft);
 }
 
 .home-music-card .music-share-comment-form {
-    padding: 16px;
+    padding: var(--sp-16);
     margin-top: 0;
     background: color-mix(
         in srgb,
@@ -2781,7 +2709,7 @@ html[data-theme="dark"] .home-music-bg::after {
         var(--home-music-bg)
     );
     border: 1px solid var(--home-music-line);
-    border-radius: 10px;
+    border-radius: var(--radius-sm);
 }
 
 .home-music-card .music-share-comment-form textarea,
@@ -2808,16 +2736,16 @@ html[data-theme] .home-music-card .music-share-comment-form input {
     .comment-actions
     button[type="submit"] {
     min-height: 30px;
-    padding: 0 14px;
-    font-size: 12px;
+    padding: 0 var(--sp-14);
+    font-size: var(--fs-xs);
     line-height: 1;
-    color: #fff;
+    color: var(--c-white);
     background: var(--home-music-accent);
 }
 
 .home-music-card .music-share-comment-form .comment-actions {
     display: flex;
-    gap: 8px;
+    gap: var(--sp-8);
     align-items: center;
     justify-content: flex-end;
 }
@@ -2863,13 +2791,13 @@ html[data-theme] .home-music-card .music-share-comment-form input {
 
 @media (max-width: 860px) {
     .home-music-card .music-share-comments .comment-list {
-        gap: 12px;
+        gap: var(--sp-12);
     }
 }
 
 @media (max-width: 560px) {
     .home-music-card .talk-comments.music-share-comments.comments {
-        padding: 22px 18px 24px;
+        padding: var(--sp-22) var(--sp-18) var(--sp-24);
     }
 
     .home-music-card .music-share-comments .comment-list {
@@ -2889,7 +2817,7 @@ html[data-theme] .home-music-card .music-share-comment-form input {
     z-index: 1300;
     display: grid;
     place-items: center;
-    padding: 24px;
+    padding: var(--sp-24);
     pointer-events: none;
     background: rgba(26, 26, 26, 0.24);
     opacity: 0;
@@ -2903,11 +2831,11 @@ html[data-theme] .home-music-card .music-share-comment-form input {
 
 .music-comment-dialog-panel {
     width: min(420px, 100%);
-    padding: 18px;
+    padding: var(--sp-18);
     color: var(--c-text);
     background: var(--c-card);
     border: 1px solid var(--c-border);
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     box-shadow: 0 18px 42px rgba(26, 26, 26, 0.18);
     transform: translateY(8px) scale(0.98);
     transition: transform 0.18s ease;
@@ -2919,23 +2847,23 @@ html[data-theme] .home-music-card .music-share-comment-form input {
 
 .music-comment-dialog-meta {
     display: flex;
-    gap: 10px;
+    gap: var(--sp-10);
     align-items: baseline;
-    margin-bottom: 10px;
+    margin-bottom: var(--sp-10);
 }
 
 .music-comment-dialog-meta strong {
-    font-size: 14px;
+    font-size: var(--fs-md);
     font-weight: 760;
 }
 
 .music-comment-dialog-meta span {
-    font-size: 12px;
+    font-size: var(--fs-xs);
     color: var(--c-text-muted);
 }
 
 .music-comment-dialog-content {
-    font-size: 14px;
+    font-size: var(--fs-md);
     line-height: 1.7;
     color: var(--c-text);
     word-break: break-word;
@@ -2961,10 +2889,10 @@ html[data-theme] .home-music-card .music-share-comment-form input {
 
     .home-music-layout {
         grid-template-columns: 84px minmax(0, 1fr);
-        gap: 16px;
+        gap: var(--sp-16);
         align-items: center;
         min-height: 0;
-        padding: 16px;
+        padding: var(--sp-16);
     }
 
     /* 左列:隐藏唱臂,封面盘缩成纯封面圆(去黑胶纹理与轴心),封面图填满圆 */
@@ -3007,7 +2935,7 @@ html[data-theme] .home-music-card .music-share-comment-form input {
         .home-music-play.music-card-btn {
         width: 40px;
         height: 40px;
-        font-size: 13px;
+        font-size: var(--fs-sm);
     }
 
     /* 播放三角形居中:桌面端为大圆加了 margin-left:3px 的光学补偿,
@@ -3021,7 +2949,7 @@ html[data-theme] .home-music-card .music-share-comment-form input {
 
     /* 右列:标题/歌手、歌词、进度整体居中 */
     .home-music-copy {
-        gap: 6px;
+        gap: var(--sp-6);
         align-items: center;
         justify-content: center;
         padding: 0;
@@ -3040,7 +2968,7 @@ html[data-theme] .home-music-card .music-share-comment-form input {
     }
 
     .home-music-title {
-        font-size: 15px;
+        font-size: var(--fs-base);
     }
 
     .home-music-card .music-card-lyric-skin .home-music-lyrics {
@@ -3053,7 +2981,7 @@ html[data-theme] .home-music-card .music-share-comment-form input {
     .home-music-card
         .talk-music-player.music-card.music-card-lyric-skin
         .home-music-progress.music-card-progress {
-        margin-top: 6px;
+        margin-top: var(--sp-6);
     }
 
     /* 点赞固定在卡片右上角 */
@@ -3113,17 +3041,17 @@ html[data-theme] .home-list .home-x-card.x-card:hover {
 .home-list .home-talk-card .talk-images .image-loading-wrap,
 .home-list .x-card .x-card-media img,
 .home-list .x-card .x-card-media .image-loading-wrap {
-    border-radius: 6px !important;
+    border-radius: var(--radius-xs) !important;
 }
 
 .category-page .category-post-list.home-list .category-post-card.post-card {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) !important;
-    gap: 14px !important;
+    gap: var(--sp-14) !important;
     height: auto !important;
     min-height: 0 !important;
     max-height: none !important;
-    padding: 18px 20px 16px !important;
+    padding: var(--sp-18) var(--sp-20) var(--sp-16) !important;
     overflow: visible !important;
 }
 
@@ -3144,7 +3072,7 @@ html[data-theme] .home-list .home-x-card.x-card:hover {
     .category-page .category-post-list.home-list .category-post-card.post-card {
         grid-template-columns: minmax(0, 1fr) !important;
         gap: 13px !important;
-        padding: 18px !important;
+        padding: var(--sp-18) !important;
     }
 
     .category-page
@@ -3152,7 +3080,7 @@ html[data-theme] .home-list .home-x-card.x-card:hover {
         .category-post-title-row
         .home-post-title {
         width: 100% !important;
-        font-size: 18px !important;
+        font-size: var(--fs-xl) !important;
         line-height: 1.36 !important;
     }
 
@@ -3173,20 +3101,19 @@ html[data-theme] .home-list .home-x-card.x-card:hover {
 
 .home-list .post-card {
     box-sizing: border-box !important;
-    gap: 8px !important;
+    gap: var(--sp-8) !important;
     align-content: start !important;
     align-items: stretch !important;
     height: 270px !important;
-    min-height: 0 !important;
     min-height: 270px !important;
     max-height: 270px !important;
-    padding-top: 14px !important;
+    padding-top: var(--sp-14) !important;
     padding-bottom: 0 !important;
     overflow: hidden !important;
 }
 
 .home-list .post-card:not(.has-cover) {
-    padding-top: 14px !important;
+    padding-top: var(--sp-14) !important;
 }
 
 .home-list .home-talk-card:not(.music-talk-card),
@@ -3197,14 +3124,14 @@ html[data-theme] .home-list .home-x-card.x-card:hover {
     height: auto !important;
     min-height: 0 !important;
     max-height: none !important;
-    padding-top: 22px !important;
+    padding-top: var(--sp-22) !important;
     padding-bottom: 0 !important;
     overflow: visible !important;
 }
 
 .home-list .home-talk-card:not(.music-talk-card) .talk-content {
     display: block !important;
-    margin-bottom: 10px !important;
+    margin-bottom: var(--sp-10) !important;
     overflow: visible !important;
     -webkit-line-clamp: initial;
     white-space: pre-wrap;
@@ -3214,7 +3141,7 @@ html[data-theme] .home-list .home-x-card.x-card:hover {
 .home-list .home-talk-card:not(.music-talk-card) .talk-images {
     flex: 0 0 auto !important;
     grid-template-rows: 1fr !important;
-    margin-top: 8px !important;
+    margin-top: var(--sp-8) !important;
     overflow: hidden !important;
 }
 
@@ -3234,14 +3161,14 @@ html[data-theme] .home-list .home-x-card.x-card:hover {
     justify-content: space-between !important;
     height: auto !important;
     min-height: 30px !important;
-    padding-top: 4px !important;
-    padding-bottom: 4px !important;
-    margin-top: 12px !important;
+    padding-top: var(--sp-4) !important;
+    padding-bottom: var(--sp-4) !important;
+    margin-top: var(--sp-12) !important;
 }
 
 /* 说说页脚按钮与 X 一致(padding-block 5px -> 高 28px,页脚整体高度对齐 X 的 37px) */
 .home-list .home-talk-card:not(.music-talk-card) .home-card-footer .home-card-actions > .home-action {
-    padding-block: 5px !important;
+    padding-block: var(--sp-5) !important;
 }
 
 .home-list
@@ -3282,7 +3209,7 @@ html[data-theme] .home-list .home-x-card.x-card:hover {
 .home-list .home-post-footer .home-action,
 .home-list .home-post-footer .home-card-meta > *,
 .home-list .home-post-footer .home-card-actions > * {
-    padding-block: 5px !important;
+    padding-block: var(--sp-5) !important;
 }
 
 .home-list .post-card.has-cover {
@@ -3293,7 +3220,7 @@ html[data-theme] .home-list .home-x-card.x-card:hover {
     aspect-ratio: auto;
     padding: 0 !important;
     overflow: hidden;
-    color: #fff;
+    color: var(--c-white);
 }
 
 .home-list .post-card.has-cover .home-post-cover {
@@ -3305,7 +3232,7 @@ html[data-theme] .home-list .home-x-card.x-card:hover {
     aspect-ratio: auto;
     background: var(--c-card-soft);
     border: 0;
-    border-radius: 6px !important;
+    border-radius: var(--radius-xs) !important;
 }
 
 .home-list .post-card.has-cover .home-post-cover img {
@@ -3314,9 +3241,20 @@ html[data-theme] .home-list .home-x-card.x-card:hover {
     height: 100% !important;
     aspect-ratio: auto;
     object-fit: cover;
-    border-radius: 6px !important;
+    border-radius: var(--radius-xs) !important;
     transform: none;
-    transition: transform 0.4s ease;
+    transition:
+        transform 0.4s ease,
+        opacity 0.4s ease,
+        filter 0.55s ease;
+}
+
+.home-list .post-card.has-cover .home-post-cover .image-loading-wrap {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    margin: 0;
+    border-radius: var(--radius-xs) !important;
 }
 
 .home-list .post-card.has-cover::before {
@@ -3331,7 +3269,7 @@ html[data-theme] .home-list .home-x-card.x-card:hover {
         rgba(0, 0, 0, 0.46) 48%,
         rgba(0, 0, 0, 0.16) 100%
     );
-    border-radius: 6px;
+    border-radius: var(--radius-xs);
 }
 
 .home-list .post-card.has-cover .home-post-main {
@@ -3343,12 +3281,12 @@ html[data-theme] .home-list .home-x-card.x-card:hover {
     box-sizing: border-box;
     display: block;
     height: auto !important;
-    padding: 0 26px 18px !important;
+    padding: 0 26px var(--sp-18) !important;
 }
 
 .home-list .post-card.has-cover .home-post-title-row {
     padding-right: 0;
-    margin: 0 0 10px;
+    margin: 0 0 var(--sp-10);
 }
 
 .home-list .post-card.has-cover .home-post-title {
@@ -3360,7 +3298,7 @@ html[data-theme] .home-list .home-x-card.x-card:hover {
 
 .home-list .post-card.has-cover .home-post-title a,
 .home-list .post-card.has-cover .home-post-title a:hover {
-    color: #fff;
+    color: var(--c-white);
 }
 
 .home-list .post-card.has-cover .home-post-content-row {
@@ -3371,22 +3309,29 @@ html[data-theme] .home-list .home-x-card.x-card:hover {
     max-width: none;
     min-height: 0;
     -webkit-line-clamp: 2;
-    font-size: 15px;
-    line-height: 1.8;
+    font-size: 14px;
+    line-height: 25px;
     color: rgba(255, 255, 255, 0.9);
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .home-list .post-card.has-cover .home-post-category {
     top: -1px;
-    right: -1px;
+    right: var(--sp-16);
     z-index: 3;
-    min-height: 42px;
-    padding: 0 18px;
-    color: #fff;
+    max-width: 38%;
+    min-height: 28px;
+    gap: var(--sp-4);
+    padding: 0 var(--sp-10);
+    font-size: 11px;
+    color: var(--c-white);
     background: var(--c-primary);
-    border-radius: 0 var(--radius-lg) 0 12px;
+    border-radius: 0;
     box-shadow: none;
+}
+
+.home-list .post-card.has-cover .home-post-category i {
+    font-size: 10px;
 }
 
 .home-list .post-card.has-cover .home-post-footer {
@@ -3421,7 +3366,7 @@ html[data-theme] .home-list .home-x-card.x-card:hover {
     }
 
     .home-list .post-card.has-cover .home-post-main {
-        padding: 0 22px 16px !important;
+        padding: 0 var(--sp-22) var(--sp-16) !important;
     }
 
     .home-list .post-card.has-cover .home-post-title {

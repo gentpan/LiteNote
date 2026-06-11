@@ -8,15 +8,15 @@
         $chatIds = (string)($s['TELEGRAM_ALLOWED_CHAT_IDS'] ?? '');
     @endphp
 
-    <div class="settings-page-shell">
+    <div class="settings-page-shell telegram-settings-page">
         @include('partials.admin-settings-tabs')
 
         <div class="mail-status-grid">
             <div class="mail-status-card">
-                <span class="mail-status-icon"><i class="fa-brands fa-telegram"></i></span>
+                <span class="mail-status-icon {{ !empty($configured) ? 'mail-status-icon-success' : '' }}"><i class="fa-brands fa-telegram"></i></span>
                 <div>
                     <strong>Telegram 发布说说</strong>
-                    <span class="status {{ !empty($configured) ? 'status-published' : 'status-draft' }}">{{ !empty($configured) ? '已配置' : '未就绪' }}</span>
+                    <small>{{ !empty($configured) ? '已配置' : '未就绪' }}</small>
                 </div>
             </div>
             <div class="mail-status-card">
@@ -94,7 +94,7 @@
         <section class="admin-form mail-log-panel telegram-help-panel">
             <h3 class="settings-group-title"><i class="fa-solid fa-list-check"></i> 字段用途</h3>
             <div class="settings-section">
-                <table class="admin-table">
+                <table class="admin-table telegram-env-table">
                     <thead>
                         <tr>
                             <th>环境变量</th>

@@ -29,7 +29,7 @@
     @if(!empty($site['site_analytics_code']))
         {!! $site['site_analytics_code'] !!}
     @endif
-    <script src="https://jsd.bluecdn.com/npm/@fancyapps/ui@5/dist/fancybox/fancybox.umd.js"></script>
+    <script src="https://static.bluecdn.com/libs/fancyapps/ui/6.1.14/dist/fancybox/fancybox.umd.js"></script>
     <script src="{{ $mainJs }}?v={{ \App\Services\ThemeManager::assetVersion($mainJs) }}"></script>
 </body>
 </html>

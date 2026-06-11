@@ -14,9 +14,6 @@ final class FaviconService
     private const PNG_FILES = [
         16 => 'favicon-16x16.png',
         32 => 'favicon-32x32.png',
-        48 => 'favicon-48x48.png',
-        96 => 'favicon-96x96.png',
-        150 => 'mstile-150x150.png',
         180 => 'apple-touch-icon.png',
         192 => 'android-chrome-192x192.png',
         512 => 'android-chrome-512x512.png',
@@ -43,7 +40,7 @@ final class FaviconService
             $tags[] = '<link rel="shortcut icon" href="' . self::e('/favicon.ico?v=' . $version) . '">';
         }
 
-        foreach ([16, 32, 96] as $size) {
+        foreach ([32] as $size) {
             $file = self::PNG_FILES[$size];
             if (is_file(self::abs($file))) {
                 $tags[] = '<link rel="icon" type="image/png" sizes="' . $size . 'x' . $size . '" href="' . self::e(self::rootUrl($file, $version)) . '">';
@@ -69,17 +66,13 @@ final class FaviconService
         $version = self::version();
         $assets = [];
         $labels = [
-            'favicon.ico' => 'ICO 多尺寸',
+            'favicon.ico' => 'ICO',
             'favicon.svg' => 'SVG',
-            'favicon-16x16.png' => 'PNG 16',
-            'favicon-32x32.png' => 'PNG 32',
-            'favicon-48x48.png' => 'PNG 48',
-            'favicon-96x96.png' => 'PNG 96',
-            'mstile-150x150.png' => 'Windows Tile 150',
-            'apple-touch-icon.png' => 'Apple 180',
-            'android-chrome-192x192.png' => 'Android 192',
-            'android-chrome-512x512.png' => 'Android 512',
-            'site.webmanifest' => 'Web Manifest',
+            'favicon-32x32.png' => '32x32',
+            'apple-touch-icon.png' => '180x180',
+            'android-chrome-192x192.png' => '192x192',
+            'android-chrome-512x512.png' => '512x512',
+            'site.webmanifest' => 'Manifest',
         ];
         foreach ($labels as $file => $label) {
             $path = self::abs($file);
@@ -152,7 +145,7 @@ final class FaviconService
             self::writePng(self::resizeSquare($source, $size), self::abs($filename));
         }
         self::writeIco();
-        imagedestroy($source);
+        unset($source);
 
         $version = (string)time();
         self::writeManifest((string)Config::get('site.title', 'LiteNote'), false);
@@ -263,10 +256,10 @@ final class FaviconService
         imagealphablending($image, false);
         imagesavealpha($image, true);
         if (!imagepng($image, $path, 6)) {
-            imagedestroy($image);
+            unset($image);
             throw new \RuntimeException('PNG 图标生成失败');
         }
-        imagedestroy($image);
+        unset($image);
     }
 
     private static function detectMime(string $path): string
@@ -296,7 +289,12 @@ final class FaviconService
 
     private static function clearGenerated(): void
     {
-        foreach (array_merge(['favicon.ico', 'favicon.svg', 'site.webmanifest'], array_values(self::PNG_FILES)) as $file) {
+        $legacyFiles = [
+            'favicon-48x48.png',
+            'favicon-96x96.png',
+            'mstile-150x150.png',
+        ];
+        foreach (array_merge(['favicon.ico', 'favicon.svg', 'site.webmanifest'], array_values(self::PNG_FILES), $legacyFiles) as $file) {
             $path = self::abs($file);
             if (is_file($path)) {
                 @unlink($path);
@@ -330,7 +328,7 @@ final class FaviconService
             'apple-touch-icon.png' => '/apple-touch-icon.png?v=' . $version,
             'android-chrome-192x192.png' => '/android-chrome-192x192.png?v=' . $version,
             'android-chrome-512x512.png' => '/android-chrome-512x512.png?v=' . $version,
-            'favicon-16x16.png', 'favicon-32x32.png', 'favicon-48x48.png', 'favicon-96x96.png' => '/' . $file . '?v=' . $version,
+            'favicon-16x16.png', 'favicon-32x32.png' => '/' . $file . '?v=' . $version,
             default => self::url($file, $version),
         };
     }
