@@ -2,22 +2,12 @@
 
 @section('content')
     @php
-        $talkKeywordBadges = static function (string $content): string {
-            preg_match_all('/#([\p{L}\p{N}_-]+)/u', $content, $matches);
-            $keywords = array_values(array_unique(array_filter(array_map('trim', $matches[1] ?? []))));
-            if (empty($keywords)) {
-                return '<span class="muted">-</span>';
-            }
-            return implode('', array_map(
-                static fn(string $keyword): string => '<span class="talk-keyword-badge">#' . htmlspecialchars($keyword, ENT_QUOTES, 'UTF-8') . '</span>',
-                $keywords
-            ));
-        };
         $rowNo = (($page ?? 1) - 1) * ($perPage ?? 20);
     @endphp
+<div class="talk-admin-page">
     <table class="admin-table admin-action-table talk-admin-table">
         <thead>
-            <tr><th>序号</th><th>内容</th><th>关键词</th><th>公开</th><th>时间</th><th>操作</th></tr>
+            <tr><th>序号</th><th>内容</th><th>公开</th><th>时间</th><th>操作</th></tr>
         </thead>
         <tbody>
             @foreach($list as $s)
@@ -25,7 +15,6 @@
             <tr>
                 <td>{{ $rowNo }}</td>
                 <td><div class="comment-cell" data-talk-content>{{ \App\Core\Helper::truncate($s->content, 100) }}</div></td>
-                <td data-talk-keywords>{!! $talkKeywordBadges((string)($s->content ?? '')) !!}</td>
                 <td data-talk-public>{!! $s->is_public ? '<span class="status status-published">公开</span>' : '<span class="status status-draft">隐藏</span>' !!}</td>
                 <td data-talk-time>{!! \App\Core\Helper::dateTimeTag($s->published_at ?: $s->created_at) !!}</td>
                 <td>
@@ -70,6 +59,7 @@
         </form>
     @endforeach
     {!! $paginator ?? '' !!}
+</div>
 
     <div class="admin-dialog-backdrop talk-edit-dialog" data-talk-edit-dialog hidden>
         <div class="admin-dialog-shell">
@@ -194,7 +184,6 @@
                     if (!res || res.code !== 0) throw new Error((res && res.msg) || '保存失败');
                     if (row && res.data) {
                         row.querySelector('[data-talk-content]').textContent = res.data.content_preview || '';
-                        row.querySelector('[data-talk-keywords]').innerHTML = renderKeywords(res.data.keywords || []);
                         updatePublicState(row, Number(res.data.is_public) === 1);
                         row.querySelector('[data-talk-time]').textContent = res.data.published_at || '';
                     }
@@ -206,19 +195,6 @@
                 })
                 .finally(function () { save.disabled = false; });
         });
-
-        function escapeHtml(value) {
-            return String(value).replace(/[&<>"']/g, function (ch) {
-                return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[ch];
-            });
-        }
-
-        function renderKeywords(keywords) {
-            if (!keywords || !keywords.length) return '<span class="muted">-</span>';
-            return keywords.map(function (keyword) {
-                return '<span class="talk-keyword-badge">#' + escapeHtml(keyword) + '</span>';
-            }).join('');
-        }
 
         function updatePublicState(sourceRow, isPublic) {
             var cell = sourceRow.querySelector('[data-talk-public]');

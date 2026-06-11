@@ -1,6 +1,11 @@
 @php
     $comments = $s->getRelation('comments') ?: [];
-    $keywords = $s->getKeywords();
+    $commentCount = count($comments);
+    $mood = trim((string)($s->mood ?? ''));
+    // 关键词(mood)显示在说说开头,与正文内联 #标签 合并去重
+    $keywords = $mood !== ''
+        ? array_values(array_unique(array_merge([$mood], $s->getKeywords())))
+        : $s->getKeywords();
     $displayContent = $s->contentWithoutKeywords();
     $images = $s->getImages();
     $locationName = method_exists($s, 'locationDisplayName') ? $s->locationDisplayName() : trim((string)($s->location_name ?: $s->location_city));
@@ -36,7 +41,7 @@
                 <i class="fa-regular fa-thumbs-up"></i><span class="like-count">{{ (int)($s->likes_count ?? 0) }}</span>
             </button>
             <button type="button" class="feed-action talk-comment-toggle" data-target="talk-comments-{{ $s->id }}">
-                <i class="fa-regular fa-comment"></i><span>{{ (int)($s->comments_count ?? count($comments)) }}</span>
+                <i class="fa-regular fa-comment"></i><span>{{ $commentCount }}</span>
             </button>
         </div>
     </div>

@@ -72,9 +72,10 @@ final class XOAuthController
             ActivityInstaller::install();
             $existing = ActivityIntegration::findByProvider('x_bookmarks');
             $metadata = $existing ? $existing->metadata() : [];
-            $metadata['sync_interval_minutes'] = $metadata['sync_interval_minutes'] ?? '360';
-            $metadata['limit'] = $metadata['limit'] ?? '50';
-            $metadata['pages'] = $metadata['pages'] ?? '1';
+            $metadata['sync_interval_minutes'] = $metadata['sync_interval_minutes'] ?? '1440';
+            $metadata['limit'] = $metadata['limit'] ?? '10';
+            $metadata['pages'] = $metadata['pages'] ?? '10';
+            $metadata['sync_new_only'] = $metadata['sync_new_only'] ?? '1';
 
             $profile = $this->fetchMe($accessToken);
             if (!empty($profile['id'])) {

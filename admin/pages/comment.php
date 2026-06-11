@@ -29,7 +29,7 @@
             </form>
         </div>
     </div>
-    <table class="admin-table admin-action-table admin-action-table-medium">
+    <table class="admin-table admin-action-table admin-action-table-medium comment-admin-table">
         <thead>
             <tr><th>ID</th><th>用户</th><th>目标</th><th>内容</th><th>状态</th><th>时间</th><th>操作</th></tr>
         </thead>

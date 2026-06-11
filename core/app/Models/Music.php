@@ -58,7 +58,9 @@ final class Music extends Model
     public static function paginate(int $page = 1, int $perPage = 20, string $orderBy = 'published_at DESC, sort ASC, id DESC', ?string $whereSql = null, array $params = []): array
     {
         self::ensurePublishedAtColumn();
-        return parent::paginate($page, $perPage, $orderBy, $whereSql, $params);
+        $result = parent::paginate($page, $perPage, $orderBy, $whereSql, $params);
+        $result['items'] = self::withRealCommentCounts($result['items']);
+        return $result;
     }
 
     public static function paginatePublic(int $page = 1, int $perPage = 10): array
@@ -80,7 +82,7 @@ final class Music extends Model
             "SELECT * FROM music WHERE is_public = ? ORDER BY published_at DESC, sort ASC, id DESC LIMIT {$limit}",
             [Toggle::On->value]
         );
-        return array_map(fn(array $row) => new self($row), $rows);
+        return self::withRealCommentCounts(array_map(fn(array $row) => new self($row), $rows));
     }
 
     public static function publicOptions(int $limit = 120): array
@@ -117,6 +119,38 @@ final class Music extends Model
             $map[(int)$item->id] = $item;
         }
         return $map;
+    }
+
+    /**
+     * @param self[] $items
+     * @return self[]
+     */
+    public static function withRealCommentCounts(array $items): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map(
+            static fn(self $item): int => (int)$item->id,
+            $items
+        ))));
+        if ($ids === []) {
+            return $items;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $rows = self::db()->fetchAll(
+            "SELECT music_id, COUNT(*) AS total
+             FROM comments
+             WHERE status = ? AND music_id IN ({$placeholders})
+             GROUP BY music_id",
+            array_merge([\App\Enums\CommentStatus::Approved->value], $ids)
+        );
+        $counts = [];
+        foreach ($rows as $row) {
+            $counts[(int)$row['music_id']] = (int)$row['total'];
+        }
+        foreach ($items as $item) {
+            $item->comments_count = $counts[(int)$item->id] ?? 0;
+        }
+        return $items;
     }
 
     public static function like(int $id): int

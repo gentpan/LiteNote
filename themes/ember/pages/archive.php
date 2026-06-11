@@ -30,14 +30,14 @@
                     <h2>近一年更新热力图</h2>
                     <p>颜色按当天写作字数区分，500 / 1000 / 1500 / 2000 字逐级加深</p>
                 </div>
-                <div class="archive-heat-scroll">
-                    <div class="archive-heat-inner" style="--weeks: {{ $heatmap['weeks'] ?? 53 }}">
-                        <div class="archive-heat-months">
+                <div class="archive-heat-scroll site-heatmap-scroll">
+                    <div class="archive-heat-inner site-heatmap-inner" style="--weeks: {{ $heatmap['weeks'] ?? 53 }}">
+                        <div class="archive-heat-months site-heatmap-months">
                             @foreach(($heatmap['months'] ?? []) as $month)
                                 <span style="grid-column: {{ $month['week'] }}">{{ $month['label'] }}</span>
                             @endforeach
                         </div>
-                        <div class="archive-heat-cells" aria-label="近一年每日写作字数热力图">
+                        <div class="archive-heat-cells site-heatmap-cells" aria-label="近一年每日写作字数热力图">
                             @foreach(($heatmap['days'] ?? []) as $day)
                                 @php
                                     $articleCount = (int)($day['articles'] ?? 0);
@@ -47,18 +47,17 @@
                                     if ($talkCount > 0) { $heatTitleParts[] = $talkCount . ' 篇说说'; }
                                     $heatTitle = empty($heatTitleParts) ? '没有内容' : implode('，', $heatTitleParts);
                                 @endphp
-                                <span class="archive-heat-cell level-{{ $day['level'] }} {{ !empty($day['muted']) ? 'is-muted' : '' }}"
+                                <span class="archive-heat-cell site-heatmap-cell level-{{ $day['level'] }} {{ !empty($day['muted']) ? 'is-muted' : '' }}"
                                       title="{{ $day['date'] }}：{{ $heatTitle }}"></span>
                             @endforeach
                         </div>
-                        <div class="archive-heat-legend">
+                        <div class="archive-heat-legend site-heatmap-legend">
                             <span>少</span>
                             <i class="level-0"></i>
                             <i class="level-1"></i>
                             <i class="level-2"></i>
                             <i class="level-3"></i>
                             <i class="level-4"></i>
-                            <i class="level-5"></i>
                             <span>多</span>
                         </div>
                     </div>

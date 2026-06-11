@@ -154,7 +154,6 @@ class ArchiveController
     private function heatmapLevel(int $words): int
     {
         return match (true) {
-            $words >= 2000 => 5,
             $words >= 1500 => 4,
             $words >= 1000 => 3,
             $words >= 500 => 2,

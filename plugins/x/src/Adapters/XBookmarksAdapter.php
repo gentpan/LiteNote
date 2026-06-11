@@ -41,10 +41,12 @@ final class XBookmarksAdapter extends BaseAdapter
 
         $limit = max(5, min(100, (int)$this->meta($integration, 'limit', '50')));
         $maxPages = max(1, min(50, (int)$this->meta($integration, 'pages', '1')));
+        $syncNewOnly = $this->boolMeta($integration, 'sync_new_only', true);
 
         $created = $updated = $skipped = 0;
         $paginationToken = '';
         $page = 0;
+        $stop = false;
         do {
             $page++;
             $payload = $this->fetchBookmarksPage($token, $userId, $limit, $paginationToken);
@@ -58,15 +60,25 @@ final class XBookmarksAdapter extends BaseAdapter
                     $skipped++;
                     continue;
                 }
+                $id = trim((string)($tweet['id'] ?? ''));
+                if ($id === '') {
+                    $skipped++;
+                    continue;
+                }
+
+                $externalId = 'x:bookmark:' . $id;
+                if ($syncNewOnly && $this->activityExists($externalId)) {
+                    $stop = true;
+                    break;
+                }
+
                 $normalized = $this->normalizeTweet($tweet, $users, $media);
-                $id = trim((string)($normalized['id'] ?? ''));
                 $text = trim((string)($normalized['text'] ?? ''));
                 if ($id === '' || $text === '') {
                     $skipped++;
                     continue;
                 }
 
-                $externalId = 'x:bookmark:' . $id;
                 $isNew = $this->ingest([
                     'type' => 'social',
                     'action' => 'saved',
@@ -90,9 +102,17 @@ final class XBookmarksAdapter extends BaseAdapter
 
             $meta = is_array($payload['meta'] ?? null) ? $payload['meta'] : [];
             $paginationToken = (string)($meta['next_token'] ?? '');
-        } while ($paginationToken !== '' && $page < $maxPages);
+        } while (!$stop && $paginationToken !== '' && $page < $maxPages);
 
         return $this->result($created, $updated, $skipped, 'X 书签同步完成');
+    }
+
+    private function activityExists(string $externalId): bool
+    {
+        return (bool)\App\Models\Activity::db()->fetchColumn(
+            'SELECT 1 FROM activities WHERE source = ? AND external_id = ? LIMIT 1',
+            ['x_bookmarks', $externalId]
+        );
     }
 
     private function validAccessToken(ActivityIntegration $integration): string

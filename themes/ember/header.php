@@ -8,7 +8,6 @@
     <meta name="keywords" content="{{ $site['keywords'] ?? '' }}">
     {!! \App\Services\FaviconService::headHtml($site ?? []) !!}
     <link rel="alternate" type="application/rss+xml" title="{{ $site['title'] ?? 'LiteNote' }} RSS" href="/rss.xml">
-    <link rel="stylesheet" href="https://static.bluecdn.com/fonts/cn/kuaikanshijieti/result.css">
     @yield('head')
     <link rel="stylesheet" href="https://static.bluecdn.com/libs/fontawesome/7.2.0/css/all.min.css">
     @php
@@ -33,7 +32,30 @@
     @foreach($themeCssFiles as $themeCss)
         <link rel="stylesheet" href="{{ $themeCss }}?v={{ \App\Services\ThemeManager::assetVersion($themeCss) }}">
     @endforeach
-    <link rel="stylesheet" href="https://jsd.bluecdn.com/npm/@fancyapps/ui@5/dist/fancybox/fancybox.css">
+    @php
+        $articleFontMap = [
+            'source-han-serif' => '"Source Han Serif CN VF", "Source Han Serif CN", "Source Han Serif SC", "Noto Serif CJK SC", "Songti SC", "SimSun", serif',
+            'noto-sans-sc' => '"Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif',
+            'lxgw-wenkai' => '"LXGW WenKai", "LXGW WenKai Screen", "Noto Sans SC", "PingFang SC", sans-serif',
+            'kuaikan' => '"快看世界体", "Source Han Serif CN VF", "Source Han Serif SC", "Songti SC", serif',
+            'luo' => '"Luo", "LXGW WenKai", "Noto Sans SC", "PingFang SC", sans-serif',
+        ];
+        $articleFontCssMap = [
+            'source-han-serif' => 'https://static.bluecdn.com/fonts/cn/source-han-serif-cn/result.css',
+            'noto-sans-sc' => 'https://static.bluecdn.com/fonts/cn/noto-sans-sc/result.css',
+            'lxgw-wenkai' => 'https://static.bluecdn.com/fonts/cn/lxgw-wenkai/result.css',
+            'kuaikan' => 'https://static.bluecdn.com/fonts/cn/kuaikanshijieti/result.css',
+            'luo' => 'https://static.bluecdn.com/fonts/cn/luo/result.css',
+        ];
+        $articleFontKey = (string)\App\Models\Setting::get('post_article_font', 'source-han-serif');
+        $articleFontFamily = $articleFontMap[$articleFontKey] ?? $articleFontMap['source-han-serif'];
+        $articleFontCss = $articleFontCssMap[$articleFontKey] ?? $articleFontCssMap['source-han-serif'];
+    @endphp
+    <link rel="stylesheet" href="{{ $articleFontCss }}">
+    <style>
+        :root { --article-font-family: {!! $articleFontFamily !!}; }
+    </style>
+    <link rel="stylesheet" href="https://static.bluecdn.com/libs/fancyapps/ui/6.1.14/dist/fancybox/fancybox.css">
     {!! $__pluginFrontHead ?? '' !!}
 </head>
 <body>

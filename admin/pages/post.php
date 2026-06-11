@@ -4,14 +4,15 @@
     @php
         $postStatusLabels = \App\Enums\PostStatus::options();
     @endphp
-    <div class="admin-toolbar">
-        <a class="btn btn-primary" href="/admin/posts/create"><i class="fa-solid fa-pen"></i> 写新文章</a>
-        <a class="btn" href="/admin/posts/import"><i class="fa-solid fa-file-import"></i> 导入 Markdown</a>
+    <div class="admin-toolbar post-admin-toolbar">
+        <a class="btn btn-primary" href="/admin/posts/create"><i class="fa-solid fa-pen"></i> 写文章</a>
+        <a class="btn" href="/admin/posts/import"><i class="fa-solid fa-file-import"></i> 导入</a>
         <button type="button" class="btn" data-open-category-dialog><i class="fa-solid fa-folder-tree"></i> 分类</button>
-        <form method="get" class="admin-search">
+        <button type="button" class="btn" data-open-post-font-dialog><i class="fa-solid fa-font"></i> 字体设置</button>
+        <form method="get" class="admin-search post-admin-search">
             <input type="text" name="q" value="{{ $keyword }}" placeholder="搜索标题...">
             <select name="status">
-                <option value="">全部状态</option>
+                <option value="">全部</option>
                 <option value="published" {{ ($status ?? '') === 'published' ? 'selected' : '' }}>已发布</option>
                 <option value="draft" {{ ($status ?? '') === 'draft' ? 'selected' : '' }}>草稿</option>
             </select>
@@ -20,6 +21,83 @@
     </div>
 
     @include('partials.admin-category-dialog')
+
+    @php
+        $fontOptions = $articleFontOptions ?? [];
+        $fontCurrent = $articleFontCurrent ?? 'source-han-serif';
+    @endphp
+    <div class="admin-modal-backdrop" id="post-font-dialog" hidden>
+        <section class="admin-modal post-font-dialog" role="dialog" aria-modal="true" aria-labelledby="post-font-dialog-title">
+            <div class="admin-modal-head">
+                <div>
+                    <h3 id="post-font-dialog-title"><i class="fa-solid fa-font"></i> 文章主用字体</h3>
+                    <p>选择前台文章正文使用的主字体，保存后立即生效。</p>
+                </div>
+                <button type="button" class="admin-modal-close" data-post-font-dialog-close aria-label="关闭"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form method="post" action="/admin/posts/font-settings" class="admin-form post-font-dialog-body" data-no-dirty-form>
+                <input type="hidden" name="_csrf" value="{{ $csrf }}">
+                <div class="post-font-options">
+                    @foreach($fontOptions as $fontKey => $fontOption)
+                        <label class="post-font-option {{ $fontCurrent === $fontKey ? 'is-active' : '' }}">
+                            <input type="radio" name="article_font" value="{{ $fontKey }}" {{ $fontCurrent === $fontKey ? 'checked' : '' }}>
+                            <span class="post-font-option-main">
+                                <span class="post-font-option-title">{{ $fontOption['label'] ?? $fontKey }}</span>
+                                <span class="post-font-option-desc">{{ $fontOption['description'] ?? '' }}</span>
+                                <span class="post-font-option-preview" style="font-family: {{ $fontOption['family'] ?? 'inherit' }};">轻舟已过万重山，文章正文会使用这个字体。</span>
+                            </span>
+                        </label>
+                    @endforeach
+                </div>
+                <div class="admin-dialog-actions post-font-actions">
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> 保存设置</button>
+                    <button type="button" class="btn" data-post-font-dialog-close>取消</button>
+                </div>
+            </form>
+        </section>
+    </div>
+
+    <script>
+    (function () {
+        var dialog = document.getElementById('post-font-dialog');
+        var openBtn = document.querySelector('[data-open-post-font-dialog]');
+        if (!dialog || !openBtn) return;
+
+        function openDialog() {
+            dialog.hidden = false;
+            document.body.classList.add('admin-dialog-open');
+            setTimeout(function () {
+                var checked = dialog.querySelector('input[name="article_font"]:checked');
+                if (checked) checked.focus();
+            }, 0);
+        }
+
+        function closeDialog() {
+            dialog.hidden = true;
+            document.body.classList.remove('admin-dialog-open');
+            openBtn.focus();
+        }
+
+        openBtn.addEventListener('click', openDialog);
+        dialog.querySelectorAll('[data-post-font-dialog-close]').forEach(function (btn) {
+            btn.addEventListener('click', closeDialog);
+        });
+        dialog.addEventListener('click', function (event) {
+            if (event.target === dialog) closeDialog();
+        });
+        dialog.querySelectorAll('input[name="article_font"]').forEach(function (radio) {
+            radio.addEventListener('change', function () {
+                dialog.querySelectorAll('.post-font-option').forEach(function (option) {
+                    var input = option.querySelector('input[name="article_font"]');
+                    option.classList.toggle('is-active', !!input && input.checked);
+                });
+            });
+        });
+        document.addEventListener('keydown', function (event) {
+            if (!dialog.hidden && event.key === 'Escape') closeDialog();
+        });
+    })();
+    </script>
 
     <form method="post" action="/admin/posts/bulk"
           data-no-dirty-form

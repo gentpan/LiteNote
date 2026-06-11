@@ -19,7 +19,7 @@ class DashboardController
             'comments' => Post::db()->fetchColumn('SELECT COUNT(*) FROM comments') ?: 0,
             'pending'  => Comment::count(['status' => $pending]),
         ];
-        $latestPosts    = Post::query("SELECT * FROM posts ORDER BY id DESC LIMIT 5");
+        $latestPosts    = Post::withRealCommentCounts(Post::query("SELECT * FROM posts ORDER BY id DESC LIMIT 5"));
         $pendingComments = Post::db()->fetchAll(
             "SELECT c.*, p.id AS target_post_id, p.slug AS target_slug, pc.slug AS target_category_slug, COALESCE(p.title, pg.title) AS target_title
              FROM comments c

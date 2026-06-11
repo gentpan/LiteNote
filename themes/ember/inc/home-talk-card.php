@@ -4,7 +4,11 @@
     $music = $item->getRelation('music');
     $isMusicTalk = !empty($music);
     $comments = $item->getRelation('comments') ?: [];
-    $keywords = $item->getKeywords();
+    $mood = trim((string)($item->mood ?? ''));
+    // 关键词(mood)显示在说说开头,与正文内联 #标签 合并去重
+    $keywords = $mood !== ''
+        ? array_values(array_unique(array_merge([$mood], $item->getKeywords())))
+        : $item->getKeywords();
     $displayContent = $item->contentWithoutKeywords();
     $commentCount = count($comments);
     $locationName = method_exists($item, 'locationDisplayName') ? $item->locationDisplayName() : trim((string)($item->location_name ?: $item->location_city ?: ''));
@@ -43,7 +47,7 @@
                     <i class="fa-regular fa-thumbs-up"></i><span class="like-count">{{ (int)($item->likes_count ?? 0) }}</span>
                 </button>
                 <button type="button" class="home-action talk-comment-toggle" data-target="talk-comments-{{ $item->id }}">
-                    <i class="fa-regular fa-comment"></i><span>{{ (int)($item->comments_count ?? count($comments)) }}</span>
+                    <i class="fa-regular fa-comment"></i><span>{{ $commentCount }}</span>
                 </button>
             </div>
         </footer>

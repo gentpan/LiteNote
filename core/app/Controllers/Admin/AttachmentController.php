@@ -85,7 +85,7 @@ class AttachmentController
             'attachment_s3_access_key' => trim((string)$request->input('attachment_s3_access_key', '')),
             'attachment_s3_secret_key' => trim((string)$request->input('attachment_s3_secret_key', '')),
             'attachment_s3_prefix' => trim((string)$request->input('attachment_s3_prefix', ''), "/ \t\n\r\0\x0B"),
-            'attachment_s3_delete_remote' => $request->input('attachment_s3_delete_remote', '0') === '1' ? '1' : '0',
+            'attachment_s3_delete_remote' => '1',
             'attachment_backup_enabled' => $request->input('attachment_backup_enabled', '0') === '1' ? '1' : '0',
             'attachment_backup_s3_enabled' => $request->input('attachment_backup_s3_enabled', '0') === '1' ? '1' : '0',
             'attachment_backup_time' => $this->cleanBackupTime((string)$request->input('attachment_backup_time', '00:00')),
@@ -112,7 +112,7 @@ class AttachmentController
             'attachment_s3_access_key' => '',
             'attachment_s3_secret_key' => '',
             'attachment_s3_prefix' => '',
-            'attachment_s3_delete_remote' => '0',
+            'attachment_s3_delete_remote' => '1',
         ];
         $defaults = array_merge($defaults, BackupService::defaults());
 

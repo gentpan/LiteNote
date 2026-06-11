@@ -23,7 +23,9 @@ final class XTweet extends Model
         if ($whereSql === null) {
             $whereSql = 'is_public = 1';
         }
-        return parent::paginate($page, $perPage, $orderBy, $whereSql, $params);
+        $result = parent::paginate($page, $perPage, $orderBy, $whereSql, $params);
+        $result['items'] = self::withRealCommentCounts($result['items']);
+        return $result;
     }
 
     /** 供主题 x-card 复用 Talk 的判定接口。 */
@@ -101,7 +103,41 @@ final class XTweet extends Model
     /** 加载本地评论(复用核心 comments 表的 x_tweet_id 维度)。 */
     public function loadComments(): void
     {
-        $this->setRelation('comments', Comment::forXTweet((int)$this->id));
+        $comments = Comment::forXTweet((int)$this->id);
+        $this->comments_count = count($comments);
+        $this->setRelation('comments', $comments);
+    }
+
+    /**
+     * @param self[] $items
+     * @return self[]
+     */
+    public static function withRealCommentCounts(array $items): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map(
+            static fn(self $item): int => (int)$item->id,
+            $items
+        ))));
+        if ($ids === []) {
+            return $items;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $rows = self::db()->fetchAll(
+            "SELECT x_tweet_id, COUNT(*) AS total
+             FROM comments
+             WHERE status = ? AND x_tweet_id IN ({$placeholders})
+             GROUP BY x_tweet_id",
+            array_merge([\App\Enums\CommentStatus::Approved->value], $ids)
+        );
+        $counts = [];
+        foreach ($rows as $row) {
+            $counts[(int)$row['x_tweet_id']] = (int)$row['total'];
+        }
+        foreach ($items as $item) {
+            $item->comments_count = $counts[(int)$item->id] ?? 0;
+        }
+        return $items;
     }
 
     public static function extractTweetId(string $value): string

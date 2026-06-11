@@ -83,7 +83,7 @@ final class ImageUploadService
         }
 
         $convertToWebp = (string)Setting::get('attachment_image_webp_enabled', '1') === '1';
-        if (!$convertToWebp) {
+        if (!$convertToWebp || $mime === 'image/webp') {
             return self::saveOriginalImage($file, $tmp, $mime, $subDir, $sub, $base);
         }
 
@@ -193,6 +193,10 @@ final class ImageUploadService
 
     private static function convertToWebp(string $source, string $mime, string $target): void
     {
+        if (in_array($mime, ['image/jpeg', 'image/png'], true) && self::convertWithCwebp($source, $target)) {
+            return;
+        }
+
         if (class_exists(\Imagick::class)) {
             try {
                 $image = new \Imagick($source);
@@ -236,14 +240,8 @@ final class ImageUploadService
             return;
         }
 
-        $cwebp = trim((string)shell_exec('command -v cwebp 2>/dev/null'));
-        if ($cwebp !== '') {
-            $cmd = escapeshellcmd($cwebp) . ' -quiet -q ' . self::WEBP_QUALITY . ' '
-                . escapeshellarg($source) . ' -o ' . escapeshellarg($target);
-            exec($cmd, $output, $code);
-            if ($code === 0 && is_file($target)) {
-                return;
-            }
+        if (self::convertWithCwebp($source, $target)) {
+            return;
         }
 
         if ($mime === 'image/webp' && copy($source, $target)) {
@@ -251,5 +249,18 @@ final class ImageUploadService
         }
 
         throw new \RuntimeException('服务器缺少 WebP 转换组件');
+    }
+
+    private static function convertWithCwebp(string $source, string $target): bool
+    {
+        $cwebp = trim((string)shell_exec('command -v cwebp 2>/dev/null'));
+        if ($cwebp === '') {
+            return false;
+        }
+
+        $cmd = escapeshellcmd($cwebp) . ' -quiet -q ' . self::WEBP_QUALITY . ' '
+            . escapeshellarg($source) . ' -o ' . escapeshellarg($target);
+        exec($cmd, $output, $code);
+        return $code === 0 && is_file($target);
     }
 }

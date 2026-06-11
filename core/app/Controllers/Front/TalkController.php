@@ -20,30 +20,51 @@ class TalkController
     {
         $perPage = 10;
         $page = max(1, (int)($_GET['page'] ?? 1));
+
+        $hero = $this->talkHero();
+
+        // 关键词(mood)筛选:仅接受确实存在的关键词,避免任意输入污染查询
+        $validKeywords = array_map(static fn(array $m): string => $m['name'], $hero['moods']);
+        $keyword = trim((string)($_GET['keyword'] ?? ''));
+        if ($keyword !== '' && !in_array($keyword, $validKeywords, true)) {
+            $keyword = '';
+        }
+
         $whereSql = "is_public = ? AND COALESCE(music_id, 0) = 0 AND (COALESCE(post_type, '') = '' OR post_type = 'talk')";
+        $params = [Toggle::On->value];
+        if ($keyword !== '') {
+            $whereSql .= ' AND mood = ?';
+            $params[] = $keyword;
+        }
+
         ['items' => $list, 'total' => $total] = Talk::paginate(
             $page,
             $perPage,
             'published_at DESC, created_at DESC, id DESC',
             $whereSql,
-            [Toggle::On->value]
+            $params
         );
         $this->attachTalkComments($list);
 
-        $hero = $this->talkHero();
+        // 分页 baseUrl 需保留当前筛选词,确保「加载更多」在筛选态下仍正确翻页
+        $listUrl = $keyword !== '' ? '/talk?keyword=' . rawurlencode($keyword) : '/talk';
 
         return View::render('front.talk.index', [
             'list' => $list,
             'total' => $total,
             'page'  => $page,
             'perPage' => $perPage,
-            'paginator' => Helper::loadMore($page, $total, $perPage, Helper::url('/talk')),
-            'pageTitle' => '滔客',
+            'paginator' => Helper::loadMore($page, $total, $perPage, Helper::url($listUrl)),
+            'pageTitle' => $keyword !== '' ? '滔客 · ' . $keyword : '滔客',
             'activeNav' => 'talk',
             'heroWeeks' => $hero['weeks'],
+            'heroHeatDays' => $hero['days'],
+            'heroHeatMonths' => $hero['months'],
+            'heroHeatWeeks' => $hero['weeksCount'],
             'heroMoods' => $hero['moods'],
             'heroTotal' => $hero['total'],
             'heroActiveDays' => $hero['activeDays'],
+            'activeKeyword' => $keyword,
         ]);
     }
 
@@ -68,22 +89,40 @@ class TalkController
         }
 
         $today = new \DateTimeImmutable('today');
-        $cursor = $today->modify('-' . ((53 * 7) - 1) . ' days');
-        $cursor = $cursor->modify('-' . (int)$cursor->format('w') . ' days'); // 对齐到周日起始
+        $rangeStart = $today->modify('-364 days');
+        $cursor = $rangeStart->modify('-' . (int)$rangeStart->format('w') . ' days'); // 对齐到周日起始
+        $gridEnd = $today->modify('+' . (6 - (int)$today->format('w')) . ' days');
         $days = [];
-        while ($cursor <= $today) {
+        $months = [];
+        $monthSeen = [];
+        $i = 0;
+        while ($cursor <= $gridEnd) {
             $ds = $cursor->format('Y-m-d');
-            $c = $counts[$ds] ?? 0;
+            $inRange = $cursor >= $rangeStart && $cursor <= $today;
+            $c = $inRange ? ($counts[$ds] ?? 0) : 0;
+            $week = intdiv($i, 7) + 1;
+            if ($inRange) {
+                $monthKey = $cursor->format('Y-m');
+                if (!isset($monthSeen[$monthKey]) && ((int)$cursor->format('j') <= 7 || $ds === $rangeStart->format('Y-m-d'))) {
+                    $monthSeen[$monthKey] = true;
+                    $months[] = ['label' => $cursor->format('n月'), 'week' => $week];
+                }
+            }
             $days[] = [
                 'date'  => $ds,
                 'count' => $c,
                 'level' => $c <= 0 ? 0 : ($c === 1 ? 1 : ($c <= 3 ? 2 : ($c <= 6 ? 3 : 4))),
+                'muted' => !$inRange,
             ];
             $cursor = $cursor->modify('+1 day');
+            $i++;
         }
 
         return [
+            'days' => $days,
             'weeks' => array_chunk($days, 7),
+            'months' => $months,
+            'weeksCount' => max(1, (int)ceil(count($days) / 7)),
             'moods' => $moods,
             'total' => (int)Talk::db()->fetchColumn("SELECT COUNT(*) FROM talk WHERE {$where}"),
             'activeDays' => count($counts),
@@ -344,7 +383,9 @@ class TalkController
     private function attachTalkComments(array $list): void
     {
         foreach ($list as $item) {
-            $item->setRelation('comments', Comment::forTalk((int)$item->id));
+            $comments = Comment::forTalk((int)$item->id);
+            $item->comments_count = count($comments);
+            $item->setRelation('comments', $comments);
         }
     }
 

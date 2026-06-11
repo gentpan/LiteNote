@@ -34,7 +34,7 @@
                         <td>{{ $t->tweet_author_name ?: ('@' . $t->tweetHandle()) }}</td>
                         <td>
                             <div class="x-admin-tweet-content">
-                                <span>{{ mb_strimwidth((string)($t->content ?? ''), 0, 150, '…', 'UTF-8') }}</span>
+                                <span>{{ (string)($t->content ?? '') }}</span>
                                 @if(!empty($tweetImages))
                                     <div class="x-admin-tweet-thumbs" aria-label="推文图片">
                                         @foreach(array_slice($tweetImages, 0, 4) as $img)

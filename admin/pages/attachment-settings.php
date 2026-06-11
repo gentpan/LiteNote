@@ -6,7 +6,6 @@
         $cdnEnabled = (string)($attSettings['attachment_cdn_enabled'] ?? '0') === '1';
         $webpEnabled = (string)($attSettings['attachment_image_webp_enabled'] ?? '1') === '1';
         $s3Enabled = (string)($attSettings['attachment_s3_enabled'] ?? '0') === '1';
-        $deleteRemote = (string)($attSettings['attachment_s3_delete_remote'] ?? '0') === '1';
         $backupEnabled = (string)($attSettings['attachment_backup_enabled'] ?? '0') === '1';
         $backupS3Enabled = (string)($attSettings['attachment_backup_s3_enabled'] ?? '1') === '1';
         $backupTime = (string)($attSettings['attachment_backup_time'] ?? '00:00');
@@ -95,25 +94,26 @@
                     </div>
                     <div class="attachment-s3-tools">
                         <button type="button" class="btn" data-s3-test><i class="fa-solid fa-plug-circle-check"></i> 测试连接</button>
-                        <button type="button" class="btn" data-s3-command><i class="fa-regular fa-copy"></i> 复制清空命令</button>
-                        <button type="button" class="btn btn-danger" data-s3-clear><i class="fa-solid fa-broom"></i> 清空桶前缀</button>
+                        <button type="button" class="btn btn-danger" data-s3-clear><i class="fa-solid fa-broom"></i> 清空桶</button>
                     </div>
                     <div class="attachment-s3-status" data-s3-status hidden></div>
-                    <label class="admin-inline-check attachment-setting-toggle">
-                        <input type="hidden" name="attachment_s3_delete_remote" value="0">
-                        <input type="checkbox" name="attachment_s3_delete_remote" value="1" {{ $deleteRemote ? 'checked' : '' }}>
-                        删除附件时同步删除远端对象
-                    </label>
                 </section>
 
                 <section class="attachment-settings-section">
                     <div class="attachment-settings-section-head">
                         <h4>数据备份</h4>
-                        <label class="admin-inline-check attachment-setting-toggle">
-                            <input type="hidden" name="attachment_backup_enabled" value="0">
-                            <input type="checkbox" name="attachment_backup_enabled" value="1" {{ $backupEnabled ? 'checked' : '' }}>
-                            启用每日备份
-                        </label>
+                        <div class="attachment-backup-head-toggles">
+                            <label class="admin-inline-check attachment-setting-toggle attachment-backup-s3-toggle">
+                                <input type="hidden" name="attachment_backup_s3_enabled" value="0">
+                                <input type="checkbox" name="attachment_backup_s3_enabled" value="1" {{ $backupS3Enabled ? 'checked' : '' }}>
+                                同步备份云端
+                            </label>
+                            <label class="admin-inline-check attachment-setting-toggle">
+                                <input type="hidden" name="attachment_backup_enabled" value="0">
+                                <input type="checkbox" name="attachment_backup_enabled" value="1" {{ $backupEnabled ? 'checked' : '' }}>
+                                每日备份
+                            </label>
+                        </div>
                     </div>
                     <p class="field-hint">每天到达设置时间后生成本地 JSON 数据快照和 SQLite 数据库备份；没有系统 cron 时，会在当天首次访问时补跑。</p>
                     <div class="form-row">
@@ -131,14 +131,6 @@
                             <label>至少保留版本数</label>
                             <input type="number" name="attachment_backup_keep_versions" min="1" max="200" value="{{ $backupKeepVersions ?: '10' }}">
                         </div>
-                        <div class="form-group attachment-backup-toggle-field">
-                            <label>远端同步</label>
-                            <label class="admin-inline-check attachment-setting-toggle">
-                                <input type="hidden" name="attachment_backup_s3_enabled" value="0">
-                                <input type="checkbox" name="attachment_backup_s3_enabled" value="1" {{ $backupS3Enabled ? 'checked' : '' }}>
-                                同步备份到 S3 / R2
-                            </label>
-                        </div>
                     </div>
                     <div class="attachment-s3-tools">
                         <button type="button" class="btn" data-backup-now><i class="fa-solid fa-rotate"></i> 立即备份同步</button>
@@ -149,7 +141,6 @@
 
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">保存设置</button>
-                <a href="/admin/attachments" class="btn"><i class="fa-solid fa-arrow-left"></i> 返回附件</a>
             </div>
         </form>
     </div>
@@ -200,19 +191,6 @@
                     setS3Status(d.msg || '连接成功', 'success');
                 })
                 .catch(function (err) { setS3Status(err.message || '连接失败', 'error'); })
-                .finally(function () { btn.disabled = false; });
-        });
-
-        document.querySelector('[data-s3-command]')?.addEventListener('click', function () {
-            var btn = this;
-            btn.disabled = true;
-            postS3Action('/admin/attachments/s3-command')
-                .then(function (d) {
-                    if (!d || d.code !== 0) throw new Error((d && d.msg) || '生成失败');
-                    return navigator.clipboard.writeText(d.data.command).then(function () { return d; });
-                })
-                .then(function (d) { setS3Status(d.msg || '清空命令已复制', 'success'); })
-                .catch(function (err) { setS3Status(err.message || '生成失败', 'error'); })
                 .finally(function () { btn.disabled = false; });
         });
 

@@ -2,7 +2,7 @@
     $talkItem = $talkItem ?? $item ?? $s ?? null;
     $comments = $comments ?? ($talkItem ? ($talkItem->getRelation('comments') ?: []) : []);
     $keywords = $keywords ?? ($talkItem ? $talkItem->getKeywords() : []);
-    $commentTotal = $talkItem ? (int)($talkItem->comments_count ?? count($comments)) : count($comments);
+    $commentTotal = count($comments);
     $hideLocalFeedActions = !empty($tweetLocalActions);
 @endphp
 @if($talkItem)

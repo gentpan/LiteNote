@@ -52,7 +52,9 @@ final class Talk extends Model
         if ($whereSql === null) {
             $whereSql = 'is_public = ' . Toggle::On->value;
         }
-        return parent::paginate($page, $perPage, $orderBy, $whereSql, $params);
+        $result = parent::paginate($page, $perPage, $orderBy, $whereSql, $params);
+        $result['items'] = self::withRealCommentCounts($result['items']);
+        return $result;
     }
 
     public function publishedAt(): string
@@ -161,7 +163,39 @@ final class Talk extends Model
             "SELECT * FROM talk WHERE is_public = ? ORDER BY published_at DESC, created_at DESC, id DESC LIMIT {$limit}",
             [Toggle::On->value]
         );
-        return array_map(fn($row) => new self($row), $rows);
+        return self::withRealCommentCounts(array_map(fn($row) => new self($row), $rows));
+    }
+
+    /**
+     * @param self[] $items
+     * @return self[]
+     */
+    public static function withRealCommentCounts(array $items): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map(
+            static fn(self $item): int => (int)$item->id,
+            $items
+        ))));
+        if ($ids === []) {
+            return $items;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $rows = self::db()->fetchAll(
+            "SELECT talk_id, COUNT(*) AS total
+             FROM comments
+             WHERE status = ? AND talk_id IN ({$placeholders})
+             GROUP BY talk_id",
+            array_merge([\App\Enums\CommentStatus::Approved->value], $ids)
+        );
+        $counts = [];
+        foreach ($rows as $row) {
+            $counts[(int)$row['talk_id']] = (int)$row['total'];
+        }
+        foreach ($items as $item) {
+            $item->comments_count = $counts[(int)$item->id] ?? 0;
+        }
+        return $items;
     }
 
     public static function like(int $id): int

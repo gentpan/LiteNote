@@ -1,13 +1,30 @@
 @extends('layouts.front')
 
 @section('content')
+    @php
+        $xmarksLastUpdatedText = !empty($lastUpdatedAt) ? \App\Core\Helper::formatDate((string)$lastUpdatedAt, 'm/d H:i') : '';
+        $xmarksLastUpdatedFull = !empty($lastUpdatedAt) ? \App\Core\Helper::formatDate((string)$lastUpdatedAt, 'Y-m-d H:i') : '';
+    @endphp
     <section class="x-page x-bookmarks-page">
         <header class="x-page-head x-bookmarks-head">
             <div class="x-bookmarks-head-text">
                 <h2 class="section-title">Xmarks</h2>
-                <p>我在 X 上收藏的内容 · 共 {{ (int)$total }} 条</p>
+                <p>我在 X 上收藏的内容</p>
             </div>
-            <span class="x-bookmarks-head-badge"><i class="fa-brands fa-x-twitter" aria-hidden="true"></i> {{ (int)$total }}</span>
+            <div class="x-bookmarks-head-stats">
+                <span class="x-bookmarks-head-stat">
+                    <i class="fa-brands fa-x-twitter" aria-hidden="true"></i>
+                    <strong>{{ (int)$total }}</strong>
+                    <small>收藏</small>
+                </span>
+                @if($xmarksLastUpdatedText !== '')
+                    <span class="x-bookmarks-head-stat" title="{{ $xmarksLastUpdatedFull }}">
+                        <i class="fa-regular fa-clock" aria-hidden="true"></i>
+                        <strong>{{ $xmarksLastUpdatedText }}</strong>
+                        <small>更新</small>
+                    </span>
+                @endif
+            </div>
         </header>
 
         @if(empty($list))

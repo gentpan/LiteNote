@@ -11,16 +11,14 @@
             <div class="favicon-settings-body">
                 <div class="favicon-preview-box">
                     <img src="{{ $favicon['preview'] ?? '/admin/assets/img/litenote-logo.svg' }}" alt="站点图标预览" width="96" height="96">
+                    <button type="button" class="btn favicon-preview-upload" id="faviconUploadBtn" title="重新上传图标" aria-label="重新上传图标"><i class="fa-solid fa-upload"></i></button>
                 </div>
                 <div class="favicon-settings-main">
                     <div class="favicon-upload-row">
                         <input type="file" id="faviconUploadInput" accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml" hidden data-no-dirty>
-                        <button type="button" class="btn" id="faviconUploadBtn"><i class="fa-solid fa-upload"></i> 上传图标</button>
                         <span class="muted small" id="faviconUploadStatus">
                             @if(!empty($favicon['updated_at']))
                                 最近生成：{{ $favicon['updated_at'] }}
-                            @else
-                                未上传时前后台使用默认蓝色 LiteNote 图标
                             @endif
                         </span>
                     </div>
@@ -30,12 +28,11 @@
                     <div class="favicon-asset-grid">
                         @foreach(($favicon['assets'] ?? []) as $asset)
                             <span class="favicon-asset {{ !empty($asset['exists']) ? 'is-ready' : '' }}">
-                                <i class="fa-solid {{ !empty($asset['exists']) ? 'fa-check' : 'fa-minus' }}"></i>
                                 {{ $asset['label'] }}
                             </span>
                         @endforeach
                     </div>
-                    <p class="field-hint">上传 JPG / PNG / GIF / WebP 会自动生成 favicon.ico、Apple、Android、Windows Tile 和 Manifest。SVG 会作为 SVG 图标保存；若服务器没有 SVG 栅格化组件，则不会生成 PNG/ICO。</p>
+                    <p class="field-hint">上传 JPG / PNG / GIF / WebP 会生成常见图标：favicon.ico、PNG 32、Apple、Android 和 Manifest。SVG 会作为 SVG 图标保存。</p>
                 </div>
             </div>
         </section>
@@ -159,7 +156,7 @@
                                 <div class="setting-upload-field">
                                     <input type="url" name="settings[{{ $item['k'] }}]" id="setting-{{ $item['k'] }}" value="{{ $val }}" placeholder="https://example.com/uploads/logo.webp">
                                     <input type="file" id="siteLogoUploadInput" accept="image/jpeg,image/png,image/gif,image/webp" hidden data-no-dirty>
-                                    <button type="button" class="btn" id="siteLogoUploadBtn"><i class="fa-solid fa-upload"></i> 上传</button>
+                                    <button type="button" class="btn admin-icon-upload-btn" id="siteLogoUploadBtn" title="上传站点 Logo" aria-label="上传站点 Logo"><i class="fa-solid fa-upload"></i></button>
                                 </div>
                                 <p class="field-hint" id="siteLogoUploadStatus">用于前台站点资料展示；个人头像请在个人资料里设置。</p>
                             @else
