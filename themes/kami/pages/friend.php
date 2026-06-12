@@ -34,11 +34,11 @@
             <div class="friend-request-box" id="friend-link-request">
                 <div class="friend-request-actions" role="tablist" aria-label="友链申请方式">
                     <button type="button" class="friend-request-btn is-active" data-friend-request-tab="apply" aria-selected="true">
-                        <i class="fa-solid fa-user-plus"></i>
+                        <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
                         <span>申请链接</span>
                     </button>
                     <button type="button" class="friend-request-btn" data-friend-request-tab="modify" aria-selected="false">
-                        <i class="fa-regular fa-pen-to-square"></i>
+                        <i class="fa-regular fa-pen-to-square" aria-hidden="true"></i>
                         <span>修改链接</span>
                     </button>
                 </div>
@@ -152,14 +152,14 @@
 
             <div class="friend-site-info">
                 <div class="friend-site-head">
-                    <h3><i class="fa-regular fa-address-card"></i> 本站信息</h3>
+                    <h3><i class="fa-regular fa-address-card" aria-hidden="true"></i> 本站信息</h3>
                     <p>复制后可直接发给对方站长。</p>
                 </div>
                 <div class="friend-site-grid">
                     @foreach($siteCopyItems as $item)
                         @php $copyValue = trim((string)($item['value'] ?? '')); @endphp
                         <div class="friend-site-field">
-                            <span class="friend-site-label"><i class="{{ $item['icon'] ?? 'fa-regular fa-copy' }}"></i> {{ $item['label'] ?? '' }}</span>
+                            <span class="friend-site-label"><i class="fa-regular fa-copy" aria-hidden="true"></i> {{ $item['label'] ?? '' }}</span>
                             <code>{{ $copyValue !== '' ? $copyValue : '未设置' }}</code>
                             <button type="button"
                                     class="friend-copy-btn"
@@ -169,7 +169,7 @@
                                     title="复制{{ $item['label'] ?? '内容' }}"
                                     aria-label="复制{{ $item['label'] ?? '内容' }}"
                                     {{ $copyValue === '' ? 'disabled' : '' }}>
-                                <i class="fa-regular fa-copy"></i>
+                                <i class="fa-regular fa-copy" aria-hidden="true"></i>
                             </button>
                         </div>
                     @endforeach

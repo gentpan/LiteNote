@@ -24,7 +24,11 @@
         <small>{{ $dateText }}</small>
     </time>
     <span class="activity-item-line" aria-hidden="true"></span>
-    <span class="activity-item-icon"><i class="{{ $icon }}"></i></span>
+    <span class="activity-item-icon">@if($source === 'x_bookmarks')<i class="fa-solid fa-bookmark" aria-hidden="true"></i>
+    @elseif($type === 'music')<i class="fa-solid fa-music" aria-hidden="true"></i>
+    @elseif($type === 'game')<i class="fa-solid fa-gamepad" aria-hidden="true"></i>
+    @else <i class="fa-solid fa-chart-simple" aria-hidden="true"></i>
+    @endif</span>
     <div class="activity-item-body">
         <div class="activity-item-meta">
             <span>{{ $timeText }}</span>

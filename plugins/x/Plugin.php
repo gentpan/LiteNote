@@ -16,18 +16,18 @@ use LiteNotePlugin\X\Models\XTweet;
 /**
  * X(Twitter)集成插件入口。
  *
- * 线A(xmarks):X 书签同步 —— Activity Provider + Adapter + OAuth 授权 + /xmarks 页面 + 导航页。
+ * 线A(书签):X 书签同步 —— Activity Provider + Adapter + OAuth 授权 + /xmarks 页面 + 导航页。
  * 线B(X 卡片):说说推文分享 —— 见阶段3 追加(独立 x_tweets 表 + 首页时间线贡献 + 推文卡片视图)。
  */
 final class Plugin implements PluginInterface
 {
     public function register(PluginContext $ctx): void
     {
-        // ---- 线A:xmarks(X 书签同步) ----
+        // ---- 线A:书签(X 书签同步) ----
 
         // Activity Provider 配置(自核心 ActivityIntegration::PROVIDERS 迁出)。
         $ctx->activityProvider('x_bookmarks', [
-            'label' => 'X Bookmarks',
+            'label' => 'X 书签',
             'icon' => 'fa-solid fa-bookmark',
             'description' => '同步我的 X 书签，允许保存别人的公开内容。',
             'default_interval_minutes' => 1440,
@@ -52,14 +52,14 @@ final class Plugin implements PluginInterface
             $r->get('/oauth/x/callback', [XOAuthController::class, 'callback']);
         });
 
-        // 前台 Xmarks 列表页。
+        // 前台书签列表页。
         $ctx->webRoutes(static function (Router $r): void {
             $r->get('/xmarks', [XmarksController::class, 'index']);
         });
 
         // 前台导航页(取代核心 systemDefinitions 里硬编码的 xmarks)。
         $ctx->navPage('xmarks', [
-            'title' => 'Xmarks',
+            'title' => '书签',
             'url' => '/xmarks',
             'icon' => 'fa-solid fa-bookmark',
             'sort' => 25,

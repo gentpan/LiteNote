@@ -1,6 +1,6 @@
 {
     "name": "X Integration",
-    "description": "X(Twitter)集成:书签同步(Xmarks)与说说推文卡片。可独立启用 / 禁用。",
+    "description": "X(Twitter)集成:书签同步与说说推文卡片。可独立启用 / 禁用。",
     "version": "1.0.0",
     "author": "LiteNote"
 }

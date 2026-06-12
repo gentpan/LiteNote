@@ -93,7 +93,7 @@ final class XOAuthController
                 'metadata' => $metadata,
             ]);
 
-            Session::flash('success', 'X 账号授权成功，X Bookmarks 已启用');
+            Session::flash('success', 'X 账号授权成功，X 书签已启用');
         } catch (\Throwable $e) {
             Session::flash('error', 'X 授权失败：' . $e->getMessage());
         }

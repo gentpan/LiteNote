@@ -19,10 +19,10 @@
         </div>
         <div class="feed-talk-side">
             <button type="button" class="feed-action talk-like-btn" data-id="{{ $talkItem->id }}" aria-label="点赞">
-                <i class="fa-regular fa-thumbs-up"></i><span class="like-count">{{ (int)($talkItem->likes_count ?? 0) }}</span>
+                <i class="fa-regular fa-thumbs-up" aria-hidden="true"></i><span class="like-count">{{ (int)($talkItem->likes_count ?? 0) }}</span>
             </button>
             <button type="button" class="feed-action talk-comment-toggle" data-target="talk-comments-{{ $talkItem->id }}">
-                <i class="fa-regular fa-comment"></i><span>{{ $commentTotal }}</span>
+                <i class="fa-regular fa-comment" aria-hidden="true"></i><span>{{ $commentTotal }}</span>
             </button>
         </div>
     </div>

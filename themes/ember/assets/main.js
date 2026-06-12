@@ -4,17 +4,7 @@
 
     function siteLoadingSpinnerSvg(extraClass) {
         var cls = 'site-loading-spinner' + (extraClass ? ' ' + extraClass : '');
-        return '<span class="' + cls + '" aria-hidden="true">'
-            + '<svg stroke="#0052d9" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">'
-            + '<g>'
-            + '<circle cx="12" cy="12" r="9.5" fill="none" stroke-width="2.35" stroke-linecap="round">'
-            + '<animate attributeName="stroke-dasharray" dur="1.5s" calcMode="spline" values="0 150;42 150;42 150;42 150" keyTimes="0;0.475;0.95;1" keySplines="0.42,0,0.58,1;0.42,0,0.58,1;0.42,0,0.58,1" repeatCount="indefinite"/>'
-            + '<animate attributeName="stroke-dashoffset" dur="1.5s" calcMode="spline" values="0;-16;-59;-59" keyTimes="0;0.475;0.95;1" keySplines="0.42,0,0.58,1;0.42,0,0.58,1;0.42,0,0.58,1" repeatCount="indefinite"/>'
-            + '</circle>'
-            + '<animateTransform attributeName="transform" type="rotate" dur="2s" values="0 12 12;360 12 12" repeatCount="indefinite"/>'
-            + '</g>'
-            + '</svg>'
-            + '</span>';
+        return '<span class="' + cls + '" aria-hidden="true"></span>';
     }
     window.siteLoadingSpinnerSvg = siteLoadingSpinnerSvg;
 
@@ -141,6 +131,104 @@
                 openSearch();
             }
         });
+    })();
+
+    (function() {
+        var dock = document.querySelector('.side-quick-actions');
+        if (!dock || !window.PointerEvent) return;
+
+        var pointerId = null;
+        var startX = 0;
+        var startY = 0;
+        var dockX = 0;
+        var dockY = 0;
+        var dragging = false;
+        var suppressClick = false;
+        var dragThreshold = 6;
+        var edgeGap = 8;
+
+        function clamp(value, min, max) {
+            return Math.min(Math.max(value, min), max);
+        }
+
+        function viewport() {
+            return {
+                width: window.innerWidth || document.documentElement.clientWidth || 0,
+                height: window.innerHeight || document.documentElement.clientHeight || 0
+            };
+        }
+
+        function clampDockPosition() {
+            if (!dock.style.left || !dock.style.top) return;
+            var rect = dock.getBoundingClientRect();
+            var vp = viewport();
+            var nextX = clamp(rect.left, edgeGap, Math.max(edgeGap, vp.width - rect.width - edgeGap));
+            var nextY = clamp(rect.top, edgeGap, Math.max(edgeGap, vp.height - rect.height - edgeGap));
+            dock.style.left = nextX + 'px';
+            dock.style.top = nextY + 'px';
+            dock.style.right = 'auto';
+            dock.style.transform = 'none';
+        }
+
+        dock.addEventListener('pointerdown', function(event) {
+            if (event.button !== undefined && event.button !== 0) return;
+            pointerId = event.pointerId;
+            startX = event.clientX;
+            startY = event.clientY;
+            var rect = dock.getBoundingClientRect();
+            dockX = rect.left;
+            dockY = rect.top;
+            dragging = false;
+            suppressClick = false;
+            if (dock.setPointerCapture) {
+                try { dock.setPointerCapture(pointerId); } catch (e) {}
+            }
+        });
+
+        dock.addEventListener('pointermove', function(event) {
+            if (pointerId !== event.pointerId) return;
+
+            var dx = event.clientX - startX;
+            var dy = event.clientY - startY;
+            if (!dragging && Math.hypot(dx, dy) < dragThreshold) return;
+
+            dragging = true;
+            suppressClick = true;
+            dock.classList.add('is-dragging');
+
+            var rect = dock.getBoundingClientRect();
+            var vp = viewport();
+            var nextX = clamp(dockX + dx, edgeGap, Math.max(edgeGap, vp.width - rect.width - edgeGap));
+            var nextY = clamp(dockY + dy, edgeGap, Math.max(edgeGap, vp.height - rect.height - edgeGap));
+
+            dock.style.left = nextX + 'px';
+            dock.style.top = nextY + 'px';
+            dock.style.right = 'auto';
+            dock.style.transform = 'none';
+            event.preventDefault();
+        });
+
+        function endDrag(event) {
+            if (pointerId !== event.pointerId) return;
+            if (dock.releasePointerCapture) {
+                try { dock.releasePointerCapture(pointerId); } catch (e) {}
+            }
+            pointerId = null;
+            dragging = false;
+            dock.classList.remove('is-dragging');
+        }
+
+        dock.addEventListener('pointerup', endDrag);
+        dock.addEventListener('pointercancel', endDrag);
+
+        dock.addEventListener('click', function(event) {
+            if (!suppressClick) return;
+            event.preventDefault();
+            event.stopPropagation();
+            suppressClick = false;
+        }, true);
+
+        window.addEventListener('resize', clampDockPosition);
     })();
 
     (function() {
@@ -615,7 +703,7 @@
         if (!dialog) {
             dialog = document.createElement('div');
             dialog.className = 'nav-identity-dialog';
-            dialog.innerHTML = '<div class="nav-identity-panel" role="dialog" aria-modal="true" tabindex="-1"><div class="nav-identity-head"><img class="nav-identity-preview" alt=""><div><p class="nav-identity-title">评论身份</p><p class="nav-identity-subtitle">保存后评论表单会自动使用这份资料</p></div></div><form class="nav-identity-form"><label class="nav-identity-field"><i class="fa-regular fa-user" aria-hidden="true"></i><input name="nickname" placeholder="昵称 *" required></label><label class="nav-identity-field"><i class="fa-regular fa-envelope" aria-hidden="true"></i><input name="email" type="email" placeholder="邮箱 *" required></label><label class="nav-identity-field"><i class="fa-solid fa-link" aria-hidden="true"></i><input name="website" placeholder="网站(选填)"></label><label class="nav-identity-field nav-identity-captcha" data-nav-identity-captcha hidden><i class="fa-solid fa-shield-halved" aria-hidden="true"></i><input name="captcha" placeholder="验证码 *" autocomplete="off" maxlength="4"><img class="nav-identity-captcha-img" data-nav-identity-captcha-img src="" alt="点击刷新验证码" title="看不清?点击刷新"></label><p class="nav-identity-captcha-tip" data-nav-identity-captcha-tip hidden>首次用此邮箱评论需填验证码，通过后以后免验。</p><div class="nav-identity-buttons"><button type="button" data-nav-identity-clear>清除</button><button type="button" data-nav-identity-close>取消</button><button type="submit">保存</button></div></form></div>';
+            dialog.innerHTML = '<div class="nav-identity-panel" role="dialog" aria-modal="true" tabindex="-1"><div class="nav-identity-head"><img class="nav-identity-preview" alt=""><div><p class="nav-identity-title">评论身份</p><p class="nav-identity-subtitle">保存后评论表单会自动使用这份资料</p></div></div><form class="nav-identity-form"><label class="nav-identity-field"><i class="fa-regular fa-circle-user" aria-hidden="true"></i><input name="nickname" placeholder="昵称 *" required></label><label class="nav-identity-field"><i class="fa-regular fa-envelope" aria-hidden="true"></i><input name="email" type="email" placeholder="邮箱 *" required></label><label class="nav-identity-field"><i class="fa-solid fa-link" aria-hidden="true"></i><input name="website" placeholder="网站(选填)"></label><label class="nav-identity-field nav-identity-captcha" data-nav-identity-captcha hidden><i class="fa-solid fa-shield-halved" aria-hidden="true"></i><input name="captcha" placeholder="验证码 *" autocomplete="off" maxlength="4"><img class="nav-identity-captcha-img" data-nav-identity-captcha-img src="" alt="点击刷新验证码" title="看不清?点击刷新"></label><p class="nav-identity-captcha-tip" data-nav-identity-captcha-tip hidden>首次用此邮箱评论需填验证码，通过后以后免验。</p><div class="nav-identity-buttons"><button type="button" data-nav-identity-clear>清除</button><button type="button" data-nav-identity-close>取消</button><button type="submit">保存</button></div></form></div>';
             document.body.appendChild(dialog);
             dialog.addEventListener('click', function(e) {
                 if (e.target === dialog) closeNavIdentityDialog();
@@ -1560,6 +1648,46 @@
         } catch (e) {}
     }
 
+    function likeSvg(name) {
+        if (name === 'like') {
+            return '<i class="fa-solid fa-thumbs-up" aria-hidden="true"></i>';
+        }
+        if (name === 'like-outline') {
+            return '<i class="fa-regular fa-thumbs-up" aria-hidden="true"></i>';
+        }
+        if (name === 'heart-filled') {
+            return '<i class="fa-solid fa-heart" aria-hidden="true"></i>';
+        }
+        return '<i class="fa-regular fa-heart" aria-hidden="true"></i>';
+    }
+
+    function musicPlaySvg() {
+        return '<i class="fa-solid fa-play" aria-hidden="true"></i>';
+    }
+
+    function musicPauseSvg() {
+        return '<i class="fa-solid fa-pause" aria-hidden="true"></i>';
+    }
+
+    function musicErrorSvg() {
+        return '<i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>';
+    }
+
+    function setMusicToggleIcon(btn, iconName) {
+        if (!btn) return;
+        var icon = btn.querySelector('i');
+        if (!icon) return;
+        if (iconName === 'play') {
+            icon.outerHTML = musicPlaySvg();
+        } else if (iconName === 'pause') {
+            icon.outerHTML = musicPauseSvg();
+        } else if (iconName === 'error') {
+            icon.outerHTML = musicErrorSvg();
+        } else {
+            icon.outerHTML = musicPlaySvg();
+        }
+    }
+
     function updateLikeButton(btn, liked) {
         if (!btn) return;
         btn.classList.toggle('is-liked', !!liked);
@@ -1567,9 +1695,9 @@
         var icon = btn.querySelector('i');
         if (!icon) return;
         if (icon.classList.contains('fa-heart')) {
-            icon.className = (liked ? 'fa-solid' : 'fa-regular') + ' fa-heart';
+            icon.outerHTML = likeSvg(liked ? 'heart-filled' : 'heart');
         } else if (icon.classList.contains('fa-thumbs-up')) {
-            icon.className = (liked ? 'fa-solid' : 'fa-regular') + ' fa-thumbs-up';
+            icon.outerHTML = likeSvg(liked ? 'like' : 'like-outline');
         }
     }
 
@@ -1830,7 +1958,6 @@
         var audioSource = isHomeMusicCard
             ? String(card.dataset.audio || inlineAudio.getAttribute('src') || inlineAudio.currentSrc || inlineAudio.src || '').trim()
             : '';
-        var icon = btn.querySelector('i');
         var track = card.querySelector('.music-card-track');
         var played = card.querySelector('.music-card-played');
         var curEl = card.querySelector('.music-card-cur');
@@ -1861,12 +1988,12 @@
             }
             if (!audio.paused && !audio.ended) {
                 card.classList.add('playing');
-                if (icon) icon.className = 'fa-solid fa-pause';
+                setMusicToggleIcon(btn, 'pause');
                 startRecordSpin();
             } else {
                 stopRecordSpin();
                 card.classList.remove('playing');
-                if (icon) icon.className = 'fa-solid fa-play';
+                setMusicToggleIcon(btn, 'play');
                 if ((audio.currentTime || 0) > 0.05) {
                     setRecordPose(audio.currentTime);
                 } else if (force) {
@@ -2073,7 +2200,7 @@
                 if (playing && typeof playing.catch === 'function') {
                     playing.catch(function() {
                         card.classList.add('is-error');
-                        if (icon) icon.className = 'fa-solid fa-triangle-exclamation';
+                        setMusicToggleIcon(btn, 'error');
                     });
                 }
             } else {
@@ -2102,7 +2229,7 @@
             }
             card.classList.add('playing');
             startRecordSpin();
-            if (icon) icon.className = 'fa-solid fa-pause';
+            setMusicToggleIcon(btn, 'pause');
             openHomeMusicComments();
         });
         audio.addEventListener('pause', function() {
@@ -2114,14 +2241,14 @@
                     resetRecordPose();
                 }
             }
-            if (icon) icon.className = 'fa-solid fa-play';
+            setMusicToggleIcon(btn, 'play');
         });
         audio.addEventListener('ended', function() {
             if (!ownsHomeMusicAudio()) return;
             stopRecordSpin();
             card.classList.remove('playing');
             resetRecordPose();
-            if (icon) icon.className = 'fa-solid fa-play';
+            setMusicToggleIcon(btn, 'play');
             if (played) played.style.width = '0%';
             if (curEl) curEl.textContent = '0:00';
             updateCardLyric(0, true);
@@ -2135,7 +2262,7 @@
             stopRecordSpin();
             card.classList.remove('playing');
             card.classList.add('is-error');
-            if (icon) icon.className = 'fa-solid fa-triangle-exclamation';
+            setMusicToggleIcon(btn, 'error');
             if (durEl) durEl.textContent = '错误';
         });
         audio.addEventListener('timeupdate', function() {
@@ -2407,8 +2534,7 @@
 
         function setPlayIcon(iconClass) {
             playBtns.forEach(function(btn) {
-                var icon = btn.querySelector('i');
-                if (icon) icon.className = iconClass;
+                setMusicToggleIcon(btn, iconClass);
             });
         }
 
@@ -2622,7 +2748,7 @@
             if (playing && typeof playing.catch === 'function') {
                 playing.catch(function() {
                     player.classList.add('is-error');
-                    setPlayIcon('fa-solid fa-triangle-exclamation');
+                    setPlayIcon('error');
                 });
             }
         }
@@ -2742,7 +2868,7 @@
         audio.addEventListener('play', function() {
             player.classList.remove('is-error');
             player.classList.add('is-playing');
-            setPlayIcon('fa-solid fa-pause');
+            setPlayIcon('pause');
             startRaf();
             var id = player.dataset.currentId || '';
             if (id && !playedIds[id]) {
@@ -2756,14 +2882,14 @@
 
         audio.addEventListener('pause', function() {
             player.classList.remove('is-playing');
-            setPlayIcon('fa-solid fa-play');
+            setPlayIcon('play');
             stopRaf();
             renderProgress();
         });
 
         audio.addEventListener('ended', function() {
             player.classList.remove('is-playing');
-            setPlayIcon('fa-solid fa-play');
+            setPlayIcon('play');
             stopRaf();
             if (tracks.length > 1) {
                 applyTrack(currentIndex + 1, true);
@@ -2786,7 +2912,7 @@
         audio.addEventListener('error', function() {
             player.classList.remove('is-playing');
             player.classList.add('is-error');
-            setPlayIcon('fa-solid fa-triangle-exclamation');
+            setPlayIcon('error');
         });
 
         if (tracks.length) {
@@ -2989,7 +3115,7 @@
                     frontToast(message, 'error');
                     if (!hasSelectedLocation()) {
                         promptLocationForWeather('本地 IP 暂时无法获取天气，请先搜索位置或点“当前”定位');
-                        weatherBtn.innerHTML = '<i class="fa-solid fa-location-dot"></i><span data-weather-label>选位置</span>';
+                        weatherBtn.innerHTML = '<i class="fa-solid fa-location-dot" aria-hidden="true"></i><span data-weather-label>选位置</span>';
                         weatherLabel = weatherBtn.querySelector('[data-weather-label]');
                     }
                 }).finally(function() {
@@ -2999,9 +3125,8 @@
                             weatherBtn.innerHTML = original;
                         }
                     } else {
-                        var icon = weatherFields.icon && weatherFields.icon.value ? weatherFields.icon.value : 'fa-solid fa-cloud-sun';
                         var text = weatherLabel ? weatherLabel.textContent : '天气';
-                        weatherBtn.innerHTML = '<i class="' + icon + '"></i><span data-weather-label>' + text + '</span>';
+                        weatherBtn.innerHTML = '<i class="fa-solid fa-cloud-sun" aria-hidden="true"></i><span data-weather-label>' + text + '</span>';
                         weatherLabel = weatherBtn.querySelector('[data-weather-label]');
                     }
                 });
@@ -3292,6 +3417,8 @@
                     tpl.innerHTML = data.html;
                     var card = tpl.content.firstElementChild;
                     if (card) {
+                        var empty = list.querySelector('.empty');
+                        if (empty) empty.remove();
                         card.classList.add('is-newly-published');
                         card.style.overflow = 'hidden';
                         card.style.maxHeight = '0px';
@@ -3571,7 +3698,7 @@
             },
             success: function(message) {
                 toast.classList.add('front-upload-toast-success');
-                if (icon) icon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+                if (icon) icon.innerHTML = '<i class="fa-regular fa-circle-check" aria-hidden="true"></i>';
                 if (bar) bar.style.width = '100%';
                 if (percent) percent.textContent = '100%';
                 toast.querySelector('.front-upload-toast-title').textContent = message || '上传完成';
@@ -3579,7 +3706,7 @@
             },
             error: function(message) {
                 toast.classList.add('front-upload-toast-error');
-                if (icon) icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+                if (icon) icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>';
                 toast.querySelector('.front-upload-toast-title').textContent = message || '上传失败';
                 close(3000);
             }
@@ -3972,13 +4099,29 @@
         var postCoverImages = Array.prototype.slice.call(root.querySelectorAll('.post-hero-card .post-cover img'));
         var avatarImages = Array.prototype.slice.call(root.querySelectorAll('.comment-avatar, .music-share-comment-avatar, .music-song-comment-avatar img'));
 
-        images.forEach(function(img) {
-            if (!img.hasAttribute('loading')) {
-                img.setAttribute('loading', 'lazy');
-            }
-            img.setAttribute('decoding', 'async');
-            prepareImageLoading(img);
-        });
+        if (window.LiteZoom && typeof window.LiteZoom.enhance === 'function') {
+            window.LiteZoom.enhance('.post-cover img, .home-post-cover img, .post-content img, .page-content img, .talk-images img', {
+                root: root,
+                wrap: true,
+                rootMargin: '360px 0px'
+            });
+            window.LiteZoom.enhance('.comment-avatar, .music-share-comment-avatar, .music-song-comment-avatar img', {
+                root: root,
+                avatar: true,
+                wrap: false,
+                rootMargin: '360px 0px'
+            });
+            window.LiteZoom.refresh(root);
+        } else {
+            images.forEach(function(img) {
+                if (!img.hasAttribute('loading')) {
+                    img.setAttribute('loading', 'lazy');
+                }
+                img.setAttribute('decoding', 'async');
+                prepareImageLoading(img);
+            });
+            avatarImages.forEach(prepareAvatarLoading);
+        }
 
         postCoverImages.forEach(function(img) {
             if (img.dataset.noViewReady === '1') {
@@ -3991,8 +4134,6 @@
                 event.preventDefault();
             });
         });
-
-        avatarImages.forEach(prepareAvatarLoading);
 
         bindLiteZoom();
     }
@@ -4257,18 +4398,36 @@
         var section = rail.closest('.talk-list');
         if (!section) return;
         var chips = Array.prototype.slice.call(rail.querySelectorAll('.talk-keyword-chip'));
+        var busy = false;
+        var resetLoading = function() {
+            var frame = section.querySelector('[data-talk-filter-frame]');
+            var loading = frame ? frame.querySelector('[data-talk-filter-loading]') : null;
+            busy = false;
+            section.classList.remove('is-filtering');
+            section.removeAttribute('aria-busy');
+            if (frame) frame.classList.remove('is-loading');
+            if (loading) loading.hidden = true;
+        };
+        resetLoading();
 
         chips.forEach(function(chip) {
             chip.addEventListener('click', function(e) {
                 e.preventDefault();
-                if (chip.classList.contains('is-active')) return;
+                if (busy || chip.classList.contains('is-active')) return;
                 var href = chip.getAttribute('href');
-                var list = section.querySelector('.js-list-items');
+                var frame = section.querySelector('[data-talk-filter-frame]');
+                var list = frame ? frame.querySelector('.js-list-items') : section.querySelector('.js-list-items');
+                var loading = frame ? frame.querySelector('[data-talk-filter-loading]') : null;
                 if (!href || !list) return;
 
+                var previous = rail.querySelector('.talk-keyword-chip.is-active');
+                busy = true;
                 chips.forEach(function(c) { c.classList.remove('is-active'); });
                 chip.classList.add('is-active');
-                list.style.opacity = '0.45';
+                section.classList.add('is-filtering');
+                section.setAttribute('aria-busy', 'true');
+                if (frame) frame.classList.add('is-loading');
+                if (loading) loading.hidden = false;
 
                 fetch(href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                     .then(function(r) { return r.text(); })
@@ -4286,10 +4445,13 @@
                             list.parentNode.insertBefore(document.importNode(newMore, true), list.nextSibling);
                             bindLoadMore(section);
                         }
-                        list.style.opacity = '';
+                        resetLoading();
                     })
                     .catch(function() {
-                        list.style.opacity = '';
+                        chip.classList.remove('is-active');
+                        if (previous) previous.classList.add('is-active');
+                        resetLoading();
+                        if (window.frontToast) window.frontToast('关键词加载失败，请稍后重试', 'error');
                     });
             });
         });

@@ -210,7 +210,6 @@ class HomeController
             }
             return [
                 'nickname' => $row['nickname'] ?: '读者',
-                'email' => (string)($row['email'] ?? ''),
                 'website' => $website,
                 'comments_count' => $count,
                 'last_commented_at' => $row['last_commented_at'] ?? null,

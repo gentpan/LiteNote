@@ -18,7 +18,7 @@
                 <span class="load-more-spinner"></span>
             </div>
             <div class="home-feed-more-end" hidden>
-                <i class="fa-regular fa-circle-check"></i>
+                <i class="fa-regular fa-circle-check" aria-hidden="true"></i>
                 <span>没有更多内容</span>
             </div>
         </div>

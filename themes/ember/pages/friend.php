@@ -20,14 +20,14 @@
                    class="{{ $activeFriendTab === 'links' ? 'active' : '' }}"
                    data-friend-tab="links"
                    aria-current="{{ $activeFriendTab === 'links' ? 'page' : 'false' }}">
-                    <i class="fa-solid fa-user-group"></i>
+                    <i class="fa-solid fa-user-group" aria-hidden="true"></i>
                     <span>友情链接</span>
                 </a>
                 <a href="/subscribe"
                    class="{{ $activeFriendTab === 'feeds' ? 'active' : '' }}"
                    data-friend-tab="feeds"
                    aria-current="{{ $activeFriendTab === 'feeds' ? 'page' : 'false' }}">
-                    <i class="fa-solid fa-rss"></i>
+                    <i class="fa-solid fa-square-rss" aria-hidden="true"></i>
                     <span>订阅文章</span>
                 </a>
             </nav>
@@ -37,7 +37,7 @@
             <div class="friend-panel">
                 <div class="friend-panel-head">
                     <div>
-                        <h3><i class="fa-solid fa-user-group"></i> 站点列表</h3>
+                        <h3><i class="fa-solid fa-user-group" aria-hidden="true"></i> 站点列表</h3>
                         <p>{{ count($links) }} 个站点</p>
                     </div>
                 </div>
@@ -52,11 +52,11 @@
                 <div class="friend-request-box" id="friend-link-request">
                     <div class="friend-request-actions" role="tablist" aria-label="友链申请方式">
                         <button type="button" class="friend-request-btn is-active" data-friend-request-tab="apply" aria-selected="true">
-                            <i class="fa-solid fa-user-plus"></i>
+                            <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
                             <span>申请链接</span>
                         </button>
                         <button type="button" class="friend-request-btn" data-friend-request-tab="modify" aria-selected="false">
-                            <i class="fa-regular fa-pen-to-square"></i>
+                            <i class="fa-regular fa-pen-to-square" aria-hidden="true"></i>
                             <span>修改链接</span>
                         </button>
                     </div>
@@ -166,7 +166,7 @@
                                 </span>
                                 @if($hasRss)
                                     <span class="friend-rss-indicator {{ $isFresh ? 'is-fresh' : '' }}" title="{{ $isFresh ? '最近一周有更新' : '已配置 RSS' }}" aria-label="{{ $isFresh ? '最近一周有更新' : '已配置 RSS' }}">
-                                        <i class="fa-solid fa-rss"></i>
+                                        <i class="fa-solid fa-square-rss" aria-hidden="true"></i>
                                     </span>
                                 @endif
                                 <span class="friend-host">{{ $friendHost }}</span>
@@ -177,14 +177,14 @@
 
                 <div class="friend-site-info">
                     <div class="friend-site-head">
-                        <h3><i class="fa-regular fa-address-card"></i> 本站信息</h3>
+                        <h3><i class="fa-regular fa-address-card" aria-hidden="true"></i> 本站信息</h3>
                         <p>复制后可直接发给对方站长。</p>
                     </div>
                     <div class="friend-site-grid">
                         @foreach($siteCopyItems as $item)
                             @php $copyValue = trim((string)($item['value'] ?? '')); @endphp
                             <div class="friend-site-field">
-                                <span class="friend-site-label"><i class="{{ $item['icon'] ?? 'fa-regular fa-copy' }}"></i> {{ $item['label'] ?? '' }}</span>
+                                <span class="friend-site-label"><i class="fa-regular fa-copy" aria-hidden="true"></i> {{ $item['label'] ?? '' }}</span>
                                 <code>{{ $copyValue !== '' ? $copyValue : '未设置' }}</code>
                                 <button type="button"
                                         class="friend-copy-btn"
@@ -194,7 +194,7 @@
                                         title="复制{{ $item['label'] ?? '内容' }}"
                                         aria-label="复制{{ $item['label'] ?? '内容' }}"
                                         {{ $copyValue === '' ? 'disabled' : '' }}>
-                                    <i class="fa-regular fa-copy"></i>
+                                    <i class="fa-regular fa-copy" aria-hidden="true"></i>
                                 </button>
                             </div>
                         @endforeach
@@ -276,7 +276,7 @@
             <div class="friend-panel friend-feed-panel">
                 <div class="friend-panel-head">
                     <div>
-                        <h3><i class="fa-solid fa-rss"></i> 订阅文章</h3>
+                        <h3><i class="fa-solid fa-square-rss" aria-hidden="true"></i> 订阅文章</h3>
                         <p>
                             友情链接最近更新
                             @if(!empty($lastUpdated))

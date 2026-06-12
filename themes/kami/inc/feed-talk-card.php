@@ -30,7 +30,7 @@
             <div class="feed-actions">
                 <div class="feed-talk-meta">
                     @if($isMusicTalk)
-                        <span class="feed-talk-music-label"><i class="fa-solid fa-music"></i> 音乐</span>
+                        <span class="feed-talk-music-label"><i class="fa-solid fa-music" aria-hidden="true"></i> 音乐</span>
                     @else
                         <span class="feed-talk-keywords">
                             @foreach($keywords as $keyword)
@@ -44,17 +44,17 @@
                 <div class="feed-talk-side">
                 @if($isMusicTalk)
                     <button type="button" class="feed-action music-share-like-btn" data-music-id="{{ $music->id }}" aria-label="喜欢这首音乐">
-                        <i class="fa-regular fa-heart"></i><span data-music-like-count>{{ (int)($music->likes_count ?? 0) }}</span>
+                        <i class="fa-regular fa-heart" aria-hidden="true"></i><span data-music-like-count>{{ (int)($music->likes_count ?? 0) }}</span>
                     </button>
                     <button type="button" class="feed-action talk-comment-toggle" data-target="talk-comments-{{ $item->id }}" data-music-id="{{ $music->id }}" aria-label="查看这首音乐的评论">
-                        <i class="fa-regular fa-comment"></i><span data-music-comment-count>{{ $commentCount }}</span>
+                        <i class="fa-regular fa-comment" aria-hidden="true"></i><span data-music-comment-count>{{ $commentCount }}</span>
                     </button>
                 @else
                     <button type="button" class="feed-action talk-like-btn" data-id="{{ $item->id }}" aria-label="点赞">
-                        <i class="fa-regular fa-thumbs-up"></i><span class="like-count">{{ (int)($item->likes_count ?? 0) }}</span>
+                        <i class="fa-regular fa-thumbs-up" aria-hidden="true"></i><span class="like-count">{{ (int)($item->likes_count ?? 0) }}</span>
                     </button>
                     <button type="button" class="feed-action talk-comment-toggle" data-target="talk-comments-{{ $item->id }}">
-                        <i class="fa-regular fa-comment"></i><span>{{ (int)($item->comments_count ?? count($comments)) }}</span>
+                        <i class="fa-regular fa-comment" aria-hidden="true"></i><span>{{ (int)($item->comments_count ?? count($comments)) }}</span>
                     </button>
                 @endif
                 </div>

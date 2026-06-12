@@ -14,7 +14,7 @@
     @endphp
     <div class="talk-music-share" data-music-id="{{ $music->id }}">
         <div class="talk-music-share-head">
-            <span class="talk-music-share-type"><i class="fa-solid fa-music"></i> 音乐说说</span>
+            <span class="talk-music-share-type"><i class="fa-solid fa-music" aria-hidden="true"></i> 音乐说说</span>
         </div>
         <div class="music-card talk-music-player" data-audio="{{ $musicAudio }}" role="button" tabindex="0" aria-label="播放音乐：{{ $musicTitle }}">
             <span class="music-card-cover {{ $musicCover !== '' ? 'has-cover' : '' }}" @if($musicCoverStyle !== '') style="{!! $musicCoverStyle !!}" @endif>
@@ -28,9 +28,9 @@
                 <span class="music-card-artist">{{ $musicSubtitle }}</span>
             </span>
             <span class="music-card-controls">
-                <button type="button" class="music-card-control music-card-skip" data-music-skip="-15" aria-label="后退 15 秒"><i class="fa-solid fa-backward-step"></i></button>
-                <button type="button" class="music-card-control music-card-btn" aria-label="播放/暂停"><i class="fa-solid fa-play"></i></button>
-                <button type="button" class="music-card-control music-card-skip" data-music-skip="15" aria-label="前进 15 秒"><i class="fa-solid fa-forward-step"></i></button>
+                <button type="button" class="music-card-control music-card-skip" data-music-skip="-15" aria-label="后退 15 秒"><i class="fa-solid fa-backward-step" aria-hidden="true"></i></button>
+                <button type="button" class="music-card-control music-card-btn" aria-label="播放/暂停"><i class="fa-solid fa-play" aria-hidden="true"></i></button>
+                <button type="button" class="music-card-control music-card-skip" data-music-skip="15" aria-label="前进 15 秒"><i class="fa-solid fa-forward-step" aria-hidden="true"></i></button>
             </span>
             <span class="music-card-time"><span class="music-card-cur">0:00</span><span>/</span><span class="music-card-dur">{{ $music->duration ?: '0:00' }}</span></span>
             <audio preload="none" src="{{ $musicAudio }}"></audio>

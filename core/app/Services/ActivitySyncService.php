@@ -8,9 +8,9 @@ use App\Models\ActivityIntegration;
 use App\Services\ActivityAdapters\ActivityAdapter;
 use App\Services\ActivityAdapters\BilibiliAdapter;
 use App\Services\ActivityAdapters\GitHubAdapter;
+use App\Services\ActivityAdapters\NeteaseAdapter;
 use App\Services\ActivityAdapters\NeoDbAdapter;
 use App\Services\ActivityAdapters\SpotifyAdapter;
-use App\Services\ActivityAdapters\WakaTimeAdapter;
 
 final class ActivitySyncService
 {
@@ -22,8 +22,8 @@ final class ActivitySyncService
         $this->adapters = [];
         foreach ([
             new GitHubAdapter(),
-            new WakaTimeAdapter(),
             new SpotifyAdapter(),
+            new NeteaseAdapter(),
             new NeoDbAdapter(),
             new BilibiliAdapter(),
         ] as $adapter) {

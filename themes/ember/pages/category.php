@@ -7,11 +7,11 @@
                 <div class="category-hero-top">
                     <span class="category-hero-kicker">Category</span>
                     <div class="category-hero-meta">
-                        <span class="category-hero-stat"><i class="fa-regular fa-file-lines"></i> {{ (int)$articleStats['article_count'] }} 篇文章</span>
-                        <span class="category-hero-stat"><i class="fa-regular fa-eye"></i> {{ number_format((int)($articleStats['views'] ?? 0)) }} 阅读</span>
-                        <span class="category-hero-stat"><i class="fa-solid fa-keyboard"></i> {{ number_format((int)($articleStats['words'] ?? 0)) }} 字</span>
-                        <span class="category-hero-stat"><i class="fa-regular fa-comments"></i> {{ number_format((int)($articleStats['comments_count'] ?? 0)) }} 评论</span>
-                        <span class="category-hero-stat"><i class="fa-regular fa-heart"></i> {{ number_format((int)($articleStats['likes_count'] ?? 0)) }} 点赞</span>
+                        <span class="category-hero-stat"><i class="fa-regular fa-file-lines" aria-hidden="true"></i> {{ (int)$articleStats['article_count'] }} 篇文章</span>
+                        <span class="category-hero-stat"><i class="fa-regular fa-eye" aria-hidden="true"></i> {{ number_format((int)($articleStats['views'] ?? 0)) }} 阅读</span>
+                        <span class="category-hero-stat"><i class="fa-solid fa-keyboard" aria-hidden="true"></i> {{ number_format((int)($articleStats['words'] ?? 0)) }} 字</span>
+                        <span class="category-hero-stat"><i class="fa-regular fa-comment" aria-hidden="true"></i> {{ number_format((int)($articleStats['comments_count'] ?? 0)) }} 评论</span>
+                        <span class="category-hero-stat"><i class="fa-regular fa-heart" aria-hidden="true"></i> {{ number_format((int)($articleStats['likes_count'] ?? 0)) }} 点赞</span>
                     </div>
                 </div>
                 <div class="category-hero-headline">
@@ -45,7 +45,7 @@
                         <span class="load-more-spinner"></span>
                     </div>
                     <div class="home-feed-more-end" hidden>
-                        <i class="fa-regular fa-circle-check"></i>
+                        <i class="fa-regular fa-circle-check" aria-hidden="true"></i>
                         <span>没有更多内容</span>
                     </div>
                 </div>

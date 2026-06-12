@@ -5,7 +5,7 @@
         <h2 class="section-title">搜索</h2>
         <form action="/search" method="get" class="search-form">
             <input type="search" name="q" value="{{ $keyword }}" placeholder="搜索文章、页面、滔客、音乐、X" autofocus>
-            <button type="submit"><i class="fa-solid fa-magnifying-glass"></i><span>搜索</span></button>
+            <button type="submit"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><span>搜索</span></button>
         </form>
         @if($keyword !== '')
             <p class="search-summary">关键字: <strong>{{ $keyword }}</strong>，共 {{ $total }} 条结果</p>
@@ -13,7 +13,7 @@
         <div class="search-results js-list-items">
         @foreach(($results ?? []) as $item)
             <article class="search-result-card">
-                <span class="search-result-type"><i class="{{ $item['icon'] ?? 'fa-regular fa-file-lines' }}"></i>{{ $item['label'] ?? '' }}</span>
+                <span class="search-result-type"><i class="fa-regular fa-file-lines" aria-hidden="true"></i>{{ $item['label'] ?? '' }}</span>
                 <h3 class="post-title">
                     <a href="{{ $item['url'] ?? '#' }}">{!! \App\Core\Helper::highlight((string)($item['title'] ?? ''), $keyword) !!}</a>
                 </h3>

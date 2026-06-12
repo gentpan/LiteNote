@@ -112,12 +112,12 @@
                     @endphp
                     <h3>
                         <span class="comments-title-label">
-                            <i class="fa-regular fa-comments" aria-hidden="true"></i>
+                            <i class="fa-regular fa-comment" aria-hidden="true"></i>
                             <span>{{ $post->title }}</span>
                         </span>
                         <span class="comments-title-stats">
                             <span><i class="fa-solid fa-people-group" aria-hidden="true"></i>{{ $commentParticipantTotal }} 人参与</span>
-                            <span><i class="fa-regular fa-message" aria-hidden="true"></i>{{ $commentTotal }} 条评论</span>
+                            <span><i class="fa-regular fa-comment" aria-hidden="true"></i>{{ $commentTotal }} 条评论</span>
                         </span>
                     </h3>
                     @if(\App\Core\Session::hasFlash('comment_success'))

@@ -30,15 +30,15 @@
                 <span class="front-publish-toggle-text">公开</span>
             </label>
         </div>
-        <textarea name="content" rows="4" placeholder="今天想说点什么...（用 #关键词 添加标签，会自动渲染）" required></textarea>
+        <textarea name="content" rows="4" placeholder="今天想说点什么...（用 #关键词 添加标签，会自动渲染）" autocomplete="off" required></textarea>
         <div class="front-publish-images">
-            <input type="text" name="images" placeholder="图片 URL，多个用英文逗号分隔">
-            <button type="button" class="fp-upload-btn fp-tool-btn"><i class="fa-solid fa-arrow-up-from-bracket"></i> 上传</button>
+            <input type="text" name="images" placeholder="图片 URL，多个用英文逗号分隔" autocomplete="off">
+            <button type="button" class="fp-upload-btn fp-tool-btn"><i class="fa-solid fa-upload" aria-hidden="true"></i> 上传</button>
             <button type="button" class="fp-location-btn fp-tool-btn" aria-expanded="false">
-                <i class="fa-solid fa-location-dot"></i><span data-location-label>位置</span>
+                <i class="fa-solid fa-location-dot" aria-hidden="true"></i><span data-location-label>位置</span>
             </button>
             <button type="button" class="fp-weather-btn fp-tool-btn">
-                <i class="fa-solid fa-cloud-sun"></i><span data-weather-label>天气</span>
+                <i class="fa-solid fa-cloud-sun" aria-hidden="true"></i><span data-weather-label>天气</span>
             </button>
             <input type="file" class="fp-upload-file" accept="image/*" hidden>
             <span class="fp-upload-status" hidden aria-live="polite">
@@ -50,8 +50,8 @@
             <div class="fp-location-search">
                 <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
                 <input type="text" class="fp-location-input" placeholder="{{ $mapboxToken !== '' ? '搜索城市或地点，选择候选结果' : '需要先配置 Mapbox Token' }}" autocomplete="off" {{ $mapboxToken === '' ? 'disabled' : '' }}>
-                <button type="button" class="fp-location-current"><i class="fa-solid fa-crosshairs"></i> 当前</button>
-                <button type="button" class="fp-location-clear"><i class="fa-solid fa-xmark"></i> 清除</button>
+                <button type="button" class="fp-location-current"><i class="fa-solid fa-crosshairs" aria-hidden="true"></i> 当前</button>
+                <button type="button" class="fp-location-clear"><i class="fa-solid fa-circle-xmark" aria-hidden="true"></i> 清除</button>
             </div>
             <div class="fp-location-results" hidden></div>
             @if($mapboxToken === '')

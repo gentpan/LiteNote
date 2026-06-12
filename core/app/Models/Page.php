@@ -93,7 +93,16 @@ final class Page extends Model
                     'updated_at' => $now,
                 ];
                 $currentTitle = trim((string)($row['title'] ?? ''));
-                if ($currentTitle === '' || (!$wasSystem && $slug === 'friends' && $currentTitle === '友情链接')) {
+                $legacyTitle = match ($slug) {
+                    'friends' => '友情链接',
+                    'xmarks' => 'Xmarks',
+                    default => null,
+                };
+                if (
+                    $currentTitle === ''
+                    || (!$wasSystem && $legacyTitle !== null && $currentTitle === $legacyTitle)
+                    || ($wasSystem && $slug === 'xmarks' && $currentTitle === 'Xmarks')
+                ) {
                     $updates['title'] = $def['title'];
                 }
                 if (!$wasSystem) {

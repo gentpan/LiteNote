@@ -1,16 +1,51 @@
 @extends('layouts.front')
 
 @section('content')
+    @php
+        $postTotal = (int)($heatmap['articles'] ?? $total ?? 0);
+        $postWords = (int)($heatmap['words'] ?? 0);
+        $novelMilestones = [
+            ['words' => 10000, 'author' => '芥川龙之介', 'title' => '罗生门'],
+            ['words' => 20000, 'author' => '弗朗茨・卡夫卡', 'title' => '变形记'],
+            ['words' => 40000, 'author' => '安托万・德・圣埃克苏佩里', 'title' => '小王子'],
+            ['words' => 70000, 'author' => '欧内斯特・海明威', 'title' => '老人与海'],
+            ['words' => 90000, 'author' => '乔治・奥威尔', 'title' => '动物农场'],
+            ['words' => 120000, 'author' => '菲茨杰拉德', 'title' => '了不起的盖茨比'],
+            ['words' => 235000, 'author' => '简・奥斯汀', 'title' => '傲慢与偏见'],
+            ['words' => 300000, 'author' => '艾米莉・勃朗特', 'title' => '呼啸山庄'],
+            ['words' => 450000, 'author' => '夏洛蒂・勃朗特', 'title' => '简・爱'],
+            ['words' => 500000, 'author' => '加西亚・马尔克斯', 'title' => '百年孤独'],
+            ['words' => 600000, 'author' => '列夫・托尔斯泰', 'title' => '安娜・卡列尼娜'],
+            ['words' => 700000, 'author' => '维克多・雨果', 'title' => '悲惨世界'],
+            ['words' => 800000, 'author' => '曹雪芹', 'title' => '红楼梦'],
+            ['words' => 900000, 'author' => '托尔斯泰', 'title' => '战争与和平'],
+            ['words' => 1000000, 'author' => '罗贯中', 'title' => '三国演义'],
+            ['words' => 1500000, 'author' => '施耐庵', 'title' => '水浒传'],
+            ['words' => 2000000, 'author' => '马塞尔・普鲁斯特', 'title' => '追忆似水年华'],
+            ['words' => 3000000, 'author' => '金庸', 'title' => '鹿鼎记'],
+        ];
+        $novelMilestone = null;
+        foreach ($novelMilestones as $milestone) {
+            if ($postWords >= (int)$milestone['words']) {
+                $novelMilestone = $milestone;
+            }
+        }
+    @endphp
     <section class="post-list">
         <header class="posts-hero">
             <div class="posts-hero-head">
                 <div class="posts-hero-kicker-row">
-                    <span class="posts-hero-kicker">POSTS<span class="posts-hero-mobile-label"> · 文章</span></span>
+                    <span class="posts-hero-kicker">
+                        <i class="fa-regular fa-file-lines" aria-hidden="true"></i>
+                        <span aria-hidden="true">·</span>
+                        <span>POSTS</span>
+                        <span aria-hidden="true">·</span>
+                        <span>文章</span>
+                    </span>
                     <p class="posts-hero-sub">
-                        共 {{ number_format((int)($heatmap['articles'] ?? $total ?? 0)) }} 篇 · 记录 {{ number_format((int)($heatmap['spanDays'] ?? 0)) }} 天
+                        <span class="posts-hero-count">{{ number_format($postTotal) }} 篇文章 · 共 {{ number_format($postWords) }} 字</span>@if($novelMilestone)<span class="posts-hero-milestone">写完一本 {{ $novelMilestone['author'] }} 的《{{ $novelMilestone['title'] }}》了！</span>@endif
                     </p>
                 </div>
-                <h2 class="posts-hero-title">文章</h2>
             </div>
             @if(!empty($heatmap['days']))
                 <div class="posts-heatmap site-heatmap">

@@ -5,10 +5,15 @@
         <header class="talk-hero">
             <div class="talk-hero-head">
                 <div class="talk-hero-kicker-row">
-                    <span class="talk-hero-kicker">TALK</span>
+                    <span class="talk-hero-kicker">
+                        <i class="fa-solid fa-head-side-speak" aria-hidden="true"></i>
+                        <span aria-hidden="true">·</span>
+                        <span>TALK</span>
+                        <span aria-hidden="true">·</span>
+                        <span>滔客</span>
+                    </span>
                     <p class="talk-hero-sub">共 {{ (int)($heroTotal ?? 0) }} 条 · {{ (int)($heroActiveDays ?? 0) }} 天有更新</p>
                 </div>
-                <h2 class="talk-hero-title">滔客</h2>
             </div>
             @if(!empty($heroHeatDays))
                 <div class="talk-heatmap site-heatmap">
@@ -57,13 +62,20 @@
             </nav>
         @endif
         @include('partials.talk-publish-form')
-        @if(empty($list))
-            <p class="empty">还没有滔客</p>
-        @endif
-        <div class="js-list-items">
-        @foreach($list as $s)
-            @include('partials.talk-card')
-        @endforeach
+        <div class="talk-filter-frame" data-talk-filter-frame>
+            <div class="talk-filter-loading" data-talk-filter-loading hidden>
+                <span class="talk-filter-spinner" aria-hidden="true"></span>
+                <span>加载中...</span>
+            </div>
+            <div class="js-list-items" aria-live="polite">
+            @if(empty($list))
+                <p class="empty">还没有滔客</p>
+            @else
+                @foreach($list as $s)
+                    @include('partials.talk-card')
+                @endforeach
+            @endif
+            </div>
         </div>
         {!! $paginator ?? '' !!}
     </section>

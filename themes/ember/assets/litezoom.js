@@ -78,9 +78,9 @@
         '.litezoom__nav--next{right:16px;}',
         '.litezoom__nav svg{width:24px;height:24px;display:block;}',
         '.litezoom.is-single .litezoom__nav{display:none;}',
-        // caption 说明文字(full 模式):贴在大图内部左下角
+        // caption 说明文字(full 模式):显示在图片下方空白区域居中
         '.litezoom__caption{position:absolute;left:24px;top:24px;right:auto;bottom:auto;max-width:min(520px,calc(100vw - 48px));',
-        'padding:10px 14px;text-align:left;color:rgba(255,255,255,.94);font-size:14px;line-height:1.55;z-index:3;',
+        'padding:10px 14px;text-align:center;color:rgba(255,255,255,.94);font-size:14px;line-height:1.55;z-index:3;',
         'pointer-events:none;background:rgba(17,24,39,.58);border:1px solid rgba(255,255,255,.16);border-radius:8px;',
         '-webkit-backdrop-filter:blur(14px) saturate(145%);backdrop-filter:blur(14px) saturate(145%);',
         'box-shadow:0 10px 28px rgba(0,0,0,.24);text-shadow:0 1px 2px rgba(0,0,0,.35);}',
@@ -98,6 +98,10 @@
         '.litezoom__thumb.is-active{opacity:1;border-color:#fff;}',
         '.litezoom[data-mode="simple"] .litezoom__thumbs{display:none;}',
         '.litezoom.is-single .litezoom__thumbs{display:none;}',
+        // 通用图片懒加载 / 淡入。站点可配合 image-loading-wrap 使用,外部单独引用本文件也可直接使用。
+        '.litezoom-lazy{opacity:0;filter:blur(12px);transition:opacity .4s ease,filter .5s ease;}',
+        '.litezoom-lazy.is-lz-loaded{opacity:1;filter:none;}',
+        '.litezoom-lazy.is-lz-error{opacity:1;filter:none;}',
         // 不锁 overflow,保留系统滚动条 → 零重排零抖动(背景滚动由 wheel/touch/键盘 拦截)
         // 移动端微调
         '@media (max-width:640px){',
@@ -107,7 +111,8 @@
         '.litezoom__nav{width:38px;height:38px;}',
         '.litezoom__thumb{width:48px;height:48px;}',
         '.litezoom__caption{max-width:calc(100vw - 24px);font-size:13px;padding:8px 11px;border-radius:8px;}',
-        '}'
+        '}',
+        '@media (prefers-reduced-motion:reduce){.litezoom-lazy{transition:none;filter:none;}}'
     ].join('');
 
     var styleInjected = false;
@@ -121,14 +126,14 @@
     }
 
     /* ----------------------------------------------------------------
-     * 图标(内联 SVG,统一描边风格)
+     * 图标(内联 SVG,插件自包含)
      * ---------------------------------------------------------------- */
     var ICON = {
-        zoomIn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>',
-        zoomOut: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/><line x1="8" y1="11" x2="14" y2="11"/></svg>',
-        close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
-        prev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>',
-        next: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>'
+        zoomIn: '<svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="m21.857 20.437l-5.23-5.22a8.27 8.27 0 1 0-1.41 1.41l5.22 5.23a1 1 0 0 0 1.42 0a1 1 0 0 0 0-1.42m-7.72-9.29h-3v3a1 1 0 1 1-2 0v-3h-3a1 1 0 1 1 0-2h3v-3a1 1 0 0 1 2 0v3h3a1 1 0 1 1 0 2"/></svg>',
+        zoomOut: '<svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="m21.785 20.35l-5.22-5.22a8.18 8.18 0 1 0-1.41 1.42l5.22 5.22a1 1 0 1 0 1.41-1.42m-15.71-9.29a1 1 0 1 1 0-2h8a1 1 0 0 1 0 2z"/></svg>',
+        close: '<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+        prev: '<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>',
+        next: '<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>'
     };
 
     /* ----------------------------------------------------------------
@@ -249,12 +254,17 @@
             var rootRect = el.getBoundingClientRect();
             var imgRect = imgEl.getBoundingClientRect();
             var capRect = captionEl.getBoundingClientRect();
-            var gutter = rootRect.width <= 640 ? 10 : 14;
+            var gutter = rootRect.width <= 640 ? 12 : 18;
             var thumbSafe = el.classList.contains('has-thumbs') ? (rootRect.width <= 640 ? 82 : 96) : 12;
-            var left = imgRect.left - rootRect.left + gutter;
-            var top = imgRect.bottom - rootRect.top - capRect.height - gutter;
+            var left = (rootRect.width - capRect.width) / 2;
+            var areaTop = imgRect.bottom - rootRect.top + gutter;
+            var areaBottom = rootRect.height - thumbSafe - gutter;
+            var top = areaTop;
+            if (areaBottom - areaTop > capRect.height) {
+                top = areaTop + (areaBottom - areaTop - capRect.height) / 2;
+            }
             left = clamp(left, 12, Math.max(12, rootRect.width - capRect.width - 12));
-            top = clamp(top, 12, Math.max(12, rootRect.height - capRect.height - thumbSafe));
+            top = clamp(top, 12, Math.max(12, rootRect.height - capRect.height - thumbSafe - 12));
             captionEl.style.left = left + 'px';
             captionEl.style.top = top + 'px';
         }
@@ -625,12 +635,169 @@
     }
 
     /* ----------------------------------------------------------------
+     * 图片增强层:懒加载 + 淡入 + 兼容站点现有 image-loading-wrap
+     * ---------------------------------------------------------------- */
+    var enhancers = [];
+    var enhanceRegistered = {};
+    var lazyObserver = null;
+    var lazyObserverMargin = '';
+
+    function isLoadedImage(img) {
+        return !!(img && img.complete && (img.naturalWidth || img.getAttribute('src')));
+    }
+
+    function ensureImageAttrs(img) {
+        if (!img.hasAttribute('loading')) {
+            img.setAttribute('loading', 'lazy');
+        }
+        img.setAttribute('decoding', 'async');
+    }
+
+    function deferredSource(img) {
+        return img.getAttribute('data-src') || img.getAttribute('data-lz-src') || '';
+    }
+
+    function loadDeferredImage(img) {
+        var src = deferredSource(img);
+        var srcset = img.getAttribute('data-srcset') || img.getAttribute('data-lz-srcset') || '';
+        var sizes = img.getAttribute('data-sizes') || img.getAttribute('data-lz-sizes') || '';
+        if (sizes && !img.getAttribute('sizes')) {
+            img.setAttribute('sizes', sizes);
+        }
+        if (srcset && !img.getAttribute('srcset')) {
+            img.setAttribute('srcset', srcset);
+        }
+        if (src && !img.getAttribute('src')) {
+            img.setAttribute('src', src);
+        }
+    }
+
+    function ensureLazyObserver(rootMargin) {
+        rootMargin = rootMargin || '280px 0px';
+        if (!('IntersectionObserver' in window)) { return null; }
+        if (lazyObserver && lazyObserverMargin === rootMargin) { return lazyObserver; }
+        lazyObserverMargin = rootMargin;
+        lazyObserver = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (!entry.isIntersecting) { return; }
+                lazyObserver.unobserve(entry.target);
+                loadDeferredImage(entry.target);
+            });
+        }, { rootMargin: rootMargin, threshold: 0.01 });
+        return lazyObserver;
+    }
+
+    function resolveWrapper(img, opts) {
+        if (opts.avatar || opts.wrap === false || !img.parentNode) { return null; }
+        if (img.parentElement && img.parentElement.classList.contains('image-loading-wrap')) {
+            return img.parentElement;
+        }
+        if (opts.wrap !== true) { return null; }
+        var wrapper = document.createElement('span');
+        wrapper.className = 'image-loading-wrap is-loading';
+        img.parentNode.insertBefore(wrapper, img);
+        wrapper.appendChild(img);
+        return wrapper;
+    }
+
+    function finishEnhancedImage(img, wrapper, opts, error) {
+        img.classList.remove('is-image-loading', 'is-avatar-loading');
+        img.classList.add('is-lz-loaded');
+        if (error) { img.classList.add('is-lz-error'); }
+        if (opts.avatar) {
+            img.classList.add('is-avatar-loaded');
+        }
+        if (wrapper) {
+            wrapper.classList.remove('is-loading');
+            wrapper.classList.add('is-loaded');
+            if (error) { wrapper.classList.add('is-error'); }
+        }
+    }
+
+    function enhanceImage(img, opts) {
+        if (!img || img.nodeType !== 1 || img.dataset.litezoomImageReady === '1') { return; }
+        img.dataset.litezoomImageReady = '1';
+        opts = opts || {};
+        injectStyle();
+        ensureImageAttrs(img);
+
+        var wrapper = resolveWrapper(img, opts);
+        if (wrapper) {
+            wrapper.classList.add('image-loading-wrap', 'is-loading');
+        }
+        img.classList.add('litezoom-lazy');
+        if (opts.avatar) {
+            img.classList.add('is-avatar-loading');
+        } else {
+            img.classList.add('is-image-loading');
+        }
+
+        img.addEventListener('load', function () {
+            finishEnhancedImage(img, wrapper, opts, false);
+        }, { once: true });
+        img.addEventListener('error', function () {
+            finishEnhancedImage(img, wrapper, opts, true);
+        }, { once: true });
+
+        if (deferredSource(img) && !img.getAttribute('src')) {
+            var observer = ensureLazyObserver(opts.rootMargin);
+            if (observer) { observer.observe(img); }
+            else { loadDeferredImage(img); }
+            return;
+        }
+        if (isLoadedImage(img)) {
+            finishEnhancedImage(img, wrapper, opts, false);
+        }
+    }
+
+    function applyEnhancer(root, enhancer) {
+        root = root && root.querySelectorAll ? root : document;
+        Array.prototype.slice.call(root.querySelectorAll(enhancer.selector)).forEach(function (img) {
+            enhanceImage(img, enhancer.opts);
+        });
+    }
+
+    function enhance(selector, opts) {
+        opts = opts || {};
+        var key = selector + '::' + (opts.avatar ? 'avatar' : 'image') + '::' + (opts.wrap === true ? 'wrap' : 'nowrap');
+        if (!enhanceRegistered[key]) {
+            enhanceRegistered[key] = true;
+            enhancers.push({ selector: selector, opts: opts });
+        }
+        applyEnhancer(opts.root || document, { selector: selector, opts: opts });
+        if (opts.zoom) {
+            bind(selector, opts);
+        }
+    }
+
+    function refresh(root) {
+        enhancers.forEach(function (enhancer) {
+            applyEnhancer(root || document, enhancer);
+        });
+    }
+
+    function autoEnhanceMarkedImages() {
+        var selector = 'img[data-lz-lazy], img[data-litezoom-lazy]';
+        if (document.querySelector(selector)) {
+            enhance(selector, { wrap: false });
+        }
+    }
+
+    /* ----------------------------------------------------------------
      * 公开 API
      * ---------------------------------------------------------------- */
     window.LiteZoom = {
         bind: bind,
+        enhance: enhance,
+        refresh: refresh,
         open: function (list, index, opts) { viewer().open(list, index || 0, opts || {}); },
         close: function () { if (V) { V.close(); } }
     };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', autoEnhanceMarkedImages, { once: true });
+    } else {
+        autoEnhanceMarkedImages();
+    }
 
 })(window, document);

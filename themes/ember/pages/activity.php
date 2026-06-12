@@ -26,11 +26,6 @@
                 <small>{{ (int)($todayStats['active_types'] ?? 0) }} 类活动</small>
             </article>
             <article class="activity-stat-card">
-                <strong>{{ number_format((int)($todayStats['ai_total_tokens'] ?? 0)) }}</strong>
-                <span>AI Tokens</span>
-                <small>输入 {{ number_format((int)($todayStats['ai_input_tokens'] ?? 0)) }} · 输出 {{ number_format((int)($todayStats['ai_output_tokens'] ?? 0)) }}</small>
-            </article>
-            <article class="activity-stat-card">
                 <strong>{{ (int)($heatmap['activeDays'] ?? 0) }}</strong>
                 <span>活跃天数</span>
                 <small>最近一年</small>
@@ -78,20 +73,26 @@
                                 @foreach(($heatmap['days'] ?? []) as $cell)
                                     @php
                                         $eventCount = (int)($cell['total'] ?? 0);
-                                        $heatTitle = $eventCount > 0 ? $eventCount . ' 条动态' : '没有动态';
+                                        $cellType = preg_replace('/[^a-z0-9_-]/i', '', (string)($cell['type'] ?? ''));
+                                        $typeLabel = (string)($cell['type_label'] ?? '');
+                                        $heatTitle = $eventCount > 0
+                                            ? trim($typeLabel . ' · ' . $eventCount . ' 条动态', ' ·')
+                                            : '没有动态';
+                                        $cellClasses = [
+                                            'site-heatmap-cell',
+                                            'level-' . (int)($cell['level'] ?? 0),
+                                        ];
+                                        if ($eventCount > 0 && $cellType !== '') {
+                                            $cellClasses[] = 'has-activity';
+                                            $cellClasses[] = 'activity-type-' . $cellType;
+                                        }
+                                        if (!empty($cell['muted'])) {
+                                            $cellClasses[] = 'is-muted';
+                                        }
                                     @endphp
-                                    <span class="site-heatmap-cell level-{{ $cell['level'] }} {{ !empty($cell['muted']) ? 'is-muted' : '' }}"
+                                    <span class="{{ implode(' ', $cellClasses) }}"
                                           title="{{ $cell['date'] }}：{{ $heatTitle }}"></span>
                                 @endforeach
-                            </div>
-                            <div class="site-heatmap-legend">
-                                <span>少</span>
-                                <i class="level-0"></i>
-                                <i class="level-1"></i>
-                                <i class="level-2"></i>
-                                <i class="level-3"></i>
-                                <i class="level-4"></i>
-                                <span>多</span>
                             </div>
                         </div>
                     </div>

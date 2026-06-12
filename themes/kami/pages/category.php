@@ -8,7 +8,7 @@
             @if($category->description)
                 <p class="category-hero-desc">{{ $category->description }}</p>
             @endif
-            <div class="category-hero-meta"><i class="fa-regular fa-file-lines"></i> 共 {{ $total }} 篇文章</div>
+            <div class="category-hero-meta"><i class="fa-regular fa-file-lines" aria-hidden="true"></i> 共 {{ $total }} 篇文章</div>
         </div>
     </header>
     @if(empty($posts))
@@ -21,8 +21,8 @@
                 <a href="{{ $post->getUrl() }}">{{ $post->title }}</a>
             </h3>
             <p class="post-meta">
-                <span><i class="fa-regular fa-calendar"></i> {!! \App\Core\Helper::timeTag($post->published_at) !!}</span>
-                <span><i class="fa-regular fa-eye"></i> {{ $post->views }} 浏览</span>
+                <span><i class="fa-regular fa-calendar" aria-hidden="true"></i> {!! \App\Core\Helper::timeTag($post->published_at) !!}</span>
+                <span><i class="fa-regular fa-eye" aria-hidden="true"></i> {{ $post->views }} 浏览</span>
             </p>
             <p class="post-excerpt">{{ $post->summaryOrContent(200) }}</p>
         </article>
