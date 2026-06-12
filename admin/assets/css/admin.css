@@ -1569,6 +1569,11 @@ body.admin-body.auth-body {
     white-space: nowrap;
 }
 
+.x-admin-tweets-table th:nth-child(3),
+.x-admin-tweets-table td:nth-child(3) {
+    white-space: nowrap;
+}
+
 .x-admin-tweet-content > span {
     grid-column: 2;
     min-width: 0;

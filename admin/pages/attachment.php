@@ -75,7 +75,7 @@
     </div>
     {!! $paginator ?? '' !!}
 
-    @php $__liteZoomJs = '/themes/ember/assets/litezoom.js'; @endphp
+    @php $__liteZoomJs = '/themes/ember/assets/litezoom.min.js'; @endphp
     <script src="{{ $__liteZoomJs }}?v={{ @filemtime(BASE_PATH . $__liteZoomJs) ?: time() }}"></script>
     <script>
     const csrf = '{{ $csrf }}';

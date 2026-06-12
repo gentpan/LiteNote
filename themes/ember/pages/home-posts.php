@@ -13,25 +13,25 @@
                 <h2 class="posts-hero-title">文章</h2>
             </div>
             @if(!empty($heatmap['days']))
-                <div class="posts-heatmap">
-                    <div class="posts-heatmap-scroll">
-                        <div class="posts-heatmap-inner" style="--weeks: {{ $heatmap['weeks'] ?? 53 }}">
-                            <div class="posts-heatmap-months">
+                <div class="posts-heatmap site-heatmap">
+                    <div class="posts-heatmap-scroll site-heatmap-scroll">
+                        <div class="posts-heatmap-inner site-heatmap-inner" style="--weeks: {{ $heatmap['weeks'] ?? 53 }}">
+                            <div class="posts-heatmap-months site-heatmap-months">
                                 @foreach(($heatmap['months'] ?? []) as $month)
                                     <span style="grid-column: {{ $month['week'] }}">{{ $month['label'] }}</span>
                                 @endforeach
                             </div>
-                            <div class="posts-heatmap-cells" aria-label="近一年文章写作热力图">
+                            <div class="posts-heatmap-cells site-heatmap-cells" aria-label="近一年文章写作热力图">
                                 @foreach(($heatmap['days'] ?? []) as $day)
                                     @php
                                         $articleCount = (int)($day['articles'] ?? 0);
                                         $heatTitle = $articleCount > 0 ? $articleCount . ' 篇文章' : '没有文章';
                                     @endphp
-                                    <span class="posts-heatmap-cell level-{{ $day['level'] }} {{ !empty($day['muted']) ? 'is-muted' : '' }}"
+                                    <span class="posts-heatmap-cell site-heatmap-cell level-{{ $day['level'] }} {{ !empty($day['muted']) ? 'is-muted' : '' }}"
                                           title="{{ $day['date'] }}：{{ $heatTitle }}"></span>
                                 @endforeach
                             </div>
-                            <div class="posts-heatmap-legend">
+                            <div class="posts-heatmap-legend site-heatmap-legend">
                                 <span>少</span>
                                 <i class="level-0"></i>
                                 <i class="level-1"></i>

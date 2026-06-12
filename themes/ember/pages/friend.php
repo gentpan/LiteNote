@@ -216,6 +216,7 @@
                         @foreach(\App\Core\Helper::nestComments($comments) as $thread)
                             @php $cmt = $thread['comment']; @endphp
                             <li class="comment-item" data-id="{{ $cmt->id }}">
+                                <img class="comment-avatar" src="{{ $cmt->getAvatarUrl(40) }}" alt="{{ $cmt->nickname }}" loading="lazy" width="32" height="32">
                                 <div class="comment-body">
                                     <div class="comment-meta">
                                         @php $commentAuthor = $cmt; @endphp
@@ -229,6 +230,7 @@
                                     <ul class="comment-reply-list">
                                         @foreach($thread['replies'] as $reply)
                                             <li class="comment-item comment-reply" data-id="{{ $reply->id }}">
+                                                <img class="comment-avatar" src="{{ $reply->getAvatarUrl(40) }}" alt="{{ $reply->nickname }}" loading="lazy" width="28" height="28">
                                                 <div class="comment-body">
                                                     <div class="comment-meta">
                                                         @php $commentAuthor = $reply; @endphp
@@ -252,14 +254,6 @@
                         <input type="hidden" name="parent_id" value="0">
                         <input type="hidden" name="_csrf" value="{{ \App\Core\Session::csrfToken() }}">
                         @if(!empty($currentAdmin))
-                            <div class="comment-admin-bar">
-                                <img class="comment-admin-avatar" src="{{ $currentAdmin->getAvatarUrl(80) }}" alt="{{ $adminCommentName }}">
-                                <div class="comment-admin-info">
-                                    <span class="comment-admin-name">{{ $adminCommentName }}</span>
-                                    @if($adminCommentEmail !== '')<span class="comment-admin-email">{{ $adminCommentEmail }}</span>@endif
-                                </div>
-                                <a class="comment-admin-logout" href="/admin/logout">注销</a>
-                            </div>
                             <input type="hidden" name="nickname" value="{{ $adminCommentName }}">
                             <input type="hidden" name="email" value="{{ $adminCommentEmail }}">
                         @else
@@ -271,7 +265,7 @@
                         @endif
                         <textarea name="content" rows="5" placeholder="说点什么... *" required></textarea>
                         <div class="comment-actions">
-                            <button type="submit">提交评论</button>
+                            <button type="submit" aria-label="提交评论"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i></button>
                         </div>
                     </form>
                 </section>

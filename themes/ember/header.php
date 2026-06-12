@@ -50,10 +50,18 @@
         $articleFontKey = (string)\App\Models\Setting::get('post_article_font', 'source-han-serif');
         $articleFontFamily = $articleFontMap[$articleFontKey] ?? $articleFontMap['source-han-serif'];
         $articleFontCss = $articleFontCssMap[$articleFontKey] ?? $articleFontCssMap['source-han-serif'];
+        $heroTitleFontCss = $articleFontCssMap['kuaikan'];
+        $heroTitleFontFamily = '"快看世界体", "Source Han Serif CN VF", "Source Han Serif SC", "Songti SC", serif';
     @endphp
     <link rel="stylesheet" href="{{ $articleFontCss }}">
+    @if($articleFontCss !== $heroTitleFontCss)
+        <link rel="stylesheet" href="{{ $heroTitleFontCss }}">
+    @endif
     <style>
-        :root { --article-font-family: {!! $articleFontFamily !!}; }
+        :root {
+            --article-font-family: {!! $articleFontFamily !!};
+            --post-hero-title-font-family: {!! $heroTitleFontFamily !!};
+        }
     </style>
     {!! $__pluginFrontHead ?? '' !!}
 </head>

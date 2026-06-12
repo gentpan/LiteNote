@@ -75,16 +75,7 @@
         @endif
         <textarea name="content" rows="3" placeholder="写这首歌的评论..." required></textarea>
         <div class="comment-actions">
-            @if(!empty($currentAdmin))
-                <button type="button" class="comment-profile-toggle comment-profile-toggle-admin" aria-label="当前登录头像">
-                    <img class="comment-admin-avatar" src="{{ $currentAdmin->getAvatarUrl(80) }}" alt="{{ $adminCommentName }}">
-                </button>
-            @else
-                <button type="button" class="comment-profile-toggle" data-comment-profile-toggle aria-label="修改评论资料" hidden>
-                    <img class="comment-admin-avatar" src="{{ \App\Services\Gravatar::url('', 80, 'mp') }}" alt="" data-comment-profile-avatar data-comment-avatar-default="{{ \App\Services\Gravatar::url('', 80, 'mp') }}">
-                </button>
-            @endif
-            <button type="submit">提交乐评</button>
+            <button type="submit" aria-label="提交乐评"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i></button>
         </div>
     </form>
 </div>

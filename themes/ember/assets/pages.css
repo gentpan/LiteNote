@@ -1069,6 +1069,8 @@ html[data-theme="dark"] .activity-item-content {
     height: 96px;
     margin: var(--sp-22) 0;
     overflow: hidden;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
     font-size: var(--fs-md);
     font-weight: 600;
     line-height: 1.5;
@@ -1087,6 +1089,9 @@ html[data-theme="dark"] .activity-item-content {
         #000 76%,
         transparent
     );
+}
+.music-lyric-lines::-webkit-scrollbar {
+    display: none;
 }
 .music-lyric-lines span {
     flex: 0 0 auto;
@@ -1234,24 +1239,28 @@ html[data-theme="dark"] .activity-item-content {
     display: none;
 }
 .music-song-comment-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--sp-16);
+    display: block;
     padding: 0;
-    margin: 0 0 var(--sp-18);
+    margin: var(--sp-20) 0;
     list-style: none;
 }
 .music-song-comment {
-    display: flex;
-    gap: var(--sp-12);
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 0 var(--sp-10);
+    align-items: start;
+    padding: var(--sp-14) 0;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--c-border-soft);
+    border-radius: 0;
+    box-shadow: none;
 }
 .music-song-comment-avatar {
-    display: flex;
+    display: block;
     flex: none;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
     overflow: hidden;
     color: var(--c-text-muted);
     background: var(--c-surface);
@@ -1266,6 +1275,7 @@ html[data-theme="dark"] .activity-item-content {
         filter 0.42s ease;
 }
 .music-song-comment-body {
+    grid-column: 2;
     min-width: 0;
 }
 .music-song-comment-meta {
@@ -1295,12 +1305,7 @@ html[data-theme="dark"] .activity-item-content {
     border-radius: var(--radius-md);
 }
 .music-comment-form {
-    /* 去掉通用 .comment-form 的外层卡片框(背景 / 边框 / 内边距),
-       只保留:输入框 + 底部的验证码与提交按钮 */
-    padding: 0;
-    margin-top: var(--sp-16);
-    background: none;
-    border: 0;
+    margin-top: var(--sp-22);
 }
 /* 验证码(输入框 + 图)与提交按钮同一行,整组靠右、高度统一,移动端也不换行 */
 .music-comment-form .comment-actions {
@@ -1311,32 +1316,19 @@ html[data-theme="dark"] .activity-item-content {
     margin-top: var(--sp-10);
 }
 .music-comment-form .comment-actions button[type="submit"] {
-    display: inline-flex;
+    display: inline-grid;
     flex: 0 0 auto;
-    align-items: center;
-    justify-content: center;
-    min-width: 0;
-    height: 36px;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    min-height: 42px;
     margin: 0;
-    padding: 0 var(--sp-20);
-}
-/* 管理员头像:移到左侧、去掉按钮默认背景 */
-.music-comment-form .comment-profile-toggle-admin {
-    width: auto;
-    height: auto;
-    min-height: 0;
     padding: 0;
-    margin-right: auto;
-    cursor: default;
-    background: none;
-    border: 0;
-    box-shadow: none;
+    border-radius: var(--radius-pill);
 }
-.music-comment-form .comment-profile-toggle-admin .comment-admin-avatar {
-    display: block;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
+.music-comment-form .music-comment-composer {
+    display: contents;
 }
 
 /* —— 播放列表 —— */
@@ -1565,87 +1557,6 @@ html[data-theme="dark"] .activity-item-content {
     gap: var(--sp-8);
 }
 
-.talk-heatmap-grid {
-    display: flex;
-    gap: 3px;
-    padding-bottom: 2px;
-}
-
-.talk-heatmap-col {
-    display: flex;
-    flex: 1 1 0;
-    flex-direction: column;
-    gap: 3px;
-    min-width: 0;
-}
-
-.talk-heatmap-cell {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    border-radius: 3px;
-}
-
-.talk-heatmap-cell.lv-0,
-.talk-heatmap-legend i.lv-0 {
-    background: #ebedf0;
-}
-.talk-heatmap-cell.lv-1,
-.talk-heatmap-legend i.lv-1 {
-    background: #9be9a8;
-}
-.talk-heatmap-cell.lv-2,
-.talk-heatmap-legend i.lv-2 {
-    background: #40c463;
-}
-.talk-heatmap-cell.lv-3,
-.talk-heatmap-legend i.lv-3 {
-    background: #216e39;
-}
-.talk-heatmap-cell.lv-4,
-.talk-heatmap-legend i.lv-4 {
-    background: #0f4f28;
-}
-
-html[data-theme="dark"] .talk-heatmap-cell.lv-0,
-html[data-theme="dark"] .talk-heatmap-legend i.lv-0 {
-    background: rgba(243, 242, 238, 0.1);
-}
-
-html[data-theme="dark"] .talk-heatmap-cell.lv-1,
-html[data-theme="dark"] .talk-heatmap-legend i.lv-1 {
-    background: #2f7f47;
-}
-
-html[data-theme="dark"] .talk-heatmap-cell.lv-2,
-html[data-theme="dark"] .talk-heatmap-legend i.lv-2 {
-    background: #3fbf67;
-}
-
-html[data-theme="dark"] .talk-heatmap-cell.lv-3,
-html[data-theme="dark"] .talk-heatmap-legend i.lv-3 {
-    background: #a4f7ae;
-}
-
-html[data-theme="dark"] .talk-heatmap-cell.lv-4,
-html[data-theme="dark"] .talk-heatmap-legend i.lv-4 {
-    background: #d2ffd8;
-}
-
-.talk-heatmap-legend {
-    display: flex;
-    gap: var(--sp-4);
-    align-items: center;
-    font-size: var(--fs-xs);
-    color: var(--c-text-muted);
-}
-
-.talk-heatmap-legend i {
-    display: inline-block;
-    width: 11px;
-    height: 11px;
-    border-radius: 3px;
-}
-
 /* 关键词侧边竖列(#关键词 数字):固定在内容列右侧空白处,垂直居中跟随滚动;点击 = 按 mood 筛选(走 PJAX) */
 .talk-keyword-rail {
     position: fixed;
@@ -1718,44 +1629,5 @@ html[data-theme="dark"] .talk-heatmap-legend i.lv-4 {
     .talk-list .talk-hero {
         gap: var(--sp-14);
         padding: var(--sp-18);
-    }
-}
-
-@media (max-width: 680px) {
-    .site-heatmap-inner,
-    .posts-heatmap-inner,
-    .archive-page .archive-heat-inner {
-        --heat-gap: 1px;
-        --heat-cell: clamp(7px, calc((100vw - 99px) / 30), 10px);
-        width: 100%;
-        max-width: 100%;
-    }
-
-    .site-heatmap-months,
-    .posts-heatmap-months,
-    .archive-page .archive-heat-months {
-        display: none;
-    }
-
-    .site-heatmap-cells,
-    .posts-heatmap-cells,
-    .archive-page .archive-heat-cells {
-        grid-template-rows: repeat(4, var(--heat-cell));
-        grid-auto-columns: var(--heat-cell);
-        gap: var(--heat-gap);
-        width: 100%;
-        max-width: 100%;
-    }
-
-    .site-heatmap-cells > .site-heatmap-cell:nth-last-child(n+121),
-    .posts-heatmap-cells > .posts-heatmap-cell:nth-last-child(n+121),
-    .archive-page .archive-heat-cells > .archive-heat-cell:nth-last-child(n+121) {
-        display: none;
-    }
-
-    .site-heatmap-legend,
-    .posts-heatmap-legend,
-    .archive-page .archive-heat-legend {
-        display: none;
     }
 }
