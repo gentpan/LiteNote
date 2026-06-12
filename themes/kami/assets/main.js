@@ -224,11 +224,11 @@
     function gravatarUrl(email, size) {
         email = String(email || '').trim().toLowerCase();
         if (!email) return '';
-        return 'https://gravatar.bluecdn.com/avatar/' + md5(email) + '?s=' + (size || 80) + '&d=identicon&r=g&v=1.3';
+        return 'https://gravatar.bluecdn.com/avatar/' + md5(email) + '?s=' + (size || 80);
     }
     // 无邮箱时的灰色默认头像(gravatar mystery-person),不回退到博主头像
     function grayGravatar(size) {
-        return 'https://gravatar.bluecdn.com/avatar/00000000000000000000000000000000?s=' + (size || 80) + '&d=mp&r=g&v=1.3';
+        return 'https://gravatar.bluecdn.com/avatar/00000000000000000000000000000000?s=' + (size || 80);
     }
     function loadIdentity() { try { var raw = localStorage.getItem(IDENTITY_KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; } }
     function saveIdentity(identity) { try { localStorage.setItem(IDENTITY_KEY, JSON.stringify(identity)); } catch (e) {} }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controllers\Front;
 
 use App\Core\Helper;
+use App\Core\Http;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -83,5 +84,65 @@ class MusicController
         } catch (\Throwable) {
             Response::text('', 404, 'text/plain; charset=utf-8');
         }
+    }
+
+    public function fetchLyrics(Request $request): never
+    {
+        $url = trim((string)$request->input('url', ''));
+        if (!$this->isSafeRemoteLyricsUrl($url)) {
+            Response::text('', 400, 'text/plain; charset=utf-8');
+        }
+
+        try {
+            $response = Http::request('GET', $url, [
+                'headers' => ['Accept: text/plain,*/*'],
+                'timeout' => 8,
+                'connect_timeout' => 4,
+                'follow' => false,
+            ]);
+            $body = (string)($response['body'] ?? '');
+            if (empty($response['ok']) || $body === '') {
+                Response::text('', 404, 'text/plain; charset=utf-8');
+            }
+            if (strlen($body) > 262144) {
+                Response::text('', 413, 'text/plain; charset=utf-8');
+            }
+            Response::text($body, 200, 'text/plain; charset=utf-8');
+        } catch (\Throwable) {
+            Response::text('', 404, 'text/plain; charset=utf-8');
+        }
+    }
+
+    private function isSafeRemoteLyricsUrl(string $url): bool
+    {
+        if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return false;
+        }
+
+        $scheme = strtolower((string)parse_url($url, PHP_URL_SCHEME));
+        if (!in_array($scheme, ['http', 'https'], true)) {
+            return false;
+        }
+
+        $host = strtolower(trim((string)parse_url($url, PHP_URL_HOST), '[]'));
+        if ($host === '' || in_array($host, ['localhost', '127.0.0.1', '0.0.0.0'], true) || str_ends_with($host, '.local')) {
+            return false;
+        }
+
+        if (filter_var($host, FILTER_VALIDATE_IP)) {
+            return filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false;
+        }
+
+        $records = @gethostbynamel($host);
+        if (!is_array($records) || $records === []) {
+            return false;
+        }
+
+        foreach ($records as $ip) {
+            if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+                return false;
+            }
+        }
+        return true;
     }
 }

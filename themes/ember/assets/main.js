@@ -252,12 +252,12 @@
     function gravatarUrl(email, size) {
         email = String(email || '').trim().toLowerCase();
         if (!email) return '';
-        return 'https://gravatar.bluecdn.com/avatar/' + md5(email) + '?s=' + (size || 80) + '&d=identicon&r=g&v=1.3';
+        return 'https://gravatar.bluecdn.com/avatar/' + md5(email) + '?s=' + (size || 80);
     }
 
     // 没有邮箱时的灰色默认头像(gravatar mystery-person),不再回退到博主头像
     function grayGravatar(size) {
-        return 'https://gravatar.bluecdn.com/avatar/00000000000000000000000000000000?s=' + (size || 80) + '&d=mp&r=g&v=1.3';
+        return 'https://gravatar.bluecdn.com/avatar/00000000000000000000000000000000?s=' + (size || 80);
     }
 
     function normalizeCommentWebsite(value) {
@@ -563,15 +563,6 @@
 
     function updateNavIdentity(identity) {
         updateSideIdentity(identity);
-        var orb = document.querySelector('[data-nav-identity]');
-        if (orb && orb.dataset.navAdmin === '1') return;
-        var img = document.querySelector('[data-nav-identity] .nav-avatar-img');
-        if (!img) return;
-        var bloggerAvatar = img.dataset.bloggerAvatar || img.src;
-        var bloggerName = img.dataset.bloggerName || img.alt || '首页';
-        var avatar = identity && (identity.avatar_url || gravatarUrl(identity.email, 80));
-        img.src = avatar || bloggerAvatar;
-        img.alt = identity && identity.nickname ? identity.nickname : bloggerName;
     }
 
     function clearCommentIdentity() {
@@ -988,25 +979,45 @@
         }
         function replyListIn(rootLi, cls) {
             var rl = rootLi.querySelector(':scope > .' + cls);
-            if (!rl) { rl = document.createElement('ul'); rl.className = cls; rootLi.appendChild(rl); }
+            if (!rl) {
+                rl = document.createElement('ul');
+                rl.className = cls === 'talk-reply-list' ? 'comment-reply-list talk-reply-list' : cls;
+                rootLi.appendChild(rl);
+            }
             return rl;
         }
 
         if (isTalk) {
             var container = form.closest('.talk-comments') || form.parentNode;
             var li = document.createElement('li');
+            li.className = 'comment-item' + (parentId > 0 ? ' comment-reply' : '');
             li.setAttribute('data-id', c.id);
-            li.appendChild(commentAuthorNode(c));
+            var avatarImg = document.createElement('img');
+            avatarImg.className = 'comment-avatar';
+            avatarImg.src = c.avatar_url || grayGravatar(parentId > 0 ? 28 : 32);
+            avatarImg.alt = c.nickname || '读者';
+            avatarImg.loading = 'lazy';
+            avatarImg.width = parentId > 0 ? 28 : 32;
+            avatarImg.height = parentId > 0 ? 28 : 32;
+            var body = document.createElement('div');
+            body.className = 'comment-body';
+            var meta = document.createElement('div');
+            meta.className = 'comment-meta';
+            meta.appendChild(commentAuthorNode(c));
             var rtn = (parentId > 0) ? (form.dataset.replyTo || '') : '';
             if (rtn) {
                 var ar = document.createElement('span'); ar.className = 'reply-arrow'; ar.textContent = ' › ';
                 var tg = document.createElement('span'); tg.className = 'reply-target'; tg.textContent = rtn;
-                li.appendChild(ar); li.appendChild(tg);
+                meta.appendChild(ar); meta.appendChild(tg);
             }
             var time = document.createElement('span'); time.className = 'comment-time'; time.innerHTML = ' · ' + c.time;
-            var bodyS = document.createElement('span'); bodyS.className = 'talk-comment-content'; bodyS.textContent = c.content;
-            li.appendChild(time); li.appendChild(document.createTextNode(' ')); li.appendChild(bodyS);
-            markPending(li);
+            var bodyS = document.createElement('div'); bodyS.className = 'comment-content talk-comment-content'; bodyS.textContent = c.content;
+            meta.appendChild(time);
+            body.appendChild(meta);
+            body.appendChild(bodyS);
+            li.appendChild(avatarImg);
+            li.appendChild(body);
+            markPending(li, meta);
 
             if (parentId > 0) {
                 var root = rootLiOf(container, parentId);
@@ -1014,7 +1025,7 @@
                 else { var l0 = container.querySelector('.talk-comment-list'); if (l0) l0.appendChild(li); }
             } else {
                 var list = container.querySelector('.talk-comment-list');
-                if (!list) { list = document.createElement('ul'); list.className = 'talk-comment-list'; container.insertBefore(list, form); }
+                if (!list) { list = document.createElement('ul'); list.className = 'comment-list talk-comment-list'; container.insertBefore(list, form); }
                 list.appendChild(li);
             }
             if (!isPending && container.id) {
@@ -1029,6 +1040,7 @@
                 var homeMusicCard = form.closest('.home-music-card');
                 if (homeMusicCard) {
                     section.classList.add('is-open');
+                    homeMusicCard.classList.add('is-comments-open');
                     var homeEmpty = section.querySelector('.music-comment-empty');
                     if (homeEmpty) homeEmpty.remove();
                     var homeList = section.querySelector(':scope > .comment-list');
@@ -1090,15 +1102,15 @@
                 var musicList = listScope.querySelector('.music-song-comment-list');
                 if (!musicList) {
                     musicList = document.createElement('ul');
-                    musicList.className = 'music-song-comment-list';
+                    musicList.className = 'comment-list music-song-comment-list';
                     listScope.insertBefore(musicList, listScope.firstChild);
                 }
                 var musicItem = document.createElement('li');
-                musicItem.className = 'music-song-comment';
+                musicItem.className = 'comment-item music-song-comment';
                 musicItem.setAttribute('data-id', c.id);
 
                 var musicAvatar = document.createElement('span');
-                musicAvatar.className = 'music-song-comment-avatar';
+                musicAvatar.className = 'comment-avatar music-song-comment-avatar';
                 var musicAvatarImg = document.createElement('img');
                 musicAvatarImg.src = c.avatar_url || '';
                 musicAvatarImg.alt = c.nickname || '';
@@ -1108,15 +1120,15 @@
                 musicAvatar.appendChild(musicAvatarImg);
 
                 var musicBody = document.createElement('div');
-                musicBody.className = 'music-song-comment-body';
+                musicBody.className = 'comment-body music-song-comment-body';
                 var musicMeta = document.createElement('div');
-                musicMeta.className = 'music-song-comment-meta';
+                musicMeta.className = 'comment-meta music-song-comment-meta';
                 var musicTime = document.createElement('span');
                 musicTime.innerHTML = c.time;
                 musicMeta.appendChild(commentAuthorNode(c));
                 musicMeta.appendChild(musicTime);
                 var musicContent = document.createElement('div');
-                musicContent.className = 'music-song-comment-content';
+                musicContent.className = 'comment-content music-song-comment-content';
                 musicContent.textContent = c.content;
                 musicBody.appendChild(musicMeta);
                 musicBody.appendChild(musicContent);
@@ -1145,7 +1157,12 @@
             item.setAttribute('data-id', c.id);
             var rtn2 = (parentId > 0) ? (form.dataset.replyTo || '') : '';
             var metaExtra = rtn2 ? '<span class="reply-arrow">›</span><span class="reply-target"></span>' : '';
-            item.innerHTML = '<div class="comment-body"><div class="comment-meta"><strong></strong>' + metaExtra + ' <span class="ct"></span></div><div class="comment-content"></div></div>';
+            item.innerHTML = '<img class="comment-avatar" src="" alt="" loading="lazy" width="' + (parentId > 0 ? '28' : '32') + '" height="' + (parentId > 0 ? '28' : '32') + '"><div class="comment-body"><div class="comment-meta"><strong></strong>' + metaExtra + ' <span class="ct"></span></div><div class="comment-content"></div></div>';
+            var itemAvatar = item.querySelector('.comment-avatar');
+            if (itemAvatar) {
+                itemAvatar.src = c.avatar_url || grayGravatar(parentId > 0 ? 28 : 32);
+                itemAvatar.alt = c.nickname || '读者';
+            }
             item.querySelector('strong').replaceWith(commentAuthorNode(c));
             if (rtn2) item.querySelector('.reply-target').textContent = rtn2;
             item.querySelector('.ct').innerHTML = '· ' + c.time;
@@ -1207,6 +1224,50 @@
         frontToast(msg, type === 'success' ? 'success' : 'error');
     }
 
+    function setCommentSubmitLoading(form, loading) {
+        var btn = form.querySelector('button[type=submit]') || form.querySelector('button');
+        if (loading) form.dataset.commentSubmitting = '1';
+        else delete form.dataset.commentSubmitting;
+        if (!btn) return;
+        btn.disabled = !!loading;
+        btn.classList.toggle('is-loading', !!loading);
+        if (loading) btn.setAttribute('aria-busy', 'true');
+        else btn.removeAttribute('aria-busy');
+    }
+
+    function replyMentionPrefix(nickname) {
+        nickname = String(nickname || '').trim().replace(/\s+/g, '');
+        return nickname ? '@' + nickname + ' ' : '';
+    }
+
+    function stripReplyMentionPrefix(value, prefix) {
+        value = String(value || '');
+        prefix = String(prefix || '');
+        if (prefix && value.indexOf(prefix) === 0) {
+            return value.slice(prefix.length);
+        }
+        return value.replace(/^@\S+\s+/u, '');
+    }
+
+    function setReplyMention(form, textarea, nickname) {
+        if (!textarea) return;
+        var oldPrefix = form.dataset.replyPrefix || '';
+        var nextPrefix = replyMentionPrefix(nickname);
+        var value = textarea.value || '';
+        if (oldPrefix && value.indexOf(oldPrefix) === 0) {
+            value = value.slice(oldPrefix.length);
+        } else if (form.dataset.replyTo && value.indexOf('@') === 0) {
+            value = value.replace(/^@\S+\s*/u, '');
+        }
+        textarea.value = nextPrefix + value;
+        form.dataset.replyPrefix = nextPrefix;
+        window.setTimeout(function() {
+            var pos = nextPrefix.length;
+            textarea.focus();
+            textarea.setSelectionRange(pos, pos);
+        }, 80);
+    }
+
     // 评论表单(可对动态加载的内容重复调用)
     function bindCommentForm(form) {
         if (form.dataset.lnBound) return; form.dataset.lnBound = '1';
@@ -1258,6 +1319,7 @@
 
         form.addEventListener('submit', function(e) {
             e.preventDefault();
+            if (form.dataset.commentSubmitting === '1') return;
             var nick = form.querySelector('[name=nickname]');
             var email = form.querySelector('[name=email]');
             var content = form.querySelector('[name=content]');
@@ -1278,20 +1340,24 @@
                 }
                 applyCommentIdentityToForm(form, identity);
             }
+            var normalizedContent = content ? stripReplyMentionPrefix(content.value, form.dataset.replyPrefix).trim() : '';
             if (nick && !nick.value.trim()) { openNavIdentityDialog(); return; }
             if (email && !email.value.trim()) { openNavIdentityDialog(); return; }
-            if (content && content.value.trim().length < 2) { frontToast('评论内容太短了', 'error'); content.focus(); return; }
+            if (content && normalizedContent.length < 2) { frontToast('评论内容太短了', 'error'); content.focus(); return; }
 
-            var btn = form.querySelector('button[type=submit]') || form.querySelector('button');
-            if (btn) btn.disabled = true;
+            setCommentSubmitLoading(form, true);
             saveCommentIdentity(form);
+            var formData = new FormData(form);
+            if (content) {
+                formData.set('content', normalizedContent);
+            }
 
             fetch('/comment/submit', {
                 method: 'POST',
                 headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                body: new FormData(form)
+                body: formData
             }).then(function(r) { return r.json(); }).then(function(d) {
-                if (btn) btn.disabled = false;
+                setCommentSubmitLoading(form, false);
                 if (captchaImg) captchaImg.src = '/captcha?t=' + Date.now();
                 var captchaInput = form.querySelector('[name=captcha]');
                 if (captchaInput) captchaInput.value = '';
@@ -1305,6 +1371,7 @@
                 var pid = form.querySelector('[name=parent_id]');
                 if (pid) pid.value = '0';
                 form.classList.remove('is-replying');
+                form.dataset.replyPrefix = '';
 
                 if (d.comment) {
                     d.comment.pending = !!d.pending || !!d.comment.pending;
@@ -1320,7 +1387,7 @@
                 }
                 form.dataset.replyTo = '';
             }).catch(function() {
-                if (btn) btn.disabled = false;
+                setCommentSubmitLoading(form, false);
                 frontToast('网络错误，提交失败', 'error');
             });
         });
@@ -1341,14 +1408,16 @@
             if (parentInput) {
                 parentInput.value = btn.dataset.parentId || '0';
             }
-            // 记录被回复者昵称(用于提交后展示"回复者 › 被回复者"),不再往输入框塞 @昵称
+            // 记录被回复者昵称,并在输入框显示 @昵称 作为当前回复状态。
             form.dataset.replyTo = (btn.dataset.nickname || '').trim();
+            setReplyMention(form, textarea, form.dataset.replyTo);
 
             form.classList.add('is-replying');
             form.scrollIntoView({ behavior: 'smooth', block: 'center' });
             if (textarea) {
+                var caret = (form.dataset.replyPrefix || '').length;
                 textarea.focus();
-                textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+                textarea.setSelectionRange(caret, caret);
             }
         });
     }
@@ -1413,13 +1482,23 @@
             if (commentScopeNeedsIdentity(target) && !hasUsableCommentIdentity()) {
                 openNavIdentityDialog({
                     onSave: function() {
-                        if (target) target.classList.add('is-open');
+                        if (target) {
+                            target.classList.add('is-open');
+                            var musicCard = target.closest('.home-music-card');
+                            if (musicCard && target.classList.contains('music-share-comments')) {
+                                musicCard.classList.add('is-comments-open');
+                            }
+                        }
                     }
                 });
                 return;
             }
             if (target) {
                 target.classList.toggle('is-open');
+                var homeMusicCard = target.closest('.home-music-card');
+                if (homeMusicCard && target.classList.contains('music-share-comments')) {
+                    homeMusicCard.classList.toggle('is-comments-open', target.classList.contains('is-open'));
+                }
             }
         });
     }
@@ -1804,43 +1883,11 @@
         }
 
         function stripCardLrc(text) {
-            text = String(text || '').replace(/\r\n?/g, '\n');
-            if (!/\[\d{1,2}:\d{2}(?:[.:]\d{1,3})?\]/.test(text)) {
-                return text;
-            }
-            return text.split('\n').map(function(line) {
-                line = line.trim();
-                if (!line || /^\[(ti|ar|al|by|offset|length|re):[^\]]*\]$/i.test(line)) {
-                    return '';
-                }
-                return line.replace(/(?:\[\d{1,2}:\d{2}(?:[.:]\d{1,3})?\])+/g, '').trim();
-            }).filter(Boolean).join('\n');
+            return plainLrcText(text);
         }
 
         function parseCardLrc(text) {
-            text = String(text || '').replace(/\r\n?/g, '\n');
-            var rows = [];
-            text.split('\n').forEach(function(line) {
-                line = line.trim();
-                if (!line || /^\[(ti|ar|al|by|offset|length|re):[^\]]*\]$/i.test(line)) {
-                    return;
-                }
-                var labels = line.match(/\[\d{1,2}:\d{2}(?:[.:]\d{1,3})?\]/g) || [];
-                var lyric = line.replace(/(?:\[\d{1,2}:\d{2}(?:[.:]\d{1,3})?\])+/g, '').trim();
-                if (!labels.length || !lyric) return;
-                labels.forEach(function(label) {
-                    var match = label.match(/\[(\d{1,2}):(\d{2})(?:[.:](\d{1,3}))?\]/);
-                    if (!match) return;
-                    var fraction = match[3] || '0';
-                    var ms = parseInt(fraction.padEnd(3, '0').slice(0, 3), 10) || 0;
-                    rows.push({
-                        time: (parseInt(match[1], 10) || 0) * 60 + (parseInt(match[2], 10) || 0) + ms / 1000,
-                        text: lyric
-                    });
-                });
-            });
-            rows.sort(function(a, b) { return a.time - b.time; });
-            return rows;
+            return parseLrcText(text);
         }
 
         function isCardLyricMetaLine(line, titleText, artistText) {
@@ -1904,16 +1951,15 @@
             lyricIndex = next;
             var windowStart = Math.max(0, next - 2);
             var windowEnd = Math.min(spans.length - 1, next + 2);
-            var missingBefore = Math.max(0, 2 - next);
-            var lyricLineHeight = parseFloat(getComputedStyle(lyricsEl).getPropertyValue('--home-music-lyric-line')) || 18;
-            lyricsEl.style.setProperty('--home-music-lyric-pad-top', (missingBefore * lyricLineHeight) + 'px');
             spans.forEach(function(span, index) {
                 var distance = Math.abs(index - next);
                 span.classList.toggle('is-active', index === next);
                 span.classList.toggle('lyric-distance-1', distance === 1);
                 span.classList.toggle('lyric-distance-2', distance >= 2);
-                span.hidden = timedLyrics.length > 5 && (index < windowStart || index > windowEnd);
+                span.hidden = false;
+                span.classList.toggle('is-outside-window', timedLyrics.length > 5 && (index < windowStart || index > windowEnd));
             });
+            scrollLyricContainerToActive(lyricsEl, spans[next]);
         }
 
         function loadCardLyrics() {
@@ -1923,7 +1969,7 @@
                 renderCardLyrics(localLyrics);
                 return;
             }
-            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            fetch(lyricFetchUrl(url), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                 .then(function(res) {
                     if (!res.ok) throw new Error('lyrics failed');
                     return res.text();
@@ -2022,6 +2068,7 @@
                 homeMusicAudioState.card = card;
             }
             if (audio.paused) {
+                openHomeMusicComments();
                 var playing = audio.play();
                 if (playing && typeof playing.catch === 'function') {
                     playing.catch(function() {
@@ -2032,6 +2079,14 @@
             } else {
                 audio.pause();
             }
+        }
+
+        function openHomeMusicComments() {
+            var homeMusicCard = card.closest('.home-music-card');
+            var commentPanel = homeMusicCard ? homeMusicCard.querySelector('.music-share-comments') : null;
+            if (!commentPanel) return;
+            commentPanel.classList.add('is-open');
+            homeMusicCard.classList.add('is-comments-open');
         }
 
         btn.addEventListener('click', function(e) {
@@ -2048,11 +2103,7 @@
             card.classList.add('playing');
             startRecordSpin();
             if (icon) icon.className = 'fa-solid fa-pause';
-            var homeMusicCard = card.closest('.home-music-card');
-            var commentPanel = homeMusicCard ? homeMusicCard.querySelector('.music-share-comments') : null;
-            if (commentPanel) {
-                commentPanel.classList.add('is-open');
-            }
+            openHomeMusicComments();
         });
         audio.addEventListener('pause', function() {
             if (!ownsHomeMusicAudio()) return;
@@ -2171,6 +2222,136 @@
         }
     }
 
+    function lrcTimestampPattern() {
+        return /\[(\d{1,3}):([0-5]?\d)(?:[.:](\d{1,3}))?\]/g;
+    }
+
+    function lrcWordTimestampPattern() {
+        return /<\d{1,3}:[0-5]?\d(?:[.:]\d{1,3})?>/g;
+    }
+
+    function normalizeLrcSource(text) {
+        return String(text || '')
+            .replace(/^\uFEFF/, '')
+            .replace(/\r\n?/g, '\n');
+    }
+
+    function isLrcMetaLine(line) {
+        return /^\s*\[(?:ti|ar|al|au|by|offset|length|re|ve|tool|encoding|kana|language):[^\]]*\]\s*$/i.test(line);
+    }
+
+    function lrcOffsetSeconds(text) {
+        var match = normalizeLrcSource(text).match(/^\s*\[offset:([+-]?\d+)\]\s*$/im);
+        return match ? ((parseInt(match[1], 10) || 0) / 1000) : 0;
+    }
+
+    function lrcMatchTime(match, offset) {
+        var fraction = match[3] || '0';
+        var ms = parseInt(fraction.padEnd(3, '0').slice(0, 3), 10) || 0;
+        var seconds = (parseInt(match[1], 10) || 0) * 60
+            + (parseInt(match[2], 10) || 0)
+            + ms / 1000
+            + (offset || 0);
+        return Math.max(0, seconds);
+    }
+
+    function hasTimedLrc(text) {
+        return lrcTimestampPattern().test(normalizeLrcSource(text));
+    }
+
+    function plainLrcText(text) {
+        text = normalizeLrcSource(text);
+        if (!hasTimedLrc(text)) {
+            return text;
+        }
+        return text.split('\n').map(function(line) {
+            line = line.trim();
+            if (!line || isLrcMetaLine(line)) {
+                return '';
+            }
+            return line
+                .replace(lrcTimestampPattern(), '')
+                .replace(lrcWordTimestampPattern(), '')
+                .trim();
+        }).filter(Boolean).join('\n');
+    }
+
+    function parseLrcText(text) {
+        text = normalizeLrcSource(text);
+        var offset = lrcOffsetSeconds(text);
+        var rows = [];
+        var seen = {};
+        text.split('\n').forEach(function(line) {
+            line = line.trim();
+            if (!line || isLrcMetaLine(line)) {
+                return;
+            }
+            var timeRe = lrcTimestampPattern();
+            var matches = [];
+            var match;
+            while ((match = timeRe.exec(line)) !== null) {
+                matches.push(match);
+            }
+            if (!matches.length) {
+                return;
+            }
+            var lyric = line
+                .replace(lrcTimestampPattern(), '')
+                .replace(lrcWordTimestampPattern(), '')
+                .trim();
+            if (!lyric) {
+                return;
+            }
+            matches.forEach(function(timeMatch) {
+                var time = lrcMatchTime(timeMatch, offset);
+                var key = time.toFixed(3) + '\n' + lyric;
+                if (seen[key]) {
+                    return;
+                }
+                seen[key] = true;
+                rows.push({ time: time, text: lyric });
+            });
+        });
+        rows.sort(function(a, b) {
+            if (a.time === b.time) {
+                return a.text.localeCompare(b.text);
+            }
+            return a.time - b.time;
+        });
+        return rows;
+    }
+
+    function scrollLyricContainerToActive(container, active) {
+        if (!container || !active) {
+            return;
+        }
+        var scrollToActive = function() {
+            var top = active.offsetTop - (container.clientHeight / 2) + (active.offsetHeight / 2);
+            container.scrollTop = Math.max(0, top);
+        };
+        if (window.requestAnimationFrame) {
+            window.requestAnimationFrame(scrollToActive);
+        } else {
+            scrollToActive();
+        }
+    }
+
+    function lyricFetchUrl(url) {
+        url = String(url || '').trim();
+        if (!url) {
+            return '';
+        }
+        try {
+            var parsed = new URL(url, window.location.href);
+            if ((parsed.protocol === 'http:' || parsed.protocol === 'https:') && parsed.origin !== window.location.origin) {
+                return '/music/lyrics/fetch?url=' + encodeURIComponent(parsed.href);
+            }
+        } catch (e) {
+            return url;
+        }
+        return url;
+    }
+
     function bindMusicDiscPlayer(player) {
         if (player.dataset.lnBound) return; player.dataset.lnBound = '1';
         var audio = player.querySelector('audio');
@@ -2232,51 +2413,18 @@
         }
 
         function stripLrc(text) {
-            text = String(text || '').replace(/\r\n?/g, '\n');
-            if (!/\[\d{1,2}:\d{2}(?:[.:]\d{1,3})?\]/.test(text)) {
-                return text;
-            }
-            return text.split('\n').map(function(line) {
-                line = line.trim();
-                if (!line || /^\[(ti|ar|al|by|offset|length|re):[^\]]*\]$/i.test(line)) {
-                    return '';
-                }
-                return line.replace(/(?:\[\d{1,2}:\d{2}(?:[.:]\d{1,3})?\])+/g, '').trim();
-            }).filter(Boolean).join('\n');
+            return plainLrcText(text);
         }
 
         function parseLrc(text) {
-            text = String(text || '').replace(/\r\n?/g, '\n');
-            var timed = [];
-            text.split('\n').forEach(function(line) {
-                line = line.trim();
-                if (!line || /^\[(ti|ar|al|by|offset|length|re):[^\]]*\]$/i.test(line)) {
-                    return;
-                }
-                var labels = line.match(/\[\d{1,2}:\d{2}(?:[.:]\d{1,3})?\]/g) || [];
-                var lyric = line.replace(/(?:\[\d{1,2}:\d{2}(?:[.:]\d{1,3})?\])+/g, '').trim();
-                if (!labels.length || !lyric) {
-                    return;
-                }
-                labels.forEach(function(label) {
-                    var match = label.match(/\[(\d{1,2}):(\d{2})(?:[.:](\d{1,3}))?\]/);
-                    if (!match) return;
-                    var fraction = match[3] || '0';
-                    var ms = parseInt(fraction.padEnd(3, '0').slice(0, 3), 10) || 0;
-                    timed.push({
-                        time: (parseInt(match[1], 10) || 0) * 60 + (parseInt(match[2], 10) || 0) + ms / 1000,
-                        text: lyric
-                    });
-                });
-            });
-            timed.sort(function(a, b) { return a.time - b.time; });
-            return timed;
+            return parseLrcText(text);
         }
 
         function renderLyrics(text, fallback) {
             if (!lyricsEls.length) return;
             lyricsEls.forEach(function(lyricsEl) {
                 lyricsEl.innerHTML = '';
+                lyricsEl.scrollTop = 0;
             });
             currentLyrics = parseLrc(text);
             currentLyricIndex = -1;
@@ -2321,7 +2469,7 @@
                 renderLyrics(lyricsCache[url], fallbackLabel || '');
                 return;
             }
-            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            fetch(lyricFetchUrl(url), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                 .then(function(res) {
                     if (!res.ok) throw new Error('lyrics failed');
                     return res.text();
@@ -2368,10 +2516,7 @@
                 });
                 var active = spans[next];
                 if (active) {
-                    // 在固定高度的歌词窗口内滚动,让当前行居中(不滚动整页/不撑大卡片)
-                    // 用 scrollTop 直接赋值(overflow:hidden 不支持 scrollTo 的 smooth 行为),
-                    // 平滑由 CSS scroll-behavior:smooth 提供
-                    lyricsEl.scrollTop = Math.max(0, active.offsetTop - (lyricsEl.clientHeight / 2) + (active.offsetHeight / 2));
+                    scrollLyricContainerToActive(lyricsEl, active);
                 }
             });
         }
@@ -2459,6 +2604,11 @@
                 if (parentInput) parentInput.value = '0';
                 commentForm.classList.remove('is-replying');
                 commentForm.dataset.replyTo = '';
+                commentForm.dataset.replyPrefix = '';
+                var contentInput = commentForm.querySelector('[name=content]');
+                if (contentInput) {
+                    contentInput.value = stripReplyMentionPrefix(contentInput.value, '');
+                }
             }
         }
 
@@ -2672,6 +2822,8 @@
             var panel = btn.closest('.music-share-comments');
             if (panel) {
                 panel.classList.remove('is-open');
+                var card = panel.closest('.home-music-card');
+                if (card) card.classList.remove('is-comments-open');
             }
         });
     }

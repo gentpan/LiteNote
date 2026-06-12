@@ -767,6 +767,36 @@ html[data-theme="light"] .home-talk-card .home-actions {
     color: var(--c-primary);
 }
 
+.home-card.home-x-card.x-card .talk-comments.is-open:not(.music-share-comments) {
+    padding-bottom: var(--sp-28);
+}
+
+.home-card.home-x-card.x-card
+    .talk-comments:not(.music-share-comments)
+    > .comment-form {
+    margin-bottom: 0;
+}
+
+.home-card.home-x-card.x-card
+    .talk-comments:not(.music-share-comments)
+    > .comment-form
+    button[type="submit"]
+    i {
+    display: block;
+    font-size: 15px;
+    line-height: 1;
+    color: var(--c-white);
+    transform: translate(-1px, 0);
+}
+
+.home-card.home-x-card.x-card
+    .talk-comments:not(.music-share-comments)
+    > .comment-form
+    button[type="submit"].is-loading
+    i {
+    display: none;
+}
+
 html[data-theme] .home-card.home-x-card:not(.x-card),
 html[data-theme] .talk-card.home-x-card {
     padding: 0;
@@ -1878,6 +1908,12 @@ html[data-theme="dark"] .music-talk-card .home-actions {
     box-shadow: var(--shadow-sm);
 }
 
+.home-music-card.is-comments-open {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+}
+
 html[data-theme] .home-card.home-music-card {
     color: var(--home-music-fg);
     background: var(--home-music-bg);
@@ -2313,12 +2349,18 @@ html[data-theme="dark"] .home-music-bg::after {
     margin-top: var(--sp-18);
     margin-left: 0;
     overflow: hidden;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
     font-size: var(--fs-xs);
     line-height: 1.42;
     color: var(--home-music-dim);
     text-align: center;
     -webkit-mask-image: none;
     mask-image: none;
+}
+
+.home-music-card .music-card-lyric-skin .home-music-lyrics::-webkit-scrollbar {
+    display: none;
 }
 
 .home-music-card .music-card-lyric-skin .home-music-lyrics span {
@@ -2712,29 +2754,61 @@ html[data-theme="dark"] .home-music-bg::after {
 }
 
 .home-music-card .music-share-comment-form {
-    padding: var(--sp-16);
-    margin-top: 0;
+    position: relative;
+    display: block;
+    min-height: 170px;
+    padding: var(--sp-16) var(--sp-18) 66px;
+    margin-top: var(--sp-14);
+    overflow: hidden;
     background: color-mix(
         in srgb,
         var(--home-music-accent) 4%,
         var(--home-music-bg)
     );
-    border: 1px solid var(--home-music-line);
+    border: 2px solid
+        color-mix(in srgb, var(--home-music-accent) 16%, var(--home-music-line));
     border-radius: var(--radius-sm);
 }
 
 .home-music-card .music-share-comment-form textarea,
 .home-music-card .music-share-comment-form input {
     color: var(--home-music-fg);
-    background: var(--home-music-bg);
-    border-color: var(--home-music-line);
+    background: transparent;
+    border: 0 !important;
+    border-bottom: 1px dashed var(--home-music-line) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
 }
 
 html[data-theme] .home-music-card .music-share-comment-form textarea,
 html[data-theme] .home-music-card .music-share-comment-form input {
     color: var(--home-music-fg);
-    background: var(--home-music-bg);
+    background: transparent;
     border-color: var(--home-music-line);
+    box-shadow: none;
+}
+
+.home-music-card .music-share-comment-form textarea {
+    min-height: 116px;
+    padding: var(--sp-6) 0 var(--sp-24);
+    margin-top: 0;
+    line-height: 1.7;
+    resize: none;
+    border-bottom: 0 !important;
+}
+
+.home-music-card .music-share-comment-form input:focus,
+.home-music-card .music-share-comment-form textarea:focus {
+    outline: none;
+    border-color: var(--home-music-accent);
+    box-shadow: none;
+}
+
+.home-music-card .music-share-comment-form .form-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--sp-12);
+    margin: 0 0 var(--sp-12);
 }
 
 .home-music-card .music-share-comment-form textarea::placeholder,
@@ -2746,58 +2820,95 @@ html[data-theme] .home-music-card .music-share-comment-form input {
     .music-share-comment-form
     .comment-actions
     button[type="submit"] {
-    min-height: 30px;
-    padding: 0 var(--sp-14);
-    font-size: var(--fs-xs);
+    display: inline-grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    min-height: 42px;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+    font-size: 0;
     line-height: 1;
-    color: var(--c-white);
+    font-weight: 500;
+    color: transparent;
     background: var(--home-music-accent);
-}
-
-.home-music-card .music-share-comment-form .comment-actions {
-    display: flex;
-    gap: var(--sp-8);
-    align-items: center;
-    justify-content: flex-end;
+    border: 1px solid var(--home-music-accent);
+    border-radius: var(--radius-pill);
+    box-shadow: none;
 }
 
 .home-music-card
     .music-share-comment-form
-    .comment-profile-toggle:not([hidden]) {
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-}
-
-.home-music-card .music-share-comment-form .comment-profile-toggle {
-    width: 32px;
-    height: 32px;
-    min-height: 32px;
-    padding: 0 !important;
-    margin-right: auto;
-    overflow: hidden;
-    cursor: pointer;
-    background: var(--home-music-bg);
-    border: 1px solid var(--home-music-line);
-    border-radius: 50%;
-    box-shadow: 0 4px 12px rgba(26, 26, 26, 0.08);
-}
-
-.home-music-card .music-share-comment-form .comment-profile-toggle img {
+    .comment-actions
+    button[type="submit"]
+    i {
     display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 50%;
+    font-size: 16px;
+    line-height: 1;
+    color: var(--c-white);
+    transform: translate(-1px, 1px);
 }
 
-.home-music-card .music-share-comment-form .comment-profile-toggle:hover {
-    border-color: color-mix(
-        in srgb,
-        var(--home-music-accent) 42%,
-        var(--home-music-line)
-    );
+.home-music-card
+    .music-share-comment-form
+    .comment-actions
+    button[type="submit"].is-loading
+    i {
+    display: none;
+}
+
+.home-music-card
+    .music-share-comment-form
+    .comment-actions
+    button[type="submit"].is-loading::before {
+    content: "";
+    width: 17px;
+    height: 17px;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-top-color: var(--c-white);
+    border-radius: 50%;
+    animation: ln-comment-submit-spin 0.78s linear infinite;
+}
+
+.home-music-card
+    .music-share-comment-form
+    .comment-actions
+    button[type="submit"]:disabled {
+    cursor: wait;
+    opacity: 0.92;
+    transform: none;
+}
+
+.home-music-card
+    .music-share-comment-form
+    .comment-actions
+    button[type="submit"]:hover {
+    color: var(--c-white);
+    background: var(--home-music-accent);
+    border-color: var(--home-music-accent);
     transform: translateY(-1px);
+}
+
+.home-music-card
+    .music-share-comment-form
+    .comment-actions
+    button[type="submit"]:disabled:hover {
+    background: var(--home-music-accent);
+    transform: none;
+}
+
+.home-music-card .music-share-comment-form .comment-actions {
+    position: absolute;
+    right: var(--sp-24);
+    bottom: var(--sp-20);
+    left: var(--sp-24);
+    display: flex;
+    gap: var(--sp-8);
+    align-items: center;
+    justify-content: flex-end;
+    margin: 0;
 }
 
 @media (max-width: 860px) {
@@ -3560,6 +3671,50 @@ html[data-theme] .archive-post-row:hover {
 html[data-theme] .post-card.has-cover:hover .home-post-cover img,
 html[data-theme] .post-feature-card:hover .post-feature-cover img {
     transform: scale(1.05) !important;
+}
+
+/* Final article-card hover contract: card shells stay fixed; cover media may zoom only inside clipped media boxes. */
+.home-list .post-card:hover,
+.post-list .post-feature-card:hover,
+.post-list .post-compact-row:hover,
+.category-page .category-post-list .category-post-card:hover,
+.post-detail .post-hero-card:hover,
+.post-detail .post-body-card:hover,
+html[data-theme] .home-list .post-card:hover,
+html[data-theme] .post-list .post-feature-card:hover,
+html[data-theme] .post-list .post-compact-row:hover,
+html[data-theme] .category-page .category-post-list .category-post-card:hover,
+html[data-theme] .post-detail .post-hero-card:hover,
+html[data-theme] .post-detail .post-body-card:hover {
+    border-color: var(--c-border) !important;
+    box-shadow: var(--shadow-sm) !important;
+    transform: none !important;
+}
+
+.post-detail .post-hero-card:hover,
+.post-detail .post-body-card:hover,
+html[data-theme] .post-detail .post-hero-card:hover,
+html[data-theme] .post-detail .post-body-card:hover {
+    border-color: transparent !important;
+    box-shadow: none !important;
+}
+
+.home-list .post-card.has-cover:hover,
+.category-page .category-post-list .category-post-card.has-cover:hover,
+html[data-theme] .home-list .post-card.has-cover:hover,
+html[data-theme] .category-page .category-post-list .category-post-card.has-cover:hover {
+    overflow: hidden !important;
+}
+
+.home-list .post-card:not(.has-cover):hover img,
+.post-list .post-compact-row:hover img,
+.post-detail .post-hero-card:hover img,
+.post-detail .post-body-card:hover img,
+html[data-theme] .home-list .post-card:not(.has-cover):hover img,
+html[data-theme] .post-list .post-compact-row:hover img,
+html[data-theme] .post-detail .post-hero-card:hover img,
+html[data-theme] .post-detail .post-body-card:hover img {
+    transform: none !important;
 }
 
 .home-music-player .home-music-tonearm-img,

@@ -14,7 +14,7 @@ namespace App\Services;
  *
  * 用法:
  *   <img src="{{ Gravatar::url($user->email, 80) }}">
- *   <img src="{{ Gravatar::url('foo@bar.com', 60, 'identicon') }}">
+ *   <img src="{{ Gravatar::url('foo@bar.com', 60) }}">
  */
 final class Gravatar
 {
@@ -29,12 +29,8 @@ final class Gravatar
      *
      * @param string      $email   邮箱(任意大小写、含前后空格均可)
      * @param int         $size    像素(1~2048),正方形
-     * @param string|null $default 默认头像类型:
-     *                              - 404         : 找不到返回 404
-     *                              - mp / identicon / monsterid / wavatar / retro / robohash
-     *                              - blank       : 1x1 透明
-     *                              - URL 字符串  : 302 跳转到该 URL
-     * @param string|null $rating  g / pg / r / x
+     * @param string|null $default 保留兼容旧调用,当前不再输出 d 参数
+     * @param string|null $rating  保留兼容旧调用,当前不再输出 r 参数
      * @param bool        $secure  true=https(默认), false=http
      * @return string 完整头像 URL
      */
@@ -49,12 +45,10 @@ final class Gravatar
         $scheme = $secure ? 'https' : 'http';
         $host = self::host();
 
-        // 仅保留标准且有用的参数:s(尺寸) + d(无头像时的兜底图,如 identicon)。
-        // r(评级)不写时 Gravatar 默认即 g,冗余;原 v=1.3 是写死的固定值,刷不了缓存,已移除。
-        $query = http_build_query(array_filter([
+        // 系统内头像 URL 只保留尺寸参数,避免 d/r/v 等冗余参数污染缓存和展示。
+        $query = http_build_query([
             's' => max(1, min(2048, $size)),
-            'd' => $default,
-        ]));
+        ]);
 
         return sprintf('%s://%s/avatar/%s?%s', $scheme, $host, $hash, $query);
     }

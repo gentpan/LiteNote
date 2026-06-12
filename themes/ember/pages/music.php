@@ -102,25 +102,25 @@
                              data-comment-count="{{ count($songComments) }}"
                              @if((int)$index !== 0) hidden @endif>
                             @if(!empty($songComments))
-                                <ul class="music-song-comment-list">
+                                <ul class="comment-list music-song-comment-list">
                                     @foreach($songComments as $cmt)
                                         @php
                                             $songCommentIndex++;
                                             // 博主标识只认「登录管理员发的评论」(is_author),不按邮箱/网址/昵称/位置,杜绝冒充
                                             $isFeaturedComment = (int)($cmt->is_author ?? 0) === 1;
                                         @endphp
-                                        <li class="music-song-comment {{ $isFeaturedComment ? 'is-featured' : '' }}" data-id="{{ $cmt->id }}">
-                                            <span class="music-song-comment-avatar">
+                                        <li class="comment-item music-song-comment {{ $isFeaturedComment ? 'is-featured' : '' }}" data-id="{{ $cmt->id }}">
+                                            <span class="comment-avatar music-song-comment-avatar">
                                                 <img src="{{ $cmt->getAvatarUrl(80) }}" alt="{{ $cmt->nickname }}" loading="lazy" width="48" height="48">
                                             </span>
-                                            <div class="music-song-comment-body">
-                                                <div class="music-song-comment-meta">
+                                            <div class="comment-body music-song-comment-body">
+                                                <div class="comment-meta music-song-comment-meta">
                                                     @php $commentAuthor = $cmt; @endphp
                                     @include('partials.comment-author-link')
                                                     @if($isFeaturedComment)<em>博主</em>@endif
                                                     <span>{!! \App\Core\Helper::timeTag($cmt->created_at) !!}</span>
                                                 </div>
-                                                <div class="music-song-comment-content">{{ preg_replace('/^@\S+\s*/u', '', (string) $cmt->content) }}</div>
+                                                <div class="comment-content music-song-comment-content">{{ preg_replace('/^@\S+\s*/u', '', (string) $cmt->content) }}</div>
                                             </div>
                                         </li>
                                     @endforeach
@@ -148,16 +148,7 @@
                         <div class="music-comment-composer">
                             <textarea name="content" rows="4" placeholder="写下这首歌带来的片刻..." required></textarea>
                             <div class="comment-actions">
-                                @if(!empty($currentAdmin))
-                                    <button type="button" class="comment-profile-toggle comment-profile-toggle-admin" aria-label="当前登录头像">
-                                        <img class="comment-admin-avatar" src="{{ $currentAdmin->getAvatarUrl(80) }}" alt="">
-                                    </button>
-                                @else
-                                    <button type="button" class="comment-profile-toggle" data-comment-profile-toggle aria-label="切换评论资料" hidden>
-                                        <img class="comment-admin-avatar" src="{{ \App\Services\Gravatar::url('', 80) }}" alt="" data-comment-profile-avatar data-comment-avatar-default="{{ \App\Services\Gravatar::url('', 80) }}">
-                                    </button>
-                                @endif
-                                <button type="submit">提交评论</button>
+                                <button type="submit" aria-label="提交评论"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i></button>
                             </div>
                         </div>
                     </form>

@@ -48,25 +48,35 @@
 
     <div class="talk-comments" id="talk-comments-{{ $s->id }}">
         @if(!empty($comments))
-            <ul class="talk-comment-list">
+            <ul class="comment-list talk-comment-list">
                 @foreach(\App\Core\Helper::nestComments($comments) as $thread)
                     @php $cmt = $thread['comment']; @endphp
-                    <li data-id="{{ $cmt->id }}">
-                        @php $commentAuthor = $cmt; @endphp
-                        @include('partials.comment-author-link')
-                        <span class="comment-time">· {!! \App\Core\Helper::timeTag($cmt->created_at) !!}</span>
-                        <button type="button" class="comment-reply-btn" data-parent-id="{{ $cmt->id }}" data-nickname="{{ $cmt->nickname }}">回复</button>
-                        <span class="talk-comment-content">{{ $cmt->content }}</span>
+                    <li class="comment-item" data-id="{{ $cmt->id }}">
+                        <img class="comment-avatar" src="{{ $cmt->getAvatarUrl(40) }}" alt="{{ $cmt->nickname }}" loading="lazy" width="32" height="32">
+                        <div class="comment-body">
+                            <div class="comment-meta">
+                                @php $commentAuthor = $cmt; @endphp
+                                @include('partials.comment-author-link')
+                                <span class="comment-time">· {!! \App\Core\Helper::timeTag($cmt->created_at) !!}</span>
+                                <button type="button" class="comment-reply-btn" data-parent-id="{{ $cmt->id }}" data-nickname="{{ $cmt->nickname }}">回复</button>
+                            </div>
+                            <div class="comment-content talk-comment-content">{{ $cmt->content }}</div>
+                        </div>
                         @if(!empty($thread['replies']))
-                            <ul class="talk-reply-list">
+                            <ul class="comment-reply-list talk-reply-list">
                                 @foreach($thread['replies'] as $reply)
-                                    <li data-id="{{ $reply->id }}">
-                                        @php $commentAuthor = $reply; @endphp
-                                        @include('partials.comment-author-link')
-                                        @if(!empty($reply->reply_to_name))<span class="reply-arrow">›</span><span class="reply-target">{{ $reply->reply_to_name }}</span>@endif
-                                        <span class="comment-time">· {!! \App\Core\Helper::timeTag($reply->created_at) !!}</span>
-                                        <button type="button" class="comment-reply-btn" data-parent-id="{{ $reply->id }}" data-nickname="{{ $reply->nickname }}">回复</button>
-                                        <span class="talk-comment-content">{{ preg_replace('/^@\S+\s*/u', '', (string) $reply->content) }}</span>
+                                    <li class="comment-item comment-reply" data-id="{{ $reply->id }}">
+                                        <img class="comment-avatar" src="{{ $reply->getAvatarUrl(40) }}" alt="{{ $reply->nickname }}" loading="lazy" width="28" height="28">
+                                        <div class="comment-body">
+                                            <div class="comment-meta">
+                                                @php $commentAuthor = $reply; @endphp
+                                                @include('partials.comment-author-link')
+                                                @if(!empty($reply->reply_to_name))<span class="reply-arrow">›</span><span class="reply-target">{{ $reply->reply_to_name }}</span>@endif
+                                                <span class="comment-time">· {!! \App\Core\Helper::timeTag($reply->created_at) !!}</span>
+                                                <button type="button" class="comment-reply-btn" data-parent-id="{{ $reply->id }}" data-nickname="{{ $reply->nickname }}">回复</button>
+                                            </div>
+                                            <div class="comment-content talk-comment-content">{{ preg_replace('/^@\S+\s*/u', '', (string) $reply->content) }}</div>
+                                        </div>
                                     </li>
                                 @endforeach
                             </ul>
@@ -95,16 +105,7 @@
             @endif
             <textarea name="content" rows="3" placeholder="写评论..." required></textarea>
             <div class="comment-actions">
-                @if(!empty($currentAdmin))
-                    <button type="button" class="comment-profile-toggle comment-profile-toggle-admin" aria-label="当前登录头像">
-                        <img class="comment-admin-avatar" src="{{ $currentAdmin->getAvatarUrl(80) }}" alt="">
-                    </button>
-                @else
-                    <button type="button" class="comment-profile-toggle" data-comment-profile-toggle aria-label="切换评论资料" hidden>
-                        <img class="comment-admin-avatar" src="{{ \App\Services\Gravatar::url('', 80, 'mp') }}" alt="" data-comment-profile-avatar data-comment-avatar-default="{{ \App\Services\Gravatar::url('', 80, 'mp') }}">
-                    </button>
-                @endif
-                <button type="submit">提交评论</button>
+                <button type="submit" aria-label="提交评论"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i></button>
             </div>
         </form>
     </div>

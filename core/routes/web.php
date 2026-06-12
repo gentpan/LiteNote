@@ -46,6 +46,7 @@ $router->post('/talk/{id}/like',  [TalkController::class, 'like']);
 // 音乐
 $router->get('/music',            [MusicController::class, 'index']);
 $router->get('/music/lyrics/meting', [MusicController::class, 'metingLyrics']);
+$router->get('/music/lyrics/fetch', [MusicController::class, 'fetchLyrics']);
 $router->post('/music/{id}/like', [MusicController::class, 'like']);
 $router->post('/music/{id}/play', [MusicController::class, 'play']);
 

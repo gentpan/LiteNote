@@ -28,7 +28,6 @@
             <section class="archive-heat-panel">
                 <div class="archive-section-head">
                     <h2>近一年更新热力图</h2>
-                    <p>颜色按当天写作字数区分，500 / 1000 / 1500 / 2000 字逐级加深</p>
                 </div>
                 <div class="archive-heat-scroll site-heatmap-scroll">
                     <div class="archive-heat-inner site-heatmap-inner" style="--weeks: {{ $heatmap['weeks'] ?? 53 }}">
