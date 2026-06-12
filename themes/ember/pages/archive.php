@@ -14,7 +14,7 @@
         <div class="archive-shell">
             <header class="archive-hero">
                 <div class="archive-title">
-                    <i class="fa-solid fa-box-archive"></i>
+                    <i class="fa-solid fa-box-archive" aria-hidden="true"></i>
                     <h1>归档</h1>
                 </div>
                 <div class="archive-stats" aria-label="站点归档统计">
@@ -65,7 +65,7 @@
 
             <section class="archive-categories">
                 <div class="archive-section-head archive-section-head-row">
-                    <h2><i class="fa-solid fa-folder-tree"></i> 分类</h2>
+                    <h2><i class="fa-solid fa-folder-tree" aria-hidden="true"></i> 分类</h2>
                     <p>{{ count($categoryCards ?? []) }} 个</p>
                 </div>
                 <div class="archive-category-panel">
@@ -81,7 +81,7 @@
                                 </div>
                                 <p>{{ $cat['description'] }}</p>
                                 <div class="archive-category-foot">
-                                    <span><i class="fa-regular fa-pen-to-square"></i> {{ $cat['latestTitle'] }}</span>
+                                    <span><i class="fa-regular fa-pen-to-square" aria-hidden="true"></i> {{ $cat['latestTitle'] }}</span>
                                     @if(!empty($cat['latestAt']))
                                         <time>{{ $cat['latestAt'] }}</time>
                                     @endif
@@ -117,8 +117,8 @@
                                         <i class="{{ $__categoryIcon }}"></i>
                                         <span class="archive-post-title">{{ $p['title'] }}</span>
                                         <span class="archive-post-meta">
-                                            <span><i class="fa-regular fa-comment"></i> {{ (int)($p['comments_count'] ?? 0) }}</span>
-                                            <span><i class="fa-regular fa-eye"></i> {{ (int)($p['views'] ?? 0) }}</span>
+                                            <span><i class="fa-regular fa-comment" aria-hidden="true"></i> {{ (int)($p['comments_count'] ?? 0) }}</span>
+                                            <span><i class="fa-regular fa-eye" aria-hidden="true"></i> {{ (int)($p['views'] ?? 0) }}</span>
                                         </span>
                                     </a>
                                 @endforeach

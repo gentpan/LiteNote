@@ -30,10 +30,10 @@
         </div>
         <div class="home-card-actions home-post-actions">
             <button type="button" class="home-action post-like-btn" data-id="{{ $item->id }}" aria-label="点赞">
-                <i class="fa-regular fa-thumbs-up"></i><span class="like-count">{{ $likesCount }}</span>
+                <i class="fa-regular fa-thumbs-up" aria-hidden="true"></i><span class="like-count">{{ $likesCount }}</span>
             </button>
             <span class="home-action post-comment-count" aria-label="评论数">
-                <i class="fa-regular fa-comment"></i><span>{{ $commentsCount }}</span>
+                <i class="fa-regular fa-comment" aria-hidden="true"></i><span>{{ $commentsCount }}</span>
             </span>
         </div>
     </footer>

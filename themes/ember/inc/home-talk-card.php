@@ -36,18 +36,18 @@
             <div class="home-card-meta home-talk-meta">
                 <span>{!! \App\Core\Helper::timeTag($item->publishedAt()) !!}</span>
                 @if($locationName !== '')
-                    <span class="home-talk-location" title="{{ $locationTitle }}"><i class="fa-solid fa-location-dot"></i>{{ $locationName }}</span>
+                    <span class="home-talk-location" title="{{ $locationTitle }}"><i class="fa-solid fa-location-dot" aria-hidden="true"></i>{{ $locationName }}</span>
                 @endif
                 @if($weatherText !== '')
-                    <span class="home-talk-weather"><i class="{{ $weatherIcon }}"></i>{{ $weatherText }}</span>
+                    <span class="home-talk-weather"><i class="fa-solid fa-cloud-sun" aria-hidden="true"></i>{{ $weatherText }}</span>
                 @endif
             </div>
             <div class="home-card-actions home-talk-side">
                 <button type="button" class="home-action talk-like-btn" data-id="{{ $item->id }}" aria-label="点赞">
-                    <i class="fa-regular fa-thumbs-up"></i><span class="like-count">{{ (int)($item->likes_count ?? 0) }}</span>
+                    <i class="fa-regular fa-thumbs-up" aria-hidden="true"></i><span class="like-count">{{ (int)($item->likes_count ?? 0) }}</span>
                 </button>
                 <button type="button" class="home-action talk-comment-toggle" data-target="talk-comments-{{ $item->id }}">
-                    <i class="fa-regular fa-comment"></i><span>{{ $commentCount }}</span>
+                    <i class="fa-regular fa-comment" aria-hidden="true"></i><span>{{ $commentCount }}</span>
                 </button>
             </div>
         </footer>
@@ -104,12 +104,12 @@
                     <input type="hidden" name="email" value="{{ $adminCommentEmail }}">
                 @else
                     <div class="form-row comment-profile-fields">
-                        <input type="text" name="nickname" placeholder="昵称 *" required>
-                        <input type="email" name="email" placeholder="邮箱 *" required>
-                        <input type="text" name="website" placeholder="网站(选填)">
+                        <input type="text" name="nickname" placeholder="昵称 *" autocomplete="nickname" required>
+                        <input type="email" name="email" placeholder="邮箱 *" autocomplete="email" required>
+                        <input type="text" name="website" placeholder="网站(选填)" autocomplete="url">
                     </div>
                 @endif
-                <textarea name="content" rows="3" placeholder="写评论..." required></textarea>
+                <textarea name="content" rows="3" placeholder="写评论..." autocomplete="off" required></textarea>
                 <div class="comment-actions">
                     <button type="submit" aria-label="提交评论"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i></button>
                 </div>

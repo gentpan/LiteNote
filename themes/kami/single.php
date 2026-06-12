@@ -37,8 +37,8 @@
                 <div class="post-content">{!! $__bodyHtml !!}</div>
                 <footer class="post-footer-meta">
                     <p class="post-meta">
-                        <span><i class="fa-regular fa-eye"></i> {{ $post->views }} 浏览</span>
-                        <span><i class="fa-regular fa-comments"></i> {{ count($comments) }} 评论</span>
+                        <span><i class="fa-regular fa-eye" aria-hidden="true"></i> {{ $post->views }} 浏览</span>
+                        <span><i class="fa-regular fa-comment" aria-hidden="true"></i> {{ count($comments) }} 评论</span>
                     </p>
                 </footer>
 

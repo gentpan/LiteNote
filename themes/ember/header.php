@@ -9,15 +9,22 @@
     {!! \App\Services\FaviconService::headHtml($site ?? []) !!}
     <link rel="alternate" type="application/rss+xml" title="{{ $site['title'] ?? 'LiteNote' }} RSS" href="/rss.xml">
     @yield('head')
-    <link rel="stylesheet" href="https://static.bluecdn.com/libs/fontawesome/7.2.0/css/all.min.css">
     @php
-        $themeCssFiles = [
+        $activeNavKey = (string)($activeNav ?? '');
+        $needsHomeCss = in_array($activeNavKey, ['home', 'posts'], true) || isset($category);
+        $needsArticleFont = isset($post)
+            || (isset($page) && is_object($page) && $page instanceof \App\Models\Page);
+        $needsLiteZoom = in_array($activeNavKey, ['home', 'talk'], true) || $needsArticleFont;
+        $themeCssFiles = array_filter([
             '/themes/ember/assets/main.css',
             '/themes/ember/assets/pages.css',
-            '/themes/ember/assets/home.css',
-        ];
+            $needsHomeCss ? '/themes/ember/assets/home.css' : null,
+        ]);
         $mainJs = '/themes/ember/assets/main.js';
     @endphp
+    <link rel="preconnect" href="https://static.bluecdn.com" crossorigin>
+    <link rel="preconnect" href="https://gravatar.bluecdn.com" crossorigin>
+    <link rel="stylesheet" href="https://static.bluecdn.com/libs/fontawesome/7.2.0/css/all.min.css">
     <script>
         (function() {
             try {
@@ -53,9 +60,11 @@
         $heroTitleFontCss = $articleFontCssMap['kuaikan'];
         $heroTitleFontFamily = '"快看世界体", "Source Han Serif CN VF", "Source Han Serif SC", "Songti SC", serif';
     @endphp
-    <link rel="stylesheet" href="{{ $articleFontCss }}">
-    @if($articleFontCss !== $heroTitleFontCss)
-        <link rel="stylesheet" href="{{ $heroTitleFontCss }}">
+    @if($needsArticleFont)
+        <link rel="stylesheet" href="{{ $articleFontCss }}">
+        @if($articleFontCss !== $heroTitleFontCss)
+            <link rel="stylesheet" href="{{ $heroTitleFontCss }}">
+        @endif
     @endif
     <style>
         :root {
@@ -95,7 +104,7 @@
                 continue;
             }
             $navMainItems[] = $navItem;
-            // 移动端底栏默认只显示 文章/滔客/Xmarks/动态;音乐、友链 收进「更多」(桌面端仍在导航条)
+            // 移动端底栏默认只显示 文章/滔客/书签/动态;音乐、友链 收进「更多」(桌面端仍在导航条)
             if (in_array($navItemSlug, ['music', 'friends'], true)) {
                 $navMoreDemoted[] = $navItem;
             }
@@ -124,30 +133,30 @@
                         @if(!empty($author))
                             <img class="nav-avatar-img" src="{{ $author->getAvatarUrl(40) }}" alt="{{ $author->nickname }}" width="32" height="32" loading="lazy" data-blogger-avatar="{{ $author->getAvatarUrl(40) }}" data-blogger-name="{{ $author->nickname ?: $author->username }}">
                         @else
-                            <span class="nav-avatar-fallback"><i class="fa-solid fa-house"></i></span>
+                            <span class="nav-avatar-fallback"><i class="fa-solid fa-house" aria-hidden="true"></i></span>
                         @endif
-                        <span class="nav-avatar-home" aria-hidden="true"><i class="fa-solid fa-house"></i></span>
+                        <span class="nav-avatar-home" aria-hidden="true"><i class="fa-solid fa-house" aria-hidden="true"></i></span>
                     </a>
                     <div class="nav-identity-actions" aria-label="头像快捷菜单">
                         @if(!empty($currentAdmin))
-                            <a class="nav-identity-action nav-identity-profile" href="/admin/logout" aria-label="登出" title="登出"><i class="fa-solid fa-right-from-bracket"></i></a>
+                            <a class="nav-identity-action nav-identity-profile" href="/admin/logout" aria-label="登出" title="登出"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i></a>
                         @else
-                            <button type="button" class="nav-identity-action nav-identity-profile" data-login-open aria-label="登录" title="登录"><i class="fa-solid fa-right-to-bracket"></i></button>
+                            <button type="button" class="nav-identity-action nav-identity-profile" data-login-open aria-label="登录" title="登录"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i></button>
                         @endif
-                        <a class="nav-identity-action nav-identity-about" href="/about" aria-label="关于我" title="关于我"><i class="fa-regular fa-circle-user"></i></a>
-                        <a class="nav-identity-action nav-identity-archives" href="/archives" aria-label="归档" title="归档"><i class="fa-solid fa-box-archive"></i></a>
+                        <a class="nav-identity-action nav-identity-about" href="/about" aria-label="关于我" title="关于我"><i class="fa-regular fa-circle-user" aria-hidden="true"></i></a>
+                        <a class="nav-identity-action nav-identity-archives" href="/archives" aria-label="归档" title="归档"><i class="fa-solid fa-box-archive" aria-hidden="true"></i></a>
                     </div>
                 </div>
                 <div class="nav-main-links">
                     <a href="/posts" class="nav-link nav-dd-trigger {{ ($activeNav ?? '') === 'posts' ? 'active' : '' }}" aria-haspopup="true">
-                        <i class="fa-regular fa-newspaper nav-link-icon" aria-hidden="true"></i>
+                        <i class="fa-regular fa-file-lines nav-link-icon" aria-hidden="true"></i>
                         <span>文章</span>
-                        <i class="fa-solid fa-chevron-down nav-dd-caret"></i>
+                        <i class="fa-solid fa-chevron-down nav-dd-caret" aria-hidden="true"></i>
                     </a>
                     @foreach($navMainItems as $navItem)
                         @php $navItemActive = ($activeNav ?? '') === ($navItem['slug'] ?? ''); @endphp
                         <a href="{{ $navItem['url'] ?? '#' }}" class="nav-link {{ $navItemActive ? 'active' : '' }}">
-                            @if(!empty($navItem['icon']))<i class="{{ $navItem['icon'] }} nav-link-icon" aria-hidden="true"></i>@endif
+                            <i class="{{ $navItem['icon'] ?? 'fa-regular fa-file-lines' }} nav-link-icon" aria-hidden="true"></i>
                             <span>{{ $navItem['title'] ?? '' }}</span>
                         </a>
                     @endforeach
@@ -160,10 +169,10 @@
                         @endphp
                         <a href="{{ $navCtaItem['url'] ?? '#' }}" class="nav-cta {{ $navCtaActive ? 'active' : '' }} {{ $hasRecentActivity ? 'has-recent-activity' : '' }}">
                             @if($navCtaSlug === 'activity')
-                                <span class="nav-activity-bars" aria-hidden="true"><i></i><i></i><i></i></span>
+                                <i class="fa-solid fa-chart-simple nav-activity-bars" aria-hidden="true"></i>
                                 <i class="fa-solid fa-gamepad nav-cta-mobile-icon" aria-hidden="true"></i>
                             @else
-                                <i class="{{ $navCtaItem['icon'] ?? 'fa-solid fa-chart-simple' }}"></i>
+                                <i class="fa-solid fa-chart-simple" aria-hidden="true"></i>
                             @endif
                             <span>{{ $navCtaItem['title'] ?? '动态' }}</span>
                         </a>
@@ -171,13 +180,13 @@
                     @if(!empty($navMoreItems))
                         <button type="button" class="nav-more-toggle" data-nav-more aria-label="更多" aria-expanded="false" aria-haspopup="true">
                             <i class="fa-solid fa-bars nav-more-bars" aria-hidden="true"></i>
-                            <i class="fa-solid fa-xmark nav-more-close" aria-hidden="true"></i>
+                            <i class="fa-solid fa-circle-xmark nav-more-close" aria-hidden="true"></i>
                             <span>更多</span>
                         </button>
                         <div class="nav-more-menu" data-nav-more-menu role="menu" aria-label="更多页面">
                             @foreach($navMoreItems as $moreItem)
                                 <a href="{{ $moreItem['url'] ?? '#' }}" class="nav-more-item" role="menuitem">
-                                    @if(!empty($moreItem['icon']))<i class="{{ $moreItem['icon'] }}" aria-hidden="true"></i>@endif
+                                    <i class="{{ $moreItem['icon'] ?? 'fa-regular fa-file-lines' }} nav-link-icon" aria-hidden="true"></i>
                                     <span>{{ $moreItem['title'] ?? '' }}</span>
                                 </a>
                             @endforeach
@@ -211,7 +220,7 @@
     <div class="side-identity" data-side-identity>
         <button type="button" class="side-identity-trigger" data-nav-identity-edit aria-label="评论身份" title="评论身份">
             <img class="side-identity-avatar" data-side-identity-avatar alt="" hidden>
-            <span class="side-identity-fallback" aria-hidden="true"><i class="fa-regular fa-user"></i></span>
+            <span class="side-identity-fallback" aria-hidden="true"><i class="fa-regular fa-circle-user" aria-hidden="true"></i></span>
         </button>
         <div class="side-identity-card" aria-hidden="true">
             <span class="side-identity-name" data-side-identity-name></span>
@@ -224,8 +233,8 @@
     </button>
     <button type="button" class="side-theme-toggle" data-theme-toggle aria-label="切换深色模式" title="切换深色模式">
         <span class="side-theme-icon" aria-hidden="true">
-            <i class="fa-solid fa-moon theme-icon-moon"></i>
-            <i class="fa-solid fa-sun theme-icon-sun"></i>
+            <i class="fa-solid fa-moon theme-icon-moon" aria-hidden="true"></i>
+            <i class="fa-solid fa-sun theme-icon-sun" aria-hidden="true"></i>
         </span>
         <span class="side-theme-label" data-theme-label>深色模式</span>
     </button>
@@ -238,7 +247,7 @@
                 <input type="search" name="q" value="{{ $keyword ?? '' }}" placeholder="搜索文章、页面、滔客、音乐、X" autocomplete="off" data-search-input>
                 <button type="submit">搜索</button>
                 <button type="button" class="site-search-close" data-search-close aria-label="关闭搜索">
-                    <i class="fa-solid fa-xmark"></i>
+                    <i class="fa-solid fa-circle-xmark" aria-hidden="true"></i>
                 </button>
             </form>
         </div>
@@ -247,9 +256,9 @@
     @if(empty($currentAdmin))
     <div class="login-overlay" data-login-overlay hidden>
         <div class="login-modal" role="dialog" aria-modal="true" aria-label="登录后台">
-            <button type="button" class="login-modal-close" data-login-close aria-label="关闭"><i class="fa-solid fa-xmark"></i></button>
+            <button type="button" class="login-modal-close" data-login-close aria-label="关闭"><i class="fa-solid fa-circle-xmark" aria-hidden="true"></i></button>
             <div class="login-modal-head">
-                <span class="login-modal-icon"><i class="fa-solid fa-right-to-bracket"></i></span>
+                <span class="login-modal-icon"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i></span>
                 <div>
                     <p class="login-modal-title">登录后台</p>
                     <p class="login-modal-subtitle">{{ $site['title'] ?? 'LiteNote' }} 管理入口</p>
@@ -257,11 +266,11 @@
             </div>
             <form class="login-modal-form" data-login-form>
                 <input type="hidden" name="_csrf" value="{{ \App\Core\Session::csrfToken() }}">
-                <label class="login-modal-field"><i class="fa-regular fa-user" aria-hidden="true"></i><input name="username" placeholder="用户名" autocomplete="username" required></label>
+                <label class="login-modal-field"><i class="fa-regular fa-circle-user" aria-hidden="true"></i><input name="username" placeholder="用户名" autocomplete="username" required></label>
                 <label class="login-modal-field"><i class="fa-solid fa-lock" aria-hidden="true"></i><input name="password" type="password" placeholder="密码" autocomplete="current-password" required></label>
                 <p class="login-modal-error" data-login-error hidden></p>
-                <button type="submit" class="login-modal-submit"><i class="fa-solid fa-right-to-bracket"></i> 登录</button>
-                <button type="button" class="login-modal-passkey" data-login-passkey><i class="fa-solid fa-key"></i> 使用 Passkey 登录</button>
+                <button type="submit" class="login-modal-submit"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> 登录</button>
+                <button type="button" class="login-modal-passkey" data-login-passkey><i class="fa-solid fa-key" aria-hidden="true"></i> 使用 Passkey 登录</button>
                 <a class="login-modal-forgot" href="/admin/forgot">忘记密码？</a>
             </form>
         </div>

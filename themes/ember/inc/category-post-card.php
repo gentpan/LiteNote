@@ -20,10 +20,10 @@
             {{ $publishedText }}
         </time>
         <div class="category-post-meta-stats">
-            <span class="home-post-stats"><i class="fa-regular fa-eye"></i>{{ number_format($viewCount) }}</span>
-            <span class="home-post-stats"><i class="fa-regular fa-comment"></i>{{ $commentsCount }}</span>
+            <span class="home-post-stats"><i class="fa-regular fa-eye" aria-hidden="true"></i>{{ number_format($viewCount) }}</span>
+            <span class="home-post-stats"><i class="fa-regular fa-comment" aria-hidden="true"></i>{{ $commentsCount }}</span>
             <button type="button" class="home-action post-like-btn" data-id="{{ $item->id }}" aria-label="点赞">
-                <i class="fa-regular fa-thumbs-up"></i><span class="like-count">{{ $likesCount }}</span>
+                <i class="fa-regular fa-thumbs-up" aria-hidden="true"></i><span class="like-count">{{ $likesCount }}</span>
             </button>
         </div>
     </footer>

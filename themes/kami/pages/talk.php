@@ -40,10 +40,10 @@
                     </div>
                     <div class="talk-meta-actions">
                         <button type="button" class="feed-action talk-like-btn" data-id="{{ $s->id }}">
-                            <i class="fa-regular fa-thumbs-up"></i><span class="like-count">{{ (int)($s->likes_count ?? 0) }}</span>
+                            <i class="fa-regular fa-thumbs-up" aria-hidden="true"></i><span class="like-count">{{ (int)($s->likes_count ?? 0) }}</span>
                         </button>
                         <button type="button" class="feed-action talk-comment-toggle" data-target="talk-comments-{{ $s->id }}">
-                            <i class="fa-regular fa-comment"></i><span>{{ (int)($s->comments_count ?? count($comments)) }}</span>
+                            <i class="fa-regular fa-comment" aria-hidden="true"></i><span>{{ (int)($s->comments_count ?? count($comments)) }}</span>
                         </button>
                     </div>
                 </div>

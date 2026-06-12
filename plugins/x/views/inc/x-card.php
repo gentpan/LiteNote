@@ -89,7 +89,7 @@
                     <strong>
                         {{ $authorName ?: ($handle !== '' ? '@'.$handle : 'X 用户') }}
                         @if($isVerified)
-                            <i class="fa-solid fa-circle-check x-card-verified tweet-verified" aria-label="认证账号"></i>
+                            <i class="fa-regular fa-circle-check x-card-verified tweet-verified" aria-hidden="true"></i>
                         @endif
                     </strong>
                     @if($handle !== '')<em>@{{ $handle }}</em>@endif
@@ -97,7 +97,7 @@
             </div>
             @if($tweetUrl !== '')
                 <a class="x-card-logo-link tweet-x-link" href="{{ $tweetUrl }}" target="_blank" rel="noopener noreferrer" aria-label="打开 X 原帖">
-                    <i class="fa-brands fa-x-twitter"></i>
+                    <i class="fa-brands fa-x-twitter" aria-hidden="true"></i>
                 </a>
             @endif
         </div>
@@ -106,7 +106,7 @@
             <div class="home-card-body x-card-body tweet-body">{!! $linkifyTweetBody($body) !!}</div>
         @elseif($tweetUrl !== '')
             <a class="home-card-body x-card-body x-card-body-link tweet-body tweet-body-link" href="{{ $tweetUrl }}" target="_blank" rel="noopener noreferrer">
-                <i class="fa-brands fa-x-twitter"></i>
+                <i class="fa-brands fa-x-twitter" aria-hidden="true"></i>
                 <span>查看 X 原帖</span>
             </a>
         @endif
@@ -130,32 +130,32 @@
             <div class="home-card-actions x-card-footer-actions tweet-footer-actions">
                 @if($tweetBookmark)
                     <button type="button" class="home-action x-bookmark-like-btn" data-id="{{ $tweet->activityId() }}" aria-label="点赞">
-                        <i class="fa-regular fa-thumbs-up"></i><span class="like-count">{{ $tweet->localLikes() }}</span>
+                        <i class="fa-regular fa-thumbs-up" aria-hidden="true"></i><span class="like-count">{{ $tweet->localLikes() }}</span>
                     </button>
                 @elseif($tweetLocalActions)
                     <button type="button" class="home-action x-tweet-like-btn" data-id="{{ $tweet->id }}" aria-label="点赞">
-                        <i class="fa-regular fa-thumbs-up"></i><span class="like-count">{{ $localLikeCount }}</span>
+                        <i class="fa-regular fa-thumbs-up" aria-hidden="true"></i><span class="like-count">{{ $localLikeCount }}</span>
                     </button>
                     <button type="button" class="home-action talk-comment-toggle" data-target="x-tweet-comments-{{ $tweet->id }}">
-                        <i class="fa-regular fa-comment"></i><span>{{ $localCommentCount }}</span>
+                        <i class="fa-regular fa-comment" aria-hidden="true"></i><span>{{ $localCommentCount }}</span>
                     </button>
                 @elseif($tweetUrl !== '')
                     @if($tweetShowReplies)
                         <a href="{{ $tweetUrl }}" target="_blank" rel="noopener noreferrer" class="x-card-action tweet-action" aria-label="在 X 打开评论">
-                            <i class="fa-regular fa-comment"></i><span>{{ $repliesCount }}</span>
+                            <i class="fa-regular fa-comment" aria-hidden="true"></i><span>{{ $repliesCount }}</span>
                         </a>
                     @endif
                     <a href="{{ $tweetUrl }}" target="_blank" rel="noopener noreferrer" class="x-card-action tweet-action" aria-label="在 X 打开并转发">
-                        <i class="fa-solid fa-retweet"></i><span>{{ $repostsCount }}</span>
+                        <i class="fa-solid fa-retweet" aria-hidden="true"></i><span>{{ $repostsCount }}</span>
                     </a>
                     @if($likesCount > 0)
                         <a href="{{ $tweetUrl }}" target="_blank" rel="noopener noreferrer" class="x-card-action x-card-like tweet-action tweet-like" aria-label="在 X 打开并点赞">
-                            <i class="fa-solid fa-heart"></i><span>{{ $likesCount }}</span>
+                            <i class="fa-solid fa-heart" aria-hidden="true"></i><span>{{ $likesCount }}</span>
                         </a>
                     @endif
                     @if(!$tweetHideViews)
                         <span class="x-card-action tweet-action" aria-label="浏览数">
-                            <i class="fa-regular fa-eye"></i><span>{{ $viewsCount }}</span>
+                            <i class="fa-regular fa-eye" aria-hidden="true"></i><span>{{ $viewsCount }}</span>
                         </span>
                     @endif
                 @endif

@@ -63,6 +63,7 @@ final class ActivityController
             $byDay[$date] = [
                 'total' => (int)($cell['total'] ?? 0),
                 'types' => is_array($cell['types'] ?? null) ? $cell['types'] : [],
+                'dominant_type' => (string)($cell['dominant_type'] ?? 'none'),
             ];
         }
 
@@ -92,6 +93,10 @@ final class ActivityController
             }
 
             $total = $inRange ? (int)($byDay[$date]['total'] ?? 0) : 0;
+            $dominantType = $inRange ? (string)($byDay[$date]['dominant_type'] ?? 'none') : 'none';
+            if (!isset(ActivityService::TYPES[$dominantType])) {
+                $dominantType = 'none';
+            }
             if ($total > 0) {
                 $activeDays++;
                 $totalEvents += $total;
@@ -100,7 +105,9 @@ final class ActivityController
             $days[] = [
                 'date' => $date,
                 'total' => $total,
-                'level' => $inRange ? min(4, $total) : 0,
+                'level' => $inRange && $total > 0 ? 1 : 0,
+                'type' => $dominantType,
+                'type_label' => $dominantType !== 'none' ? ActivityService::typeLabel($dominantType) : '',
                 'muted' => !$inRange,
             ];
         }

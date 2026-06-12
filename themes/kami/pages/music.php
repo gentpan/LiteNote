@@ -41,7 +41,7 @@
                                     </p>
                                 </div>
                                 <button type="button" class="music-like-button" data-music-like aria-label="喜欢这首音乐">
-                                    <i class="fa-regular fa-heart"></i>
+                                    <i class="fa-regular fa-heart" aria-hidden="true"></i>
                                     <span data-music-likes>{{ (int)($featured->likes_count ?? 0) }}</span>
                                 </button>
                             </div>
@@ -65,13 +65,13 @@
                             </div>
                             <div class="music-control-row">
                                 <button type="button" class="music-control-btn" data-music-prev aria-label="上一首">
-                                    <i class="fa-solid fa-backward-step"></i>
+                                    <i class="fa-solid fa-backward-step" aria-hidden="true"></i>
                                 </button>
                                 <button type="button" class="music-control-btn music-control-play" data-music-play aria-label="播放/暂停">
-                                    <i class="fa-solid fa-play"></i>
+                                    <i class="fa-solid fa-play" aria-hidden="true"></i>
                                 </button>
                                 <button type="button" class="music-control-btn" data-music-next aria-label="下一首">
-                                    <i class="fa-solid fa-forward-step"></i>
+                                    <i class="fa-solid fa-forward-step" aria-hidden="true"></i>
                                 </button>
                             </div>
                         </div>
@@ -88,7 +88,7 @@
                         <small data-music-comment-title>{{ $featured->title }}</small>
                         <em><span data-music-comment-count>{{ count($featuredComments) }}</span> 条</em>
                         <button type="button" class="music-comments-close" data-music-comments-toggle aria-label="收起音乐评论">
-                            <i class="fa-solid fa-xmark"></i>
+                            <i class="fa-solid fa-circle-xmark" aria-hidden="true"></i>
                         </button>
                     </h3>
 
@@ -113,7 +113,7 @@
                                                 @if($isFeaturedComment)
                                                     <img src="{{ $cmt->getAvatarUrl(80) }}" alt="" loading="lazy" width="48" height="48">
                                                 @else
-                                                    <i class="fa-solid fa-music"></i>
+                                                    <i class="fa-solid fa-music" aria-hidden="true"></i>
                                                 @endif
                                             </span>
                                             <div class="music-song-comment-body">
@@ -200,7 +200,7 @@
                                 <small>{{ $song->artist ?: '未知歌手' }}</small>
                             </span>
                             <span class="music-track-side">
-                                <span><i class="fa-regular fa-comment"></i> <b data-music-track-comments>{{ count($song->getRelation('comments') ?: []) }}</b></span>
+                                <span><i class="fa-regular fa-comment" aria-hidden="true"></i> <b data-music-track-comments>{{ count($song->getRelation('comments') ?: []) }}</b></span>
                                 <span>{{ $song->duration ?: '试听' }}</span>
                             </span>
                         </button>
@@ -209,7 +209,7 @@
 
                 <div class="music-rain-quota-card music-page-footer">
                     <div>
-                        <span class="music-rain-kicker"><i class="fa-solid fa-cloud-rain"></i> 阴雨额度</span>
+                        <span class="music-rain-kicker"><i class="fa-solid fa-cloud-sun" aria-hidden="true"></i> 阴雨额度</span>
                         <h2>{{ $featured ? $featured->title : '今日歌单' }}</h2>
                         <p>{{ $featured ? '给今天留一点可以循环播放的背景音乐。' : '还没有添加音乐，去后台录入第一首吧。' }}</p>
                     </div>

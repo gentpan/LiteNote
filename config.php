@@ -110,4 +110,8 @@ return [
         'quality' => $env('METING_QUALITY', 'exhigh'),
         'timeout' => (int)$env('METING_TIMEOUT', '12'),
     ],
+
+    'netease' => [
+        'api_base_url' => rtrim($env('NETEASE_API_BASE_URL', 'http://127.0.0.1:3000'), '/'),
+    ],
 ];

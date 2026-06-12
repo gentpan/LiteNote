@@ -13,7 +13,7 @@ use LiteNotePlugin\X\Models\XTweet;
 use LiteNotePlugin\X\Support\TweetCardItem;
 
 /**
- * 前台 Xmarks 页面(承接原 App\Controllers\Front\TalkController::xmarks)。
+ * 前台书签页面(承接原 App\Controllers\Front\TalkController::xmarks)。
  * 数据来自核心 activities 表(source=x_bookmarks),用 TweetCardItem 适配给推文卡片视图。
  */
 final class XmarksController
@@ -33,7 +33,7 @@ final class XmarksController
             'page' => $page,
             'perPage' => $perPage,
             'paginator' => Helper::loadMore($page, $total, $perPage, Helper::url('/xmarks')),
-            'pageTitle' => 'Xmarks',
+            'pageTitle' => '书签',
             'activeNav' => 'xmarks',
         ], 'layouts.front');
     }
@@ -59,7 +59,7 @@ final class XmarksController
         Response::json(['code' => 0, 'likes' => $count, 'liked' => true]);
     }
 
-    /** Xmarks 书签的本地点赞(站点自己的,计数存 activity metadata.local_likes)。 */
+    /** 书签页的本地点赞(站点自己的,计数存 activity metadata.local_likes)。 */
     public function likeBookmark(Request $request, array $params): never
     {
         $id = (int)($params['id'] ?? 0);

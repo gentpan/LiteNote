@@ -874,56 +874,69 @@ html[data-theme] .talk-card.home-x-card:hover {
 }
 
 .x-bookmarks-head {
-    gap: var(--sp-16);
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--sp-20) 26px;
+    display: flex;
+    gap: var(--sp-18);
+    flex-direction: column;
+    padding: var(--sp-22) var(--sp-24);
     margin-bottom: var(--sp-24);
     background: var(--c-card);
     border: 1px solid var(--c-border);
     border-radius: var(--radius-card);
     box-shadow: var(--shadow-sm);
 }
-.x-bookmarks-head .section-title {
-    margin: 0;
-    font-size: 23px;
-}
-.x-bookmarks-head p {
-    margin: var(--sp-6) 0 0;
-    font-size: var(--fs-md);
-    color: var(--c-text-muted);
-}
-.x-bookmarks-head-stats {
+.x-bookmarks-hero-head {
     display: flex;
-    flex: 0 0 auto;
-    gap: var(--sp-10);
-    align-items: center;
+    flex-direction: column;
+    width: 100%;
 }
-.x-bookmarks-head-stat,
-.x-bookmarks-head-badge {
+.x-bookmarks-hero-kicker-row {
+    display: flex;
+    gap: var(--sp-12);
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+.x-bookmarks-hero-kicker {
     display: inline-flex;
     gap: var(--sp-8);
     align-items: center;
-    padding: var(--sp-9) var(--sp-18);
-    font-size: var(--fs-base);
-    font-weight: 800;
-    font-variant-numeric: tabular-nums;
-    color: var(--c-bg, var(--c-white));
-    background: var(--c-text);
-    border-radius: var(--radius-pill);
-}
-.x-bookmarks-head-stat strong {
-    line-height: 1;
-}
-.x-bookmarks-head-stat small {
+    min-width: 0;
+    font-family: var(--font-mono);
     font-size: var(--fs-xs);
     font-weight: 700;
-    line-height: 1;
-    opacity: .76;
+    color: var(--c-primary);
+    letter-spacing: 1px;
+    border-bottom: none;
 }
-.x-bookmarks-head-stat i,
-.x-bookmarks-head-badge i {
+.x-bookmarks-hero-kicker:hover {
+    color: var(--c-primary);
+}
+.x-bookmarks-hero-icon {
+    display: inline-grid;
+    flex: 0 0 auto;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    font-size: var(--fs-base);
+    color: var(--c-primary);
+    background: color-mix(in srgb, var(--c-primary) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--c-primary) 18%, transparent);
+    border-radius: var(--radius-pill);
+}
+.x-bookmarks-dot {
+    color: var(--c-text-faint);
+}
+.x-page-head .x-bookmarks-hero-sub {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    margin: 0;
+    overflow: hidden;
     font-size: var(--fs-sm);
+    font-weight: 400;
+    color: var(--c-text-muted);
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .x-masonry {
@@ -956,57 +969,25 @@ html[data-theme] .talk-card.home-x-card:hover {
         margin-bottom: var(--sp-14);
     }
     .x-bookmarks-head {
-        gap: var(--sp-12);
-        align-items: flex-start;
-        padding: var(--sp-18) var(--sp-20);
+        gap: var(--sp-14);
+        padding: var(--sp-18);
         margin-bottom: var(--sp-18);
     }
-    .x-bookmarks-head-text {
-        display: flex;
+    .x-bookmarks-hero-kicker-row {
         gap: var(--sp-8);
-        align-items: baseline;
-        min-width: 0;
-        width: 100%;
     }
-    .x-bookmarks-head .section-title {
+    .x-bookmarks-hero-kicker {
         flex: 0 0 auto;
-        font-size: var(--fs-2xl);
-    }
-    .x-bookmarks-head p {
-        min-width: 0;
-        margin: 0;
-        overflow: hidden;
-        font-size: var(--fs-sm);
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-    .x-bookmarks-head-stats {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        width: 100%;
-        gap: var(--sp-8);
-    }
-    .x-bookmarks-head-stat,
-    .x-bookmarks-head-badge {
-        display: grid;
-        grid-template-columns: auto minmax(0, 1fr) auto;
         gap: var(--sp-6);
-        justify-content: center;
-        min-width: 0;
-        padding: var(--sp-7) var(--sp-10);
+        font-size: var(--fs-xs);
+    }
+    .x-bookmarks-hero-icon {
+        width: 28px;
+        height: 28px;
         font-size: var(--fs-sm);
     }
-    .x-bookmarks-head-stat strong {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        color: var(--c-bg, var(--c-white));
-        text-align: center;
-        opacity: 1;
-    }
-    .x-bookmarks-head-stat small {
-        color: var(--c-bg, var(--c-white));
-        opacity: .76;
+    .x-page-head .x-bookmarks-hero-sub {
+        font-size: 12px;
     }
 }
 

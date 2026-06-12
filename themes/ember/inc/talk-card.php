@@ -30,18 +30,18 @@
         <div class="talk-meta-main">
             <span class="time">{!! \App\Core\Helper::timeTag($s->publishedAt()) !!}</span>
             @if($locationName !== '')
-                <span class="talk-location" title="{{ $locationTitle }}"><i class="fa-solid fa-location-dot"></i>{{ $locationName }}</span>
+                <span class="talk-location" title="{{ $locationTitle }}"><i class="fa-solid fa-location-dot" aria-hidden="true"></i>{{ $locationName }}</span>
             @endif
             @if($weatherText !== '')
-                <span class="talk-weather"><i class="{{ $weatherIcon }}"></i>{{ $weatherText }}</span>
+                <span class="talk-weather"><i class="fa-solid fa-cloud-sun" aria-hidden="true"></i>{{ $weatherText }}</span>
             @endif
         </div>
         <div class="talk-meta-actions">
             <button type="button" class="feed-action talk-like-btn" data-id="{{ $s->id }}">
-                <i class="fa-regular fa-thumbs-up"></i><span class="like-count">{{ (int)($s->likes_count ?? 0) }}</span>
+                <i class="fa-regular fa-thumbs-up" aria-hidden="true"></i><span class="like-count">{{ (int)($s->likes_count ?? 0) }}</span>
             </button>
             <button type="button" class="feed-action talk-comment-toggle" data-target="talk-comments-{{ $s->id }}">
-                <i class="fa-regular fa-comment"></i><span>{{ $commentCount }}</span>
+                <i class="fa-regular fa-comment" aria-hidden="true"></i><span>{{ $commentCount }}</span>
             </button>
         </div>
     </div>
@@ -98,12 +98,12 @@
                 <input type="hidden" name="email" value="{{ $adminCommentEmail }}">
             @else
                 <div class="form-row comment-profile-fields">
-                    <input type="text" name="nickname" placeholder="昵称 *" required>
-                    <input type="email" name="email" placeholder="邮箱{{ \App\Services\CommentSettingsService::emailRequired() ? ' *' : '（选填）' }}" {{ \App\Services\CommentSettingsService::emailRequired() ? 'required' : '' }}>
-                    <input type="text" name="website" placeholder="网站(选填)">
+                    <input type="text" name="nickname" placeholder="昵称 *" autocomplete="nickname" required>
+                    <input type="email" name="email" placeholder="邮箱{{ \App\Services\CommentSettingsService::emailRequired() ? ' *' : '（选填）' }}" autocomplete="email" {{ \App\Services\CommentSettingsService::emailRequired() ? 'required' : '' }}>
+                    <input type="text" name="website" placeholder="网站(选填)" autocomplete="url">
                 </div>
             @endif
-            <textarea name="content" rows="3" placeholder="写评论..." required></textarea>
+            <textarea name="content" rows="3" placeholder="写评论..." autocomplete="off" required></textarea>
             <div class="comment-actions">
                 <button type="submit" aria-label="提交评论"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i></button>
             </div>
