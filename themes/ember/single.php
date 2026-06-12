@@ -72,7 +72,6 @@
                         <span class="like-count">{{ (int)($post->likes_count ?? 0) }}</span>
                     </button>
                 </div>
-                <div class="post-end-divider" aria-hidden="true"><span>THE END</span></div>
                 <div class="post-license-card">
                     <div class="post-license-info">
                         @if($postAuthorAvatar !== '')
@@ -80,10 +79,11 @@
                         @endif
                         <strong class="post-license-author">{{ $postAuthorName }}</strong>
                         @if($category)
-                            <span class="post-license-category">发布在 <a class="post-license-inline-link post-license-category-link" href="/category/{{ $category->slug }}"><i class="{{ $category->iconClass() }}" aria-hidden="true"></i>{{ $category->name }}</a></span>
+                            <span class="post-license-category">发布在&nbsp;<a class="post-license-inline-link post-license-category-link" href="/category/{{ $category->slug }}"><i class="{{ $category->iconClass() }}" aria-hidden="true"></i>{{ $category->name }}</a></span>
                         @endif
-                        <span class="post-license-terms">本文采用 <i class="fa-brands fa-creative-commons" aria-hidden="true"></i> <a class="post-license-inline-link" href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-NC-SA 4.0</a> 许可协议，转载请注明来源。</span>
+                        <span class="post-license-terms">本文采用 <i class="fa-brands fa-creative-commons" aria-hidden="true"></i> <a class="post-license-inline-link" href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-NC-SA 4.0</a>&nbsp;许可协议，转载请注明来源。</span>
                     </div>
+                    <span class="post-end-tag" aria-hidden="true">THE END</span>
                 </div>
                 {{-- 标签功能已下线,UI 隐藏(数据 + 代码保留) --}}
                 {{-- 文章底部 author block 已删除(2026-06) --}}
