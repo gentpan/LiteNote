@@ -12,6 +12,18 @@ final class ActivityStatsService
     {
         ActivityInstaller::install();
         $date = substr($date, 0, 10);
+
+        $existing = Activity::db()->fetchOne(
+            'SELECT * FROM daily_activity_stats WHERE date = ? LIMIT 1',
+            [$date]
+        );
+        $cacheWindow = 300; // 5 分钟内不重复重建
+        if ($existing && strtotime((string)$existing['updated_at']) >= time() - $cacheWindow) {
+            $metadata = json_decode((string)($existing['metadata'] ?? ''), true);
+            $existing['metadata'] = is_array($metadata) ? $metadata : [];
+            return $existing;
+        }
+
         $rows = Activity::db()->fetchAll(
             "SELECT * FROM activities WHERE substr(happened_at, 1, 10) = ? AND visibility IN ('public', 'hidden')",
             [$date]

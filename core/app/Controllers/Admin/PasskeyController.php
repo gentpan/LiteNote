@@ -138,6 +138,7 @@ class PasskeyController
             'username' => $user->username,
             'nickname' => $user->nickname,
             'role'     => $user->role,
+            'status'   => (int) $user->status,
         ]);
         Session::forget('passkey_login_challenge');
         Session::regenerate();

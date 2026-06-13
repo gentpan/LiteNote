@@ -15,7 +15,11 @@ final class AdminAuth
     public function handle(Request $request): bool
     {
         $user = Session::get('admin_user');
-        if (!$user) {
+        $valid = is_array($user)
+            && ($user['role'] ?? '') === 'admin'
+            && ($user['status'] ?? 1) === 1;
+        if (!$valid) {
+            Session::destroy();
             if ($request->isAjax()) {
                 Response::json(['error' => 'Unauthorized'], 401);
             }

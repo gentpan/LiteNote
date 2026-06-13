@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin;
 
+use App\Core\Background;
 use App\Core\Helper;
 use App\Core\Request;
 use App\Core\Response;
@@ -113,18 +114,14 @@ final class ActivityController
     public function syncIntegration(Request $request, array $params): never
     {
         $provider = (string)($params['provider'] ?? '');
-        try {
-            $result = (new ActivitySyncService())->sync($provider, true);
-            Session::flash('success', sprintf(
-                '%s：新增 %d，更新 %d，跳过 %d',
-                (string)($result['message'] ?? '同步完成'),
-                (int)($result['created'] ?? 0),
-                (int)($result['updated'] ?? 0),
-                (int)($result['skipped'] ?? 0)
-            ));
-        } catch (\Throwable $e) {
-            Session::flash('error', '同步失败：' . $e->getMessage());
-        }
+        Background::run(function () use ($provider): void {
+            try {
+                (new ActivitySyncService())->sync($provider, true);
+            } catch (\Throwable $e) {
+                error_log('LiteNote activity sync failed: ' . $e->getMessage());
+            }
+        });
+        Session::flash('success', '同步任务已提交，请稍后刷新页面查看最新日志');
         Response::redirect('/admin/activities/integrations');
     }
 

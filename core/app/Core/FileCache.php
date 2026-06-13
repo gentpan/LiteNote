@@ -23,6 +23,7 @@ final class FileCache
         }
 
         if ($ttl !== null && $ttl > 0 && filemtime($path) + $ttl < time()) {
+            @unlink($path);
             return $default;
         }
 
@@ -55,9 +56,42 @@ final class FileCache
             return $cached;
         }
 
-        $value = $callback();
-        $this->set($key, $value);
-        return $value;
+        $lockPath = $this->path($key) . '.lock';
+        $dir = dirname($lockPath);
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0775, true);
+        }
+        $lock = @fopen($lockPath, 'c');
+        if ($lock === false) {
+            $value = $callback();
+            $this->set($key, $value);
+            return $value;
+        }
+
+        try {
+            if (!@flock($lock, LOCK_EX)) {
+                fclose($lock);
+                $value = $callback();
+                $this->set($key, $value);
+                return $value;
+            }
+
+            // 拿到锁后再检查一次，防止多个进程重复重建
+            $cached = $this->get($key, null, $ttl);
+            if ($cached !== null) {
+                return $cached;
+            }
+
+            $value = $callback();
+            $this->set($key, $value);
+            return $value;
+        } finally {
+            if (is_resource($lock)) {
+                flock($lock, LOCK_UN);
+                fclose($lock);
+                @unlink($lockPath);
+            }
+        }
     }
 
     public function forget(string $key): void

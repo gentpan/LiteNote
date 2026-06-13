@@ -9,6 +9,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
 use App\Models\User;
+use App\Services\LoginRateLimiter;
 use App\Services\Mailer;
 
 class AuthController
@@ -27,9 +28,20 @@ class AuthController
         $username = trim((string) $request->input('username', ''));
         $password = (string) $request->input('password', '');
         $isAjax = $request->isAjax();
+        $ip = $request->ip;
+
+        if (LoginRateLimiter::tooManyAttempts($ip, $username)) {
+            $message = '登录尝试次数过多，请 ' . LoginRateLimiter::decayMinutes() . ' 分钟后再试';
+            if ($isAjax) {
+                Response::json(['ok' => false, 'message' => $message], 429);
+            }
+            Session::flash('login_error', $message);
+            Response::redirect('/admin/login');
+        }
 
         $user = User::byUsername($username);
         if (!$user || !$user->verifyPassword($password)) {
+            LoginRateLimiter::recordFailure($ip, $username);
             if ($isAjax) {
                 Response::json(['ok' => false, 'message' => '用户名或密码错误'], 401);
             }
@@ -37,9 +49,11 @@ class AuthController
             Response::redirect('/admin/login');
         }
 
+        LoginRateLimiter::clear($ip, $username);
+
         User::db()->update('users', [
             'last_login_at' => date('Y-m-d H:i:s'),
-            'last_login_ip' => $request->ip,
+            'last_login_ip' => $ip,
         ], 'id = :id', ['id' => $user->id]);
 
         Session::set('admin_user', [
@@ -47,6 +61,7 @@ class AuthController
             'username' => $user->username,
             'nickname' => $user->nickname,
             'role'     => $user->role,
+            'status'   => (int) $user->status,
         ]);
         Session::regenerate();
 

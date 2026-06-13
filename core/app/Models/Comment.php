@@ -96,50 +96,39 @@ final class Comment extends Model
         }
     }
 
-    public static function forPost(int $postId, string|CommentStatus $status = CommentStatus::Approved): array
+    public static function forPost(int $postId, string|CommentStatus $status = CommentStatus::Approved, int $limit = 0, int $offset = 0): array
     {
-        self::ensureGeoColumns();
-        $statusValue = $status instanceof CommentStatus ? $status->value : $status;
-        $comments = self::query(
-            'SELECT * FROM comments WHERE post_id = ? AND status = ? ORDER BY id ASC',
-            [$postId, $statusValue]
-        );
-        self::hydrateGeoForComments($comments);
-        return $comments;
+        return self::forTarget('post_id', $postId, $status, $limit, $offset);
     }
 
-    public static function forPage(int $pageId, string|CommentStatus $status = CommentStatus::Approved): array
+    public static function forPage(int $pageId, string|CommentStatus $status = CommentStatus::Approved, int $limit = 0, int $offset = 0): array
     {
-        self::ensureGeoColumns();
-        $statusValue = $status instanceof CommentStatus ? $status->value : $status;
-        $comments = self::query(
-            'SELECT * FROM comments WHERE page_id = ? AND status = ? ORDER BY id ASC',
-            [$pageId, $statusValue]
-        );
-        self::hydrateGeoForComments($comments);
-        return $comments;
+        return self::forTarget('page_id', $pageId, $status, $limit, $offset);
     }
 
-    public static function forTalk(int $talkId, string|CommentStatus $status = CommentStatus::Approved): array
+    public static function forTalk(int $talkId, string|CommentStatus $status = CommentStatus::Approved, int $limit = 0, int $offset = 0): array
     {
-        self::ensureGeoColumns();
-        $statusValue = $status instanceof CommentStatus ? $status->value : $status;
-        $comments = self::query(
-            'SELECT * FROM comments WHERE talk_id = ? AND status = ? ORDER BY id ASC',
-            [$talkId, $statusValue]
-        );
-        self::hydrateGeoForComments($comments);
-        return $comments;
+        return self::forTarget('talk_id', $talkId, $status, $limit, $offset);
     }
 
-    public static function forMusic(int $musicId, string|CommentStatus $status = CommentStatus::Approved): array
+    public static function forMusic(int $musicId, string|CommentStatus $status = CommentStatus::Approved, int $limit = 0, int $offset = 0): array
+    {
+        return self::forTarget('music_id', $musicId, $status, $limit, $offset);
+    }
+
+    /**
+     * @return self[]
+     */
+    private static function forTarget(string $column, int $id, string|CommentStatus $status, int $limit, int $offset): array
     {
         self::ensureGeoColumns();
         $statusValue = $status instanceof CommentStatus ? $status->value : $status;
-        $comments = self::query(
-            'SELECT * FROM comments WHERE music_id = ? AND status = ? ORDER BY id ASC',
-            [$musicId, $statusValue]
-        );
+        $sql = "SELECT * FROM comments WHERE {$column} = ? AND status = ? ORDER BY id ASC";
+        $params = [$id, $statusValue];
+        if ($limit > 0) {
+            $sql .= " LIMIT {$limit} OFFSET {$offset}";
+        }
+        $comments = self::query($sql, $params);
         self::hydrateGeoForComments($comments);
         return $comments;
     }

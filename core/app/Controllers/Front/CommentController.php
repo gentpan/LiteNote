@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Front;
 
+use App\Core\Background;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -137,18 +138,21 @@ class CommentController
         }
 
         if ($status !== CommentStatus::Spam->value) {
-            $this->sendNotifications(
-                $cmt,
-                $target,
-                (int)$data['post_id'],
-                (int)$data['page_id'],
-                (int)$data['talk_id'],
-                (int)$data['music_id'],
-                (int)$data['x_tweet_id'],
-                $parentId,
-                $status,
-                $request
-            );
+            $notifyData = $data;
+            Background::run(function () use ($cmt, $target, $notifyData, $parentId, $status, $request): void {
+                $this->sendNotifications(
+                    $cmt,
+                    $target,
+                    (int)$notifyData['post_id'],
+                    (int)$notifyData['page_id'],
+                    (int)$notifyData['talk_id'],
+                    (int)$notifyData['music_id'],
+                    (int)$notifyData['x_tweet_id'],
+                    $parentId,
+                    $status,
+                    $request
+                );
+            });
         }
 
         $isPending = $status !== CommentStatus::Approved->value;
@@ -400,7 +404,12 @@ class CommentController
 
     private function back(): never
     {
-        $ref = $_SERVER['HTTP_REFERER'] ?? '/';
-        Response::redirect($ref);
+        $ref = $_SERVER['HTTP_REFERER'] ?? '';
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        $refHost = $ref !== '' ? parse_url($ref, PHP_URL_HOST) : null;
+        if ($refHost !== null && $refHost === $host) {
+            Response::redirect($ref);
+        }
+        Response::redirect('/');
     }
 }

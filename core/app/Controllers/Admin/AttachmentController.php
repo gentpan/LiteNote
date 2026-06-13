@@ -230,6 +230,13 @@ class AttachmentController
         if (!in_array($ext, $allowed, true)) {
             Response::json(['code' => 1, 'msg' => '不允许的文件类型: ' . $ext]);
         }
+
+        $detectedMime = $this->detectMime($file['tmp_name']);
+        $expectedMimes = $this->expectedMimesForExt($ext);
+        if ($expectedMimes !== [] && !in_array($detectedMime, $expectedMimes, true)) {
+            Response::json(['code' => 1, 'msg' => '文件 MIME 类型与扩展名不符: ' . $detectedMime]);
+        }
+
         $uploadDir = Config::get('upload.path');
         if (!is_dir($uploadDir)) mkdir($uploadDir, 0775, true);
 
@@ -290,5 +297,42 @@ class AttachmentController
             $att->delete();
         }
         Response::json(['code' => 0, 'msg' => '已删除']);
+    }
+
+    private function detectMime(string $path): string
+    {
+        if (!is_file($path)) {
+            return '';
+        }
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($path);
+        return is_string($mime) ? strtolower(trim($mime)) : '';
+    }
+
+    /**
+     * @return array<int,string>
+     */
+    private function expectedMimesForExt(string $ext): array
+    {
+        $map = [
+            'mp3'  => ['audio/mpeg', 'audio/mp3'],
+            'm4a'  => ['audio/mp4'],
+            'wav'  => ['audio/wav', 'audio/x-wav'],
+            'ogg'  => ['audio/ogg'],
+            'flac' => ['audio/flac'],
+            'aac'  => ['audio/aac'],
+            'lrc'  => ['text/plain'],
+            'mp4'  => ['video/mp4'],
+            'webm' => ['video/webm'],
+            'mov'  => ['video/quicktime'],
+            'm4v'  => ['video/mp4'],
+            'avi'  => ['video/x-msvideo'],
+            'mkv'  => ['video/x-matroska'],
+            'pdf'  => ['application/pdf'],
+            'zip'  => ['application/zip', 'application/x-zip-compressed'],
+            'txt'  => ['text/plain'],
+            'md'   => ['text/plain'],
+        ];
+        return $map[$ext] ?? [];
     }
 }

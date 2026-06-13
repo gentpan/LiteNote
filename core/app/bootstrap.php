@@ -93,34 +93,25 @@ Session::start();
 // 首次部署:本地还没有数据库时,从模板库复制一份默认数据,实现"上传即用"。
 // - 模板库 database.default.sqlite 随仓库分发(含表结构 + 默认管理员 + 示例数据);
 // - live 库 database.sqlite 被 git 忽略,每个部署各自独立;
-// - 部署后直接打开,用 admin / admin123 登录后自行修改即可。
+// - 部署后请查看 runtime/storage/.initial-admin-password 获取随机初始密码。
 $__dbPath = (string) Config::get('database.sqlite');
 $__dbSeed = dirname($__dbPath) . '/database.default.sqlite';
 if (!is_file($__dbPath) && is_file($__dbSeed)) {
-    if (!is_dir(dirname($__dbPath))) {
-        @mkdir(dirname($__dbPath), 0775, true);
+    $__dbDir = dirname($__dbPath);
+    if (!is_dir($__dbDir) && !mkdir($__dbDir, 0775, true) && !is_dir($__dbDir)) {
+        error_log('LiteNote bootstrap: 无法创建数据库目录 ' . $__dbDir);
+    } elseif (!copy($__dbSeed, $__dbPath)) {
+        error_log('LiteNote bootstrap: 无法复制种子数据库 ' . $__dbSeed . ' -> ' . $__dbPath);
     }
-    @copy($__dbSeed, $__dbPath);
 }
-unset($__dbPath, $__dbSeed);
+unset($__dbPath, $__dbSeed, $__dbDir);
 
 // 自动创建默认管理员（如果不存在）
 if (is_file(Config::get('database.sqlite'))) {
     try {
-        $userCount = \App\Models\User::count();
-        if ($userCount === 0) {
-            $defaultUser = new \App\Models\User([
-                'username' => 'admin',
-                'password' => password_hash('admin123', PASSWORD_DEFAULT),
-                'nickname' => 'Administrator',
-                'email'    => 'admin@litenote.local',
-                'role'     => 'admin',
-                'status'   => 1,
-            ]);
-            $defaultUser->save();
-        }
+        \App\Services\Installer::ensureDefaultAdmin();
     } catch (\Throwable $e) {
-        // 忽略错误，避免影响启动
+        error_log('LiteNote bootstrap: 默认管理员创建失败: ' . $e->getMessage());
     }
 }
 
@@ -139,22 +130,17 @@ if (is_file(Config::get('database.sqlite'))) {
         }
         View::share('site', Config::get('site'));
     } catch (\Throwable) {
-        // 首次安装时数据库还没建好
+        // 首次安装时数据库还没建好，静默忽略
     }
 }
 View::share('site', Config::get('site'));
-
-try {
-    \App\Services\BackupService::runDueSafely();
-} catch (\Throwable) {
-    // 备份任务不影响正常访问。
-}
 
 $currentAdmin = null;
 try {
     $adminId = (int) Session::get('admin_user.id', 0);
     $currentAdmin = $adminId > 0 ? \App\Models\User::find($adminId) : null;
 } catch (\Throwable) {
+    // 数据库未就绪时静默忽略
     $currentAdmin = null;
 }
 View::share('currentAdmin', $currentAdmin);
@@ -170,9 +156,27 @@ View::composer(['*layouts.front', '*layouts.admin', '*front.*', '*home.*', '*pos
     try {
         if ($cached === null) {
             $author = \App\Models\User::find(1);
+            $categoryPostCounts = [];
+            try {
+                $counts = \App\Models\Post::db()->fetchAll(
+                    "SELECT category_id, COUNT(*) AS total FROM posts WHERE status = ? AND COALESCE(is_private, 0) = 0 GROUP BY category_id",
+                    [\App\Enums\PostStatus::Published->value]
+                );
+                foreach ($counts as $c) {
+                    $categoryPostCounts[(int)$c['category_id']] = (int)$c['total'];
+                }
+            } catch (\Throwable) {
+            }
             $navCategories = [];
             foreach (\App\Models\Category::navList() as $cat) {
-                $navCategories[] = ['name' => $cat->name, 'slug' => $cat->slug, 'count' => $cat->postCount(), 'icon' => $cat->iconClass(), 'color' => $cat->colorIndex(), 'desc' => (string) ($cat->description ?? '')];
+                $navCategories[] = [
+                    'name' => $cat->name,
+                    'slug' => $cat->slug,
+                    'count' => $categoryPostCounts[(int)$cat->id] ?? 0,
+                    'icon' => $cat->iconClass(),
+                    'color' => $cat->colorIndex(),
+                    'desc' => (string) ($cat->description ?? ''),
+                ];
             }
             $navItems = [];
             foreach (\App\Models\Page::navItems() as $page) {
@@ -208,6 +212,6 @@ try {
     \App\Services\PluginManager::boot();
     View::share('__pluginMenus', \App\Services\Plugins\Registry::adminMenus());
     View::share('__pluginFrontHead', \App\Services\Plugins\Registry::frontHeadHtml());
-} catch (\Throwable) {
-    // 插件系统异常不应阻断站点启动。
+} catch (\Throwable $e) {
+    error_log('LiteNote bootstrap: 插件启动失败: ' . $e->getMessage());
 }

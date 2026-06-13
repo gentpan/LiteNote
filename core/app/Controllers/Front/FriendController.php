@@ -8,6 +8,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
+use App\Enums\CommentStatus;
 use App\Models\Category;
 use App\Models\Comment;
 use App\Models\Link;
@@ -49,7 +50,7 @@ class FriendController
         $activeTab = ($_GET['tab'] ?? '') === 'feeds' ? 'feeds' : $defaultTab;
         $links = Link::enabled();
         $friendPage = Page::findBySlug('friends');
-        $comments = $friendPage ? Comment::forPage((int)$friendPage->id) : [];
+        $comments = $friendPage ? Comment::forPage((int)$friendPage->id, CommentStatus::Approved, 500) : [];
         $rssPool = [];
         try {
             $rssPool = FriendRssService::aggregate(5, 200);

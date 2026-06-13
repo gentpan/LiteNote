@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\CommentStatus;
 use App\Enums\PostStatus;
 use App\Enums\Toggle;
 use App\Models\Category;
@@ -161,19 +162,55 @@ final class ReadingSettingsService
     private static function attachTalkRelations(array $talks): void
     {
         $musicMap = Music::mapByIds(array_map(static fn(Talk $item): int => (int)($item->music_id ?? 0), $talks));
+
+        $talkIds = [];
+        $musicIds = [];
         foreach ($talks as $item) {
             $music = $musicMap[(int)($item->music_id ?? 0)] ?? null;
             if ($music && (int)$music->is_public === Toggle::On->value) {
                 $item->setRelation('music', $music);
-                $comments = Comment::forMusic((int)$music->id);
+                $musicIds[] = (int)$music->id;
+            } else {
+                $talkIds[] = (int)$item->id;
+            }
+        }
+
+        $commentsByTalk = self::batchComments('talk_id', $talkIds);
+        $commentsByMusic = self::batchComments('music_id', $musicIds);
+
+        foreach ($talks as $item) {
+            $music = $musicMap[(int)($item->music_id ?? 0)] ?? null;
+            if ($music && (int)$music->is_public === Toggle::On->value) {
+                $comments = $commentsByMusic[(int)$music->id] ?? [];
                 $music->comments_count = count($comments);
                 $item->setRelation('comments', $comments);
             } else {
-                $comments = Comment::forTalk((int)$item->id);
+                $comments = $commentsByTalk[(int)$item->id] ?? [];
                 $item->comments_count = count($comments);
                 $item->setRelation('comments', $comments);
             }
         }
+    }
+
+    /**
+     * @return array<int, Comment[]>
+     */
+    private static function batchComments(string $column, array $ids): array
+    {
+        $result = [];
+        if ($ids === []) {
+            return $result;
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $rows = Comment::db()->fetchAll(
+            "SELECT * FROM comments WHERE {$column} IN ({$placeholders}) AND status = ? ORDER BY id ASC",
+            [...$ids, CommentStatus::Approved->value]
+        );
+        foreach ($rows as $row) {
+            $key = (int)$row[$column];
+            $result[$key][] = new Comment($row);
+        }
+        return $result;
     }
 
     private static function feedItem(string $type, object $item, bool $fixed): array
