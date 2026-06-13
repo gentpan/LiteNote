@@ -17,13 +17,13 @@ final class AdminAuth
         $user = Session::get('admin_user');
         $valid = is_array($user)
             && ($user['role'] ?? '') === 'admin'
-            && ($user['status'] ?? 1) === 1;
+            && (int)($user['status'] ?? 1) === 1;
         if (!$valid) {
             Session::destroy();
             if ($request->isAjax()) {
                 Response::json(['error' => 'Unauthorized'], 401);
             }
-            Response::redirect('/admin/login');
+            Response::redirect('/?login=1');
         }
         return true;
     }

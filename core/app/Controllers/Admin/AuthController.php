@@ -14,15 +14,6 @@ use App\Services\Mailer;
 
 class AuthController
 {
-    public function loginForm(): string
-    {
-        return View::render('auth.login', [
-            'csrf' => Session::csrfToken(),
-            'error' => Session::getFlash('login_error'),
-            'success' => (($_GET['password_changed'] ?? '') === '1') ? '密码已修改，请重新登录' : '',
-        ], 'layouts.admin_auth');
-    }
-
     public function login(Request $request): never
     {
         $username = trim((string) $request->input('username', ''));
@@ -36,7 +27,7 @@ class AuthController
                 Response::json(['ok' => false, 'message' => $message], 429);
             }
             Session::flash('login_error', $message);
-            Response::redirect('/admin/login');
+            Response::redirect('/?login=1');
         }
 
         $user = User::byUsername($username);
@@ -46,7 +37,7 @@ class AuthController
                 Response::json(['ok' => false, 'message' => '用户名或密码错误'], 401);
             }
             Session::flash('login_error', '用户名或密码错误');
-            Response::redirect('/admin/login');
+            Response::redirect('/?login=1');
         }
 
         LoginRateLimiter::clear($ip, $username);
@@ -61,7 +52,7 @@ class AuthController
             'username' => $user->username,
             'nickname' => $user->nickname,
             'role'     => $user->role,
-            'status'   => (int) $user->status,
+            'status'   => isset($user->status) ? (int) $user->status : 1,
         ]);
         Session::regenerate();
 
@@ -74,7 +65,7 @@ class AuthController
     public function logout(): never
     {
         Session::destroy();
-        Response::redirect('/admin/login');
+        Response::redirect('/?login=1');
     }
 
     /**
@@ -176,7 +167,7 @@ class AuthController
         ], 'id = :id', ['id' => $user->id]);
 
         Session::flash('reset_success', '密码已重置,请用新密码登录。');
-        Response::redirect('/admin/login');
+        Response::redirect('/?login=1&password_changed=1');
     }
 
     /**

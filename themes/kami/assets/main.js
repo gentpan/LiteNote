@@ -473,4 +473,13 @@
         var pk = document.querySelector('[data-login-passkey]');
         if (pk) pk.addEventListener('click', function () { loginErr(''); loginWithPasskey().then(function (r) { if (r && r.success !== false) window.location.href = '/admin'; else loginErr((r && r.message) || 'Passkey 登录失败'); }).catch(function (err) { loginErr('Passkey 登录失败：' + err.message); }); });
     }
+    try {
+        var params = new URLSearchParams(window.location.search || '');
+        if (params.get('login') === '1') {
+            openLogin();
+            if (params.get('password_changed') === '1') {
+                loginErr('密码已修改，请重新登录');
+            }
+        }
+    } catch (e) {}
 })();

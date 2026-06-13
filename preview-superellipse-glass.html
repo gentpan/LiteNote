@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Superellipse Glass Preview</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+      color: #171717;
+      background:
+        radial-gradient(circle at 18% 14%, rgba(255, 255, 255, .95) 0 8%, transparent 22%),
+        radial-gradient(circle at 82% 6%, rgba(255, 248, 232, .9) 0 12%, transparent 34%),
+        linear-gradient(135deg, #ded3c3 0%, #7d6a58 38%, #f1eadf 58%, #585061 100%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      content: "";
+      background-image: radial-gradient(rgba(255,255,255,.45) 1px, transparent 1px);
+      background-size: 18px 18px;
+      opacity: .35;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 48px;
+      width: min(1080px, calc(100% - 32px));
+      min-height: 100vh;
+      padding: 72px 0;
+      margin: 0 auto;
+      place-items: center;
+    }
+
+    .demo-row {
+      display: grid;
+      gap: 28px;
+      width: 100%;
+      place-items: center;
+    }
+
+    .super-card {
+      position: relative;
+      width: min(580px, 100%);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, .78);
+      border-radius: 54px;
+      background: rgba(247, 247, 245, .76);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.9),
+        inset 0 -1px 0 rgba(0,0,0,.045),
+        0 1px 1px rgba(255,255,255,.9),
+        0 22px 60px rgba(36, 30, 24, .20);
+    }
+
+    .super-card::before {
+      position: absolute;
+      inset: 8px;
+      pointer-events: none;
+      content: "";
+      border: 1px solid rgba(255,255,255,.52);
+      border-radius: 46px;
+    }
+
+    .stock-card {
+      display: grid;
+      grid-template-rows: auto auto;
+    }
+
+    .stock-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 24px;
+      padding: 48px 56px 34px;
+      align-items: end;
+    }
+
+    .ticker {
+      margin: 0 0 10px;
+      font-size: 19px;
+      font-weight: 800;
+      color: rgba(0,0,0,.18);
+      letter-spacing: 2px;
+    }
+
+    .price {
+      margin: 0;
+      font-size: clamp(32px, 5vw, 50px);
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .price span {
+      color: rgba(0,0,0,.36);
+    }
+
+    .gain-pill {
+      display: inline-grid;
+      min-width: 118px;
+      min-height: 48px;
+      padding: 0 22px;
+      font-size: 22px;
+      font-weight: 800;
+      color: #25bf62;
+      border: 1px solid rgba(0,0,0,.08);
+      border-radius: 20px;
+      background: rgba(255,255,255,.42);
+      place-items: center;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.6);
+    }
+
+    .stock-body {
+      display: grid;
+      gap: 18px;
+      padding: 28px 56px 42px;
+      background: rgba(235, 238, 235, .62);
+      border-top: 1px solid rgba(0,0,0,.06);
+    }
+
+    .stock-line {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 24px;
+      align-items: center;
+      font-size: 22px;
+      color: rgba(0,0,0,.42);
+    }
+
+    .stock-line strong {
+      color: #20bd5a;
+      font-weight: 800;
+    }
+
+    .stock-line:last-child strong {
+      color: #d03131;
+    }
+
+    .glass-search {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 24px;
+      width: min(760px, 100%);
+      min-height: 92px;
+      padding: 0 44px;
+      align-items: center;
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.34);
+      border-radius: 46px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,.06) 48%, rgba(0,0,0,.18)),
+        rgba(28, 26, 24, .34);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.52),
+        inset 0 -28px 52px rgba(255,255,255,.14),
+        inset 0 -1px 0 rgba(0,0,0,.16),
+        0 18px 46px rgba(0,0,0,.24),
+        0 1px 0 rgba(255,255,255,.18);
+      backdrop-filter: blur(34px) saturate(190%) brightness(1.18);
+      -webkit-backdrop-filter: blur(34px) saturate(190%) brightness(1.18);
+    }
+
+    .glass-search span {
+      font-size: clamp(28px, 5vw, 42px);
+      font-weight: 650;
+      color: rgba(255,255,255,.68);
+      letter-spacing: -.02em;
+    }
+
+    .glass-search i {
+      font-size: 42px;
+      font-style: normal;
+      color: rgba(255,255,255,.9);
+    }
+
+    .glass-panel {
+      width: min(760px, 100%);
+      padding: 34px 48px 40px;
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.30);
+      border-radius: 54px;
+      background:
+        linear-gradient(140deg, rgba(255,255,255,.24), rgba(255,255,255,.08) 42%, rgba(80,70,66,.26)),
+        rgba(96, 88, 82, .28);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.48),
+        inset 0 -72px 90px rgba(255,255,255,.10),
+        inset 0 -1px 0 rgba(0,0,0,.14),
+        0 22px 64px rgba(0,0,0,.22),
+        0 1px 0 rgba(255,255,255,.18);
+      backdrop-filter: blur(38px) saturate(185%) brightness(1.16);
+      -webkit-backdrop-filter: blur(38px) saturate(185%) brightness(1.16);
+    }
+
+    .glass-panel ul {
+      display: grid;
+      gap: 24px;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+
+    .glass-panel li {
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr) auto;
+      gap: 28px;
+      align-items: center;
+      min-height: 54px;
+      font-size: clamp(24px, 4vw, 34px);
+      font-weight: 700;
+    }
+
+    .glass-panel .icon {
+      width: 42px;
+      color: rgba(255,255,255,.92);
+      text-align: center;
+    }
+
+    .glass-panel .shortcut {
+      font-size: 26px;
+      color: rgba(255,255,255,.38);
+    }
+
+    .note {
+      max-width: 760px;
+      padding: 18px 22px;
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.8;
+      color: rgba(255,255,255,.72);
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 18px;
+      background: rgba(0,0,0,.18);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .mobile-frame {
+      position: relative;
+      width: min(760px, 100%);
+      min-height: 420px;
+      overflow: hidden;
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 46px;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,.94), rgba(0,0,0,.82)),
+        radial-gradient(circle at 70% 72%, rgba(255, 154, 62, .54), transparent 32%);
+      box-shadow: 0 28px 80px rgba(0,0,0,.36);
+    }
+
+    .mobile-frame::before {
+      position: absolute;
+      right: 48px;
+      bottom: 76px;
+      width: 380px;
+      height: 210px;
+      content: "";
+      background:
+        linear-gradient(90deg, rgba(82,32,16,.75), rgba(246,181,118,.52)),
+        url("data:image/svg+xml,%3Csvg width='420' height='260' viewBox='0 0 420 260' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='420' height='260' fill='%23110b08'/%3E%3Ccircle cx='270' cy='148' r='98' fill='%23ff9c3c' fill-opacity='.58'/%3E%3Cpath d='M240 250L300 70l36 180M260 214h58M276 160h38M292 110h18' stroke='%23000' stroke-width='8' stroke-opacity='.38'/%3E%3C/svg%3E");
+      background-size: cover;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 28px;
+      opacity: .86;
+    }
+
+    .tweet-mock {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 88px minmax(0, 1fr);
+      gap: 20px;
+      padding: 54px 56px 150px;
+    }
+
+    .tweet-avatar {
+      display: grid;
+      width: 82px;
+      height: 82px;
+      font-size: 44px;
+      font-weight: 800;
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 20px;
+      background: #050505;
+      place-items: center;
+    }
+
+    .tweet-meta {
+      margin: 0 0 12px;
+      font-size: 28px;
+      font-weight: 800;
+    }
+
+    .tweet-meta span {
+      font-weight: 500;
+      color: rgba(255,255,255,.44);
+    }
+
+    .tweet-text {
+      max-width: 560px;
+      margin: 0;
+      font-size: clamp(26px, 4vw, 38px);
+      line-height: 1.2;
+    }
+
+    .glass-bottom-nav {
+      position: absolute;
+      right: 54px;
+      bottom: 42px;
+      left: 54px;
+      z-index: 3;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 82px;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .glass-tabs {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(52px, 1fr));
+      gap: 6px;
+      height: 82px;
+      padding: 8px;
+      border: 1px solid rgba(255,255,255,.24);
+      border-radius: 999px;
+      background: rgba(42, 38, 34, .42);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.22),
+        inset 0 -1px 0 rgba(0,0,0,.16),
+        0 14px 34px rgba(0,0,0,.34);
+      backdrop-filter: blur(32px) saturate(145%) brightness(1.02);
+      -webkit-backdrop-filter: blur(32px) saturate(145%) brightness(1.02);
+    }
+
+    .glass-tab,
+    .glass-add {
+      position: relative;
+      display: grid;
+      color: rgba(255,255,255,.92);
+      text-decoration: none;
+      border: 0;
+      place-items: center;
+    }
+
+    .glass-tab {
+      border-radius: 999px;
+      background: transparent;
+    }
+
+    .glass-tab svg,
+    .glass-add svg {
+      width: 34px;
+      height: 34px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .glass-tab.is-active {
+      background: rgba(255,255,255,.14);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.12),
+        0 4px 12px rgba(0,0,0,.16);
+    }
+
+    .glass-tab-badge {
+      position: absolute;
+      top: 4px;
+      right: 13px;
+      display: grid;
+      width: 24px;
+      height: 24px;
+      font-size: 14px;
+      font-weight: 800;
+      color: #fff;
+      background: #22a7ff;
+      border-radius: 50%;
+      place-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,.24);
+    }
+
+    .glass-add {
+      width: 82px;
+      height: 82px;
+      border: 1px solid rgba(255,255,255,.24);
+      border-radius: 50%;
+      background: rgba(42, 38, 34, .46);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.20),
+        inset 0 -1px 0 rgba(0,0,0,.16),
+        0 14px 34px rgba(0,0,0,.32);
+      backdrop-filter: blur(32px) saturate(145%) brightness(1.02);
+      -webkit-backdrop-filter: blur(32px) saturate(145%) brightness(1.02);
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        padding: 36px 0;
+      }
+
+      .super-card,
+      .glass-panel {
+        border-radius: 36px;
+      }
+
+      .stock-head,
+      .stock-body,
+      .glass-panel {
+        padding-right: 26px;
+        padding-left: 26px;
+      }
+
+      .glass-search {
+        min-height: 72px;
+        padding: 0 28px;
+        border-radius: 36px;
+      }
+
+      .glass-panel li {
+        grid-template-columns: 30px minmax(0, 1fr) auto;
+        gap: 18px;
+      }
+
+      .tweet-mock {
+        grid-template-columns: 58px minmax(0, 1fr);
+        gap: 14px;
+        padding: 32px 22px 126px;
+      }
+
+      .tweet-avatar {
+        width: 56px;
+        height: 56px;
+        font-size: 30px;
+        border-radius: 14px;
+      }
+
+      .tweet-meta {
+        font-size: 19px;
+      }
+
+      .tweet-text {
+        font-size: 22px;
+      }
+
+      .mobile-frame {
+        min-height: 360px;
+        border-radius: 32px;
+      }
+
+      .glass-bottom-nav {
+        right: 16px;
+        bottom: 24px;
+        left: 16px;
+        grid-template-columns: minmax(0, 1fr) 62px;
+        gap: 10px;
+      }
+
+      .glass-tabs {
+        height: 62px;
+        padding: 6px;
+      }
+
+      .glass-tab svg,
+      .glass-add svg {
+        width: 25px;
+        height: 25px;
+      }
+
+      .glass-add {
+        width: 62px;
+        height: 62px;
+      }
+
+      .glass-tab-badge {
+        top: 2px;
+        right: 7px;
+        width: 19px;
+        height: 19px;
+        font-size: 11px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="demo-row" aria-label="Superellipse card">
+      <div class="super-card stock-card">
+        <div class="stock-head">
+          <div>
+            <p class="ticker">NVDA</p>
+            <p class="price">$201<span>.39</span></p>
+          </div>
+          <span class="gain-pill">+ 0.4%</span>
+        </div>
+        <div class="stock-body">
+          <div class="stock-line"><span>⌁ Day</span><strong>$8.34 (4.00%)</strong></div>
+          <div class="stock-line"><span>⌁ After hours</span><strong>-$2.23 (0.98%)</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="demo-row" aria-label="Glass search">
+      <div class="glass-search">
+        <span>Search or Ask</span>
+        <i aria-hidden="true">♬</i>
+      </div>
+      <div class="glass-panel">
+        <ul>
+          <li><span class="icon">A</span><span>Applications</span><span class="shortcut">⌘&</span></li>
+          <li><span class="icon">□</span><span>Files</span><span class="shortcut">⌘é</span></li>
+          <li><span class="icon">◇</span><span>Actions</span><span class="shortcut">⌘"</span></li>
+          <li><span class="icon">▱</span><span>Clipboard</span><span class="shortcut">⌘'</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="demo-row" aria-label="Glass bottom navigation">
+      <div class="mobile-frame">
+        <div class="tweet-mock">
+          <div class="tweet-avatar">X</div>
+          <div>
+            <p class="tweet-meta">SpaceX <span>@SpaceX · May 12</span></p>
+            <p class="tweet-text">Falcon 9 launches NROL-172 to orbit from pad 4E in California</p>
+          </div>
+        </div>
+        <nav class="glass-bottom-nav" aria-label="玻璃底部菜单">
+          <div class="glass-tabs">
+            <a class="glass-tab is-active" href="#" aria-label="Home">
+              <svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5V21h-6v-6H9v6H3z"/></svg>
+            </a>
+            <a class="glass-tab" href="#" aria-label="Search">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+            </a>
+            <a class="glass-tab" href="#" aria-label="Explore">
+              <svg viewBox="0 0 24 24"><path d="M19 5 9.5 14.5M14 4l6 1-1 6M5 19l9.5-9.5M10 20l-6-1 1-6"/></svg>
+            </a>
+            <a class="glass-tab" href="#" aria-label="Notifications">
+              <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
+              <span class="glass-tab-badge">8</span>
+            </a>
+            <a class="glass-tab" href="#" aria-label="Messages">
+              <svg viewBox="0 0 24 24"><path d="M21 11.5a8.5 8.5 0 0 1-12.9 7.3L3 20l1.2-4.7A8.5 8.5 0 1 1 21 11.5Z"/></svg>
+            </a>
+          </div>
+          <button class="glass-add" type="button" aria-label="新增">
+            <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+        </nav>
+      </div>
+    </section>
+
+    <p class="note">
+      这页用大圆角 + overflow + 内外阴影模拟 superellipse；磨砂透明靠半透明背景和 backdrop-filter。
+      如果要更接近真实 squircle，可以再用 SVG mask 替代 border-radius。
+    </p>
+  </main>
+</body>
+</html>

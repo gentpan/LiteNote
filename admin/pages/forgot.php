@@ -28,7 +28,7 @@
         </form>
 
         <p class="login-foot">
-            <a href="/admin/login"><i class="fa-solid fa-arrow-left"></i> 返回登录</a>
+            <a href="/?login=1"><i class="fa-solid fa-arrow-left"></i> 返回登录</a>
         </p>
     </div>
 @endsection

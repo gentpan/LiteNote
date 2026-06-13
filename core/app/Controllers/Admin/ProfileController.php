@@ -21,7 +21,7 @@ class ProfileController
             // 会话里的 id 在 users 表中已不存在,踢回登录
             Session::flash('login_error', '账号不存在或已失效,请重新登录');
             Session::destroy();
-            Response::redirect('/admin/login');
+            Response::redirect('/?login=1');
         }
         $passkeys = (new PasskeyService())->credentialsForUser((int) $user->id);
         return View::render('profile.index', [
@@ -120,6 +120,6 @@ class ProfileController
         $user->password = password_hash($new, PASSWORD_DEFAULT);
         $user->save();
         Session::destroy();
-        Response::redirect('/admin/login?password_changed=1');
+        Response::redirect('/?login=1&password_changed=1');
     }
 }

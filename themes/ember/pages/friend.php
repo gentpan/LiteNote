@@ -2,35 +2,40 @@
 
 @section('content')
     @php
-        $comments = $comments ?? [];
-        $friendPage = $friendPage ?? null;
+        $links = $links ?? [];
         $siteCopyItems = $siteCopyItems ?? [];
         $rssItems = $rssItems ?? [];
         $rssFreshByLink = $rssFreshByLink ?? [];
         $activeFriendTab = ($activeFriendTab ?? 'links') === 'feeds' ? 'feeds' : 'links';
-        $adminCommentName = !empty($currentAdmin) ? ($currentAdmin->nickname ?: $currentAdmin->username) : '';
-        $adminCommentEmail = !empty($currentAdmin) ? (string)($currentAdmin->email ?? '') : '';
         $friendIconPlaceholder = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%226%22 fill=%22%23f3f4f6%22/%3E%3Cpath d=%22M10 16h12M16 10v12%22 stroke=%22%239ca3af%22 stroke-width=%222.4%22 stroke-linecap=%22round%22/%3E%3C/svg%3E';
     @endphp
 
     <section class="friend-page">
         <header class="friend-header">
-            <nav class="friend-tabs friend-title-tabs" aria-label="友情链接页面切换" data-friend-tabs>
-                <a href="/links"
-                   class="{{ $activeFriendTab === 'links' ? 'active' : '' }}"
-                   data-friend-tab="links"
-                   aria-current="{{ $activeFriendTab === 'links' ? 'page' : 'false' }}">
-                    <i class="fa-solid fa-user-group" aria-hidden="true"></i>
-                    <span>友情链接</span>
-                </a>
-                <a href="/subscribe"
-                   class="{{ $activeFriendTab === 'feeds' ? 'active' : '' }}"
-                   data-friend-tab="feeds"
-                   aria-current="{{ $activeFriendTab === 'feeds' ? 'page' : 'false' }}">
-                    <i class="fa-solid fa-square-rss" aria-hidden="true"></i>
-                    <span>订阅文章</span>
-                </a>
-            </nav>
+            <div class="friend-hero">
+                <div class="friend-hero-copy">
+                    <h1><i class="fa-solid fa-user-group" aria-hidden="true"></i> 友邻</h1>
+                    <p>友情链接与最近订阅更新</p>
+                </div>
+                <nav class="friend-tabs friend-title-tabs" aria-label="友情链接页面切换" data-friend-tabs>
+                    <a href="/links"
+                       class="{{ $activeFriendTab === 'links' ? 'active' : '' }}"
+                       data-friend-tab="links"
+                       aria-current="{{ $activeFriendTab === 'links' ? 'page' : 'false' }}">
+                        <i class="fa-solid fa-user-group" aria-hidden="true"></i>
+                        <span>友情链接</span>
+                        <strong>{{ count($links) }}</strong>
+                    </a>
+                    <a href="/subscribe"
+                       class="{{ $activeFriendTab === 'feeds' ? 'active' : '' }}"
+                       data-friend-tab="feeds"
+                       aria-current="{{ $activeFriendTab === 'feeds' ? 'page' : 'false' }}">
+                        <i class="fa-solid fa-square-rss" aria-hidden="true"></i>
+                        <span>订阅文章</span>
+                        <strong>{{ count($rssItems) }}</strong>
+                    </a>
+                </nav>
+            </div>
         </header>
 
         <div class="friend-tab-panel" data-friend-panel="links" {{ $activeFriendTab === 'feeds' ? 'hidden' : '' }}>
@@ -48,91 +53,6 @@
                 @if(\App\Core\Session::hasFlash('friend_link_error'))
                     <div hidden data-toast-type="error" data-toast-message="{{ \App\Core\Session::getFlash('friend_link_error') }}"></div>
                 @endif
-
-                <div class="friend-request-box" id="friend-link-request">
-                    <div class="friend-request-actions" role="tablist" aria-label="友链申请方式">
-                        <button type="button" class="friend-request-btn is-active" data-friend-request-tab="apply" aria-selected="true">
-                            <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
-                            <span>申请链接</span>
-                        </button>
-                        <button type="button" class="friend-request-btn" data-friend-request-tab="modify" aria-selected="false">
-                            <i class="fa-regular fa-pen-to-square" aria-hidden="true"></i>
-                            <span>修改链接</span>
-                        </button>
-                    </div>
-                    <div class="friend-request-panels">
-                        <form class="friend-request-form" method="post" action="/links/apply" data-friend-request-panel="apply">
-                            <input type="hidden" name="_csrf" value="{{ \App\Core\Session::csrfToken() }}">
-                            <div class="friend-request-grid">
-                                <label class="friend-request-field">
-                                    <span>站点名称 *</span>
-                                    <input type="text" name="name" required>
-                                </label>
-                                <label class="friend-request-field">
-                                    <span>站点地址 *</span>
-                                    <input type="text" name="url" placeholder="https://example.com" required>
-                                </label>
-                                <label class="friend-request-field">
-                                    <span>联系邮箱 *</span>
-                                    <input type="email" name="contact_email" required>
-                                </label>
-                                <label class="friend-request-field">
-                                    <span>RSS 地址</span>
-                                    <input type="text" name="rss_url" placeholder="https://example.com/rss.xml">
-                                </label>
-                                <label class="friend-request-field">
-                                    <span>Logo 地址</span>
-                                    <input type="text" name="logo" placeholder="https://example.com/avatar.png">
-                                </label>
-                                <label class="friend-request-field friend-request-field-full">
-                                    <span>站点描述</span>
-                                    <textarea name="description" rows="3" maxlength="255"></textarea>
-                                </label>
-                            </div>
-                            <div class="friend-request-footer">
-                                <p>提交后会进入后台待审核，审核通过后展示在友链列表。</p>
-                                <button type="submit" class="friend-request-submit">提交申请</button>
-                            </div>
-                        </form>
-                        <form class="friend-request-form" method="post" action="/links/modify" data-friend-request-panel="modify" hidden>
-                            <input type="hidden" name="_csrf" value="{{ \App\Core\Session::csrfToken() }}">
-                            <div class="friend-request-grid">
-                                <label class="friend-request-field friend-request-field-full">
-                                    <span>当前已展示的原链接 *</span>
-                                    <input type="text" name="previous_url" placeholder="https://old.example.com" required>
-                                </label>
-                                <label class="friend-request-field">
-                                    <span>新站点名称 *</span>
-                                    <input type="text" name="name" required>
-                                </label>
-                                <label class="friend-request-field">
-                                    <span>新站点地址 *</span>
-                                    <input type="text" name="url" placeholder="https://example.com" required>
-                                </label>
-                                <label class="friend-request-field">
-                                    <span>联系邮箱 *</span>
-                                    <input type="email" name="contact_email" required>
-                                </label>
-                                <label class="friend-request-field">
-                                    <span>RSS 地址</span>
-                                    <input type="text" name="rss_url" placeholder="https://example.com/rss.xml">
-                                </label>
-                                <label class="friend-request-field">
-                                    <span>Logo 地址</span>
-                                    <input type="text" name="logo" placeholder="https://example.com/avatar.png">
-                                </label>
-                                <label class="friend-request-field friend-request-field-full">
-                                    <span>站点描述</span>
-                                    <textarea name="description" rows="3" maxlength="255"></textarea>
-                                </label>
-                            </div>
-                            <div class="friend-request-footer">
-                                <p>修改不会直接覆盖旧信息，审核通过后再更新展示。</p>
-                                <button type="submit" class="friend-request-submit">提交修改</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
 
                 <div class="friend-list">
                     @if(empty($links))
@@ -175,10 +95,22 @@
                     @endif
                 </div>
 
+                <div class="friend-request-box" id="friend-link-request">
+                    <div class="friend-request-actions" aria-label="友链申请方式">
+                        <button type="button" class="friend-request-btn" data-friend-request-open="apply">
+                            <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
+                            <span>申请链接</span>
+                        </button>
+                        <button type="button" class="friend-request-btn" data-friend-request-open="modify">
+                            <i class="fa-regular fa-pen-to-square" aria-hidden="true"></i>
+                            <span>修改链接</span>
+                        </button>
+                    </div>
+                </div>
+
                 <div class="friend-site-info">
                     <div class="friend-site-head">
                         <h3><i class="fa-regular fa-address-card" aria-hidden="true"></i> 本站信息</h3>
-                        <p>复制后可直接发给对方站长。</p>
                     </div>
                     <div class="friend-site-grid">
                         @foreach($siteCopyItems as $item)
@@ -201,75 +133,108 @@
                     </div>
                 </div>
             </div>
+        </div>
 
-            @if($friendPage)
-                <section class="comments friend-comments" id="friend-comments" data-page-comments>
-                    <h3>友链留言 ({{ count($comments) }})</h3>
-                    @if(\App\Core\Session::hasFlash('comment_success'))
-                        <div hidden data-toast-type="success" data-toast-message="{{ \App\Core\Session::getFlash('comment_success') }}"></div>
-                    @endif
-                    @if(\App\Core\Session::hasFlash('comment_error'))
-                        <div hidden data-toast-type="error" data-toast-message="{{ \App\Core\Session::getFlash('comment_error') }}"></div>
-                    @endif
-
-                    <ul class="comment-list">
-                        @foreach(\App\Core\Helper::nestComments($comments) as $thread)
-                            @php $cmt = $thread['comment']; @endphp
-                            <li class="comment-item" data-id="{{ $cmt->id }}">
-                                <img class="comment-avatar" src="{{ $cmt->getAvatarUrl(40) }}" alt="{{ $cmt->nickname }}" loading="lazy" width="32" height="32">
-                                <div class="comment-body">
-                                    <div class="comment-meta">
-                                        @php $commentAuthor = $cmt; @endphp
-                                    @include('partials.comment-author-link')
-                                        <span>· {!! \App\Core\Helper::timeTag($cmt->created_at) !!}</span>
-                                        <button type="button" class="comment-reply-btn" data-parent-id="{{ $cmt->id }}" data-nickname="{{ $cmt->nickname }}">回复</button>
-                                    </div>
-                                    <div class="comment-content">{{ $cmt->content }}</div>
-                                </div>
-                                @if(!empty($thread['replies']))
-                                    <ul class="comment-reply-list">
-                                        @foreach($thread['replies'] as $reply)
-                                            <li class="comment-item comment-reply" data-id="{{ $reply->id }}">
-                                                <img class="comment-avatar" src="{{ $reply->getAvatarUrl(40) }}" alt="{{ $reply->nickname }}" loading="lazy" width="28" height="28">
-                                                <div class="comment-body">
-                                                    <div class="comment-meta">
-                                                        @php $commentAuthor = $reply; @endphp
-                                                    @include('partials.comment-author-link')
-                                                        @if(!empty($reply->reply_to_name))<span class="reply-arrow">›</span><span class="reply-target">{{ $reply->reply_to_name }}</span>@endif
-                                                        <span>· {!! \App\Core\Helper::timeTag($reply->created_at) !!}</span>
-                                                        <button type="button" class="comment-reply-btn" data-parent-id="{{ $reply->id }}" data-nickname="{{ $reply->nickname }}">回复</button>
-                                                    </div>
-                                                    <div class="comment-content">{{ preg_replace('/^@\S+\s*/u', '', (string) $reply->content) }}</div>
-                                                </div>
-                                            </li>
-                                        @endforeach
-                                    </ul>
-                                @endif
-                            </li>
-                        @endforeach
-                    </ul>
-
-                    <form class="comment-form friend-comment-form" method="post" action="/comment/submit" data-comment-admin="{{ !empty($currentAdmin) ? '1' : '0' }}">
-                        <input type="hidden" name="page_id" value="{{ $friendPage->id }}">
-                        <input type="hidden" name="parent_id" value="0">
+        <div class="friend-request-modal" data-friend-request-dialog="apply" hidden>
+            <section class="friend-request-dialog" role="dialog" aria-modal="true" aria-labelledby="friend-apply-title">
+                <div class="friend-request-dialog-head">
+                    <div>
+                        <h3 id="friend-apply-title"><i class="fa-solid fa-user-plus" aria-hidden="true"></i> 申请友链</h3>
+                        <p>填写站点信息，提交后进入后台审核。</p>
+                    </div>
+                    <button type="button" class="friend-request-close" data-friend-request-close aria-label="关闭">
+                        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <div class="friend-request-dialog-body">
+                    <form class="friend-request-form" method="post" action="/links/apply">
                         <input type="hidden" name="_csrf" value="{{ \App\Core\Session::csrfToken() }}">
-                        @if(!empty($currentAdmin))
-                            <input type="hidden" name="nickname" value="{{ $adminCommentName }}">
-                            <input type="hidden" name="email" value="{{ $adminCommentEmail }}">
-                        @else
-                            <div class="form-row comment-profile-fields">
-                                <input type="text" name="nickname" placeholder="昵称 *" required>
-                                <input type="email" name="email" placeholder="邮箱{{ \App\Services\CommentSettingsService::emailRequired() ? ' *' : '（选填）' }}" {{ \App\Services\CommentSettingsService::emailRequired() ? 'required' : '' }}>
-                                <input type="text" name="website" placeholder="网站(选填)">
-                            </div>
-                        @endif
-                        <textarea name="content" rows="5" placeholder="说点什么... *" required></textarea>
-                        <div class="comment-actions">
-                            <button type="submit" aria-label="提交评论"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i></button>
+                        <div class="friend-request-grid">
+                            <label class="friend-request-field">
+                                <span>站点名称 *</span>
+                                <input type="text" name="name" required autocomplete="organization">
+                            </label>
+                            <label class="friend-request-field">
+                                <span>站点地址 *</span>
+                                <input type="text" name="url" placeholder="https://example.com" required autocomplete="url" data-friend-url-input>
+                            </label>
+                            <label class="friend-request-field">
+                                <span>联系邮箱 *</span>
+                                <input type="email" name="contact_email" required autocomplete="email">
+                            </label>
+                            <label class="friend-request-field">
+                                <span>RSS 地址</span>
+                                <input type="text" name="rss_url" placeholder="https://example.com/rss.xml" autocomplete="url">
+                            </label>
+                            <label class="friend-request-field">
+                                <span>Logo 地址</span>
+                                <input type="text" name="logo" placeholder="自动识别 favicon" autocomplete="url">
+                            </label>
+                            <label class="friend-request-field friend-request-field-full">
+                                <span>站点描述</span>
+                                <textarea name="description" rows="3" maxlength="255"></textarea>
+                            </label>
+                        </div>
+                        <div class="friend-request-footer">
+                            <p>输入站点地址后会自动识别域名和默认 Logo，提交后进入审核。</p>
+                            <button type="submit" class="friend-request-submit">提交申请</button>
                         </div>
                     </form>
-                </section>
-            @endif
+                </div>
+            </section>
+        </div>
+
+        <div class="friend-request-modal" data-friend-request-dialog="modify" hidden>
+            <section class="friend-request-dialog" role="dialog" aria-modal="true" aria-labelledby="friend-modify-title">
+                <div class="friend-request-dialog-head">
+                    <div>
+                        <h3 id="friend-modify-title"><i class="fa-regular fa-pen-to-square" aria-hidden="true"></i> 修改友链</h3>
+                        <p>填写旧链接和新资料，审核通过后再更新展示。</p>
+                    </div>
+                    <button type="button" class="friend-request-close" data-friend-request-close aria-label="关闭">
+                        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <div class="friend-request-dialog-body">
+                    <form class="friend-request-form" method="post" action="/links/modify">
+                        <input type="hidden" name="_csrf" value="{{ \App\Core\Session::csrfToken() }}">
+                        <div class="friend-request-grid">
+                            <label class="friend-request-field friend-request-field-full">
+                                <span>当前已展示的原链接 *</span>
+                                <input type="text" name="previous_url" placeholder="https://old.example.com" required autocomplete="url">
+                            </label>
+                            <label class="friend-request-field">
+                                <span>新站点名称 *</span>
+                                <input type="text" name="name" required autocomplete="organization">
+                            </label>
+                            <label class="friend-request-field">
+                                <span>新站点地址 *</span>
+                                <input type="text" name="url" placeholder="https://example.com" required autocomplete="url" data-friend-url-input>
+                            </label>
+                            <label class="friend-request-field">
+                                <span>联系邮箱 *</span>
+                                <input type="email" name="contact_email" required autocomplete="email">
+                            </label>
+                            <label class="friend-request-field">
+                                <span>RSS 地址</span>
+                                <input type="text" name="rss_url" placeholder="https://example.com/rss.xml" autocomplete="url">
+                            </label>
+                            <label class="friend-request-field">
+                                <span>Logo 地址</span>
+                                <input type="text" name="logo" placeholder="自动识别 favicon" autocomplete="url">
+                            </label>
+                            <label class="friend-request-field friend-request-field-full">
+                                <span>站点描述</span>
+                                <textarea name="description" rows="3" maxlength="255"></textarea>
+                            </label>
+                        </div>
+                        <div class="friend-request-footer">
+                            <p>修改不会直接覆盖旧信息，审核通过后再更新展示。</p>
+                            <button type="submit" class="friend-request-submit">提交修改</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
         </div>
 
         <div class="friend-tab-panel" data-friend-panel="feeds" {{ $activeFriendTab === 'links' ? 'hidden' : '' }}>
@@ -360,23 +325,119 @@
                 setTab(tabFromPath(), false);
             });
 
-            var requestTabs = document.querySelectorAll('[data-friend-request-tab]');
-            var requestPanels = document.querySelectorAll('[data-friend-request-panel]');
-            if (requestTabs.length && requestPanels.length) {
-                requestTabs.forEach(function (button) {
-                    button.addEventListener('click', function () {
-                        var mode = button.getAttribute('data-friend-request-tab') === 'modify' ? 'modify' : 'apply';
-                        requestTabs.forEach(function (item) {
-                            var active = item.getAttribute('data-friend-request-tab') === mode;
-                            item.classList.toggle('is-active', active);
-                            item.setAttribute('aria-selected', active ? 'true' : 'false');
-                        });
-                        requestPanels.forEach(function (panel) {
-                            panel.hidden = panel.getAttribute('data-friend-request-panel') !== mode;
+            var requestDialogs = document.querySelectorAll('[data-friend-request-dialog]');
+            var requestOpeners = document.querySelectorAll('[data-friend-request-open]');
+
+            function requestMode(mode) {
+                return mode === 'modify' ? 'modify' : 'apply';
+            }
+
+            function closeRequestDialogs() {
+                requestDialogs.forEach(function (dialog) {
+                    dialog.hidden = true;
+                });
+                document.body.classList.remove('friend-request-modal-open');
+            }
+
+            function openRequestDialog(mode) {
+                mode = requestMode(mode);
+                var activeDialog = document.querySelector('[data-friend-request-dialog="' + mode + '"]');
+                if (!activeDialog) return;
+                closeRequestDialogs();
+                activeDialog.hidden = false;
+                document.body.classList.add('friend-request-modal-open');
+                window.setTimeout(function () {
+                    var firstInput = activeDialog.querySelector('input, textarea, button');
+                    if (firstInput) firstInput.focus();
+                }, 30);
+            }
+
+            function hasOpenRequestDialog() {
+                return Array.prototype.some.call(requestDialogs, function (dialog) {
+                    return !dialog.hidden;
+                });
+            }
+
+            function normalizeSiteUrl(value) {
+                value = String(value || '').trim();
+                if (!value) return null;
+                if (!/^https?:\/\//i.test(value)) value = 'https://' + value;
+                try {
+                    var parsed = new URL(value);
+                    if (!parsed.hostname || parsed.hostname.indexOf('.') === -1) return null;
+                    parsed.hash = '';
+                    return parsed;
+                } catch (error) {
+                    return null;
+                }
+            }
+
+            function detectFriendSite(input, commitValue) {
+                var parsed = normalizeSiteUrl(input.value);
+                if (!parsed) return;
+                var form = input.closest('form');
+                if (!form) return;
+                if (commitValue) input.value = parsed.href.replace(/\/$/, '');
+
+                var host = parsed.hostname.replace(/^www\./i, '');
+                var nameInput = form.querySelector('input[name="name"]');
+                var logoInput = form.querySelector('input[name="logo"]');
+                var rssInput = form.querySelector('input[name="rss_url"]');
+                var autoName = host.split('.')[0] || host;
+                var autoLogo = 'https://favicon.im/' + encodeURIComponent(host);
+
+                if (nameInput && (!nameInput.value.trim() || nameInput.dataset.autoFriendName === nameInput.value.trim())) {
+                    nameInput.value = autoName;
+                    nameInput.dataset.autoFriendName = autoName;
+                }
+                if (logoInput && (!logoInput.value.trim() || logoInput.dataset.autoFriendLogo === logoInput.value.trim())) {
+                    logoInput.value = autoLogo;
+                    logoInput.dataset.autoFriendLogo = autoLogo;
+                }
+                if (rssInput && !rssInput.value.trim()) {
+                    rssInput.placeholder = parsed.origin + '/rss.xml';
+                }
+            }
+
+            requestOpeners.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    openRequestDialog(button.getAttribute('data-friend-request-open'));
+                });
+            });
+
+            requestDialogs.forEach(function (dialog) {
+                dialog.addEventListener('click', function (event) {
+                    if (event.target === dialog || event.target.closest('[data-friend-request-close]')) {
+                        closeRequestDialogs();
+                    }
+                });
+                dialog.querySelectorAll('[data-friend-url-input]').forEach(function (input) {
+                    var detectTimer = null;
+                    input.addEventListener('input', function () {
+                        window.clearTimeout(detectTimer);
+                        detectTimer = window.setTimeout(function () {
+                            detectFriendSite(input, false);
+                        }, 260);
+                    });
+                    input.addEventListener('blur', function () {
+                        detectFriendSite(input, true);
+                    });
+                });
+                dialog.querySelectorAll('.friend-request-form').forEach(function (form) {
+                    form.addEventListener('submit', function () {
+                        form.querySelectorAll('input[name="url"], input[name="previous_url"], input[name="rss_url"], input[name="logo"]').forEach(function (input) {
+                            var parsed = normalizeSiteUrl(input.value);
+                            if (parsed) input.value = parsed.href.replace(/\/$/, '');
                         });
                     });
                 });
-            }
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && hasOpenRequestDialog()) {
+                    closeRequestDialogs();
+                }
+            });
         })();
         </script>
     </section>
