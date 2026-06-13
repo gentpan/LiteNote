@@ -246,11 +246,10 @@ class PostController
 
         $summary = trim((string)$request->input('summary', $meta['summary'] ?? ''));
         $cover = trim((string)$request->input('cover', $meta['cover'] ?? ''));
-        $publishedAt = trim((string)($meta['published_at'] ?? ''));
-        if ($publishedAt === '') {
-            $publishedAt = date('Y-m-d H:i:s');
-        }
         $now = date('Y-m-d H:i:s');
+        $publishedAt = $status === PostStatus::Published->value
+            ? $this->normalizeDateTime((string)($meta['published_at'] ?? ''), $now)
+            : null;
 
         $post = new Post([
             'title'            => $title,
@@ -328,13 +327,13 @@ class PostController
 
         $slug = Post::resolveSlug((string)$data['slug'], (string)$data['title'], $id);
         $now = date('Y-m-d H:i:s');
-        $publishedAt = $this->normalizeDateTime((string)$data['published_at'], $now);
         $categoryId = $this->normalizeCategoryId((int)$data['category_id']);
         $allowComments = ((string)$data['allow_comments'] === '1') ? Toggle::On->value : Toggle::Off->value;
         $allowRss = ((string)$data['allow_rss'] === '1') ? Toggle::On->value : Toggle::Off->value;
         $isTop = ((string)$data['is_top'] === '1') ? Toggle::On->value : Toggle::Off->value;
         $isPrivate = ((string)$data['is_private'] === '1') ? Toggle::On->value : Toggle::Off->value;
 
+        $publishedAt = null;
         if ($id) {
             $post = Post::find($id);
             if (!$post) {
@@ -343,6 +342,13 @@ class PostController
             }
             $oldSlug = (string)$post->slug;
             $oldStatus = (string)($post->status ?? '');
+            $publishedAt = $this->resolvePublishedAt(
+                (string)$data['status'],
+                $oldStatus,
+                (string)$data['published_at'],
+                $now,
+                (string)($post->published_at ?? '')
+            );
             $post->fill([
                 'title'            => trim((string)$data['title']),
                 'slug'             => $slug,
@@ -367,6 +373,9 @@ class PostController
                 $this->notifyPostPublished((int)$post->id);
             }
         } else {
+            $publishedAt = $data['status'] === PostStatus::Published->value
+                ? $this->normalizeDateTime((string)$data['published_at'], $now)
+                : null;
             $post = new Post([
                 'title'            => trim((string)$data['title']),
                 'slug'             => $slug,
@@ -411,6 +420,25 @@ class PostController
         }
         $time = strtotime($value);
         return $time ? date('Y-m-d H:i:s', $time) : $fallback;
+    }
+
+    private function resolvePublishedAt(
+        string $nextStatus,
+        string $oldStatus,
+        string $submittedValue,
+        string $now,
+        string $existingValue
+    ): ?string {
+        if ($nextStatus !== PostStatus::Published->value) {
+            return null;
+        }
+
+        if ($oldStatus !== PostStatus::Published->value) {
+            return $now;
+        }
+
+        $fallback = trim($existingValue) !== '' ? $existingValue : $now;
+        return $this->normalizeDateTime($submittedValue, $fallback);
     }
 
     private function normalizeCategoryId(int $categoryId): int
@@ -528,13 +556,21 @@ class PostController
                 $this->flashSuccess('已删除 ' . count($ids) . ' 篇文章');
                 break;
             case 'publish':
+                $now = date('Y-m-d H:i:s');
                 $notifyPosts = Post::query(
                     "SELECT * FROM posts WHERE status <> '" . PostStatus::Published->value . "' AND id IN ({$placeholders})",
                     $ids
                 );
                 $db->query(
-                    "UPDATE posts SET status='" . PostStatus::Published->value . "' WHERE id IN ({$placeholders})",
-                    $ids
+                    "UPDATE posts
+                     SET status = ?, published_at = ?, updated_at = ?
+                     WHERE status <> ? AND id IN ({$placeholders})",
+                    array_merge([
+                        PostStatus::Published->value,
+                        $now,
+                        $now,
+                        PostStatus::Published->value,
+                    ], $ids)
                 );
                 foreach ($notifyPosts as $post) {
                     $post->status = PostStatus::Published->value;

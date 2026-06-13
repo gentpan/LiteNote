@@ -89,6 +89,9 @@ final class ActivityController
         $metadata = [];
         foreach (($definition['fields'] ?? []) as $key => $field) {
             $value = trim((string)$request->input('metadata_' . $key, ''));
+            if ($provider === 'spotify' && $key === 'redirect_uri' && $value === '') {
+                $value = $this->defaultSpotifyRedirectUri();
+            }
             if ($value === '' && !empty($field['secret']) && isset($existingMeta[$key])) {
                 $value = (string)$existingMeta[$key];
             }
@@ -109,6 +112,13 @@ final class ActivityController
 
         Session::flash('success', ($definition['label'] ?? $provider) . ' 配置已保存');
         Response::redirect('/admin/activities/integrations');
+    }
+
+    private function defaultSpotifyRedirectUri(): string
+    {
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = (string)($_SERVER['HTTP_HOST'] ?? '127.0.0.1:5555');
+        return $scheme . '://' . $host . '/admin/oauth/spotify/callback';
     }
 
     public function syncIntegration(Request $request, array $params): never

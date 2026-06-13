@@ -67,9 +67,9 @@
                     <td>
                         <div class="admin-action-bar">
                             <a href="/admin/activities/integrations/{{ $provider }}/edit" class="admin-action-btn admin-action-edit" title="设置" aria-label="设置"><i class="fa-solid fa-gear"></i></a>
-                            <form method="post" action="/admin/activities/integrations/{{ $provider }}/sync">
+                            <form method="post" action="/admin/activities/integrations/{{ $provider }}/sync" data-icon-submit-only>
                                 <input type="hidden" name="_csrf" value="{{ $csrf }}">
-                                <button type="submit" class="admin-action-btn admin-action-refresh" title="立即同步" aria-label="立即同步" {{ !$isActive ? 'disabled' : '' }}><i class="fa-solid fa-arrows-rotate"></i></button>
+                                <button type="submit" class="admin-action-btn admin-action-refresh" title="立即同步" aria-label="立即同步" data-icon-submit-only {{ !$isActive ? 'disabled' : '' }}><i class="fa-solid fa-arrows-rotate"></i></button>
                             </form>
                         </div>
                     </td>

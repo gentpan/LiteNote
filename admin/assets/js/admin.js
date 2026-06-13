@@ -434,7 +434,14 @@
             var btn = form.querySelector('button[type=submit]');
             if (btn) {
                 btn.disabled = true;
-                btn.textContent = '\u{5904}\u{7406}\u{4E2D}...';
+                if (form.hasAttribute('data-icon-submit-only') || btn.hasAttribute('data-icon-submit-only')) {
+                    if (!btn.dataset.originalHtml) {
+                        btn.dataset.originalHtml = btn.innerHTML;
+                    }
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                } else {
+                    btn.textContent = '\u{5904}\u{7406}\u{4E2D}...';
+                }
                 setTimeout(function() { btn.disabled = false; }, 5000);
             }
         });
