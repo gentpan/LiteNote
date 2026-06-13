@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin;
 
+use App\Core\Background;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -210,19 +211,17 @@ class LinkController
 
     public function refreshAggregate(Request $request): never
     {
-        try {
-            $items = FriendRssService::refreshAggregate(5, 50, false);
-            Response::json([
-                'code' => 0,
-                'msg' => '订阅聚合缓存已更新',
-                'count' => count($items),
-            ]);
-        } catch (\Throwable $e) {
-            Response::json([
-                'code' => 1,
-                'msg' => '订阅聚合缓存更新失败：' . ($e->getMessage() ?: '未知错误'),
-            ], 500);
-        }
+        Background::run(function (): void {
+            try {
+                FriendRssService::refreshAggregate(5, 50, false);
+            } catch (\Throwable $e) {
+                error_log('LiteNote friend RSS refresh failed: ' . $e->getMessage());
+            }
+        });
+        Response::json([
+            'code' => 0,
+            'msg' => '订阅聚合更新任务已提交，请稍后刷新查看',
+        ]);
     }
 
     /**

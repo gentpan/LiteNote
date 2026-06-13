@@ -7,6 +7,7 @@ use App\Core\Response;
 use App\Core\Request;
 use App\Core\Session;
 use App\Core\View;
+use App\Enums\CommentStatus;
 use App\Enums\PostStatus;
 use App\Models\Post;
 use App\Models\Category;
@@ -41,7 +42,7 @@ class PostController
         Response::json(['code' => 0, 'likes' => $count, 'liked' => true]);
     }
 
-    public function show($request, array $params): string
+    public function show(Request $request, array $params): string
     {
         $slug = $params['slug'] ?? '';
         Post::ensurePublishingOptionsSchema();
@@ -51,7 +52,7 @@ class PostController
         }
         $post->incrementViews();
         $category = $post->getCategory();
-        $comments = Comment::forPost((int)$post->id);
+        $comments = Comment::forPost((int)$post->id, CommentStatus::Approved, 500);
 
         return View::render('post.show', [
             'post'    => $post,

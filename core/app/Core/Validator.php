@@ -68,7 +68,7 @@ final class Validator
             'in'        => is_string($value) && in_array($value, explode(',', (string)$param), true),
             'regex'     => is_string($value) && preg_match($param, $value) === 1,
             'confirmed' => isset($this->data[$field . '_confirmation']) && $value === $this->data[$field . '_confirmation'],
-            default     => true,
+            default     => false,
         };
 
         if (!$valid) {

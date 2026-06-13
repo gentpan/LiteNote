@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Front;
 
+use App\Core\Request;
 use App\Core\Response;
 use App\Core\View;
 use App\Models\Category;
@@ -12,7 +13,7 @@ use App\Services\PermalinkService;
 
 class PageController
 {
-    public function show($request, array $params): string
+    public function show(Request $request, array $params): string
     {
         if (str_ends_with((string) $request->path, '.html')) {
             $post = PermalinkService::resolve((string)$request->path);

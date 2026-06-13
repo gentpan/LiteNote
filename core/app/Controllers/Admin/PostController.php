@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin;
 
+use App\Core\Background;
+use App\Core\FileCache;
 use App\Core\Helper;
 use App\Core\Markdown;
 use App\Core\Request;
@@ -277,6 +279,7 @@ class PostController
             $this->deleteImportSource((string)$request->input('import_file', ''));
         }
 
+        $this->clearPublicCache();
         $this->flashSuccess('Markdown 已导入为文章：' . $title);
         $this->redirect('/admin/posts/' . $post->id . '/edit');
     }
@@ -361,7 +364,7 @@ class PostController
             PostContentStorage::writePost($slug, trim((string)$data['title']), $markdown);
             (new ActivityService())->recordPost($post, 'updated_post');
             if ($oldStatus !== PostStatus::Published->value && $data['status'] === PostStatus::Published->value) {
-                Notifications::postPublished($post);
+                $this->notifyPostPublished((int)$post->id);
             }
         } else {
             $post = new Post([
@@ -387,10 +390,11 @@ class PostController
             PostContentStorage::writePost($slug, trim((string)$data['title']), $markdown);
             (new ActivityService())->recordPost($post, 'published_post');
             if ($data['status'] === PostStatus::Published->value) {
-                Notifications::postPublished($post);
+                $this->notifyPostPublished((int)$post->id);
             }
         }
 
+        $this->clearPublicCache();
         $this->flashSuccess($data['status'] === PostStatus::Published->value ? ($id ? '文章已发布' : '文章已发布') : ($id ? '草稿已保存' : '草稿已保存'));
         $this->redirect('/admin/posts');
     }
@@ -438,6 +442,7 @@ class PostController
         $current = (int)($post->{$field} ?? 0);
         $next = $current === Toggle::On->value ? Toggle::Off->value : Toggle::On->value;
         Post::db()->update('posts', [$field => $next, 'updated_at' => date('Y-m-d H:i:s')], 'id = :id', [':id' => $id]);
+        $this->clearPublicCache();
 
         Response::json([
             'code' => 0,
@@ -476,6 +481,7 @@ class PostController
             }
             AttachmentCleanupService::deleteUnusedFromValues($attachmentValues);
         }
+        $this->clearPublicCache();
         $this->flashSuccess('文章已删除');
         $this->redirect('/admin/posts');
     }
@@ -532,7 +538,7 @@ class PostController
                 );
                 foreach ($notifyPosts as $post) {
                     $post->status = PostStatus::Published->value;
-                    Notifications::postPublished($post);
+                    $this->notifyPostPublished((int)$post->id);
                 }
                 $this->flashSuccess('已发布 ' . count($ids) . ' 篇文章');
                 break;
@@ -559,6 +565,7 @@ class PostController
                 break;
         }
 
+        $this->clearPublicCache();
         $this->redirect('/admin/posts');
     }
 
@@ -634,6 +641,25 @@ class PostController
         }
         $name = pathinfo($sourceName, PATHINFO_FILENAME);
         return trim(str_replace(['-', '_'], ' ', $name));
+    }
+
+    private function clearPublicCache(): void
+    {
+        $cache = new FileCache();
+        $cache->forget('rss.xml');
+        $cache->forget('llms.txt');
+        $cache->forget('archives.page');
+        $cache->forget('home.posts-heatmap');
+    }
+
+    private function notifyPostPublished(int $postId): void
+    {
+        Background::run(function () use ($postId): void {
+            $post = Post::find($postId);
+            if ($post) {
+                Notifications::postPublished($post);
+            }
+        });
     }
 
     private function deleteImportSource(string $filename): void

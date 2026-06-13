@@ -27,10 +27,11 @@ return [
         'name'      => 'LiteNote',
         'version'   => '1.0.0',
         'url'       => $env('APP_URL', 'http://127.0.0.1:5555'),
-        'debug'     => true,
+        'debug'     => $envBool('APP_DEBUG', false),
         'timezone'  => 'Asia/Shanghai',
         'locale'    => 'zh-CN',
-        'key'       => 'change-me-32-bytes-random-secret!!',  // 用于加密 cookie 等
+        // 强烈建议通过 .env 的 APP_KEY 设置 32 字节以上随机字符串，不要依赖回退值
+        'key'       => $env('APP_KEY', 'change-me-32-bytes-random-secret!!'),
     ],
 
     'database' => [

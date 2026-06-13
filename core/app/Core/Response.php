@@ -58,7 +58,7 @@ final class Response
     {
         http_response_code(404);
         header('Content-Type: text/html; charset=utf-8');
-        echo "<h1>{$message}</h1>";
+        echo '<h1>' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</h1>';
         exit;
     }
 }

@@ -33,6 +33,37 @@ final class Installer
         }
     }
 
+    public static function ensureDefaultAdmin(): void
+    {
+        if (\App\Models\User::count() > 0) {
+            return;
+        }
+        $password = self::randomPassword(16);
+        $user = new \App\Models\User([
+            'username' => 'admin',
+            'password' => password_hash($password, PASSWORD_DEFAULT),
+            'email'    => 'admin@example.com',
+            'nickname' => '管理员',
+            'role'     => 'admin',
+            'status'   => 1,
+        ]);
+        $user->save();
+
+        $path = dirname((string) Config::get('database.sqlite')) . '/.initial-admin-password';
+        @file_put_contents($path, "用户名: admin\n密码: {$password}\n请登录后立即修改密码。\n");
+    }
+
+    private static function randomPassword(int $length = 16): string
+    {
+        $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*-_=+';
+        $max = strlen($chars) - 1;
+        $password = '';
+        for ($i = 0; $i < $length; $i++) {
+            $password .= $chars[random_int(0, $max)];
+        }
+        return $password;
+    }
+
     public static function install(): array
     {
         $log = [];
@@ -334,20 +365,26 @@ final class Installer
         $db->query('CREATE INDEX IF NOT EXISTS idx_mail_logs_status ON mail_logs(status)');
         $db->query('CREATE INDEX IF NOT EXISTS idx_mail_unsub_email ON mail_unsubscribes(email)');
 
+        // 复合索引：优化前台高频列表查询
+        try {
+            \App\Models\Post::ensurePublishingOptionsSchema();
+            $db->query('CREATE INDEX IF NOT EXISTS idx_posts_public_published ON posts(status, is_private, published_at, id)');
+        } catch (\Throwable) {
+        }
+        try {
+            $db->query('CREATE INDEX IF NOT EXISTS idx_comments_post_status ON comments(post_id, status)');
+            $db->query('CREATE INDEX IF NOT EXISTS idx_comments_talk_status ON comments(talk_id, status)');
+            $db->query('CREATE INDEX IF NOT EXISTS idx_comments_music_status ON comments(music_id, status)');
+            $db->query('CREATE INDEX IF NOT EXISTS idx_comments_email_status ON comments(email, status)');
+            $db->query('CREATE INDEX IF NOT EXISTS idx_links_enabled ON links(is_enabled, sort, id)');
+        } catch (\Throwable) {
+        }
+
         $log[] = '数据表创建完成';
 
         // 默认数据：管理员
-        $exists = $db->fetchOne('SELECT id FROM users LIMIT 1');
-        if (!$exists) {
-            $db->insert('users', [
-                'username' => 'admin',
-                'password' => password_hash('admin123', PASSWORD_DEFAULT),
-                'email'    => 'admin@example.com',
-                'nickname' => '管理员',
-                'role'     => 'admin',
-            ]);
-            $log[] = '默认管理员创建完成（admin / admin123）';
-        }
+        self::ensureDefaultAdmin();
+        $log[] = '默认管理员创建完成（admin / 随机密码已写入 runtime/storage/.initial-admin-password）';
 
         // 默认设置
         $exists = $db->fetchOne('SELECT id FROM settings LIMIT 1');
@@ -523,6 +560,18 @@ final class Installer
             $db->query("UPDATE talk SET post_type = 'talk' WHERE post_type IS NULL OR post_type = ''");
             $db->query('UPDATE talk SET published_at = created_at WHERE published_at IS NULL');
             $db->query('CREATE INDEX IF NOT EXISTS idx_talk_published ON talk(is_public, published_at, id)');
+        } catch (\Throwable) {
+            // ignore
+        }
+
+        // 复合索引升级
+        try {
+            $db->query('CREATE INDEX IF NOT EXISTS idx_posts_public_published ON posts(status, is_private, published_at, id)');
+            $db->query('CREATE INDEX IF NOT EXISTS idx_comments_post_status ON comments(post_id, status)');
+            $db->query('CREATE INDEX IF NOT EXISTS idx_comments_talk_status ON comments(talk_id, status)');
+            $db->query('CREATE INDEX IF NOT EXISTS idx_comments_music_status ON comments(music_id, status)');
+            $db->query('CREATE INDEX IF NOT EXISTS idx_comments_email_status ON comments(email, status)');
+            $db->query('CREATE INDEX IF NOT EXISTS idx_links_enabled ON links(is_enabled, sort, id)');
         } catch (\Throwable) {
             // ignore
         }

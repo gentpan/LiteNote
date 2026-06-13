@@ -137,37 +137,34 @@ final class Post extends Model
         return $items;
     }
 
-    public static function search(string $keyword, int $page, int $perPage): array
+    public static function search(string $keyword, int $page = 1, int $perPage = 20): array
     {
         self::ensurePublishingOptionsSchema();
         $keyword = trim($keyword);
         if ($keyword === '' || mb_strlen($keyword) > 100) {
             return ['items' => [], 'total' => 0];
         }
-        $published = PostStatus::Published->value;
-        $rows = self::db()->fetchAll(
-            "SELECT * FROM posts WHERE status='{$published}' AND COALESCE(is_private, 0) = 0 ORDER BY published_at DESC"
-        );
-        $matches = [];
-        foreach ($rows as $row) {
-            $post = new self($row);
-            $haystacks = [
-                (string)$post->title,
-                (string)($post->summary ?? ''),
-                $post->markdown(),
-            ];
-            foreach ($haystacks as $haystack) {
-                if (mb_stripos($haystack, $keyword) !== false) {
-                    $matches[] = $post;
-                    break;
-                }
-            }
-        }
 
-        $offset = max(0, ($page - 1) * $perPage);
+        $published = PostStatus::Published->value;
+        $like = '%' . $keyword . '%';
+        $where = "p.status = ? AND COALESCE(p.is_private, 0) = 0 AND (p.title LIKE ? OR p.summary LIKE ? OR c.name LIKE ?)";
+        $params = [$published, $like, $like, $like];
+
+        $total = (int) self::db()->fetchColumn(
+            "SELECT COUNT(*) FROM posts p LEFT JOIN categories c ON p.category_id = c.id WHERE {$where}",
+            $params
+        );
+
+        $sql = "SELECT p.*, c.name AS category_name FROM posts p LEFT JOIN categories c ON p.category_id = c.id WHERE {$where} ORDER BY p.published_at DESC, p.id DESC";
+        if ($perPage > 0) {
+            $offset = max(0, ($page - 1) * $perPage);
+            $sql .= " LIMIT {$perPage} OFFSET {$offset}";
+        }
+        $rows = self::db()->fetchAll($sql, $params);
+
         return [
-            'items' => array_slice($matches, $offset, $perPage),
-            'total' => count($matches),
+            'items' => array_map(fn($r) => new self($r), $rows),
+            'total' => $total,
         ];
     }
 

@@ -27,6 +27,8 @@ final class Database
 
         $this->pdo = new PDO('sqlite:' . $path);
         $this->pdo->exec('PRAGMA foreign_keys = ON');
+        $this->pdo->exec('PRAGMA journal_mode = WAL');
+        $this->pdo->exec('PRAGMA busy_timeout = 5000');
 
         $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $this->pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);

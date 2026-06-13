@@ -3,10 +3,12 @@ declare(strict_types=1);
 
 namespace App\Controllers\Front;
 
+use App\Core\FileCache;
 use App\Core\Helper;
 use App\Core\Response;
 use App\Core\View;
 use App\Models\Category;
+use App\Models\Comment;
 use App\Models\Post;
 use App\Services\Gravatar;
 use App\Services\ActivityCacheService;
@@ -92,6 +94,13 @@ class HomeController
     }
 
     private function postsHeatmap(): array
+    {
+        return (new FileCache())->remember('home.posts-heatmap', 3600, function (): array {
+            return $this->buildPostsHeatmap();
+        });
+    }
+
+    private function buildPostsHeatmap(): array
     {
         $wordsByDay = [];
         $articlesByDay = [];

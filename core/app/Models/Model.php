@@ -79,6 +79,7 @@ abstract class Model
 
     public static function findBy(string $field, mixed $value): ?static
     {
+        self::guardIdentifier($field);
         $row = self::db()->fetchOne(
             'SELECT * FROM ' . static::$table . " WHERE {$field} = ? LIMIT 1",
             [$value]
@@ -99,6 +100,7 @@ abstract class Model
         $where = [];
         $params = [];
         foreach ($conds as $k => $v) {
+            self::guardIdentifier((string) $k);
             $where[] = "{$k} = ?";
             $params[] = $v;
         }
@@ -121,6 +123,7 @@ abstract class Model
         if ($conds) {
             $where = [];
             foreach ($conds as $k => $v) {
+                self::guardIdentifier((string) $k);
                 $where[] = "{$k} = ?";
                 $params[] = $v;
             }
@@ -215,6 +218,13 @@ abstract class Model
     /**
      * 校验 ORDER BY 子句，防止 SQL 注入。
      */
+    protected static function guardIdentifier(string $name): void
+    {
+        if (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $name)) {
+            throw new \InvalidArgumentException("Disallowed identifier: {$name}");
+        }
+    }
+
     protected static function guardOrderBy(string $orderBy): void
     {
         // 只允许：列名、ASC、DESC、逗号、空格、点（表别名）

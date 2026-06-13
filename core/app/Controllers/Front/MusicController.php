@@ -9,6 +9,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
+use App\Enums\CommentStatus;
 use App\Models\Comment;
 use App\Models\Music;
 use App\Services\MetingService;
@@ -20,11 +21,7 @@ class MusicController
         $perPage = 50;
         $page = max(1, (int)($_GET['page'] ?? 1));
         ['items' => $list, 'total' => $total] = Music::paginate($page, $perPage, 'published_at DESC, sort ASC, id DESC');
-        foreach ($list as $item) {
-            $comments = Comment::forMusic((int)$item->id);
-            $item->comments_count = count($comments);
-            $item->setRelation('comments', $comments);
-        }
+        $this->attachMusicComments($list);
 
         return View::render('front.music.index', [
             'list' => $list,
@@ -35,6 +32,31 @@ class MusicController
             'pageTitle' => '音乐',
             'activeNav' => 'music',
         ], 'layouts.front');
+    }
+
+    /**
+     * @param Music[] $list
+     */
+    private function attachMusicComments(array $list): void
+    {
+        $ids = array_map(static fn($item): int => (int)$item->id, $list);
+        $commentsByMusic = [];
+        if ($ids !== []) {
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $rows = Comment::db()->fetchAll(
+                "SELECT * FROM comments WHERE music_id IN ({$placeholders}) AND status = ? ORDER BY id ASC",
+                [...$ids, CommentStatus::Approved->value]
+            );
+            foreach ($rows as $row) {
+                $musicId = (int)$row['music_id'];
+                $commentsByMusic[$musicId][] = new Comment($row);
+            }
+        }
+        foreach ($list as $item) {
+            $comments = $commentsByMusic[(int)$item->id] ?? [];
+            $item->comments_count = count($comments);
+            $item->setRelation('comments', $comments);
+        }
     }
 
     public function like(Request $request, array $params): never

@@ -35,6 +35,9 @@ final class FriendRssService
         if (!filter_var($rssUrl, FILTER_VALIDATE_URL) || !preg_match('~^https?://~i', $rssUrl)) {
             return self::result(false, [], 'RSS 地址格式无效');
         }
+        if (!self::isSafeRemoteUrl($rssUrl)) {
+            return self::result(false, [], 'RSS 地址指向不允许的目标');
+        }
 
         $key = md5($rssUrl);
         $cacheFile = self::cacheDir() . '/friend_' . $key . '.json';
@@ -304,6 +307,34 @@ final class FriendRssService
             return $published;
         }
         return (int)($item['fetched_at'] ?? 0);
+    }
+
+    private static function isSafeRemoteUrl(string $url): bool
+    {
+        $scheme = strtolower((string)parse_url($url, PHP_URL_SCHEME));
+        if (!in_array($scheme, ['http', 'https'], true)) {
+            return false;
+        }
+
+        $host = strtolower(trim((string)parse_url($url, PHP_URL_HOST), '[]'));
+        if ($host === '' || in_array($host, ['localhost', '127.0.0.1', '0.0.0.0'], true) || str_ends_with($host, '.local')) {
+            return false;
+        }
+
+        if (filter_var($host, FILTER_VALIDATE_IP)) {
+            return filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false;
+        }
+
+        $records = @gethostbynamel($host);
+        if (!is_array($records) || $records === []) {
+            return false;
+        }
+        foreach ($records as $ip) {
+            if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static function ensureCacheDir(): void

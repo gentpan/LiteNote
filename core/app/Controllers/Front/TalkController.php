@@ -8,6 +8,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
+use App\Enums\CommentStatus;
 use App\Enums\Toggle;
 use App\Models\Comment;
 use App\Models\Talk;
@@ -382,8 +383,21 @@ class TalkController
      */
     private function attachTalkComments(array $list): void
     {
+        $ids = array_map(static fn($item): int => (int)$item->id, $list);
+        $commentsByTalk = [];
+        if ($ids !== []) {
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $rows = Comment::db()->fetchAll(
+                "SELECT * FROM comments WHERE talk_id IN ({$placeholders}) AND status = ? ORDER BY id ASC",
+                [...$ids, CommentStatus::Approved->value]
+            );
+            foreach ($rows as $row) {
+                $talkId = (int)$row['talk_id'];
+                $commentsByTalk[$talkId][] = new Comment($row);
+            }
+        }
         foreach ($list as $item) {
-            $comments = Comment::forTalk((int)$item->id);
+            $comments = $commentsByTalk[(int)$item->id] ?? [];
             $item->comments_count = count($comments);
             $item->setRelation('comments', $comments);
         }

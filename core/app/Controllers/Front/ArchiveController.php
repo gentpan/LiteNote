@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Front;
 
+use App\Core\FileCache;
 use App\Core\Helper;
 use App\Core\View;
 use App\Models\Category;
@@ -14,36 +15,47 @@ class ArchiveController
 {
     public function index(): string
     {
-        $posts = Post::archives();
-        foreach ($posts as &$post) {
-            $post['url'] = PermalinkService::postUrlFromParts(
-                (int)($post['id'] ?? 0),
-                (string)($post['slug'] ?? ''),
-                (string)($post['category_slug'] ?? '')
-            );
-        }
-        unset($post);
+        $cache = new FileCache();
+        $data = $cache->remember('archives.page', 3600, function (): array {
+            $posts = Post::archives();
+            foreach ($posts as &$post) {
+                $post['url'] = PermalinkService::postUrlFromParts(
+                    (int)($post['id'] ?? 0),
+                    (string)($post['slug'] ?? ''),
+                    (string)($post['category_slug'] ?? '')
+                );
+            }
+            unset($post);
 
-        $stats = $this->buildStats($posts);
-        $talks = $this->publicTalks();
-        $heatmap = $this->buildHeatmap($posts, $talks);
-        $categoryCards = $this->buildCategoryCards($posts);
-        $years = [];
-        foreach ($posts as $p) {
-            $date = (string)($p['published_at'] ?? '');
-            $year = substr($date, 0, 4) ?: '未归档';
-            $month = substr($date, 5, 2) ?: '00';
-            $years[$year]['total'] = ($years[$year]['total'] ?? 0) + 1;
-            $years[$year]['months'][$month]['total'] = ($years[$year]['months'][$month]['total'] ?? 0) + 1;
-            $years[$year]['months'][$month]['items'][] = $p;
-        }
+            $stats = $this->buildStats($posts);
+            $talks = $this->publicTalks();
+            $heatmap = $this->buildHeatmap($posts, $talks);
+            $categoryCards = $this->buildCategoryCards($posts);
+            $years = [];
+            foreach ($posts as $p) {
+                $date = (string)($p['published_at'] ?? '');
+                $year = substr($date, 0, 4) ?: '未归档';
+                $month = substr($date, 5, 2) ?: '00';
+                $years[$year]['total'] = ($years[$year]['total'] ?? 0) + 1;
+                $years[$year]['months'][$month]['total'] = ($years[$year]['months'][$month]['total'] ?? 0) + 1;
+                $years[$year]['months'][$month]['items'][] = $p;
+            }
+
+            return [
+                'years' => $years,
+                'stats' => $stats,
+                'heatmap' => $heatmap,
+                'categoryCards' => $categoryCards,
+                'total' => count($posts),
+            ];
+        });
 
         return View::render('archive.index', [
-            'years' => $years,
-            'stats' => $stats,
-            'heatmap' => $heatmap,
-            'categoryCards' => $categoryCards,
-            'total' => count($posts),
+            'years' => $data['years'],
+            'stats' => $data['stats'],
+            'heatmap' => $data['heatmap'],
+            'categoryCards' => $data['categoryCards'],
+            'total' => $data['total'],
             'pageTitle' => '归档',
             'activeNav' => 'archives',
         ], 'layouts.front');
