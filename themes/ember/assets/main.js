@@ -170,6 +170,25 @@
             dock.style.transform = 'none';
         }
 
+        function capturePointer(id) {
+            if (!dock.setPointerCapture) return;
+            try { dock.setPointerCapture(id); } catch (e) {}
+        }
+
+        function releasePointer(id) {
+            if (!dock.releasePointerCapture) return;
+            try { dock.releasePointerCapture(id); } catch (e) {}
+        }
+
+        function resetDragState() {
+            if (pointerId !== null) {
+                releasePointer(pointerId);
+            }
+            pointerId = null;
+            dragging = false;
+            dock.classList.remove('is-dragging');
+        }
+
         dock.addEventListener('pointerdown', function(event) {
             if (event.button !== undefined && event.button !== 0) return;
             pointerId = event.pointerId;
@@ -180,17 +199,22 @@
             dockY = rect.top;
             dragging = false;
             suppressClick = false;
-            if (dock.setPointerCapture) {
-                try { dock.setPointerCapture(pointerId); } catch (e) {}
-            }
         });
 
         dock.addEventListener('pointermove', function(event) {
             if (pointerId !== event.pointerId) return;
+            if (event.pointerType === 'mouse' && event.buttons !== 1) {
+                resetDragState();
+                return;
+            }
 
             var dx = event.clientX - startX;
             var dy = event.clientY - startY;
             if (!dragging && Math.hypot(dx, dy) < dragThreshold) return;
+
+            if (!dragging) {
+                capturePointer(pointerId);
+            }
 
             dragging = true;
             suppressClick = true;
@@ -210,16 +234,13 @@
 
         function endDrag(event) {
             if (pointerId !== event.pointerId) return;
-            if (dock.releasePointerCapture) {
-                try { dock.releasePointerCapture(pointerId); } catch (e) {}
-            }
-            pointerId = null;
-            dragging = false;
-            dock.classList.remove('is-dragging');
+            resetDragState();
         }
 
         dock.addEventListener('pointerup', endDrag);
         dock.addEventListener('pointercancel', endDrag);
+        window.addEventListener('pointerup', endDrag, true);
+        window.addEventListener('pointercancel', endDrag, true);
 
         dock.addEventListener('click', function(event) {
             if (!suppressClick) return;
@@ -990,7 +1011,7 @@
                 });
                 avatar.addEventListener('click', function(e) {
                     suppressHover = true;
-                    orb.__lnCloseIdentityMenu();
+                    orb.classList.add('is-avatar-navigating');
                     if (window.location.pathname === '/' || window.location.pathname === '') {
                         e.preventDefault();
                         window.location.assign(avatar.href || '/?__refresh=1');
@@ -3858,130 +3879,6 @@
     }
     bindDynamic(document);
 
-    function initPjax() {
-        if (!window.fetch || !window.DOMParser || !window.history || document.documentElement.dataset.lnPjaxBound === '1') {
-            return;
-        }
-        document.documentElement.dataset.lnPjaxBound = '1';
-        var activeController = null;
-        if (window.location.pathname === '/' && new URLSearchParams(window.location.search).has('__refresh')) {
-            window.history.replaceState({ pjax: true }, '', '/');
-        }
-        window.history.replaceState({ pjax: true }, '', window.location.href);
-
-        function samePageHash(url) {
-            return url.hash && url.pathname === window.location.pathname && url.search === window.location.search;
-        }
-
-        function shouldSkipLink(link, event) {
-            if (!link || !link.href) return true;
-            if (event && (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0)) return true;
-            if (link.target && link.target !== '_self') return true;
-            if (link.hasAttribute('download') || link.dataset.noPjax === '1') return true;
-            var url;
-            try { url = new URL(link.href, window.location.href); } catch (e) { return true; }
-            if (url.origin !== window.location.origin) return true;
-            if (link.classList.contains('nav-avatar')
-                && (window.location.pathname === '/' || window.location.pathname === '')
-                && url.pathname === '/') {
-                return true;
-            }
-            if (samePageHash(url)) return true;
-            if (/^\/(admin|api)(\/|$)/.test(url.pathname)) return true;
-            if (/\/(rss\.xml|feed|sitemap\.xml)$/i.test(url.pathname)) return true;
-            if (/\.(?:xml|json|zip|pdf|png|jpe?g|gif|webp|svg|mp3|mp4|webm|txt)$/i.test(url.pathname)) return true;
-            link.__lnPjaxUrl = url;
-            return false;
-        }
-
-        function executeInlineScripts(root) {
-            root.querySelectorAll('script').forEach(function(oldScript) {
-                if (oldScript.src) return;
-                var nextScript = document.createElement('script');
-                Array.prototype.slice.call(oldScript.attributes).forEach(function(attr) {
-                    nextScript.setAttribute(attr.name, attr.value);
-                });
-                nextScript.textContent = oldScript.textContent;
-                oldScript.parentNode.replaceChild(nextScript, oldScript);
-            });
-        }
-
-        function replaceFromDocument(nextDoc, href) {
-            var nextNav = nextDoc.querySelector('.site-nav-bar');
-            var currentNav = document.querySelector('.site-nav-bar');
-            if (nextNav && currentNav) {
-                currentNav.replaceWith(nextNav);
-            }
-
-            var nextContainer = nextDoc.querySelector('.container');
-            var currentContainer = document.querySelector('.container');
-            if (!nextContainer || !currentContainer) {
-                window.location.href = href;
-                return false;
-            }
-            currentContainer.replaceWith(nextContainer);
-
-            if (nextDoc.title) {
-                document.title = nextDoc.title;
-            }
-            executeInlineScripts(nextContainer);
-            bindDynamic(document);
-            document.dispatchEvent(new CustomEvent('litenote:pjax:complete', { detail: { url: href } }));
-            return true;
-        }
-
-        function navigatePjax(href, options) {
-            options = options || {};
-            var url = new URL(href, window.location.href);
-            if (activeController) activeController.abort();
-            activeController = new AbortController();
-            document.body.classList.add('pjax-loading');
-
-            return fetch(url.href, {
-                method: 'GET',
-                signal: activeController.signal,
-                headers: {
-                    'X-Requested-With': 'fetch',
-                    'X-PJAX': '1'
-                }
-            }).then(function(response) {
-                if (!response.ok) throw new Error('PJAX response failed');
-                return response.text();
-            }).then(function(html) {
-                var nextDoc = new DOMParser().parseFromString(html, 'text/html');
-                if (!replaceFromDocument(nextDoc, url.href)) return;
-                if (options.push !== false) {
-                    if (url.href === window.location.href) {
-                        window.history.replaceState({ pjax: true }, '', url.href);
-                    } else {
-                        window.history.pushState({ pjax: true }, '', url.href);
-                    }
-                }
-                if (options.scroll !== false) {
-                    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-                }
-            }).catch(function(error) {
-                if (error && error.name === 'AbortError') return;
-                window.location.href = url.href;
-            }).finally(function() {
-                document.body.classList.remove('pjax-loading');
-                activeController = null;
-            });
-        }
-
-        document.addEventListener('click', function(event) {
-            var link = event.target.closest ? event.target.closest('a[href]') : null;
-            if (shouldSkipLink(link, event)) return;
-            event.preventDefault();
-            navigatePjax(link.__lnPjaxUrl.href, { push: true });
-        });
-
-        window.addEventListener('popstate', function() {
-            navigatePjax(window.location.href, { push: false, scroll: false });
-        });
-    }
-    initPjax();
-
     // 图片懒加载 + LiteZoom 分组灯箱
     function finishImageLoad(img, wrapper) {
         img.classList.remove('is-image-loading');
@@ -4331,7 +4228,7 @@
     }
 
     // 加载更多:首次自动加载,之后手动;到底显示"没有更多内容"
-    // 包成可重入函数并由 bindDynamic 调用,确保 PJAX 切页后新列表的按钮也能绑定
+    // 包成可重入函数并由 bindDynamic 调用,确保新插入列表的按钮也能绑定
     function bindLoadMore(root) {
         (root || document).querySelectorAll('.load-more').forEach(function(lm) {
         if (lm.dataset.lnLoadmore) return;
@@ -4590,53 +4487,69 @@
 
     function lnOverlay() { return document.querySelector('[data-login-overlay]'); }
     function lnErr(msg) { var e = document.querySelector('[data-login-error]'); if (e) { e.textContent = msg || ''; e.hidden = !msg; } }
-    function lnOpen() {
-        var o = lnOverlay(); if (!o) return;
+    function lnOpen(trigger) {
+        var o = lnOverlay();
+        if (!o) {
+            window.location.href = '/?login=1';
+            return;
+        }
+        var orb = trigger && trigger.closest ? trigger.closest('[data-nav-identity]') : null;
+        if (orb) orb.classList.remove('is-menu-open');
         o.hidden = false; document.body.classList.add('login-modal-open');
         var u = o.querySelector('[name=username]'); if (u) setTimeout(function () { try { u.focus(); } catch (e) {} }, 60);
     }
     function lnClose() { var o = lnOverlay(); if (o) { o.hidden = true; document.body.classList.remove('login-modal-open'); lnErr(''); } }
 
     document.addEventListener('click', function (e) {
-        if (e.target.closest('[data-login-open]')) { e.preventDefault(); lnOpen(); return; }
+        var openTrigger = e.target.closest('[data-login-open]');
+        if (openTrigger) { e.preventDefault(); lnOpen(openTrigger); return; }
         if (e.target.closest('[data-login-close]')) { e.preventDefault(); lnClose(); return; }
         var o = lnOverlay();
         if (o && !o.hidden && e.target === o) lnClose();
     });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') lnClose(); });
 
-    document.addEventListener('DOMContentLoaded', function () {
-        var form = document.querySelector('[data-login-form]');
+    document.addEventListener('submit', function(e) {
+        var form = e.target && e.target.closest ? e.target.closest('[data-login-form]') : null;
         if (!form) return;
-        form.addEventListener('submit', function (e) {
-            e.preventDefault(); lnErr('');
-            var btn = form.querySelector('.login-modal-submit');
-            if (btn) btn.disabled = true;
-            var body = new URLSearchParams();
-            body.set('_csrf', lnLoginCsrf());
-            body.set('username', (form.username.value || '').trim());
-            body.set('password', form.password.value || '');
-            fetch('/admin/login', {
-                method: 'POST',
-                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded' },
-                credentials: 'same-origin',
-                body: body.toString()
-            }).then(function (res) {
-                return res.json().catch(function () { return {}; }).then(function (data) { return { ok: res.ok, data: data }; });
-            }).then(function (r) {
-                if (r.ok && r.data && r.data.ok) { window.location.href = r.data.redirect || '/admin'; }
-                else { lnErr((r.data && r.data.message) || '用户名或密码错误'); if (btn) btn.disabled = false; }
-            }).catch(function (err) { lnErr('登录失败：' + err.message); if (btn) btn.disabled = false; });
-        });
-        var pk = document.querySelector('[data-login-passkey]');
-        if (pk) {
-            pk.addEventListener('click', function () {
-                lnErr('');
-                lnLoginWithPasskey().then(function (r) {
-                    if (r && r.success !== false) window.location.href = '/admin';
-                    else lnErr((r && r.message) || 'Passkey 登录失败');
-                }).catch(function (err) { lnErr('Passkey 登录失败：' + err.message); });
-            });
-        }
+        e.preventDefault(); lnErr('');
+        var btn = form.querySelector('.login-modal-submit');
+        if (btn) btn.disabled = true;
+        var body = new URLSearchParams();
+        body.set('_csrf', lnLoginCsrf());
+        body.set('username', (form.username.value || '').trim());
+        body.set('password', form.password.value || '');
+        fetch('/admin/login', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded' },
+            credentials: 'same-origin',
+            body: body.toString()
+        }).then(function (res) {
+            return res.json().catch(function () { return {}; }).then(function (data) { return { ok: res.ok, data: data }; });
+        }).then(function (r) {
+            if (r.ok && r.data && r.data.ok) { window.location.href = r.data.redirect || '/admin'; }
+            else { lnErr((r.data && r.data.message) || '用户名或密码错误'); if (btn) btn.disabled = false; }
+        }).catch(function (err) { lnErr('登录失败：' + err.message); if (btn) btn.disabled = false; });
     });
+
+    document.addEventListener('click', function(e) {
+        var pk = e.target.closest('[data-login-passkey]');
+        if (!pk) return;
+        e.preventDefault();
+        lnErr('');
+        lnLoginWithPasskey().then(function (r) {
+            if (r && r.success !== false) window.location.href = '/admin';
+            else lnErr((r && r.message) || 'Passkey 登录失败');
+        }).catch(function (err) { lnErr('Passkey 登录失败：' + err.message); });
+    });
+
+    try {
+        var params = new URLSearchParams(window.location.search || '');
+        if (params.get('login') === '1') {
+            lnOpen();
+            if (params.get('password_changed') === '1') {
+                lnErr('密码已修改，请重新登录');
+            }
+        }
+    } catch (e) {}
 })();

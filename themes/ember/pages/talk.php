@@ -51,11 +51,11 @@
         @if(!empty($heroMoods))
             @php $activeKeyword = $activeKeyword ?? ''; @endphp
             <nav class="talk-keyword-rail" aria-label="按关键词筛选滔客" data-talk-keyword-rail>
-                <a class="talk-keyword-chip{{ $activeKeyword === '' ? ' is-active' : '' }}" href="{{ \App\Core\Helper::url('/talk') }}" data-no-pjax="1" data-keyword="">
+                <a class="talk-keyword-chip{{ $activeKeyword === '' ? ' is-active' : '' }}" href="{{ \App\Core\Helper::url('/talk') }}" data-keyword="">
                     <span class="talk-keyword-name">全部</span><b>{{ (int)($heroTotal ?? 0) }}</b>
                 </a>
                 @foreach($heroMoods as $m)
-                    <a class="talk-keyword-chip{{ $activeKeyword === $m['name'] ? ' is-active' : '' }}" href="{{ \App\Core\Helper::url('/talk?keyword=' . rawurlencode($m['name'])) }}" data-no-pjax="1" data-keyword="{{ $m['name'] }}">
+                    <a class="talk-keyword-chip{{ $activeKeyword === $m['name'] ? ' is-active' : '' }}" href="{{ \App\Core\Helper::url('/talk?keyword=' . rawurlencode($m['name'])) }}" data-keyword="{{ $m['name'] }}">
                         <span class="talk-keyword-name">#{{ $m['name'] }}</span><b>{{ $m['count'] }}</b>
                     </a>
                 @endforeach

@@ -254,6 +254,14 @@
     </div>
 
     @if(empty($currentAdmin))
+    @php
+        $loginPasskeyAvailable = false;
+        try {
+            $loginPasskeyAvailable = (new \App\Services\PasskeyService())->hasAnyCredential();
+        } catch (\Throwable $e) {
+            $loginPasskeyAvailable = false;
+        }
+    @endphp
     <div class="login-overlay" data-login-overlay hidden>
         <div class="login-modal" role="dialog" aria-modal="true" aria-label="登录后台">
             <button type="button" class="login-modal-close" data-login-close aria-label="关闭"><i class="fa-solid fa-circle-xmark" aria-hidden="true"></i></button>
@@ -270,7 +278,9 @@
                 <label class="login-modal-field"><i class="fa-solid fa-lock" aria-hidden="true"></i><input name="password" type="password" placeholder="密码" autocomplete="current-password" required></label>
                 <p class="login-modal-error" data-login-error hidden></p>
                 <button type="submit" class="login-modal-submit"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> 登录</button>
+                @if($loginPasskeyAvailable)
                 <button type="button" class="login-modal-passkey" data-login-passkey><i class="fa-solid fa-key" aria-hidden="true"></i> 使用 Passkey 登录</button>
+                @endif
                 <a class="login-modal-forgot" href="/admin/forgot">忘记密码？</a>
             </form>
         </div>

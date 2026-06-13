@@ -112,7 +112,11 @@ final class Plugin implements PluginInterface
             return $out;
         });
 
-        // 推文卡片本地点赞的前端脚本(自包含,经前台 <head> 注入,不改主题 JS)。
+        // 前台书签页样式和推文卡片本地点赞脚本(插件自包含,不依赖首页 home.css)。
+        $frontCss = '/plugins/x/assets/front.css';
+        $frontCssFile = __DIR__ . '/assets/front.css';
+        $frontCssVersion = is_file($frontCssFile) ? (string)filemtime($frontCssFile) : '1';
+        $ctx->frontHead('<link rel="stylesheet" href="' . $frontCss . '?v=' . $frontCssVersion . '">');
         $ctx->frontHead(<<<'HTML'
 <script>
 (function(){

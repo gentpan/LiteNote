@@ -12,7 +12,7 @@
  *   LiteZoom.bind('.post-content img, .page-content img', { mode: 'full', group: fn, caption: fn });
  *   // 也可手动打开:LiteZoom.open([{src,thumb,caption}], index, { mode });
  *
- * 委托式单一 document click 监听,PJAX 翻页后无需重新初始化。
+ * 委托式单一 document click 监听,动态插入图片后可调用 refresh/enhance。
  */
 (function (window, document) {
     'use strict';

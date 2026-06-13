@@ -162,7 +162,7 @@ class TalkController
             if ($isAjax) {
                 Response::json(['code' => 401, 'msg' => '请先登录后台'], 401);
             }
-            Response::redirect('/admin/login');
+            Response::redirect('/?login=1');
         }
 
         if (!Session::verifyCsrf((string)$request->input('_csrf', ''))) {

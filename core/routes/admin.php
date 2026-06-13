@@ -26,8 +26,7 @@ use App\Controllers\Admin\PluginController;
 use App\Middleware\AdminAuth;
 use App\Middleware\CsrfMiddleware;
 
-// 公开
-$router->get('/admin/login',        [AuthController::class, 'loginForm']);
+// 公开:登录页已迁移到前台模拟窗,这里只保留 POST 登录接口。
 $router->post('/admin/login',       [AuthController::class, 'login'], [CsrfMiddleware::class]);
 $router->get('/admin/logout',       [AuthController::class, 'logout']);
 $router->get('/admin/forgot',       [AuthController::class, 'forgotForm']);

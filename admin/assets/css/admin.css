@@ -354,7 +354,7 @@ button:hover .admin-check-icon {
 .admin-brand {
     display: flex;
     align-items: center;
-    height: 48px;
+    height: var(--admin-header-height);
     padding: 0 8px;
     border-bottom: 0;
 }
@@ -5954,7 +5954,7 @@ body.admin-body.auth-body {
     }
 
     .admin-brand {
-        height: 48px;
+        height: var(--admin-header-height);
         padding: 0 4px;
     }
 

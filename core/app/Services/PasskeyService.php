@@ -41,6 +41,11 @@ class PasskeyService
         ) > 0;
     }
 
+    public function hasAnyCredential(): bool
+    {
+        return (int) $this->db->fetchColumn('SELECT COUNT(*) FROM webauthn_credentials') > 0;
+    }
+
     public function allCredentials(): array
     {
         return $this->db->fetchAll(

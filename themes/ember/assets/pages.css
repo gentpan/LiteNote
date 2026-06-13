@@ -1728,7 +1728,7 @@ html[data-theme="dark"] .activity-item-content {
     gap: var(--sp-8);
 }
 
-/* 关键词侧边竖列(#关键词 数字):固定在内容列右侧空白处,垂直居中跟随滚动;点击 = 按 mood 筛选(走 PJAX) */
+/* 关键词侧边竖列(#关键词 数字):固定在内容列右侧空白处,垂直居中跟随滚动;点击后 AJAX 筛选。 */
 .talk-keyword-rail {
     position: fixed;
     top: 50%;
