@@ -27,11 +27,12 @@ final class ActivityIntegration
             'description' => '同步最近播放，可选同步收藏歌曲。',
             'default_interval_minutes' => 60,
             'token_label' => 'Access Token',
-            'token_hint' => '如果填写 refresh token，access token 可留空或过期后自动刷新。',
+            'token_hint' => '由 Spotify 授权按钮自动写入；通常不需要手动填写。',
             'refresh_label' => 'Refresh Token',
             'fields' => [
                 'client_id' => ['label' => 'Client ID', 'placeholder' => 'Spotify app client id'],
                 'client_secret' => ['label' => 'Client Secret', 'placeholder' => 'Spotify app client secret', 'secret' => true],
+                'redirect_uri' => ['label' => 'Redirect URI', 'placeholder' => 'http://127.0.0.1:5555/admin/oauth/spotify/callback'],
                 'limit' => ['label' => '同步条数', 'placeholder' => '20'],
                 'sync_saved' => ['label' => '同步收藏歌曲', 'placeholder' => '1 / 0'],
             ],

@@ -47,7 +47,26 @@
             </div>
         @endif
 
-        @if(!empty($definition['token_label']))
+        @if($provider === 'spotify')
+            <div class="form-group">
+                <label>Spotify 账号授权</label>
+                <a class="btn btn-primary" href="/admin/oauth/spotify/start"><i class="fa-brands fa-spotify"></i> 授权 Spotify 账号</a>
+                <span class="field-hint">
+                    先保存 Client ID、Client Secret 和 Redirect URI，再点击授权。Spotify Developer Dashboard 里的 Redirect URI 必须和这里填写的完全一致，不能多斜杠。
+                </span>
+            </div>
+            <div class="form-group">
+                <label>Token 状态</label>
+                <div class="activity-token-state">
+                    <span class="status {{ $hasToken ? 'status-published' : 'status-draft' }}">{{ $hasToken ? 'Access Token 已保存' : 'Access Token 未授权' }}</span>
+                    @if($hasRefresh)
+                        <span class="status status-published">Refresh Token 已保存</span>
+                    @endif
+                </div>
+            </div>
+        @endif
+
+        @if($provider !== 'spotify' && !empty($definition['token_label']))
             <div class="form-group">
                 <label>{{ $definition['token_label'] }}</label>
                 <input type="password" name="access_token" value="" placeholder="{{ $hasToken ? '已保存，留空则不修改' : $definition['token_label'] }}" data-no-dirty>
@@ -55,7 +74,7 @@
             </div>
         @endif
 
-        @if(!empty($definition['refresh_label']))
+        @if($provider !== 'spotify' && !empty($definition['refresh_label']))
             <div class="form-group">
                 <label>{{ $definition['refresh_label'] }}</label>
                 <input type="password" name="refresh_token" value="" placeholder="{{ $hasRefresh ? '已保存，留空则不修改' : $definition['refresh_label'] }}" data-no-dirty>
@@ -63,12 +82,19 @@
         @endif
 
         @foreach(($definition['fields'] ?? []) as $key => $field)
+            @php
+                $fieldValue = $meta[$key] ?? '';
+                if ($provider === 'spotify' && $key === 'redirect_uri' && trim((string)$fieldValue) === '') {
+                    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+                    $fieldValue = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? '127.0.0.1:5555') . '/admin/oauth/spotify/callback';
+                }
+            @endphp
             <div class="form-group">
                 <label>{{ $field['label'] }}</label>
                 @if(!empty($field['textarea']))
-                    <textarea name="metadata_{{ $key }}" rows="5" placeholder="{{ $field['placeholder'] ?? '' }}">{{ $meta[$key] ?? '' }}</textarea>
+                    <textarea name="metadata_{{ $key }}" rows="5" placeholder="{{ $field['placeholder'] ?? '' }}">{{ $fieldValue }}</textarea>
                 @else
-                    <input type="{{ !empty($field['secret']) ? 'password' : 'text' }}" name="metadata_{{ $key }}" value="{{ !empty($field['secret']) && !empty($meta[$key] ?? '') ? '' : ($meta[$key] ?? '') }}" placeholder="{{ !empty($field['secret']) && !empty($meta[$key] ?? '') ? '已保存，留空则不修改' : ($field['placeholder'] ?? '') }}" {{ !empty($field['secret']) ? 'data-no-dirty' : '' }}>
+                    <input type="{{ !empty($field['secret']) ? 'password' : 'text' }}" name="metadata_{{ $key }}" value="{{ !empty($field['secret']) && !empty($fieldValue) ? '' : $fieldValue }}" placeholder="{{ !empty($field['secret']) && !empty($fieldValue) ? '已保存，留空则不修改' : ($field['placeholder'] ?? '') }}" {{ !empty($field['secret']) ? 'data-no-dirty' : '' }}>
                 @endif
             </div>
         @endforeach

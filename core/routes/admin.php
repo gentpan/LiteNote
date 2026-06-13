@@ -19,6 +19,7 @@ use App\Controllers\Admin\SettingController;
 use App\Controllers\Admin\ProfileController;
 use App\Controllers\Admin\PasskeyController;
 use App\Controllers\Admin\ActivityController;
+use App\Controllers\Admin\SpotifyOAuthController;
 use App\Controllers\Admin\MailController;
 use App\Controllers\Admin\TelegramController;
 use App\Controllers\Admin\ThemeController;
@@ -35,6 +36,7 @@ $router->get('/admin/reset',        [AuthController::class, 'resetForm']);
 $router->post('/admin/reset',       [AuthController::class, 'reset'], [CsrfMiddleware::class]);
 $router->get('/admin/passkey/login-options', [PasskeyController::class, 'loginOptions']);
 $router->post('/admin/passkey/login',        [PasskeyController::class, 'login'], [CsrfMiddleware::class]);
+$router->get('/admin/oauth/spotify/callback', [SpotifyOAuthController::class, 'callback']);
 
 // 受保护
 $router->get('/admin', [DashboardController::class, 'index'], [AdminAuth::class]);
@@ -112,6 +114,7 @@ $router->group('/admin', function ($r) {
     $r->get('/activities/integrations/{provider}/edit', [ActivityController::class, 'editIntegration']);
     $r->post('/activities/integrations/{provider}/save', [ActivityController::class, 'saveIntegration'], [\App\Middleware\CsrfMiddleware::class]);
     $r->post('/activities/integrations/{provider}/sync', [ActivityController::class, 'syncIntegration'], [\App\Middleware\CsrfMiddleware::class]);
+    $r->get('/oauth/spotify/start', [SpotifyOAuthController::class, 'start']);
     $r->get('/activities/{id}/edit', [ActivityController::class, 'edit']);
     $r->post('/activities/{id}/edit', [ActivityController::class, 'update'], [\App\Middleware\CsrfMiddleware::class]);
     $r->post('/activities/delete', [ActivityController::class, 'destroy'], [\App\Middleware\CsrfMiddleware::class]);

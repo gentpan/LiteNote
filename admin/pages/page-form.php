@@ -42,7 +42,8 @@
 
             <aside class="post-editor-sidebar">
                 <div class="post-editor-actions">
-                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> 保存</button>
+                    <button type="submit" name="submit_action" value="publish" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> 发布</button>
+                    <button type="submit" name="submit_action" value="save" class="btn"><i class="fa-solid fa-floppy-disk"></i> 保存</button>
                     <a href="/admin/pages" class="btn"><i class="fa-solid fa-arrow-left"></i> 返回</a>
                 </div>
 
