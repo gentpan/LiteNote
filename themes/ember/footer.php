@@ -18,12 +18,14 @@
                                 || in_array(rtrim($socialPath, '/'), ['/rss.xml', '/feed'], true);
                         @endphp
                         @if($socialKey !== 'email' && !$isRssLink && strpos($socialUrl, 'mailto:') !== 0)
-                            <a href="{{ $s['url'] }}" class="footer-social" title="{{ $s['label'] }}" aria-label="{{ $s['label'] }}" target="_blank" rel="nofollow noopener">@php $footerSocialIcon = (string)($s['icon'] ?? ''); @endphp
-                                @if(str_contains($footerSocialIcon, 'fa-x-twitter'))<i class="fa-brands fa-x-twitter" aria-hidden="true"></i>
-                                @elseif(str_contains($footerSocialIcon, 'fa-github'))<i class="fa-brands fa-github" aria-hidden="true"></i>
-                                @elseif(str_contains($footerSocialIcon, 'fa-rss') || str_contains($footerSocialIcon, 'fa-square-rss'))<i class="fa-solid fa-square-rss" aria-hidden="true"></i>
-                                @else <i class="fa-regular fa-copy" aria-hidden="true"></i>
-                                @endif</a>
+                            <a href="{{ $s['url'] }}" class="footer-social" title="{{ $s['label'] }}" aria-label="{{ $s['label'] }}" target="_blank" rel="nofollow noopener">
+                                @php $footerSocialIcon = (string)($s['icon'] ?? ''); @endphp
+                                @if($footerSocialIcon)
+                                    <i class="{{ $footerSocialIcon }}" aria-hidden="true"></i>
+                                @else
+                                    <i class="fa-regular fa-copy" aria-hidden="true"></i>
+                                @endif
+                            </a>
                         @endif
                     @endforeach
                 @endif
