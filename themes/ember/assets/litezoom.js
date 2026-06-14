@@ -41,11 +41,11 @@
         '.litezoom__backdrop{position:absolute;inset:0;background:rgba(17,24,39,.92);',
         '-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}',
         '.litezoom__stage{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;box-sizing:border-box;}',
-        '.litezoom.has-thumbs .litezoom__stage{padding-bottom:92px;}',
+        '.litezoom.has-thumbs .litezoom__stage{padding-bottom:148px;}',
         '.litezoom__img{max-width:92vw;max-height:88vh;object-fit:contain;transform-origin:center center;',
         'will-change:transform;-webkit-user-drag:none;border-radius:2px;box-shadow:0 8px 40px rgba(0,0,0,.45);',
         'opacity:0;cursor:zoom-out;}',
-        '.litezoom.has-thumbs .litezoom__img{max-height:calc(100vh - 136px);}',
+        '.litezoom.has-thumbs .litezoom__img{max-height:calc(100vh - 192px);}',
         '.litezoom__img.is-ready{opacity:1;}',
         '.litezoom[data-mode="full"] .litezoom__img{cursor:zoom-in;}',
         '.litezoom[data-mode="full"] .litezoom__img.is-zoomed{cursor:grab;}',
@@ -78,10 +78,10 @@
         '.litezoom__nav--next{right:16px;}',
         '.litezoom__nav svg{width:24px;height:24px;display:block;}',
         '.litezoom.is-single .litezoom__nav{display:none;}',
-        // caption 说明文字(full 模式):显示在图片下方空白区域居中
-        '.litezoom__caption{position:absolute;left:24px;top:24px;right:auto;bottom:auto;max-width:min(520px,calc(100vw - 48px));',
+        // caption 说明文字(full 模式):固定在图片底部说明区,避免跟随图片尺寸漂移
+        '.litezoom__caption{position:absolute;left:50%;right:auto;bottom:92px;transform:translateX(-50%);max-width:min(620px,calc(100vw - 48px));',
         'padding:10px 14px;text-align:center;color:rgba(255,255,255,.94);font-size:14px;line-height:1.55;z-index:3;',
-        'pointer-events:none;background:rgba(17,24,39,.58);border:1px solid rgba(255,255,255,.16);border-radius:8px;',
+        'pointer-events:none;background:rgba(17,24,39,.58);border:1px solid rgba(255,255,255,.16);border-radius:0;',
         '-webkit-backdrop-filter:blur(14px) saturate(145%);backdrop-filter:blur(14px) saturate(145%);',
         'box-shadow:0 10px 28px rgba(0,0,0,.24);text-shadow:0 1px 2px rgba(0,0,0,.35);}',
         '.litezoom__caption:empty{display:none;}',
@@ -106,11 +106,11 @@
         // 移动端微调
         '@media (max-width:640px){',
         '.litezoom__img{max-width:100vw;max-height:82vh;}',
-        '.litezoom.has-thumbs .litezoom__stage{padding-bottom:78px;}',
-        '.litezoom.has-thumbs .litezoom__img{max-height:calc(100vh - 112px);}',
+        '.litezoom.has-thumbs .litezoom__stage{padding-bottom:132px;}',
+        '.litezoom.has-thumbs .litezoom__img{max-height:calc(100vh - 168px);}',
         '.litezoom__nav{width:38px;height:38px;}',
         '.litezoom__thumb{width:48px;height:48px;}',
-        '.litezoom__caption{max-width:calc(100vw - 24px);font-size:13px;padding:8px 11px;border-radius:8px;}',
+        '.litezoom__caption{bottom:78px;max-width:calc(100vw - 24px);font-size:13px;padding:8px 11px;border-radius:0;}',
         '}',
         '@media (prefers-reduced-motion:reduce){.litezoom-lazy{transition:none;filter:none;}}'
     ].join('');
@@ -220,7 +220,6 @@
             imgEl.style.transition = animate ? 'transform .25s ease' : 'none';
             imgEl.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + scale + ')';
             imgEl.classList.toggle('is-zoomed', scale > 1.001);
-            scheduleCaptionPosition();
         }
 
         function resetTransform(animate) {
@@ -242,31 +241,6 @@
             if (scale <= 1.001) { tx = 0; ty = 0; }
             clampPan();
             applyTransform(!!animate);
-        }
-
-        function scheduleCaptionPosition() {
-            if (!isOpen || mode !== 'full' || !captionEl.textContent.trim()) { return; }
-            window.requestAnimationFrame(placeCaption);
-        }
-
-        function placeCaption() {
-            if (!isOpen || mode !== 'full' || !captionEl.textContent.trim() || !imgEl.classList.contains('is-ready')) { return; }
-            var rootRect = el.getBoundingClientRect();
-            var imgRect = imgEl.getBoundingClientRect();
-            var capRect = captionEl.getBoundingClientRect();
-            var gutter = rootRect.width <= 640 ? 12 : 18;
-            var thumbSafe = el.classList.contains('has-thumbs') ? (rootRect.width <= 640 ? 82 : 96) : 12;
-            var left = (rootRect.width - capRect.width) / 2;
-            var areaTop = imgRect.bottom - rootRect.top + gutter;
-            var areaBottom = rootRect.height - thumbSafe - gutter;
-            var top = areaTop;
-            if (areaBottom - areaTop > capRect.height) {
-                top = areaTop + (areaBottom - areaTop - capRect.height) / 2;
-            }
-            left = clamp(left, 12, Math.max(12, rootRect.width - capRect.width - 12));
-            top = clamp(top, 12, Math.max(12, rootRect.height - capRect.height - thumbSafe - 12));
-            captionEl.style.left = left + 'px';
-            captionEl.style.top = top + 'px';
         }
 
         // 限制平移范围,避免把图片拖出视野太远
@@ -298,7 +272,6 @@
                 imgEl.alt = item.caption || '';
                 imgEl.classList.add('is-ready');
                 spinner.classList.remove('is-active');
-                scheduleCaptionPosition();
             };
             loader.onerror = function () {
                 if (token !== loadToken) { return; }
@@ -308,8 +281,6 @@
 
             counterEl.textContent = (index + 1) + ' / ' + items.length;
             captionEl.textContent = item.caption || '';
-            captionEl.style.left = '';
-            captionEl.style.top = '';
             updateThumbsActive();
             preload(index + 1);
             preload(index - 1);
@@ -380,8 +351,6 @@
             void el.offsetWidth;
             el.classList.add('is-open');
             document.addEventListener('keydown', onKeydown, false);
-            window.addEventListener('resize', scheduleCaptionPosition, false);
-            scheduleCaptionPosition();
             (el.querySelector('[data-act="close"]') || el).focus && el.querySelector('[data-act="close"]').focus();
         }
 
@@ -391,7 +360,6 @@
             el.classList.remove('is-open');
             backdrop.style.opacity = '';
             document.removeEventListener('keydown', onKeydown, false);
-            window.removeEventListener('resize', scheduleCaptionPosition, false);
             // 过渡结束后清理大图,释放内存
             window.setTimeout(function () {
                 if (!isOpen) { imgEl.removeAttribute('src'); imgEl.classList.remove('is-ready'); }

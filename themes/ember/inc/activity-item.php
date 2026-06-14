@@ -11,6 +11,18 @@
     $typeLabel = \App\Services\ActivityService::typeLabel($type);
     $actionLabel = \App\Services\ActivityService::actionLabel((string)($activity->action ?? 'manual'));
     $source = trim((string)($activity->source ?? ''));
+    $sourceClass = $source !== '' ? preg_replace('~[^a-z0-9_-]+~i', '-', strtolower($source)) : '';
+    $sourceLabel = match ($source) {
+        'litenote' => '站内',
+        'spotify' => 'Spotify',
+        'netease' => '网易云',
+        'neodb' => 'NeoDB',
+        'github' => 'GitHub',
+        'bilibili' => 'Bilibili',
+        'x_bookmarks' => '书签',
+        'manual', '' => '',
+        default => ucfirst(str_replace(['_', '-'], ' ', $source)),
+    };
     $rating = isset($meta['rating']) ? (float)$meta['rating'] : null;
     $ratingText = '';
     if ($rating !== null) {
@@ -33,23 +45,29 @@
         $xmarkUrl = '/xmarks#xmark-activity-' . (int)$activity->id;
     }
 @endphp
-<article class="activity-item activity-type-{{ $type }}" id="activity-{{ $activity->id }}">
+<article class="activity-item activity-type-{{ $type }}{{ $sourceClass ? ' activity-source-' . $sourceClass : '' }}" id="activity-{{ $activity->id }}">
     <time class="activity-item-time" datetime="{{ $activity->happened_at }}">
         <strong>{{ $dayLabel }}</strong>
         <small>{{ $dateText }}</small>
     </time>
     <span class="activity-item-line" aria-hidden="true"></span>
-    <span class="activity-item-icon">@if($source === 'x_bookmarks')<i class="fa-solid fa-bookmark" aria-hidden="true"></i>
-    @elseif($type === 'music')<i class="fa-solid fa-music" aria-hidden="true"></i>
-    @elseif($type === 'game')<i class="fa-solid fa-gamepad" aria-hidden="true"></i>
-    @else <i class="fa-solid fa-chart-simple" aria-hidden="true"></i>
-    @endif</span>
+    <span class="activity-item-icon">
+        @if($source === 'x_bookmarks')<i class="fa-solid fa-bookmark" aria-hidden="true"></i>
+        @elseif($source === 'github')<i class="fa-brands fa-github" aria-hidden="true"></i>
+        @elseif($source === 'spotify')<i class="fa-brands fa-spotify" aria-hidden="true"></i>
+        @elseif($source === 'neodb')<i class="fa-solid fa-clapperboard" aria-hidden="true"></i>
+        @elseif($type === 'music')<i class="fa-solid fa-music" aria-hidden="true"></i>
+        @elseif($type === 'blog')<i class="fa-regular fa-file-lines" aria-hidden="true"></i>
+        @elseif($type === 'social')<i class="fa-regular fa-comments" aria-hidden="true"></i>
+        @else <i class="{{ $icon }}" aria-hidden="true"></i>
+        @endif
+    </span>
     <div class="activity-item-body">
         <div class="activity-item-meta">
             <span>{{ $timeText }}</span>
             <span>{{ $actionLabel }}</span>
             <span>{{ $typeLabel }}</span>
-            @if($source !== '')<span>{{ $source }}</span>@endif
+            @if($sourceLabel !== '')<span>{{ $sourceLabel }}</span>@endif
         </div>
         <div class="activity-item-title">
             @if($isXmark)

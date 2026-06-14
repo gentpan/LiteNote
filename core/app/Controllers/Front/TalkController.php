@@ -12,6 +12,7 @@ use App\Enums\CommentStatus;
 use App\Enums\Toggle;
 use App\Models\Comment;
 use App\Models\Talk;
+use App\Services\ActivityService;
 use App\Services\ImageUploadService;
 use App\Services\WeatherService;
 
@@ -210,6 +211,7 @@ class TalkController
             'published_at' => date('Y-m-d H:i:s'),
         ]);
         $item->save();
+        $this->recordTalkActivity($item);
 
         if ($isAjax) {
             $item->setRelation('comments', []);
@@ -225,6 +227,37 @@ class TalkController
 
         Session::flash('talk_publish_success', '滔客已发布');
         Response::redirect('/talk#talk-' . $item->id);
+    }
+
+    private function recordTalkActivity(Talk $talk): void
+    {
+        if ((int)($talk->is_public ?? 0) !== Toggle::On->value) {
+            return;
+        }
+
+        try {
+            $content = trim((string)$talk->contentWithoutKeywords());
+            (new ActivityService())->record([
+                'type' => 'social',
+                'action' => 'posted',
+                'source' => 'litenote',
+                'external_id' => 'talk:' . (int)$talk->id,
+                'title' => '发布说说',
+                'content' => $content,
+                'url' => '/talk#talk-' . (int)$talk->id,
+                'icon' => ActivityService::typeIcon('social'),
+                'happened_at' => (string)($talk->published_at ?: $talk->created_at ?: date('Y-m-d H:i:s')),
+                'metadata' => [
+                    'talk_id' => (int)$talk->id,
+                    'keywords' => $talk->getKeywords(),
+                    'image_count' => count($talk->getImages()),
+                    'location' => trim((string)($talk->locationDisplayName())),
+                    'weather' => trim((string)($talk->weatherDisplayText())),
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            error_log('LiteNote talk activity record failed: ' . $e->getMessage());
+        }
     }
 
     public function uploadImage(Request $request): never
