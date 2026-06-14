@@ -129,7 +129,7 @@
         <div class="nav-pill" id="nav-shell">
             <div class="nav-row">
                 <div class="nav-identity-orb" data-nav-identity data-nav-admin="{{ !empty($currentAdmin) ? '1' : '0' }}">
-                    <a href="{{ ($activeNav ?? '') === 'home' ? '/?__refresh=1' : '/' }}" class="nav-avatar {{ ($activeNav ?? '') === 'home' ? 'active' : '' }}" title="{{ !empty($author) ? ($author->nickname ?: $author->username) : '首页' }}" aria-label="返回首页">
+                    <a href="/" class="nav-avatar {{ ($activeNav ?? '') === 'home' ? 'active' : '' }}" title="{{ !empty($author) ? ($author->nickname ?: $author->username) : '首页' }}" aria-label="返回首页">
                         @if(!empty($author))
                             <img class="nav-avatar-img" src="{{ $author->getAvatarUrl(40) }}" alt="{{ $author->nickname }}" width="32" height="32" loading="lazy" data-blogger-avatar="{{ $author->getAvatarUrl(40) }}" data-blogger-name="{{ $author->nickname ?: $author->username }}">
                         @else

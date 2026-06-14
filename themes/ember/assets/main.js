@@ -1014,7 +1014,7 @@
                     orb.classList.add('is-avatar-navigating');
                     if (window.location.pathname === '/' || window.location.pathname === '') {
                         e.preventDefault();
-                        window.location.assign(avatar.href || '/?__refresh=1');
+                        window.location.assign(avatar.href || '/');
                         return;
                     }
                     try { sessionStorage.setItem(suppressStorageKey, String(Date.now() + 1600)); } catch (err) {}
