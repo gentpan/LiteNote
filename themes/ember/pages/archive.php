@@ -71,7 +71,7 @@
                 <div class="archive-category-panel">
                     <div class="archive-category-grid">
                         @foreach(($categoryCards ?? []) as $cat)
-                            <a class="archive-category-card cat-color-{{ $cat['color'] }}" href="/category/{{ $cat['slug'] }}">
+                            <a class="archive-category-card cat-color-{{ $cat['color'] }}" href="{{ \App\Core\Helper::categoryUrl((string)$cat['slug']) }}">
                                 <div class="archive-category-main">
                                     <span class="archive-category-icon"><i class="{{ $cat['icon'] }}"></i></span>
                                     <div>

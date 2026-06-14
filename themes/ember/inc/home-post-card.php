@@ -9,7 +9,7 @@
         <img src="{{ $cover }}" alt="{{ $item->title }}" loading="lazy" decoding="async">
     </a>
     @if($category)
-        <a href="/category/{{ $category->slug }}" class="home-post-category">
+        <a href="{{ \App\Core\Helper::categoryUrl((string)$category->slug) }}" class="home-post-category">
             <i class="{{ $category->iconClass() }}" aria-hidden="true"></i>
             <span>{{ $category->name }}</span>
         </a>

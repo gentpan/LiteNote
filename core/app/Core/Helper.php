@@ -15,6 +15,11 @@ final class Helper
         return $base . $path;
     }
 
+    public static function categoryUrl(string $slug): string
+    {
+        return self::url('/category/' . rawurlencode($slug));
+    }
+
     public static function asset(string $path): string
     {
         return self::url('/admin/assets/' . ltrim($path, '/'));

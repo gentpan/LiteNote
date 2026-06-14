@@ -8,7 +8,7 @@
             <span>文章</span>
             @if($category)
                 <span>·</span>
-                <a href="/category/{{ $category->slug }}">{{ $category->name }}</a>
+                <a href="{{ \App\Core\Helper::categoryUrl((string)$category->slug) }}">{{ $category->name }}</a>
             @endif
             <span>·</span>
             <span>{!! \App\Core\Helper::timeTag($item->published_at) !!}</span>
