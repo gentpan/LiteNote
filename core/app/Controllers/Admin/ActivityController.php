@@ -24,7 +24,7 @@ final class ActivityController
         $page = max(1, (int)($_GET['page'] ?? 1));
         $type = trim((string)($_GET['type'] ?? ''));
         $filters = [];
-        if ($type !== '' && isset(ActivityService::TYPES[$type])) {
+        if ($type !== '' && isset(ActivityService::TYPES[$type]) && $type !== 'manual') {
             $filters['type'] = $type;
         }
         $result = Activity::paginate($page, 20, $filters, false);
@@ -34,8 +34,8 @@ final class ActivityController
             'total' => $result['total'],
             'page' => $page,
             'perPage' => 20,
-            'activeType' => $type,
-            'types' => ActivityService::TYPES,
+            'activeType' => $filters['type'] ?? '',
+            'types' => $this->visibleTypes(),
             'paginator' => Helper::paginate($page, $result['total'], 20, '/admin/activities'),
             'csrf' => Session::csrfToken(),
             'pageTitle' => '动态管理',
@@ -149,7 +149,7 @@ final class ActivityController
     {
         return View::render('activity.form', [
             'item' => $item,
-            'types' => ActivityService::TYPES,
+            'types' => $this->visibleTypes(),
             'actions' => ActivityService::ACTIONS,
             'csrf' => Session::csrfToken(),
             'pageTitle' => '编辑动态',
@@ -206,6 +206,18 @@ final class ActivityController
 
         Session::flash('success', '动态已更新');
         Response::redirect('/admin/activities');
+    }
+
+    /**
+     * @return array<string,array{label:string,icon:string}>
+     */
+    private function visibleTypes(): array
+    {
+        return array_filter(
+            ActivityService::TYPES,
+            static fn(string $key): bool => $key !== 'manual',
+            ARRAY_FILTER_USE_KEY
+        );
     }
 
     public function destroy(Request $request): never

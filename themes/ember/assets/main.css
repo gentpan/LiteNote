@@ -1284,19 +1284,16 @@ button.feed-action:disabled {
     padding: 76px var(--sp-28) 26px;
     color: var(--c-white);
     text-align: left;
-    background: linear-gradient(
-        180deg,
-        rgba(15, 23, 42, 0) 0%,
-        rgba(15, 23, 42, 0.82) 72%,
-        rgba(15, 23, 42, 0.92) 100%
-    );
+    background: none;
 }
 .post-hero-title .post-title {
     margin: 0;
     font-family: var(--post-hero-title-font-family);
     font-weight: 400;
     color: var(--c-white);
-    text-shadow: 0 2px 16px rgba(0, 0, 0, 0.35);
+    text-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.72),
+        0 8px 24px rgba(0, 0, 0, 0.46);
 }
 .post-side-stats {
     position: absolute;
