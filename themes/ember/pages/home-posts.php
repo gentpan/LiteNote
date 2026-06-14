@@ -108,7 +108,7 @@
                         <div class="post-feature-body">
                             <p class="post-feature-meta">
                                 <span class="post-number">{{ $postNumberText }}</span>
-                                @if($category)<a href="/category/{{ $category->slug }}">{{ $category->name }}</a>@endif
+                                @if($category)<a href="{{ \App\Core\Helper::categoryUrl((string)$category->slug) }}">{{ $category->name }}</a>@endif
                                 <span class="post-feature-time">{!! \App\Core\Helper::timeTag($post->published_at) !!}</span>
                             </p>
                             <h3 class="post-feature-title">

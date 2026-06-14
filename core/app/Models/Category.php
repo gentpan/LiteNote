@@ -49,7 +49,20 @@ final class Category extends Model
 
     public static function findBySlug(string $slug): ?self
     {
+        $slug = trim($slug);
+        $decodedSlug = self::decodeSlug($slug);
+
+        $category = self::findBy('slug', $decodedSlug);
+        if ($category || $decodedSlug === $slug) {
+            return $category;
+        }
+
         return self::findBy('slug', $slug);
+    }
+
+    public static function decodeSlug(string $slug): string
+    {
+        return rawurldecode(trim($slug));
     }
 
     public function postCount(): int

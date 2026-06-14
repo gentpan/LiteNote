@@ -12,7 +12,7 @@
         <header class="post-header kami-article-header">
             <p class="kami-page-kicker">
                 @if($category)
-                    <a href="/category/{{ $category->slug }}">{{ $category->name }}</a>
+                    <a href="{{ \App\Core\Helper::categoryUrl((string)$category->slug) }}">{{ $category->name }}</a>
                     <span>·</span>
                 @endif
                 <span>{!! \App\Core\Helper::timeTag($post->published_at) !!}</span>

@@ -31,7 +31,7 @@ class CategoryController
 
     public function show($request, array $params): string
     {
-        $slug = $params['slug'] ?? '';
+        $slug = Category::decodeSlug((string)($params['slug'] ?? ''));
         $cat = Category::findBySlug($slug);
         if (!$cat) {
             \App\Core\Response::notFound("分类不存在: {$slug}");
@@ -56,7 +56,7 @@ class CategoryController
 
     public function feed($request, array $params): never
     {
-        $slug = $params['slug'] ?? '';
+        $slug = Category::decodeSlug((string)($params['slug'] ?? ''));
         $cat = Category::findBySlug($slug);
         if (!$cat) {
             Response::json(['code' => 404, 'msg' => '分类不存在'], 404);

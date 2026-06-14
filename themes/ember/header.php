@@ -198,7 +198,7 @@
                 <div class="nav-cat-list">
                     @if(!empty($navCategories))
                         @foreach($navCategories as $cat)
-                            <a href="/category/{{ $cat['slug'] }}" class="nav-cat-item cat-color-{{ $cat['color'] ?? 0 }}">
+                            <a href="{{ \App\Core\Helper::categoryUrl((string)($cat['slug'] ?? '')) }}" class="nav-cat-item cat-color-{{ $cat['color'] ?? 0 }}">
                                 <span class="nav-cat-ico"><i class="{{ $cat['icon'] ?? 'fa-regular fa-folder' }}"></i></span>
                                 <span class="nav-cat-name">{{ $cat['name'] }}</span>
                                 @if(!empty($cat['desc']))<span class="nav-cat-desc">{{ $cat['desc'] }}</span>@endif

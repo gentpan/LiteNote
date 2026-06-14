@@ -51,7 +51,7 @@
                         </span>
                     </time>
                     @if($category)
-                        <a class="post-side-stat post-side-category" href="/category/{{ $category->slug }}" title="分类：{{ $category->name }}">
+                        <a class="post-side-stat post-side-category" href="{{ \App\Core\Helper::categoryUrl((string)$category->slug) }}" title="分类：{{ $category->name }}">
                             <i class="{{ $category->iconClass() }}" aria-hidden="true"></i>
                             <span>{{ $category->name }}</span>
                         </a>
@@ -79,7 +79,7 @@
                         @endif
                         <strong class="post-license-author">{{ $postAuthorName }}</strong>
                         @if($category)
-                            <span class="post-license-category">发布在&nbsp;<a class="post-license-inline-link post-license-category-link" href="/category/{{ $category->slug }}"><i class="{{ $category->iconClass() }}" aria-hidden="true"></i>{{ $category->name }}</a></span>
+                            <span class="post-license-category">发布在&nbsp;<a class="post-license-inline-link post-license-category-link" href="{{ \App\Core\Helper::categoryUrl((string)$category->slug) }}"><i class="{{ $category->iconClass() }}" aria-hidden="true"></i>{{ $category->name }}</a></span>
                         @endif
                         <span class="post-license-terms">本文采用 <i class="fa-brands fa-creative-commons" aria-hidden="true"></i> <a class="post-license-inline-link" href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-NC-SA 4.0</a>&nbsp;许可协议，转载请注明来源。</span>
                     </div>

@@ -37,7 +37,7 @@
                      data-list-selector="[data-category-feed-list]"
                      data-offset="{{ count($posts ?? []) }}"
                      data-limit="10"
-                     data-url="/category/{{ $category->slug }}/feed">
+                     data-url="{{ \App\Core\Helper::categoryUrl((string)$category->slug) }}/feed">
                     <button type="button" class="home-feed-more-btn">
                         <span>加载更多</span>
                     </button>
