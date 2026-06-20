@@ -154,7 +154,7 @@
         }
 
         function renderRow(idx, data) {
-            data = data || { key: '', url: '', icon: '', label: '' };
+            data = data || { key: '', url: '', icon: '', label: '', qr: '' };
             var label = data.label || data.key || '';
             var wrap = document.createElement('div');
             wrap.className = 'social-row';
@@ -165,13 +165,20 @@
                 +   '<input type="text" name="socials[' + idx + '][label]" placeholder="平台名称" value="' + escapeAttr(label) + '" class="input-label">'
                 +   '<input type="text" name="socials[' + idx + '][url]"   placeholder="https://…" value="' + escapeAttr(data.url) + '" class="input-url">'
                 +   '<input type="text" name="socials[' + idx + '][icon]"  placeholder="fa-brands fa-github" value="' + escapeAttr(data.icon) + '" class="input-icon">'
+                +   '<div class="social-row-qr" data-social-qr hidden>'
+                +       '<input type="text" name="socials[' + idx + '][qr]" placeholder="二维码图片 URL" value="' + escapeAttr(data.qr || '') + '" class="input-qr">'
+                +       '<input type="file" class="input-qr-file" accept="image/jpeg,image/png,image/gif,image/webp" hidden>'
+                +       '<button type="button" class="btn-icon social-qr-upload" title="上传二维码" aria-label="上传二维码"><i class="fa-solid fa-upload"></i></button>'
+                +   '</div>'
                 +   '<button type="button" class="btn-icon btn-remove" title="删除" aria-label="删除"><i class="fa-solid fa-trash"></i></button>'
                 + '</div>';
             wrap.querySelector('.btn-remove').addEventListener('click', function () {
                 wrap.remove();
                 reindex();
             });
+            bindQrUpload(wrap);
             list.appendChild(wrap);
+            updateQrVisibility(wrap);
         }
 
         // 输入 icon 时实时预览
@@ -180,8 +187,101 @@
                 var row = e.target.closest('.social-row');
                 var preview = row.querySelector('.social-row-preview');
                 preview.innerHTML = renderIcon(e.target.value);
+                updateQrVisibility(row);
+            } else if (e.target.classList && (e.target.classList.contains('input-label') || e.target.classList.contains('input-url'))) {
+                updateQrVisibility(e.target.closest('.social-row'));
             }
         });
+
+        function isQrSource(source) {
+            source = String(source || '').toLowerCase();
+            return source.indexOf('telegram') >= 0
+                || source.indexOf('wechat') >= 0
+                || source.indexOf('weixin') >= 0
+                || source.indexOf('微信') >= 0;
+        }
+
+        function isWechatSource(source) {
+            source = String(source || '').toLowerCase();
+            return source.indexOf('wechat') >= 0
+                || source.indexOf('weixin') >= 0
+                || source.indexOf('微信') >= 0;
+        }
+
+        function updateQrVisibility(row) {
+            if (!row) return;
+            var key = row.querySelector('.input-key')?.value || '';
+            var label = row.querySelector('.input-label')?.value || '';
+            var urlInput = row.querySelector('.input-url');
+            var url = urlInput?.value || '';
+            var icon = row.querySelector('.input-icon')?.value || '';
+            var qr = row.querySelector('[data-social-qr]');
+            if (!qr) return;
+            var source = [key, label, url, icon].join(' ');
+            var visible = isQrSource(source);
+            var isWechat = isWechatSource(source);
+            qr.hidden = !visible;
+            row.classList.toggle('has-qr-field', visible);
+            row.classList.toggle('is-wechat-social', isWechat);
+            if (urlInput) {
+                urlInput.required = false;
+                if (isWechat) {
+                    urlInput.value = '';
+                }
+            }
+        }
+
+        function bindQrUpload(row) {
+            var fileInput = row.querySelector('.input-qr-file');
+            var uploadBtn = row.querySelector('.social-qr-upload');
+            var qrInput = row.querySelector('.input-qr');
+            var csrf = '{{ $csrf }}';
+            if (!fileInput || !uploadBtn || !qrInput) return;
+            uploadBtn.addEventListener('click', function () {
+                fileInput.click();
+            });
+            fileInput.addEventListener('change', function () {
+                if (!fileInput.files || !fileInput.files[0]) return;
+                var original = uploadBtn.innerHTML;
+                uploadBtn.disabled = true;
+                uploadBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                var file = fileInput.files[0];
+                var upload = window.adminUploadFile
+                    ? window.adminUploadFile({
+                        url: '/admin/posts/upload-image',
+                        fields: { _csrf: csrf, purpose: 'social-qr' },
+                        fileField: 'image',
+                        file: file,
+                        successMessage: '二维码已上传'
+                    })
+                    : (function () {
+                        var fd = new FormData();
+                        fd.append('_csrf', csrf);
+                        fd.append('purpose', 'social-qr');
+                        fd.append('image', file);
+                        return fetch('/admin/posts/upload-image', {
+                            method: 'POST',
+                            body: fd,
+                            credentials: 'same-origin'
+                        }).then(function (r) { return r.json(); });
+                    })();
+                upload
+                    .then(function (res) {
+                        if (!res || res.code !== 0) {
+                            throw new Error((res && res.msg) || '上传失败');
+                        }
+                        qrInput.value = res.data.url || '';
+                    })
+                    .catch(function (err) {
+                        window.adminToast && window.adminToast(err.message || '二维码上传失败', 'error');
+                    })
+                    .finally(function () {
+                        uploadBtn.disabled = false;
+                        uploadBtn.innerHTML = original;
+                        fileInput.value = '';
+                    });
+            });
+        }
 
         function renderIcon(icon) {
             var safe = String(icon || '').trim();
@@ -231,7 +331,10 @@
         }
 
         list.closest('form')?.addEventListener('submit', function () {
-            list.querySelectorAll('.social-row').forEach(inferKey);
+            list.querySelectorAll('.social-row').forEach(function (row) {
+                inferKey(row);
+                updateQrVisibility(row);
+            });
         });
 
         // 添加空白行

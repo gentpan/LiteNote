@@ -241,7 +241,7 @@
     </div>
 
     <div class="site-search-overlay" data-search-overlay hidden>
-        <div class="site-search-panel" role="dialog" aria-modal="true" aria-label="站内搜索">
+        <div class="site-search-panel" role="search" aria-label="站内搜索">
             <form action="/search" method="get" class="site-search-pop-form">
                 <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
                 <input type="search" name="q" value="{{ $keyword ?? '' }}" placeholder="搜索文章、页面、滔客、音乐、X" autocomplete="off" data-search-input>

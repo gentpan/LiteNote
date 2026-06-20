@@ -114,6 +114,11 @@
                 return;
             }
 
+            if (document.body.classList.contains('site-search-open') && !target.closest('[data-search-overlay]')) {
+                closeSearch();
+                return;
+            }
+
             var panel = target.closest('[data-search-overlay]');
             if (panel && target === panel) {
                 closeSearch();

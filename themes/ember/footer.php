@@ -16,14 +16,24 @@
                             $socialPath = parse_url($socialUrl, PHP_URL_PATH) ?: $socialUrl;
                             $isRssLink = in_array($socialKey, ['rss', 'feed'], true)
                                 || in_array(rtrim($socialPath, '/'), ['/rss.xml', '/feed'], true);
+                            $socialQr = trim((string)($s['qr'] ?? ''));
+                            $hasSocialQr = $socialQr !== '' && in_array($socialKey, ['wechat', 'weixin', 'telegram'], true);
+                            $isQrOnlyLink = $socialUrl === '' || $socialUrl === '#';
+                            $socialHref = $isQrOnlyLink ? '#' : $socialUrl;
+                            $isMailLink = str_starts_with($socialUrl, 'mailto:');
                         @endphp
-                        @if($socialKey !== 'email' && !$isRssLink && strpos($socialUrl, 'mailto:') !== 0)
-                            <a href="{{ $s['url'] }}" class="footer-social" title="{{ $s['label'] }}" aria-label="{{ $s['label'] }}" target="_blank" rel="nofollow noopener">
+                        @if(!$isRssLink)
+                            <a href="{{ $socialHref }}" class="footer-social{{ $hasSocialQr ? ' footer-social-has-qr' : '' }}" title="{{ $s['label'] }}" aria-label="{{ $s['label'] }}" @if($isQrOnlyLink) onclick="return false" @elseif(!$isMailLink) target="_blank" rel="nofollow noopener" @endif>
                                 @php $footerSocialIcon = (string)($s['icon'] ?? ''); @endphp
                                 @if($footerSocialIcon)
-                                    <i class="{{ $footerSocialIcon }}" aria-hidden="true"></i>
+                                    {!! $footerSocialIcon !!}
                                 @else
                                     <i class="fa-regular fa-copy" aria-hidden="true"></i>
+                                @endif
+                                @if($hasSocialQr)
+                                    <span class="footer-social-qr" role="tooltip">
+                                        <img src="{{ $socialQr }}" alt="{{ $s['label'] }}二维码" loading="lazy">
+                                    </span>
                                 @endif
                             </a>
                         @endif
