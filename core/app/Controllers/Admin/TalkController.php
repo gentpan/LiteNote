@@ -50,9 +50,19 @@ class TalkController
                 'post_type' => $type,
                 'content' => (string)($item->content ?? ''),
                 'images' => (string)($item->images ?? ''),
-                'mood' => (string)($item->mood ?? ''),
                 'music_id' => (int)($item->music_id ?? 0),
                 'is_public' => (int)($item->is_public ?? 1),
+                'location_name' => (string)($item->location_name ?? ''),
+                'location_city' => (string)($item->location_city ?? ''),
+                'location_lat' => (string)($item->location_lat ?? ''),
+                'location_lng' => (string)($item->location_lng ?? ''),
+                'location_provider' => (string)($item->location_provider ?? ''),
+                'location_data' => (string)($item->location_data ?? ''),
+                'weather_label' => (string)($item->weather_label ?? ''),
+                'weather_icon' => (string)($item->weather_icon ?? ''),
+                'weather_temp' => (string)($item->weather_temp ?? ''),
+                'weather_code' => (int)($item->weather_code ?? 0),
+                'weather_data' => (string)($item->weather_data ?? ''),
                 'published_at' => (string)($item->published_at ?? $item->created_at ?? ''),
             ],
         ]);
@@ -68,11 +78,13 @@ class TalkController
         $postType = $this->normalizePostType((string)$request->input('post_type', 'talk'));
         $content = trim((string) $request->input('content', ''));
         $images  = trim((string) $request->input('images', ''));
-        $mood    = $postType === 'music' ? '' : trim((string) $request->input('mood', ''));
+        $mood    = '';
         $musicId = $postType === 'music' ? $this->normalizeMusicId((int)$request->input('music_id', 0)) : 0;
         $public  = $postType === 'talk' ? Toggle::fromInput($request->input('is_public', 0))->value : Toggle::On->value;
         $publishedAt = $postType === 'talk' ? trim((string)$request->input('published_at', '')) : '';
         $existingItem = $id ? Talk::find($id) : null;
+        $location = $postType === 'talk' ? $this->locationPayload($request) : $this->emptyLocationPayload();
+        $weather = $postType === 'talk' ? $this->weatherPayload($request) : $this->emptyWeatherPayload();
 
         if ($postType === 'talk' && $content === '') {
             if ($this->wantsJson()) {
@@ -95,6 +107,7 @@ class TalkController
             $publishedAt = (string)($existingItem->published_at ?? $existingItem->created_at ?? '');
         }
 
+        Talk::ensureLocationSchema();
         $fields = [
             'content' => $content,
             'images'  => $images,
@@ -102,6 +115,17 @@ class TalkController
             'music_id' => $musicId,
             'is_public' => $public,
             'post_type' => $postType,
+            'location_name' => $location['name'],
+            'location_city' => $location['city'],
+            'location_lat' => $location['lat'],
+            'location_lng' => $location['lng'],
+            'location_provider' => $location['provider'],
+            'location_data' => $location['data'],
+            'weather_label' => $weather['label'],
+            'weather_icon' => $weather['icon'],
+            'weather_temp' => $weather['temperature'],
+            'weather_code' => $weather['code'],
+            'weather_data' => $weather['data'],
             'published_at' => $publishedAt !== '' ? $publishedAt : date('Y-m-d H:i:s'),
         ];
         if ($id) {
@@ -124,7 +148,6 @@ class TalkController
                     'content' => $content,
                     'content_preview' => Helper::truncate($content, 100),
                     'keywords' => $this->extractContentKeywords($content),
-                    'mood' => $mood,
                     'is_public' => $public,
                     'published_at' => $fields['published_at'],
                 ],
@@ -214,6 +237,130 @@ class TalkController
     private function wantsJson(): bool
     {
         return strtolower((string)($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')) === 'xmlhttprequest';
+    }
+
+    /**
+     * @return array{name:string, city:string, lat:string, lng:string, provider:string, data:string}
+     */
+    private function locationPayload(Request $request): array
+    {
+        $name = mb_substr(trim((string)$request->input('location_name', '')), 0, 160);
+        if ($name === '') {
+            return $this->emptyLocationPayload();
+        }
+
+        $city = mb_substr(trim((string)$request->input('location_city', '')), 0, 80);
+        $lat = trim((string)$request->input('location_lat', ''));
+        $lng = trim((string)$request->input('location_lng', ''));
+        $provider = trim((string)$request->input('location_provider', ''));
+        $data = trim((string)$request->input('location_data', ''));
+
+        if ($city === '') {
+            $city = $name;
+        }
+        if (!preg_match('/^-?\d{1,3}(?:\.\d+)?$/', $lat)) {
+            $lat = '';
+        }
+        if (!preg_match('/^-?\d{1,3}(?:\.\d+)?$/', $lng)) {
+            $lng = '';
+        }
+        if (!in_array($provider, ['mapbox', 'manual'], true)) {
+            $provider = $lat !== '' && $lng !== '' ? 'mapbox' : 'manual';
+        }
+
+        $fullName = '';
+        if ($data !== '') {
+            $decoded = json_decode($data, true);
+            if (is_array($decoded)) {
+                $fullName = mb_substr(trim((string)($decoded['full_name'] ?? $decoded['place_name'] ?? '')), 0, 220);
+            }
+        }
+        $data = json_encode([
+            'id' => '',
+            'name' => $name,
+            'city' => $city,
+            'full_name' => $fullName !== '' ? $fullName : $name,
+            'lat' => $lat,
+            'lng' => $lng,
+            'provider' => $provider,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '';
+
+        return [
+            'name' => $name,
+            'city' => $city,
+            'lat' => $lat,
+            'lng' => $lng,
+            'provider' => $provider,
+            'data' => $data,
+        ];
+    }
+
+    /**
+     * @return array{name:string, city:string, lat:string, lng:string, provider:string, data:string}
+     */
+    private function emptyLocationPayload(): array
+    {
+        return ['name' => '', 'city' => '', 'lat' => '', 'lng' => '', 'provider' => '', 'data' => ''];
+    }
+
+    /**
+     * @return array{label:string, icon:string, temperature:string, code:int, data:string}
+     */
+    private function weatherPayload(Request $request): array
+    {
+        $label = mb_substr(trim((string)$request->input('weather_label', '')), 0, 40);
+        if ($label === '') {
+            return $this->emptyWeatherPayload();
+        }
+
+        $icon = trim((string)$request->input('weather_icon', ''));
+        $temp = trim((string)$request->input('weather_temp', ''));
+        $code = (int)$request->input('weather_code', 0);
+        $data = trim((string)$request->input('weather_data', ''));
+
+        if (!preg_match('/^[a-zA-Z0-9 _-]+$/', $icon)) {
+            $icon = 'fa-solid fa-cloud-sun';
+        }
+        if ($temp !== '' && !preg_match('/^-?\d{1,2}(?:\.\d)?$/', $temp)) {
+            $temp = '';
+        }
+
+        $place = '';
+        $source = 'admin';
+        $fetchedAt = '';
+        if ($data !== '') {
+            $decoded = json_decode($data, true);
+            if (is_array($decoded)) {
+                $place = mb_substr(trim((string)($decoded['place'] ?? '')), 0, 80);
+                $source = mb_substr(trim((string)($decoded['source'] ?? 'admin')), 0, 40);
+                $fetchedAt = mb_substr(trim((string)($decoded['fetched_at'] ?? '')), 0, 40);
+            }
+        }
+        $data = json_encode([
+            'label' => $label,
+            'icon' => $icon,
+            'temperature' => $temp,
+            'code' => $code,
+            'place' => $place,
+            'source' => $source,
+            'fetched_at' => $fetchedAt,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '';
+
+        return [
+            'label' => $label,
+            'icon' => $icon,
+            'temperature' => $temp,
+            'code' => $code,
+            'data' => $data,
+        ];
+    }
+
+    /**
+     * @return array{label:string, icon:string, temperature:string, code:int, data:string}
+     */
+    private function emptyWeatherPayload(): array
+    {
+        return ['label' => '', 'icon' => '', 'temperature' => '', 'code' => 0, 'data' => ''];
     }
 
     /**

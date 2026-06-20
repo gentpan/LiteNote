@@ -431,6 +431,9 @@
     // \u{8868}\u{5355}\u{63D0}\u{4EA4}\u{7981}\u{7528}\u{6309}\u{94AE}
     document.querySelectorAll('form').forEach(function(form) {
         form.addEventListener('submit', function() {
+            if (form.hasAttribute('data-no-submit-loading')) {
+                return;
+            }
             var btn = form.querySelector('button[type=submit]');
             if (btn) {
                 btn.disabled = true;

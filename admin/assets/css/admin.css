@@ -5230,6 +5230,31 @@ body.admin-body.auth-body {
     align-items: center;
 }
 
+.social-row-qr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--control-height);
+    grid-column: 2 / 5;
+    gap: 8px;
+    align-items: center;
+}
+
+.social-row-qr[hidden] {
+    display: none;
+}
+
+.social-row.is-wechat-social .input-url {
+    display: none;
+}
+
+.social-qr-upload {
+    display: grid;
+    place-items: center;
+    width: var(--control-height);
+    min-width: var(--control-height);
+    height: var(--control-height);
+    padding: 0;
+}
+
 .social-row-preview {
     display: inline-grid;
     place-items: center;
@@ -5770,14 +5795,31 @@ body.admin-body.auth-body {
     width: min(720px, calc(100vw - 32px));
 }
 
+.talk-edit-dialog-layout {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 0 14px;
+    align-items: center;
+}
+
+.talk-edit-dialog-layout .admin-dialog-icon {
+    grid-column: 1;
+    grid-row: 1;
+}
+
 .talk-edit-dialog-copy {
+    grid-column: 2;
+    grid-row: 1;
     width: 100%;
+    padding-top: 0;
 }
 
 .talk-edit-form-grid {
+    grid-column: 1 / -1;
     display: grid;
     gap: 14px;
-    margin-top: 16px;
+    width: 100%;
+    margin-top: 18px;
 }
 
 .talk-edit-form-grid label {
@@ -5792,23 +5834,151 @@ body.admin-body.auth-body {
 .talk-edit-form-grid textarea {
     box-sizing: border-box;
     width: 100%;
+    height: var(--control-height);
+    min-height: var(--control-height);
+    padding: 8px 11px;
     font: inherit;
     font-size: 14px;
+    font-weight: 400;
+    line-height: 1.5;
     color: var(--text);
     background: #fff;
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: var(--radius);
+    box-shadow: 0 1px 0 rgba(17, 24, 39, 0.02);
+    transition:
+        border-color 0.15s,
+        box-shadow 0.15s,
+        background 0.15s;
+}
+
+.talk-edit-form-grid input[type="text"]:focus,
+.talk-edit-form-grid textarea:focus {
+    outline: none;
+    border-color: #93c5fd;
+    box-shadow: var(--ring);
 }
 
 .talk-edit-form-grid textarea {
+    height: auto;
     min-height: 132px;
+    line-height: 1.65;
     resize: vertical;
 }
 
-.talk-edit-form-grid .form-row {
+.talk-edit-image-field {
+    width: 100%;
+}
+
+.talk-edit-control-field {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--control-height);
+    gap: 8px;
+    align-items: stretch;
+}
+
+.talk-edit-tool-btn.is-active {
+    color: var(--primary);
+    background: var(--primary-soft);
+    border-color: var(--primary-border);
+}
+
+.talk-edit-form-grid .form-row,
+.talk-edit-form-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
     gap: 14px;
+}
+
+.talk-edit-weather-field {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 96px var(--control-height);
+    gap: 8px;
+}
+
+.talk-edit-location-panel {
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.talk-edit-location-panel[hidden],
+.talk-edit-location-results[hidden] {
+    display: none;
+}
+
+.talk-edit-location-search {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    gap: 8px;
+    align-items: center;
+}
+
+.talk-edit-location-search > i {
+    width: 18px;
+    color: var(--text-soft);
+    text-align: center;
+}
+
+.talk-edit-location-search .btn {
+    height: var(--control-height);
+    min-height: var(--control-height);
+    padding: 0 12px;
+}
+
+.talk-edit-location-results {
+    display: grid;
+    gap: 8px;
+}
+
+.talk-edit-location-result,
+.talk-edit-location-empty {
+    width: 100%;
+    min-height: 38px;
+    padding: 8px 10px;
+    font: inherit;
+    font-size: 13px;
+    line-height: 1.45;
+    text-align: left;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.talk-edit-location-result {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    color: var(--text);
+    cursor: pointer;
+    background: #fff;
+}
+
+.talk-edit-location-result:hover {
+    color: var(--primary);
+    background: var(--primary-soft);
+    border-color: var(--primary-border);
+}
+
+.talk-edit-location-result i {
+    color: var(--primary);
+}
+
+.talk-edit-location-empty,
+.talk-edit-location-hint {
+    color: var(--text-muted);
+}
+
+.talk-edit-location-empty {
+    background: #fff;
+}
+
+.talk-edit-location-hint {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.6;
 }
 
 .talk-edit-public {
@@ -5820,8 +5990,29 @@ body.admin-body.auth-body {
 }
 
 @media (max-width: 680px) {
-    .talk-edit-form-grid .form-row {
+    .talk-edit-form-grid .form-row,
+    .talk-edit-form-row {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    .talk-edit-weather-field {
+        grid-template-columns: minmax(0, 1fr) 88px var(--control-height);
+    }
+
+    .talk-edit-location-search {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .talk-edit-location-search > i {
+        display: none;
+    }
+
+    .talk-edit-location-search input {
+        grid-column: 1 / -1;
+    }
+
+    .talk-edit-location-search .btn {
+        width: 100%;
     }
 }
 
@@ -9451,6 +9642,19 @@ body.admin-body.auth-body {
         grid-row: 4;
     }
 
+    .social-row-grid .social-row-qr {
+        grid-column: 1 / -1;
+        grid-row: 5;
+    }
+
+    .social-row.is-wechat-social .social-row-grid .input-icon {
+        grid-row: 2;
+    }
+
+    .social-row.is-wechat-social .social-row-grid .social-row-qr {
+        grid-row: 3;
+    }
+
     .passkey-table tr {
         gap: 7px;
         padding: 12px;
@@ -10540,6 +10744,19 @@ body.admin-body.auth-body {
     }
 
     .profile-page-shell .social-row-grid .input-icon {
+        grid-row: 3;
+    }
+
+    .profile-page-shell .social-row-grid .social-row-qr {
+        grid-column: 1 / -1;
+        grid-row: 4;
+    }
+
+    .profile-page-shell .social-row.is-wechat-social .social-row-grid .input-icon {
+        grid-row: 2;
+    }
+
+    .profile-page-shell .social-row.is-wechat-social .social-row-grid .social-row-qr {
         grid-row: 3;
     }
 

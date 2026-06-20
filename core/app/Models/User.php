@@ -37,7 +37,7 @@ final class User extends Model
     }
 
     /**
-     * 社交链接数组。结构: [['key'=>..., 'url'=>..., 'icon'=>..., 'label'=>...], ...]
+     * 社交链接数组。结构: [['key'=>..., 'url'=>..., 'icon'=>..., 'label'=>..., 'qr'=>...], ...]
      * - key  : 平台标识(github / x / email / website ...),用作 HTML id/类名
      * - url  : 完整 URL
      * - icon : 用户填的 fontawesome HTML 片段,已 sanitize
@@ -57,13 +57,18 @@ final class User extends Model
             $key  = trim((string)($row['key'] ?? ''));
             $url  = trim((string)($row['url'] ?? ''));
             $icon = self::sanitizeIcon((string)($row['icon'] ?? ''));
-            if ($key === '' || $url === '') continue;
-
+            $qr = trim((string)($row['qr'] ?? ''));
+            $lowerKey = strtolower($key);
+            $path = parse_url($url, PHP_URL_PATH) ?: $url;
+            if (in_array($lowerKey, ['rss', 'feed'], true) || in_array(rtrim($path, '/'), ['/rss.xml', '/feed'], true)) continue;
+            $isQrPlatform = in_array(strtolower($key), ['wechat', 'weixin', 'telegram'], true);
+            if ($key === '' || ($url === '' && (!$isQrPlatform || $qr === ''))) continue;
             $out[] = [
                 'key'   => $key,
                 'url'   => $url,
                 'icon'  => $icon,
                 'label' => trim((string)($row['label'] ?? '')) ?: self::labelFromKey($key),
+                'qr'    => $qr,
             ];
         }
         return $out;
@@ -80,12 +85,18 @@ final class User extends Model
             $key  = trim((string)($row['key'] ?? ''));
             $url  = trim((string)($row['url'] ?? ''));
             $icon = self::sanitizeIcon((string)($row['icon'] ?? ''));
-            if ($key === '' || $url === '') continue;
+            $qr = trim((string)($row['qr'] ?? ''));
+            $lowerKey = strtolower($key);
+            $path = parse_url($url, PHP_URL_PATH) ?: $url;
+            if (in_array($lowerKey, ['rss', 'feed'], true) || in_array(rtrim($path, '/'), ['/rss.xml', '/feed'], true)) continue;
+            $isQrPlatform = in_array(strtolower($key), ['wechat', 'weixin', 'telegram'], true);
+            if ($key === '' || ($url === '' && (!$isQrPlatform || $qr === ''))) continue;
             $clean[] = [
                 'key'   => $key,
                 'url'   => $url,
                 'icon'  => $icon,
                 'label' => trim((string)($row['label'] ?? '')) ?: self::labelFromKey($key),
+                'qr'    => $qr,
             ];
         }
         $this->socials = $clean ? json_encode($clean, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null;
@@ -158,7 +169,6 @@ final class User extends Model
             ['key' => 'telegram', 'icon' => 'fa-brands fa-telegram',       'label' => 'Telegram'],
             ['key' => 'mastodon', 'icon' => 'fa-brands fa-mastodon',       'label' => 'Mastodon'],
             ['key' => 'bilibili', 'icon' => 'fa-brands fa-bilibili',       'label' => '哔哩哔哩'],
-            ['key' => 'rss',      'icon' => 'fa-solid fa-square-rss',      'label' => 'RSS'],
         ];
     }
 }

@@ -68,6 +68,7 @@ class ProfileController
                 'url'   => trim((string)($row['url']   ?? '')),
                 'icon'  => trim((string)($row['icon']  ?? '')),
                 'label' => trim((string)($row['label'] ?? '')),
+                'qr'    => trim((string)($row['qr']    ?? '')),
             ];
         }
         $user->setSocialLinks($socials);
