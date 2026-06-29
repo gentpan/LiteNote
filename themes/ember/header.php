@@ -24,7 +24,7 @@
     @endphp
     <link rel="preconnect" href="https://static.bluecdn.com" crossorigin>
     <link rel="preconnect" href="https://gravatar.bluecdn.com" crossorigin>
-    <link rel="stylesheet" href="https://static.bluecdn.com/libs/fontawesome/7.2.0/css/all.min.css">
+    <link rel="stylesheet" href="https://static.bluecdn.com/libs/fontawesome/7.3.0/css/all.min.css">
     <script>
         (function() {
             try {
