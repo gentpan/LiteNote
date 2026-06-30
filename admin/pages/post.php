@@ -145,7 +145,7 @@
                     <td>{{ $p->views }}</td>
                     <td>{{ $p->comments_count }}</td>
                     <td><span class="status status-{{ $p->status }}">{{ $postStatusLabels[$p->status] ?? $p->status }}</span></td>
-                    <td>{!! \App\Core\Helper::dateTimeTag($p->published_at) !!}</td>
+                    <td>{!! !empty($p->published_at) ? \App\Core\Helper::dateTimeTag((string)$p->published_at) : '<span class="muted">—</span>' !!}</td>
                     <td>
                         <div class="post-action-bar">
                             <a href="/admin/posts/{{ $p->id }}/edit" class="post-action-btn post-action-edit" title="编辑" aria-label="编辑">
