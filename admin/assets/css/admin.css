@@ -5570,17 +5570,48 @@ body.admin-body.auth-body {
     overflow: auto;
 }
 
-.post-font-current {
+.post-font-tabs {
     display: flex;
-    flex-wrap: wrap;
-    gap: 10px 18px;
+    gap: 6px;
+    align-items: center;
+    width: 100%;
+    padding: 6px;
     margin-bottom: 12px;
-    font-size: 13px;
-    color: var(--text-soft);
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
 }
 
-.post-font-current strong {
-    color: var(--text);
+.post-font-tab {
+    flex: 1 1 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: var(--control-height);
+    min-height: var(--control-height);
+    padding: 0 14px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 650;
+    line-height: 1;
+    color: var(--text-soft);
+    cursor: pointer;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+}
+
+.post-font-tab:hover {
+    color: var(--primary);
+    background: var(--primary-soft);
+    border-color: var(--primary-border);
+}
+
+.post-font-tab.is-active {
+    color: #fff;
+    background: var(--primary);
+    border-color: var(--primary);
 }
 
 .post-font-search {
@@ -5590,29 +5621,19 @@ body.admin-body.auth-body {
 
 .post-font-options {
     display: grid;
-    gap: 10px;
+    gap: 8px;
     max-height: 420px;
     overflow: auto;
 }
 
-.post-font-option-preview-img {
-    display: block;
-    width: 100%;
-    max-width: 320px;
-    height: auto;
-    margin-top: 4px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: #fff;
-}
-
 .post-font-option {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 14px;
-    align-items: center;
-    padding: 13px 14px;
-    cursor: default;
+    gap: 8px;
+    width: 100%;
+    padding: 12px 14px;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
     background: #fff;
     border: 1px solid var(--border);
     border-radius: var(--radius);
@@ -5624,68 +5645,42 @@ body.admin-body.auth-body {
 
 .post-font-option:hover {
     border-color: var(--primary-border);
+    background: #fafcff;
 }
 
-.post-font-option.is-body {
-    border-left: 3px solid var(--primary);
-}
-
-.post-font-option.is-title {
-    box-shadow: inset 0 0 0 1px var(--primary-border);
-}
-
-.post-font-option.is-body.is-title {
+.post-font-option.is-selected {
     background: var(--primary-soft);
     border-color: var(--primary);
     box-shadow: var(--ring);
 }
 
-.post-font-option-picks {
-    display: grid;
-    gap: 8px;
-    min-width: 72px;
-}
-
-.post-font-pick {
-    display: inline-flex;
-    gap: 6px;
-    align-items: center;
-    margin: 0;
-    font-size: 12px;
-    font-weight: 650;
-    color: var(--text-soft);
-    cursor: pointer;
-    white-space: nowrap;
-}
-
-.post-font-pick input {
-    width: 16px;
-    height: 16px;
-    margin: 0;
-    accent-color: var(--primary);
-}
-
-.post-font-option-main {
-    display: grid;
-    gap: 5px;
+.post-font-option-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    align-items: baseline;
+    min-width: 0;
 }
 
 .post-font-option-title {
     font-size: 14px;
     font-weight: 750;
+    line-height: 1.4;
     color: var(--text);
+    white-space: nowrap;
 }
 
 .post-font-option-desc {
     font-size: 12px;
-    line-height: 1.5;
+    line-height: 1.4;
     color: var(--text-muted);
+    white-space: nowrap;
 }
 
 .post-font-option-preview {
     display: block;
-    padding-top: 4px;
-    font-size: 17px;
+    margin: 0;
+    font-size: 18px;
     line-height: 1.65;
     color: var(--text);
 }

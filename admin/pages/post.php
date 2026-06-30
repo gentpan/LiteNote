@@ -38,38 +38,32 @@
             </div>
             <form method="post" action="/admin/posts/font-settings" class="admin-form post-font-dialog-body" data-no-dirty-form>
                 <input type="hidden" name="_csrf" value="{{ $csrf }}">
-                <div class="post-font-current">
-                    <span>正文：<strong data-font-current-body>{{ $fontOptions[$fontCurrent]['label'] ?? $fontCurrent }}</strong></span>
-                    <span>标题：<strong data-font-current-title>{{ $fontOptions[$titleFontCurrent]['label'] ?? $titleFontCurrent }}</strong></span>
+                <input type="hidden" name="article_font" value="{{ $fontCurrent }}" data-font-input="article_font">
+                <input type="hidden" name="title_font" value="{{ $titleFontCurrent }}" data-font-input="title_font">
+                <div class="post-font-tabs" role="tablist" aria-label="字体类型">
+                    <button type="button" role="tab" class="post-font-tab is-active" data-font-tab="article_font" aria-selected="true">
+                        正文字体
+                    </button>
+                    <button type="button" role="tab" class="post-font-tab" data-font-tab="title_font" aria-selected="false">
+                        标题字体
+                    </button>
                 </div>
                 <input type="search" class="post-font-search" placeholder="搜索字体名称..." data-font-search autocomplete="off">
                 <div class="post-font-options" data-font-options>
                     @foreach($fontOptions as $fontKey => $fontOption)
-                        @php
-                            $isBodyFont = $fontCurrent === $fontKey;
-                            $isTitleFont = $titleFontCurrent === $fontKey;
-                            $optionClass = trim(($isBodyFont ? 'is-body' : '') . ' ' . ($isTitleFont ? 'is-title' : ''));
-                        @endphp
-                        <div class="post-font-option {{ $optionClass }}" data-font-option data-font-key="{{ $fontKey }}" data-font-label="{{ strtolower(($fontOption['label'] ?? $fontKey) . ' ' . $fontKey) }}" data-font-css="{{ $fontOption['css'] ?? '' }}" data-font-name="{{ $fontOption['label'] ?? $fontKey }}">
-                            <div class="post-font-option-main">
+                        <button type="button"
+                                class="post-font-option"
+                                data-font-option
+                                data-font-key="{{ $fontKey }}"
+                                data-font-label="{{ strtolower(($fontOption['label'] ?? $fontKey) . ' ' . $fontKey) }}"
+                                data-font-css="{{ $fontOption['css'] ?? '' }}"
+                                data-font-name="{{ $fontOption['label'] ?? $fontKey }}">
+                            <span class="post-font-option-head">
                                 <span class="post-font-option-title">{{ $fontOption['label'] ?? $fontKey }}</span>
                                 <span class="post-font-option-desc">{{ $fontOption['description'] ?? '' }}</span>
-                                @if(!empty($fontOption['preview']))
-                                    <img class="post-font-option-preview-img" src="{{ $fontOption['preview'] }}" alt="{{ $fontOption['label'] ?? $fontKey }} 预览" loading="lazy" decoding="async">
-                                @endif
-                                <span class="post-font-option-preview" style="font-family: {{ $fontOption['family'] ?? 'inherit' }};">轻舟已过万重山，文章正文与标题可分别使用这个字体。</span>
-                            </div>
-                            <div class="post-font-option-picks" role="group" aria-label="{{ $fontOption['label'] ?? $fontKey }} 字体用途">
-                                <label class="post-font-pick">
-                                    <input type="radio" name="article_font" value="{{ $fontKey }}" {{ $isBodyFont ? 'checked' : '' }}>
-                                    <span>正文</span>
-                                </label>
-                                <label class="post-font-pick">
-                                    <input type="radio" name="title_font" value="{{ $fontKey }}" {{ $isTitleFont ? 'checked' : '' }}>
-                                    <span>标题</span>
-                                </label>
-                            </div>
-                        </div>
+                            </span>
+                            <span class="post-font-option-preview" style="font-family: {{ $fontOption['family'] ?? 'inherit' }};">轻舟已过万重山，文章正文与标题可分别使用这个字体。</span>
+                        </button>
                     @endforeach
                 </div>
                 <div class="admin-dialog-actions post-font-actions">
@@ -86,34 +80,54 @@
         var openBtn = document.querySelector('[data-open-post-font-dialog]');
         if (!dialog || !openBtn) return;
 
-        function syncFontRows() {
-            var bodyRadio = dialog.querySelector('input[name="article_font"]:checked');
-            var titleRadio = dialog.querySelector('input[name="title_font"]:checked');
-            var bodyLabel = dialog.querySelector('[data-font-current-body]');
-            var titleLabel = dialog.querySelector('[data-font-current-title]');
-            dialog.querySelectorAll('[data-font-option]').forEach(function (option) {
-                var bodyInput = option.querySelector('input[name="article_font"]');
-                var titleInput = option.querySelector('input[name="title_font"]');
-                option.classList.toggle('is-body', !!bodyInput && bodyInput.checked);
-                option.classList.toggle('is-title', !!titleInput && titleInput.checked);
+        var activeTab = 'article_font';
+
+        function currentInput() {
+            return dialog.querySelector('[data-font-input="' + activeTab + '"]');
+        }
+
+        function currentValue() {
+            var input = currentInput();
+            return input ? String(input.value || '') : '';
+        }
+
+        function setTab(tab) {
+            activeTab = tab;
+            dialog.querySelectorAll('[data-font-tab]').forEach(function (btn) {
+                var isActive = btn.getAttribute('data-font-tab') === tab;
+                btn.classList.toggle('is-active', isActive);
+                btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
             });
-            if (bodyLabel && bodyRadio) {
-                var bodyOption = bodyRadio.closest('[data-font-option]');
-                bodyLabel.textContent = bodyOption ? (bodyOption.getAttribute('data-font-name') || '') : '';
-            }
-            if (titleLabel && titleRadio) {
-                var titleOption = titleRadio.closest('[data-font-option]');
-                titleLabel.textContent = titleOption ? (titleOption.getAttribute('data-font-name') || '') : '';
-            }
+            syncSelection();
+        }
+
+        function syncSelection() {
+            var value = currentValue();
+            dialog.querySelectorAll('[data-font-option]').forEach(function (option) {
+                option.classList.toggle('is-selected', option.getAttribute('data-font-key') === value);
+            });
+        }
+
+        function selectFont(option) {
+            if (!option) return;
+            var key = option.getAttribute('data-font-key') || '';
+            var input = currentInput();
+            if (!input || !key) return;
+            input.value = key;
+            ensureFontCss(option);
+            syncSelection();
         }
 
         function openDialog() {
             dialog.hidden = false;
             document.body.classList.add('admin-dialog-open');
-            dialog.querySelectorAll('input[name="article_font"]:checked, input[name="title_font"]:checked').forEach(function (radio) {
-                ensureFontCss(radio.closest('[data-font-option]'));
+            ['article_font', 'title_font'].forEach(function (tab) {
+                var input = dialog.querySelector('[data-font-input="' + tab + '"]');
+                if (!input) return;
+                var option = dialog.querySelector('[data-font-option][data-font-key="' + input.value + '"]');
+                ensureFontCss(option);
             });
-            syncFontRows();
+            setTab('article_font');
         }
 
         function ensureFontCss(option) {
@@ -141,10 +155,18 @@
             });
         }
 
-        dialog.querySelectorAll('input[name="article_font"], input[name="title_font"]').forEach(function (radio) {
-            radio.addEventListener('change', function () {
-                ensureFontCss(radio.closest('[data-font-option]'));
-                syncFontRows();
+        dialog.querySelectorAll('[data-font-tab]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                setTab(btn.getAttribute('data-font-tab') || 'article_font');
+            });
+        });
+
+        dialog.querySelectorAll('[data-font-option]').forEach(function (option) {
+            option.addEventListener('click', function () {
+                selectFont(option);
+            });
+            option.addEventListener('mouseenter', function () {
+                ensureFontCss(option);
             });
         });
 
