@@ -77,6 +77,9 @@ nav-avatar-*.png
 vendor/
 composer.lock
 
+# Node 构建依赖
+node_modules/
+
 # 运行时缓存(RSS 抓取缓存 / 视图编译产物)
 runtime/storage/cache/
 

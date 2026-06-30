@@ -14,6 +14,7 @@ use App\Models\Setting;
 use App\Services\CommentModerationService;
 use App\Services\CommentSettingsService;
 use App\Services\IpGeoService;
+use App\Services\PublicCacheService;
 use App\Traits\HasFlashRedirect;
 
 /**
@@ -141,6 +142,7 @@ class CommentController
             $cmt->save();
             CommentModerationService::removeFromComment($cmt);
             $this->syncPostCommentCount($cmt);
+            PublicCacheService::forgetAll();
         }
         Response::json(['code' => 0, 'msg' => '已通过']);
     }
@@ -154,6 +156,7 @@ class CommentController
             $cmt->save();
             CommentModerationService::markFromComment($cmt);
             $this->syncPostCommentCount($cmt);
+            PublicCacheService::forgetAll();
         }
         Response::json(['code' => 0, 'msg' => '已标记垃圾']);
     }
@@ -165,6 +168,7 @@ class CommentController
         if ($cmt) {
             Comment::db()->delete('comments', 'id = ?', [$id]);
             $this->syncPostCommentCount($cmt);
+            PublicCacheService::forgetAll();
         }
         Response::json(['code' => 0, 'msg' => '已删除']);
     }

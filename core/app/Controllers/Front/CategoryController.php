@@ -19,16 +19,6 @@ class CategoryController
 {
     private const PER_PAGE = 10;
 
-    public function __construct()
-    {
-        View::composer('layouts.front', function (array $data): array {
-            return array_merge($data, [
-                'categories'  => Category::allEnabled(),
-                'recentPosts' => Post::recent(5),
-            ]);
-        });
-    }
-
     public function show($request, array $params): string
     {
         $slug = Category::decodeSlug((string)($params['slug'] ?? ''));

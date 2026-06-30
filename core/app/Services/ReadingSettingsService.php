@@ -33,21 +33,16 @@ final class ReadingSettingsService
     }
 
     /**
-     * @return array<int, array{type:string,time:int,item:object,fixed:bool}>
+     * @return array{items: array<int, array{type:string,time:int,item:object,fixed:bool}>, hasMore: bool}
      */
-    public static function homeFeedItems(int $offset = 0, ?int $limit = null): array
+    public static function homeFeedPage(int $offset = 0, ?int $limit = null): array
     {
-        $settings = self::settings();
-        $total = $limit ?? 10;
+        $limit = $limit ?? 10;
         $offset = max(0, $offset);
-        $wanted = $offset + $total + 10;
+        $wanted = min($offset + $limit + 1, 200);
 
-        $latestPosts = [];
         $latestPosts = self::latestPosts($wanted, []);
-
-        $latestTalks = [];
         $latestTalks = self::latestTalks($wanted, []);
-
         self::attachTalkRelations($latestTalks);
 
         $rest = [];
@@ -57,18 +52,31 @@ final class ReadingSettingsService
         foreach ($latestTalks as $talk) {
             $rest[] = self::feedItem('talk', $talk, false);
         }
-        // 合并插件贡献的时间线条目(如 X 推文),与核心 post/talk 一起按时间排序。
         foreach (\App\Services\Plugins\Registry::collectHomeFeedItems() as $pluginItem) {
             $rest[] = $pluginItem;
         }
         usort($rest, static fn(array $a, array $b): int => $b['time'] <=> $a['time']);
 
-        return array_slice($rest, $offset, $total);
+        $slice = array_slice($rest, $offset, $limit + 1);
+        $hasMore = count($slice) > $limit;
+        if ($hasMore) {
+            array_pop($slice);
+        }
+
+        return ['items' => $slice, 'hasMore' => $hasMore];
+    }
+
+    /**
+     * @return array<int, array{type:string,time:int,item:object,fixed:bool}>
+     */
+    public static function homeFeedItems(int $offset = 0, ?int $limit = null): array
+    {
+        return self::homeFeedPage($offset, $limit)['items'];
     }
 
     public static function homeFeedHasMore(int $offset, int $limit): bool
     {
-        return count(self::homeFeedItems($offset + $limit, 1)) > 0;
+        return self::homeFeedPage($offset, $limit)['hasMore'];
     }
 
     /**
@@ -90,14 +98,16 @@ final class ReadingSettingsService
 
         $rows = Post::db()->fetchAll(
             "SELECT p.*,
-                    (
-                        SELECT COUNT(*)
-                        FROM comments cm
-                        WHERE cm.post_id = p.id AND cm.status = 'approved'
-                    ) AS __comments_count,
+                    COALESCE(cc.total, 0) AS __comments_count,
                     c.name AS __category_name, c.slug AS __category_slug
              FROM posts p
              LEFT JOIN categories c ON p.category_id = c.id
+             LEFT JOIN (
+                 SELECT post_id, COUNT(*) AS total
+                 FROM comments
+                 WHERE status = 'approved'
+                 GROUP BY post_id
+             ) cc ON cc.post_id = p.id
              WHERE {$where}
              ORDER BY p.is_top DESC, p.published_at DESC, p.id DESC
              LIMIT " . max(1, $limit),

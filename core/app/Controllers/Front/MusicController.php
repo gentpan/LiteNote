@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controllers\Front;
 
 use App\Core\Helper;
+use App\Core\FrontCsrf;
 use App\Core\Http;
 use App\Core\Request;
 use App\Core\Response;
@@ -37,30 +38,20 @@ class MusicController
     /**
      * @param Music[] $list
      */
-    private function attachMusicComments(array $list): void
+    private function attachMusicComments(array $list, int $limitPerMusic = 20): void
     {
         $ids = array_map(static fn($item): int => (int)$item->id, $list);
-        $commentsByMusic = [];
-        if ($ids !== []) {
-            $placeholders = implode(',', array_fill(0, count($ids), '?'));
-            $rows = Comment::db()->fetchAll(
-                "SELECT * FROM comments WHERE music_id IN ({$placeholders}) AND status = ? ORDER BY id ASC",
-                [...$ids, CommentStatus::Approved->value]
-            );
-            foreach ($rows as $row) {
-                $musicId = (int)$row['music_id'];
-                $commentsByMusic[$musicId][] = new Comment($row);
-            }
-        }
+        $commentsByMusic = Comment::recentGroupedByTarget('music_id', $ids, $limitPerMusic);
         foreach ($list as $item) {
             $comments = $commentsByMusic[(int)$item->id] ?? [];
-            $item->comments_count = count($comments);
+            $item->comments_count = (int)($item->comments_count ?? count($comments));
             $item->setRelation('comments', $comments);
         }
     }
 
     public function like(Request $request, array $params): never
     {
+        FrontCsrf::verify($request);
         $id = (int)($params['id'] ?? 0);
         $item = Music::find($id);
         if (!$item) {
@@ -86,13 +77,15 @@ class MusicController
 
     public function play(Request $request, array $params): never
     {
+        FrontCsrf::verify($request);
+
         $id = (int)($params['id'] ?? 0);
         $item = Music::find($id);
         if (!$item) {
             Response::json(['code' => 1, 'msg' => '音乐不存在'], 404);
         }
 
-        $count = Music::recordPlay($id);
+        $count = Music::trackPlay($id);
         Response::json(['code' => 0, 'plays' => $count]);
     }
 

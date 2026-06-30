@@ -113,9 +113,8 @@ final class Plugin implements PluginInterface
         });
 
         // 前台书签页样式和推文卡片本地点赞脚本(插件自包含,不依赖首页 home.css)。
-        $frontCss = '/plugins/x/assets/front.css';
-        $frontCssFile = __DIR__ . '/assets/front.css';
-        $frontCssVersion = is_file($frontCssFile) ? (string)filemtime($frontCssFile) : '1';
+        $frontCss = \App\Services\PublishedAsset::url('/plugins/x/assets/front.css');
+        $frontCssVersion = (string)\App\Services\PublishedAsset::version('/plugins/x/assets/front.css');
         $ctx->frontHead('<link rel="stylesheet" href="' . $frontCss . '?v=' . $frontCssVersion . '">');
         $ctx->frontHead(<<<'HTML'
 <script>

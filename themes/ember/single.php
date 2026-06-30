@@ -90,7 +90,7 @@
 
                 <section class="comments" id="comments">
                     @php
-                        $commentTotal = count($comments);
+                        $commentTotal = (int)($commentsTotal ?? count($comments));
                         $commentParticipants = [];
                         foreach ($comments as $commentItem) {
                             $participantKey = trim((string)($commentItem->email ?? ''));
@@ -176,6 +176,11 @@
                             </li>
                         @endforeach
                     </ul>
+                    @if(!empty($commentsHasMore))
+                    <div class="comment-load-more-wrap">
+                        <button type="button" class="btn comment-load-more" data-post-id="{{ $post->id }}" data-offset="{{ $commentsPerPage }}" data-limit="{{ $commentsPerPage }}">加载更多评论</button>
+                    </div>
+                    @endif
                     @php
                         $adminCommentName = !empty($currentAdmin) ? ($currentAdmin->nickname ?: $currentAdmin->username) : '';
                         $adminCommentEmail = !empty($currentAdmin) ? (string)($currentAdmin->email ?? '') : '';

@@ -30,6 +30,7 @@ $router->get('/posts',            [HomeController::class, 'posts']);
 $router->get('/readers',          [HomeController::class, 'readers']);
 $router->get('/post/{slug}.html', [PostController::class, 'show']);
 $router->post('/post/{id}/like',  [PostController::class, 'like']);
+$router->get('/post/{id}/comments', [PostController::class, 'comments']);
 
 // 分类
 $router->get('/category/{slug}/feed', [CategoryController::class, 'feed']);

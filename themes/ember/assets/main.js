@@ -2,6 +2,17 @@
 (function() {
     'use strict';
 
+    function frontCsrf() {
+        var meta = document.querySelector('meta[name="csrf-token"]');
+        if (meta && meta.content) return meta.content;
+        var field = document.querySelector('input[name="_csrf"]');
+        return field ? field.value : '';
+    }
+
+    function frontAjaxHeaders() {
+        return { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': frontCsrf() };
+    }
+
     function siteLoadingSpinnerSvg(extraClass) {
         var cls = 'site-loading-spinner' + (extraClass ? ' ' + extraClass : '');
         return '<span class="' + cls + '" aria-hidden="true"></span>';
@@ -776,7 +787,8 @@
                 var body = new FormData();
                 body.append('email', next.email);
                 body.append('captcha', captchaVal);
-                fetch('/comment/verify-identity', { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: body, credentials: 'same-origin' })
+                body.append('_csrf', frontCsrf());
+                fetch('/comment/verify-identity', { method: 'POST', headers: frontAjaxHeaders(), body: body, credentials: 'same-origin' })
                     .then(function(r) { return r.json(); })
                     .then(function(d) {
                         if (saveBtn) saveBtn.disabled = false;
@@ -1768,7 +1780,7 @@
             btn.disabled = true;
             fetch('/talk/' + encodeURIComponent(id) + '/like', {
                 method: 'POST',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                headers: frontAjaxHeaders()
             })
                 .then(function(res) { return res.json(); })
                 .then(function(data) {
@@ -1812,7 +1824,7 @@
             btn.disabled = true;
             fetch('/post/' + encodeURIComponent(id) + '/like', {
                 method: 'POST',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                headers: frontAjaxHeaders()
             })
                 .then(function(res) { return res.json(); })
                 .then(function(data) {
@@ -1920,7 +1932,7 @@
             btn.disabled = true;
             fetch('/music/' + encodeURIComponent(id) + '/like', {
                 method: 'POST',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                headers: frontAjaxHeaders()
             }).then(function(res) {
                 return res.json();
             }).then(function(data) {
@@ -2840,7 +2852,7 @@
                 likeBtns.forEach(function(btn) { btn.disabled = true; });
                 fetch('/music/' + encodeURIComponent(id) + '/like', {
                     method: 'POST',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    headers: frontAjaxHeaders()
                 }).then(function(res) {
                     return res.json();
                 }).then(function(data) {
@@ -2901,7 +2913,7 @@
                 playedIds[id] = true;
                 fetch('/music/' + encodeURIComponent(id) + '/play', {
                     method: 'POST',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    headers: frontAjaxHeaders()
                 }).catch(function() {});
             }
         });
@@ -3854,6 +3866,60 @@
         }, 250);
     }
 
+    function bindCommentLoadMore(root) {
+        (root || document).querySelectorAll('.comment-load-more').forEach(function(btn) {
+            if (btn.dataset.lnBound) return;
+            btn.dataset.lnBound = '1';
+            var section = btn.closest('.comments');
+            if (!section) return;
+            var ul = section.querySelector('.comment-list');
+            if (!ul) return;
+            var busy = false;
+            btn.addEventListener('click', function() {
+                if (busy) return;
+                var postId = btn.dataset.postId;
+                var offset = parseInt(btn.dataset.offset, 10) || 0;
+                var limit = parseInt(btn.dataset.limit, 10) || 50;
+                if (!postId) return;
+                busy = true;
+                btn.disabled = true;
+                var originalText = btn.textContent;
+                btn.textContent = '加载中...';
+                fetch('/post/' + encodeURIComponent(postId) + '/comments?offset=' + offset + '&limit=' + limit, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data && data.code === 0 && data.html) {
+                            var wrap = document.createElement('div');
+                            wrap.innerHTML = data.html;
+                            Array.prototype.slice.call(wrap.children).forEach(function(node) {
+                                ul.appendChild(node);
+                                bindDynamic(node);
+                            });
+                            if (data.hasMore) {
+                                btn.dataset.offset = String(data.nextOffset || (offset + (data.count || 0)));
+                                btn.disabled = false;
+                                btn.textContent = originalText;
+                            } else if (btn.parentNode) {
+                                btn.parentNode.removeChild(btn);
+                            }
+                        } else {
+                            frontToast((data && data.msg) || '加载失败', 'error');
+                            btn.disabled = false;
+                            btn.textContent = originalText;
+                        }
+                    })
+                    .catch(function() {
+                        frontToast('网络错误，请重试', 'error');
+                        btn.disabled = false;
+                        btn.textContent = originalText;
+                    })
+                    .finally(function() { busy = false; });
+            });
+        });
+    }
+
     function bindDynamic(root) {
         root = root || document;
         bindToastSeeds(root);
@@ -3880,6 +3946,7 @@
         bindImages(root);
         bindLoadMore(root);
         bindHomeFeedMore(root);
+        bindCommentLoadMore(root);
         bindTalkKeywordFilter(root);
     }
     bindDynamic(document);

@@ -6,6 +6,7 @@
     <title>{{ $pageTitle ?? $site['title'] ?? 'LiteNote' }} - {{ $site['title'] ?? 'LiteNote' }}</title>
     <meta name="description" content="{{ $site['description'] ?? '' }}">
     <meta name="keywords" content="{{ $site['keywords'] ?? '' }}">
+    <meta name="csrf-token" content="{{ \App\Core\Session::csrfToken() }}">
     {!! \App\Services\FaviconService::headHtml($site ?? []) !!}
     <link rel="alternate" type="application/rss+xml" title="{{ $site['title'] ?? 'LiteNote' }} RSS" href="/rss.xml">
     @yield('head')
@@ -16,11 +17,11 @@
             || (isset($page) && is_object($page) && $page instanceof \App\Models\Page);
         $needsLiteZoom = in_array($activeNavKey, ['home', 'talk'], true) || $needsArticleFont;
         $themeCssFiles = array_filter([
-            '/themes/ember/assets/main.css',
-            '/themes/ember/assets/pages.css',
-            $needsHomeCss ? '/themes/ember/assets/home.css' : null,
+            \App\Services\ThemeManager::styleAsset('/themes/ember/assets/main.css'),
+            \App\Services\ThemeManager::styleAsset('/themes/ember/assets/pages.css'),
+            $needsHomeCss ? \App\Services\ThemeManager::styleAsset('/themes/ember/assets/home.css') : null,
         ]);
-        $mainJs = '/themes/ember/assets/main.js';
+        $mainJs = \App\Services\ThemeManager::scriptAsset('/themes/ember/assets/main.js');
     @endphp
     <link rel="preconnect" href="https://static.bluecdn.com" crossorigin>
     <link rel="preconnect" href="https://gravatar.bluecdn.com" crossorigin>
@@ -113,12 +114,14 @@
         $navMoreItems = array_merge($navMoreDemoted, $navMoreItems);
         $hasRecentActivity = false;
         try {
-            $recentActivitySince = date('Y-m-d H:i:s', time() - 6 * 3600);
-            $recentActivityNow = date('Y-m-d H:i:s');
-            $hasRecentActivity = (int)\App\Models\Activity::db()->fetchColumn(
-                "SELECT COUNT(*) FROM activities WHERE visibility = 'public' AND happened_at >= ? AND happened_at <= ?",
-                [$recentActivitySince, $recentActivityNow]
-            ) > 0;
+            $hasRecentActivity = (new \App\Core\FileCache())->remember('nav.recent-activity', 60, static function (): bool {
+                $recentActivitySince = date('Y-m-d H:i:s', time() - 6 * 3600);
+                $recentActivityNow = date('Y-m-d H:i:s');
+                return (int)\App\Models\Activity::db()->fetchColumn(
+                    "SELECT COUNT(*) FROM activities WHERE visibility = 'public' AND happened_at >= ? AND happened_at <= ?",
+                    [$recentActivitySince, $recentActivityNow]
+                ) > 0;
+            });
         } catch (\Throwable $e) {
             $hasRecentActivity = false;
         }
