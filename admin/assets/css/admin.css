@@ -5570,16 +5570,16 @@ body.admin-body.auth-body {
     overflow: auto;
 }
 
-.post-font-section + .post-font-section {
-    margin-top: 18px;
-    padding-top: 18px;
-    border-top: 1px solid var(--border);
+.post-font-current {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: var(--text-soft);
 }
 
-.post-font-section-title {
-    margin: 0 0 12px;
-    font-size: 14px;
-    font-weight: 750;
+.post-font-current strong {
     color: var(--text);
 }
 
@@ -5591,7 +5591,7 @@ body.admin-body.auth-body {
 .post-font-options {
     display: grid;
     gap: 10px;
-    max-height: 280px;
+    max-height: 420px;
     overflow: auto;
 }
 
@@ -5608,11 +5608,11 @@ body.admin-body.auth-body {
 
 .post-font-option {
     display: grid;
-    grid-template-columns: 18px 1fr;
-    gap: 12px;
-    align-items: flex-start;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 14px;
+    align-items: center;
     padding: 13px 14px;
-    cursor: pointer;
+    cursor: default;
     background: #fff;
     border: 1px solid var(--border);
     border-radius: var(--radius);
@@ -5626,16 +5626,42 @@ body.admin-body.auth-body {
     border-color: var(--primary-border);
 }
 
-.post-font-option.is-active {
+.post-font-option.is-body {
+    border-left: 3px solid var(--primary);
+}
+
+.post-font-option.is-title {
+    box-shadow: inset 0 0 0 1px var(--primary-border);
+}
+
+.post-font-option.is-body.is-title {
     background: var(--primary-soft);
     border-color: var(--primary);
     box-shadow: var(--ring);
 }
 
-.post-font-option input {
+.post-font-option-picks {
+    display: grid;
+    gap: 8px;
+    min-width: 72px;
+}
+
+.post-font-pick {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    margin: 0;
+    font-size: 12px;
+    font-weight: 650;
+    color: var(--text-soft);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.post-font-pick input {
     width: 16px;
     height: 16px;
-    margin: 3px 0 0;
+    margin: 0;
     accent-color: var(--primary);
 }
 

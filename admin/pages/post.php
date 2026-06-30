@@ -38,44 +38,40 @@
             </div>
             <form method="post" action="/admin/posts/font-settings" class="admin-form post-font-dialog-body" data-no-dirty-form>
                 <input type="hidden" name="_csrf" value="{{ $csrf }}">
-                <section class="post-font-section" data-font-group="article_font">
-                    <h4 class="post-font-section-title">正文字体</h4>
-                    <input type="search" class="post-font-search" placeholder="搜索字体名称..." data-font-search="article_font" autocomplete="off">
-                    <div class="post-font-options" data-font-options="article_font">
-                        @foreach($fontOptions as $fontKey => $fontOption)
-                            <label class="post-font-option {{ $fontCurrent === $fontKey ? 'is-active' : '' }}" data-font-option data-font-label="{{ strtolower(($fontOption['label'] ?? $fontKey) . ' ' . $fontKey) }}" data-font-css="{{ $fontOption['css'] ?? '' }}">
-                                <input type="radio" name="article_font" value="{{ $fontKey }}" {{ $fontCurrent === $fontKey ? 'checked' : '' }}>
-                                <span class="post-font-option-main">
-                                    <span class="post-font-option-title">{{ $fontOption['label'] ?? $fontKey }}</span>
-                                    <span class="post-font-option-desc">{{ $fontOption['description'] ?? '' }}</span>
-                                    @if(!empty($fontOption['preview']))
-                                        <img class="post-font-option-preview-img" src="{{ $fontOption['preview'] }}" alt="{{ $fontOption['label'] ?? $fontKey }} 预览" loading="lazy" decoding="async">
-                                    @endif
-                                    <span class="post-font-option-preview" style="font-family: {{ $fontOption['family'] ?? 'inherit' }};">轻舟已过万重山，文章正文会使用这个字体。</span>
-                                </span>
-                            </label>
-                        @endforeach
-                    </div>
-                </section>
-                <section class="post-font-section" data-font-group="title_font">
-                    <h4 class="post-font-section-title">标题字体</h4>
-                    <input type="search" class="post-font-search" placeholder="搜索字体名称..." data-font-search="title_font" autocomplete="off">
-                    <div class="post-font-options" data-font-options="title_font">
-                        @foreach($fontOptions as $fontKey => $fontOption)
-                            <label class="post-font-option {{ $titleFontCurrent === $fontKey ? 'is-active' : '' }}" data-font-option data-font-label="{{ strtolower(($fontOption['label'] ?? $fontKey) . ' ' . $fontKey) }}" data-font-css="{{ $fontOption['css'] ?? '' }}">
-                                <input type="radio" name="title_font" value="{{ $fontKey }}" {{ $titleFontCurrent === $fontKey ? 'checked' : '' }}>
-                                <span class="post-font-option-main">
-                                    <span class="post-font-option-title">{{ $fontOption['label'] ?? $fontKey }}</span>
-                                    <span class="post-font-option-desc">{{ $fontOption['description'] ?? '' }}</span>
-                                    @if(!empty($fontOption['preview']))
-                                        <img class="post-font-option-preview-img" src="{{ $fontOption['preview'] }}" alt="{{ $fontOption['label'] ?? $fontKey }} 预览" loading="lazy" decoding="async">
-                                    @endif
-                                    <span class="post-font-option-preview" style="font-family: {{ $fontOption['family'] ?? 'inherit' }};">潘吉诃德的骑士精神，文章标题会使用这个字体。</span>
-                                </span>
-                            </label>
-                        @endforeach
-                    </div>
-                </section>
+                <div class="post-font-current">
+                    <span>正文：<strong data-font-current-body>{{ $fontOptions[$fontCurrent]['label'] ?? $fontCurrent }}</strong></span>
+                    <span>标题：<strong data-font-current-title>{{ $fontOptions[$titleFontCurrent]['label'] ?? $titleFontCurrent }}</strong></span>
+                </div>
+                <input type="search" class="post-font-search" placeholder="搜索字体名称..." data-font-search autocomplete="off">
+                <div class="post-font-options" data-font-options>
+                    @foreach($fontOptions as $fontKey => $fontOption)
+                        @php
+                            $isBodyFont = $fontCurrent === $fontKey;
+                            $isTitleFont = $titleFontCurrent === $fontKey;
+                            $optionClass = trim(($isBodyFont ? 'is-body' : '') . ' ' . ($isTitleFont ? 'is-title' : ''));
+                        @endphp
+                        <div class="post-font-option {{ $optionClass }}" data-font-option data-font-key="{{ $fontKey }}" data-font-label="{{ strtolower(($fontOption['label'] ?? $fontKey) . ' ' . $fontKey) }}" data-font-css="{{ $fontOption['css'] ?? '' }}" data-font-name="{{ $fontOption['label'] ?? $fontKey }}">
+                            <div class="post-font-option-main">
+                                <span class="post-font-option-title">{{ $fontOption['label'] ?? $fontKey }}</span>
+                                <span class="post-font-option-desc">{{ $fontOption['description'] ?? '' }}</span>
+                                @if(!empty($fontOption['preview']))
+                                    <img class="post-font-option-preview-img" src="{{ $fontOption['preview'] }}" alt="{{ $fontOption['label'] ?? $fontKey }} 预览" loading="lazy" decoding="async">
+                                @endif
+                                <span class="post-font-option-preview" style="font-family: {{ $fontOption['family'] ?? 'inherit' }};">轻舟已过万重山，文章正文与标题可分别使用这个字体。</span>
+                            </div>
+                            <div class="post-font-option-picks" role="group" aria-label="{{ $fontOption['label'] ?? $fontKey }} 字体用途">
+                                <label class="post-font-pick">
+                                    <input type="radio" name="article_font" value="{{ $fontKey }}" {{ $isBodyFont ? 'checked' : '' }}>
+                                    <span>正文</span>
+                                </label>
+                                <label class="post-font-pick">
+                                    <input type="radio" name="title_font" value="{{ $fontKey }}" {{ $isTitleFont ? 'checked' : '' }}>
+                                    <span>标题</span>
+                                </label>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
                 <div class="admin-dialog-actions post-font-actions">
                     <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> 保存设置</button>
                     <button type="button" class="btn" data-post-font-dialog-close>取消</button>
@@ -90,17 +86,34 @@
         var openBtn = document.querySelector('[data-open-post-font-dialog]');
         if (!dialog || !openBtn) return;
 
+        function syncFontRows() {
+            var bodyRadio = dialog.querySelector('input[name="article_font"]:checked');
+            var titleRadio = dialog.querySelector('input[name="title_font"]:checked');
+            var bodyLabel = dialog.querySelector('[data-font-current-body]');
+            var titleLabel = dialog.querySelector('[data-font-current-title]');
+            dialog.querySelectorAll('[data-font-option]').forEach(function (option) {
+                var bodyInput = option.querySelector('input[name="article_font"]');
+                var titleInput = option.querySelector('input[name="title_font"]');
+                option.classList.toggle('is-body', !!bodyInput && bodyInput.checked);
+                option.classList.toggle('is-title', !!titleInput && titleInput.checked);
+            });
+            if (bodyLabel && bodyRadio) {
+                var bodyOption = bodyRadio.closest('[data-font-option]');
+                bodyLabel.textContent = bodyOption ? (bodyOption.getAttribute('data-font-name') || '') : '';
+            }
+            if (titleLabel && titleRadio) {
+                var titleOption = titleRadio.closest('[data-font-option]');
+                titleLabel.textContent = titleOption ? (titleOption.getAttribute('data-font-name') || '') : '';
+            }
+        }
+
         function openDialog() {
             dialog.hidden = false;
             document.body.classList.add('admin-dialog-open');
-            dialog.querySelectorAll('input[type="radio"]:checked').forEach(function (radio) {
+            dialog.querySelectorAll('input[name="article_font"]:checked, input[name="title_font"]:checked').forEach(function (radio) {
                 ensureFontCss(radio.closest('[data-font-option]'));
             });
-            setTimeout(function () {
-                var checked = dialog.querySelector('input[name="article_font"]:checked')
-                    || dialog.querySelector('input[name="title_font"]:checked');
-                if (checked) checked.focus();
-            }, 0);
+            syncFontRows();
         }
 
         function ensureFontCss(option) {
@@ -116,16 +129,22 @@
             document.head.appendChild(link);
         }
 
-        dialog.querySelectorAll('[data-font-search]').forEach(function (input) {
-            var group = input.getAttribute('data-font-search') || '';
-            var container = dialog.querySelector('[data-font-options="' + group + '"]');
-            if (!container) return;
-            input.addEventListener('input', function () {
-                var keyword = String(input.value || '').trim().toLowerCase();
-                container.querySelectorAll('[data-font-option]').forEach(function (option) {
+        var searchInput = dialog.querySelector('[data-font-search]');
+        var optionsContainer = dialog.querySelector('[data-font-options]');
+        if (searchInput && optionsContainer) {
+            searchInput.addEventListener('input', function () {
+                var keyword = String(searchInput.value || '').trim().toLowerCase();
+                optionsContainer.querySelectorAll('[data-font-option]').forEach(function (option) {
                     var label = option.getAttribute('data-font-label') || '';
                     option.hidden = keyword !== '' && label.indexOf(keyword) === -1;
                 });
+            });
+        }
+
+        dialog.querySelectorAll('input[name="article_font"], input[name="title_font"]').forEach(function (radio) {
+            radio.addEventListener('change', function () {
+                ensureFontCss(radio.closest('[data-font-option]'));
+                syncFontRows();
             });
         });
 
@@ -141,19 +160,6 @@
         });
         dialog.addEventListener('click', function (event) {
             if (event.target === dialog) closeDialog();
-        });
-        dialog.querySelectorAll('[data-font-group]').forEach(function (section) {
-            var fieldName = section.getAttribute('data-font-group') || '';
-            if (!fieldName) return;
-            section.querySelectorAll('input[name="' + fieldName + '"]').forEach(function (radio) {
-                radio.addEventListener('change', function () {
-                    ensureFontCss(radio.closest('[data-font-option]'));
-                    section.querySelectorAll('[data-font-option]').forEach(function (option) {
-                        var input = option.querySelector('input[name="' + fieldName + '"]');
-                        option.classList.toggle('is-active', !!input && input.checked);
-                    });
-                });
-            });
         });
         document.addEventListener('keydown', function (event) {
             if (!dialog.hidden && event.key === 'Escape') closeDialog();
