@@ -7,7 +7,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $pageTitle ?? $site['title'] ?? 'LiteNote' }} - {{ $site['title'] ?? 'LiteNote' }}</title>
+    <title>{{ \App\Core\Helper::documentTitle($pageTitle ?? null, $site ?? []) }}</title>
     <meta name="description" content="{{ $site['description'] ?? '' }}">
     <meta name="keywords" content="{{ $site['keywords'] ?? '' }}">
     <meta name="csrf-token" content="{{ \App\Core\Session::csrfToken() }}">

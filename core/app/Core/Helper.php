@@ -15,6 +15,27 @@ final class Helper
         return $base . $path;
     }
 
+    /**
+     * 浏览器标签标题：内页为「页面标题 - 站点标题」，首页为「站点标题 - 副标题」。
+     *
+     * @param array<string, mixed> $site
+     */
+    public static function documentTitle(?string $pageTitle, array $site): string
+    {
+        $siteTitle = trim((string)($site['title'] ?? '')) ?: 'LiteNote';
+        $siteSubtitle = trim((string)($site['subtitle'] ?? ''));
+        $pageTitleText = trim((string)($pageTitle ?? ''));
+
+        if ($pageTitleText !== '') {
+            return $pageTitleText . ' - ' . $siteTitle;
+        }
+        if ($siteSubtitle !== '') {
+            return $siteTitle . ' - ' . $siteSubtitle;
+        }
+
+        return $siteTitle;
+    }
+
     public static function categoryUrl(string $slug): string
     {
         return self::url('/category/' . rawurlencode($slug));
