@@ -48,7 +48,10 @@
                         标题字体
                     </button>
                 </div>
-                <input type="search" class="post-font-search" placeholder="搜索字体名称..." data-font-search autocomplete="off">
+                <div class="post-font-search-field">
+                    <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                    <input type="search" class="post-font-search" placeholder="搜索字体名称..." data-font-search autocomplete="off">
+                </div>
                 <div class="post-font-options" data-font-options>
                     @foreach($fontOptions as $fontKey => $fontOption)
                         <button type="button"
@@ -62,7 +65,7 @@
                                 <span class="post-font-option-title">{{ $fontOption['label'] ?? $fontKey }}</span>
                                 <span class="post-font-option-desc">{{ $fontOption['description'] ?? '' }}</span>
                             </span>
-                            <span class="post-font-option-preview" style="font-family: {{ $fontOption['family'] ?? 'inherit' }};">轻舟已过万重山，文章正文与标题可分别使用这个字体。</span>
+                            <span class="post-font-option-preview" data-font-preview data-font-family="{{ $fontOption['family'] ?? '' }}">轻舟已过万重山，文章正文与标题可分别使用这个字体。</span>
                         </button>
                     @endforeach
                 </div>
@@ -81,6 +84,13 @@
         if (!dialog || !openBtn) return;
 
         var activeTab = 'article_font';
+        var optionsContainer = dialog.querySelector('[data-font-options]');
+        var loadedCss = Object.create(null);
+        var loadingCss = Object.create(null);
+        var previewQueue = [];
+        var previewActive = 0;
+        var PREVIEW_CONCURRENCY = 3;
+        var fontPreviewObserver = null;
 
         function currentInput() {
             return dialog.querySelector('[data-font-input="' + activeTab + '"]');
@@ -89,6 +99,153 @@
         function currentValue() {
             var input = currentInput();
             return input ? String(input.value || '') : '';
+        }
+
+        function primaryFontName(family) {
+            var match = String(family || '').match(/"([^"]+)"/);
+            return match ? match[1] : '';
+        }
+
+        function loadFontCss(css) {
+            css = String(css || '').trim();
+            if (!css) {
+                return Promise.resolve();
+            }
+            if (loadedCss[css]) {
+                return Promise.resolve();
+            }
+            if (loadingCss[css]) {
+                return loadingCss[css];
+            }
+
+            loadingCss[css] = new Promise(function (resolve) {
+                var existing = document.querySelector('link[data-post-font-css="' + css + '"]');
+                if (existing) {
+                    loadedCss[css] = true;
+                    resolve();
+                    return;
+                }
+
+                var link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = css;
+                link.setAttribute('data-post-font-css', css);
+                link.onload = function () {
+                    loadedCss[css] = true;
+                    resolve();
+                };
+                link.onerror = function () {
+                    resolve();
+                };
+                document.head.appendChild(link);
+            });
+
+            return loadingCss[css];
+        }
+
+        function applyPreviewFont(option) {
+            var preview = option.querySelector('[data-font-preview]');
+            if (!preview) return;
+            var family = preview.getAttribute('data-font-family') || '';
+            if (family) {
+                preview.style.fontFamily = family;
+            }
+        }
+
+        function loadOptionPreview(option) {
+            if (!option || option.getAttribute('data-font-preview-loaded') === '1') {
+                return Promise.resolve();
+            }
+
+            option.setAttribute('data-font-preview-loading', '1');
+            option.classList.add('is-font-loading');
+
+            var css = option.getAttribute('data-font-css') || '';
+            var preview = option.querySelector('[data-font-preview]');
+            var family = preview ? preview.getAttribute('data-font-family') || '' : '';
+            var fontName = primaryFontName(family);
+
+            return loadFontCss(css).then(function () {
+                if (fontName && document.fonts && typeof document.fonts.load === 'function') {
+                    return document.fonts.load('18px "' + fontName + '"').catch(function () {});
+                }
+            }).then(function () {
+                applyPreviewFont(option);
+                option.classList.remove('is-font-loading');
+                option.classList.add('is-font-ready');
+                option.setAttribute('data-font-preview-loaded', '1');
+                option.removeAttribute('data-font-preview-loading');
+            });
+        }
+
+        function drainPreviewQueue() {
+            while (previewActive < PREVIEW_CONCURRENCY && previewQueue.length) {
+                var option = previewQueue.shift();
+                if (!option) continue;
+                option.removeAttribute('data-font-preview-queued');
+                previewActive += 1;
+                loadOptionPreview(option).finally(function () {
+                    previewActive -= 1;
+                    drainPreviewQueue();
+                });
+            }
+        }
+
+        function queueOptionPreview(option, priority) {
+            if (!option || option.hidden || option.getAttribute('data-font-preview-loaded') === '1') {
+                return;
+            }
+            if (priority) {
+                loadOptionPreview(option);
+                return;
+            }
+            if (option.getAttribute('data-font-preview-queued') === '1'
+                || option.getAttribute('data-font-preview-loading') === '1') {
+                return;
+            }
+            option.setAttribute('data-font-preview-queued', '1');
+            previewQueue.push(option);
+            drainPreviewQueue();
+        }
+
+        function observeFontPreviews() {
+            if (!optionsContainer || typeof IntersectionObserver === 'undefined') {
+                dialog.querySelectorAll('[data-font-option]').forEach(function (option) {
+                    queueOptionPreview(option, false);
+                });
+                return;
+            }
+
+            if (!fontPreviewObserver) {
+                fontPreviewObserver = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (entry) {
+                        if (!entry.isIntersecting) return;
+                        var option = entry.target;
+                        fontPreviewObserver.unobserve(option);
+                        queueOptionPreview(option, false);
+                    });
+                }, {
+                    root: optionsContainer,
+                    rootMargin: '160px 0px',
+                    threshold: 0.01,
+                });
+            }
+
+            dialog.querySelectorAll('[data-font-option]').forEach(function (option) {
+                if (option.hidden || option.getAttribute('data-font-preview-loaded') === '1') {
+                    return;
+                }
+                fontPreviewObserver.observe(option);
+            });
+        }
+
+        function preloadCurrentFonts() {
+            ['article_font', 'title_font'].forEach(function (tab) {
+                var input = dialog.querySelector('[data-font-input="' + tab + '"]');
+                if (!input) return;
+                var option = dialog.querySelector('[data-font-option][data-font-key="' + input.value + '"]');
+                queueOptionPreview(option, true);
+            });
         }
 
         function setTab(tab) {
@@ -114,43 +271,32 @@
             var input = currentInput();
             if (!input || !key) return;
             input.value = key;
-            ensureFontCss(option);
+            queueOptionPreview(option, true);
             syncSelection();
         }
 
         function openDialog() {
             dialog.hidden = false;
             document.body.classList.add('admin-dialog-open');
-            ['article_font', 'title_font'].forEach(function (tab) {
-                var input = dialog.querySelector('[data-font-input="' + tab + '"]');
-                if (!input) return;
-                var option = dialog.querySelector('[data-font-option][data-font-key="' + input.value + '"]');
-                ensureFontCss(option);
-            });
+            preloadCurrentFonts();
+            observeFontPreviews();
             setTab('article_font');
         }
 
-        function ensureFontCss(option) {
-            if (!option) return;
-            var css = option.getAttribute('data-font-css') || '';
-            if (!css || document.querySelector('link[data-post-font-css="' + css + '"]')) {
-                return;
-            }
-            var link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = css;
-            link.setAttribute('data-post-font-css', css);
-            document.head.appendChild(link);
-        }
-
         var searchInput = dialog.querySelector('[data-font-search]');
-        var optionsContainer = dialog.querySelector('[data-font-options]');
         if (searchInput && optionsContainer) {
             searchInput.addEventListener('input', function () {
                 var keyword = String(searchInput.value || '').trim().toLowerCase();
                 optionsContainer.querySelectorAll('[data-font-option]').forEach(function (option) {
                     var label = option.getAttribute('data-font-label') || '';
                     option.hidden = keyword !== '' && label.indexOf(keyword) === -1;
+                    if (!option.hidden && option.getAttribute('data-font-preview-loaded') !== '1') {
+                        if (fontPreviewObserver) {
+                            fontPreviewObserver.observe(option);
+                        } else {
+                            queueOptionPreview(option, false);
+                        }
+                    }
                 });
             });
         }
@@ -166,7 +312,7 @@
                 selectFont(option);
             });
             option.addEventListener('mouseenter', function () {
-                ensureFontCss(option);
+                queueOptionPreview(option, true);
             });
         });
 

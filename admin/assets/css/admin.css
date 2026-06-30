@@ -1156,6 +1156,7 @@ body.admin-body.auth-body {
 }
 
 .admin-form input[type="text"],
+.admin-form input[type="search"],
 .admin-form input[type="email"],
 .admin-form input[type="url"],
 .admin-form input[type="password"],
@@ -5614,9 +5615,62 @@ body.admin-body.auth-body {
     border-color: var(--primary);
 }
 
-.post-font-search {
+.post-font-search-field {
+    display: flex;
+    gap: 10px;
+    align-items: center;
     width: 100%;
+    height: var(--control-height);
+    min-height: var(--control-height);
     margin-bottom: 10px;
+    padding: 0 12px;
+    background: #fff;
+    border: 1px solid #dfe3ea;
+    border-radius: var(--radius);
+    box-shadow: 0 1px 0 rgba(17, 24, 39, 0.02);
+    transition:
+        border-color 0.15s,
+        box-shadow 0.15s;
+}
+
+.post-font-search-field:focus-within {
+    border-color: #93c5fd;
+    box-shadow: var(--ring);
+}
+
+.post-font-search-field > i {
+    flex: 0 0 auto;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.post-font-search {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text);
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.post-font-search:focus {
+    border-color: transparent;
+    box-shadow: none;
+}
+
+.post-font-search::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
 }
 
 .post-font-options {
@@ -5680,8 +5734,18 @@ body.admin-body.auth-body {
 .post-font-option-preview {
     display: block;
     margin: 0;
+    font-family: inherit;
     font-size: 18px;
     line-height: 1.65;
+    color: var(--text-muted);
+    transition: color 0.2s ease;
+}
+
+.post-font-option.is-font-loading .post-font-option-preview {
+    color: var(--text-muted);
+}
+
+.post-font-option.is-font-ready .post-font-option-preview {
     color: var(--text);
 }
 
