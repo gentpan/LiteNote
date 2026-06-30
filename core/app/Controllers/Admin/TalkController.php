@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin;
 
+use App\Services\PublicCacheService;
+use App\Services\SearchIndexService;
 use App\Core\Helper;
 use App\Core\Request;
 use App\Core\Response;
@@ -138,6 +140,10 @@ class TalkController
             $item = new Talk($fields);
             $item->save();
         }
+        PublicCacheService::forget('talk.hero');
+        if (isset($item) && $item instanceof Talk) {
+            SearchIndexService::syncTalk($item);
+        }
         if ($this->wantsJson()) {
             Response::json([
                 'code' => 0,
@@ -168,6 +174,9 @@ class TalkController
 
         $next = (int)($item->is_public ?? 1) === Toggle::On->value ? Toggle::Off->value : Toggle::On->value;
         Talk::db()->update('talk', ['is_public' => $next], 'id = :id', [':id' => $id]);
+        $item->is_public = $next;
+        SearchIndexService::syncTalk($item);
+        PublicCacheService::forget('talk.hero');
 
         Response::json([
             'code' => 0,
@@ -204,7 +213,9 @@ class TalkController
                 Response::redirect('/admin/talk');
             }
             AttachmentCleanupService::deleteUnusedFromValues($attachmentValues);
+            SearchIndexService::remove('talk', $id);
         }
+        PublicCacheService::forget('talk.hero');
         Session::flash('success', '滔客已删除');
         Response::redirect('/admin/talk');
     }

@@ -10,15 +10,16 @@
     <title>{{ $pageTitle ?? $site['title'] ?? 'LiteNote' }} - {{ $site['title'] ?? 'LiteNote' }}</title>
     <meta name="description" content="{{ $site['description'] ?? '' }}">
     <meta name="keywords" content="{{ $site['keywords'] ?? '' }}">
+    <meta name="csrf-token" content="{{ \App\Core\Session::csrfToken() }}">
     {!! \App\Services\FaviconService::headHtml($site ?? []) !!}
     <link rel="alternate" type="application/rss+xml" title="{{ $site['title'] ?? 'LiteNote' }} RSS" href="/rss.xml">
     @yield('head')
     <link rel="stylesheet" href="https://static.bluecdn.com/libs/fontawesome/7.2.0/css/all.min.css">
     @php
-        $themeCss = (string)($activeTheme['stylesheet'] ?? '/themes/kami/assets/main.css');
-        $themeJs = '/themes/' . rawurlencode($siteThemeKey) . '/assets/main.js';
+        $themeCss = \App\Services\ThemeManager::styleAsset((string)($activeTheme['stylesheet'] ?? '/themes/kami/assets/main.css'));
+        $themeJs = \App\Services\ThemeManager::scriptAsset('/themes/' . rawurlencode($siteThemeKey) . '/assets/main.js');
         if (!is_file(BASE_PATH . $themeJs)) {
-            $themeJs = '/themes/kami/assets/main.js';
+            $themeJs = \App\Services\ThemeManager::scriptAsset('/themes/kami/assets/main.js');
         }
     @endphp
     <script>

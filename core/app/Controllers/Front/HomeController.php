@@ -12,6 +12,7 @@ use App\Models\Comment;
 use App\Models\Post;
 use App\Services\Gravatar;
 use App\Services\ActivityCacheService;
+use App\Services\HeatmapBuilder;
 use App\Services\ReadingSettingsService;
 
 /**
@@ -22,25 +23,14 @@ use App\Services\ReadingSettingsService;
  */
 class HomeController
 {
-    public function __construct()
-    {
-        // 注册前台布局的 View Composer，自动注入共享数据
-        View::composer('layouts.front', function (array $data): array {
-            return array_merge($data, [
-                'categories'  => Category::allEnabled(),
-                'recentPosts' => Post::recent(5),
-            ]);
-        });
-    }
-
     public function index(): string
     {
         $limit = 10;
-        $feedItems = ReadingSettingsService::homeFeedItems(0, $limit);
+        $feed = ReadingSettingsService::homeFeedPage(0, $limit);
 
         return View::render('home.index', [
-            'feedItems' => $feedItems,
-            'homeFeedHasMore' => ReadingSettingsService::homeFeedHasMore(0, count($feedItems)),
+            'feedItems' => $feed['items'],
+            'homeFeedHasMore' => $feed['hasMore'],
             // 读 5 分钟文件缓存快照,避免每次访问都实时聚合 + 重复建表。
             'activitySummary' => (new ActivityCacheService())->snapshot()['summary'] ?? null,
             'pageTitle' => null,
@@ -52,7 +42,8 @@ class HomeController
     {
         $offset = max(0, (int)($_GET['offset'] ?? 0));
         $limit = max(1, min(20, (int)($_GET['limit'] ?? 10)));
-        $feedItems = ReadingSettingsService::homeFeedItems($offset, $limit);
+        $feed = ReadingSettingsService::homeFeedPage($offset, $limit);
+        $feedItems = $feed['items'];
         $html = View::render('partials.home-feed-items', [
             'feedItems' => $feedItems,
         ]);
@@ -62,7 +53,7 @@ class HomeController
             'html' => $html,
             'count' => count($feedItems),
             'nextOffset' => $offset + count($feedItems),
-            'hasMore' => count($feedItems) > 0 && ReadingSettingsService::homeFeedHasMore($offset, count($feedItems)),
+            'hasMore' => $feed['hasMore'],
         ]);
     }
 
@@ -119,7 +110,7 @@ class HomeController
             }
 
             $post = new Post($row);
-            $words = $this->wordCount($post->markdown() ?: (string)($row['summary'] ?? ''));
+            $words = HeatmapBuilder::wordCount($post->markdown() ?: (string)($row['summary'] ?? ''));
             $wordsByDay[$day] = ($wordsByDay[$day] ?? 0) + $words;
             $articlesByDay[$day] = ($articlesByDay[$day] ?? 0) + 1;
             $totalWords += $words;
@@ -127,69 +118,25 @@ class HomeController
         }
 
         $today = strtotime(date('Y-m-d')) ?: time();
-        $rangeStart = strtotime('-364 days', $today) ?: $today;
-        $startDow = (int)date('w', $rangeStart);
-        $gridStart = strtotime("-{$startDow} days", $rangeStart) ?: $rangeStart;
-        $endDow = (int)date('w', $today);
-        $gridEnd = strtotime('+' . (6 - $endDow) . ' days', $today) ?: $today;
-
-        $days = [];
-        $months = [];
-        $monthSeen = [];
-        $i = 0;
-        for ($ts = $gridStart; $ts <= $gridEnd; $ts += 86400, $i++) {
-            $date = date('Y-m-d', $ts);
-            $inRange = $ts >= $rangeStart && $ts <= $today;
-            $week = intdiv($i, 7) + 1;
-            if ($inRange) {
-                $monthKey = date('Y-m', $ts);
-                if (!isset($monthSeen[$monthKey]) && ((int)date('j', $ts) <= 7 || $date === date('Y-m-d', $rangeStart))) {
-                    $monthSeen[$monthKey] = true;
-                    $months[] = ['label' => date('n月', $ts), 'week' => $week];
-                }
-            }
-
-            $words = $wordsByDay[$date] ?? 0;
-            $days[] = [
-                'date' => $date,
+        $grid = HeatmapBuilder::buildWordGrid(
+            $wordsByDay,
+            364,
+            static fn(string $date, int $words, bool $inRange): array => [
                 'words' => $inRange ? $words : 0,
                 'articles' => $inRange ? ($articlesByDay[$date] ?? 0) : 0,
-                'level' => $inRange ? $this->heatmapLevel($words) : 0,
-                'muted' => !$inRange,
-            ];
-        }
+            ]
+        );
 
         return [
-            'days' => $days,
-            'months' => $months,
-            'weeks' => max(1, (int)ceil(count($days) / 7)),
+            'days' => $grid['days'],
+            'months' => $grid['months'],
+            'weeks' => $grid['weeks'],
             'articles' => array_sum($articlesByDay),
             'activeDays' => count($activeDays),
             'firstDate' => $firstPublishedTs ? date('Y-m-d', $firstPublishedTs) : null,
             'spanDays' => $firstPublishedTs ? max(1, (int)floor(($today - $firstPublishedTs) / 86400) + 1) : 0,
             'words' => $totalWords,
         ];
-    }
-
-    private function wordCount(string $markdown): int
-    {
-        $plain = preg_replace('/```.*?```/s', ' ', $markdown) ?? $markdown;
-        $plain = preg_replace('/!\[(.*?)\]\((.*?)\)/', '$1', $plain) ?? $plain;
-        $plain = preg_replace('/\[(.*?)\]\((.*?)\)/', '$1', $plain) ?? $plain;
-        $plain = preg_replace('/[#>*_`\-\[\](){ }|~!]+/u', ' ', $plain) ?? $plain;
-        $plain = trim(preg_replace('/\s+/u', '', strip_tags($plain)) ?? '');
-        return $plain === '' ? 0 : mb_strlen($plain);
-    }
-
-    private function heatmapLevel(int $words): int
-    {
-        return match (true) {
-            $words >= 1500 => 4,
-            $words >= 1000 => 3,
-            $words >= 500 => 2,
-            $words > 0 => 1,
-            default => 0,
-        };
     }
 
     public function readers(): string

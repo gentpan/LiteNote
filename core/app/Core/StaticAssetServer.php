@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Core;
 
+use App\Services\PublishedAsset;
+
 final class StaticAssetServer
 {
     private const ALLOWED_ROOTS = ['admin', 'themes', 'plugins', 'uploads'];
@@ -65,6 +67,10 @@ final class StaticAssetServer
             return null;
         }
         if (!str_starts_with($file, $base . DIRECTORY_SEPARATOR) || !is_file($file)) {
+            return null;
+        }
+
+        if (PublishedAsset::isUncompressedBlocked($path, $file)) {
             return null;
         }
 

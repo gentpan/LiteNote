@@ -4,7 +4,8 @@ declare(strict_types=1);
 namespace App\Controllers\Admin;
 
 use App\Core\Background;
-use App\Core\FileCache;
+use App\Services\PublicCacheService;
+use App\Services\SearchIndexService;
 use App\Core\Helper;
 use App\Core\Markdown;
 use App\Core\Request;
@@ -319,93 +320,121 @@ class PostController
             $this->redirect($id ? "/admin/posts/{$id}/edit" : '/admin/posts/create');
         }
 
-        $markdown = trim((string)$data['markdown']);
-        if ($markdown === '') {
-            $this->flashError('Markdown 内容不能为空');
+        if (trim((string)$data['title']) === '') {
+            $this->flashError('标题不能为空');
             $this->redirect($id ? "/admin/posts/{$id}/edit" : '/admin/posts/create');
         }
 
-        $slug = Post::resolveSlug((string)$data['slug'], (string)$data['title'], $id);
-        $now = date('Y-m-d H:i:s');
-        $categoryId = $this->normalizeCategoryId((int)$data['category_id']);
-        $allowComments = ((string)$data['allow_comments'] === '1') ? Toggle::On->value : Toggle::Off->value;
-        $allowRss = ((string)$data['allow_rss'] === '1') ? Toggle::On->value : Toggle::Off->value;
-        $isTop = ((string)$data['is_top'] === '1') ? Toggle::On->value : Toggle::Off->value;
-        $isPrivate = ((string)$data['is_private'] === '1') ? Toggle::On->value : Toggle::Off->value;
+        if ($request->post === [] && $request->isPost()) {
+            $this->flashError('提交数据为空，可能是内容过大超过了服务器 post_max_size 限制');
+            $this->redirect($id ? "/admin/posts/{$id}/edit" : '/admin/posts/create');
+        }
 
-        $publishedAt = null;
-        if ($id) {
-            $post = Post::find($id);
-            if (!$post) {
-                $this->flashError('文章不存在');
-                $this->redirect('/admin/posts');
-            }
-            $oldSlug = (string)$post->slug;
-            $oldStatus = (string)($post->status ?? '');
-            $publishedAt = $this->resolvePublishedAt(
-                (string)$data['status'],
-                $oldStatus,
-                (string)$data['published_at'],
-                $now,
-                (string)($post->published_at ?? '')
-            );
-            $post->fill([
-                'title'            => trim((string)$data['title']),
-                'slug'             => $slug,
-                'summary'          => trim((string)$data['summary']),
-                'content'          => '',
-                'markdown_content' => '',
-                'cover'            => trim((string)$data['cover']),
-                'category_id'      => $categoryId,
-                'status'           => $data['status'],
-                'published_at'     => $publishedAt,
-                'allow_comments'   => $allowComments,
-                'allow_rss'        => $allowRss,
-                'is_top'           => $isTop,
-                'is_private'       => $isPrivate,
-                'updated_at'       => $now,
-            ]);
-            $post->save();
-            PostContentStorage::rename($oldSlug, $slug);
-            PostContentStorage::writePost($slug, trim((string)$data['title']), $markdown);
-            (new ActivityService())->recordPost($post, 'updated_post');
-            if ($oldStatus !== PostStatus::Published->value && $data['status'] === PostStatus::Published->value) {
-                $this->notifyPostPublished((int)$post->id);
-            }
-        } else {
-            $publishedAt = $data['status'] === PostStatus::Published->value
-                ? $this->normalizeDateTime((string)$data['published_at'], $now)
-                : null;
-            $post = new Post([
-                'title'            => trim((string)$data['title']),
-                'slug'             => $slug,
-                'summary'          => trim((string)$data['summary']),
-                'content'          => '',
-                'markdown_content' => '',
-                'cover'            => trim((string)$data['cover']),
-                'category_id'      => $categoryId,
-                'user_id'          => Session::get('admin_user.id', 1),
-                'is_top'           => $isTop,
-                'is_recommend'     => Toggle::Off->value,
-                'allow_comments'   => $allowComments,
-                'allow_rss'        => $allowRss,
-                'is_private'       => $isPrivate,
-                'status'           => $data['status'],
-                'published_at'     => $publishedAt,
-                'created_at'       => $now,
-                'updated_at'       => $now,
-            ]);
-            $post->save();
-            PostContentStorage::writePost($slug, trim((string)$data['title']), $markdown);
-            (new ActivityService())->recordPost($post, 'published_post');
-            if ($data['status'] === PostStatus::Published->value) {
-                $this->notifyPostPublished((int)$post->id);
+        $markdown = trim((string)$data['markdown']);
+        if ($markdown === '' && $id) {
+            $existing = Post::find($id);
+            if ($existing) {
+                $markdown = trim(PostContentStorage::bodyWithoutTitleHeading(
+                    $existing->markdown(),
+                    trim((string)$data['title'])
+                ));
             }
         }
 
-        $this->clearPublicCache();
-        $this->flashSuccess($data['status'] === PostStatus::Published->value ? ($id ? '文章已发布' : '文章已发布') : ($id ? '草稿已保存' : '草稿已保存'));
-        $this->redirect('/admin/posts');
+        try {
+            $slug = Post::resolveSlug((string)$data['slug'], (string)$data['title'], $id);
+            $now = date('Y-m-d H:i:s');
+            $categoryId = $this->normalizeCategoryId((int)$data['category_id']);
+            $allowComments = ((string)$data['allow_comments'] === '1') ? Toggle::On->value : Toggle::Off->value;
+            $allowRss = ((string)$data['allow_rss'] === '1') ? Toggle::On->value : Toggle::Off->value;
+            $isTop = ((string)$data['is_top'] === '1') ? Toggle::On->value : Toggle::Off->value;
+            $isPrivate = ((string)$data['is_private'] === '1') ? Toggle::On->value : Toggle::Off->value;
+
+            $publishedAt = null;
+            if ($id) {
+                $post = Post::find($id);
+                if (!$post) {
+                    $this->flashError('文章不存在');
+                    $this->redirect('/admin/posts');
+                }
+                $oldSlug = (string)$post->slug;
+                $oldStatus = (string)($post->status ?? '');
+                $publishedAt = $this->resolvePublishedAt(
+                    (string)$data['status'],
+                    $oldStatus,
+                    (string)$data['published_at'],
+                    $now,
+                    (string)($post->published_at ?? '')
+                );
+                $post->fill([
+                    'title'            => trim((string)$data['title']),
+                    'slug'             => $slug,
+                    'summary'          => trim((string)$data['summary']),
+                    'content'          => '',
+                    'markdown_content' => '',
+                    'cover'            => trim((string)$data['cover']),
+                    'category_id'      => $categoryId,
+                    'status'           => $data['status'],
+                    'published_at'     => $publishedAt,
+                    'allow_comments'   => $allowComments,
+                    'allow_rss'        => $allowRss,
+                    'is_top'           => $isTop,
+                    'is_private'       => $isPrivate,
+                    'updated_at'       => $now,
+                ]);
+                $post->save();
+                PostContentStorage::rename($oldSlug, $slug);
+                PostContentStorage::writePost($slug, trim((string)$data['title']), $markdown);
+                (new ActivityService())->recordPost($post, 'updated_post');
+                if ($oldStatus !== PostStatus::Published->value && $data['status'] === PostStatus::Published->value) {
+                    $this->notifyPostPublished((int)$post->id);
+                }
+                $savedId = (int)$post->id;
+            } else {
+                $publishedAt = $data['status'] === PostStatus::Published->value
+                    ? $this->normalizeDateTime((string)$data['published_at'], $now)
+                    : null;
+                $post = new Post([
+                    'title'            => trim((string)$data['title']),
+                    'slug'             => $slug,
+                    'summary'          => trim((string)$data['summary']),
+                    'content'          => '',
+                    'markdown_content' => '',
+                    'cover'            => trim((string)$data['cover']),
+                    'category_id'      => $categoryId,
+                    'user_id'          => Session::get('admin_user.id', 1),
+                    'is_top'           => $isTop,
+                    'is_recommend'     => Toggle::Off->value,
+                    'allow_comments'   => $allowComments,
+                    'allow_rss'        => $allowRss,
+                    'is_private'       => $isPrivate,
+                    'status'           => $data['status'],
+                    'published_at'     => $publishedAt,
+                    'created_at'       => $now,
+                    'updated_at'       => $now,
+                ]);
+                $post->save();
+                PostContentStorage::writePost($slug, trim((string)$data['title']), $markdown);
+                (new ActivityService())->recordPost($post, 'published_post');
+                if ($data['status'] === PostStatus::Published->value) {
+                    $this->notifyPostPublished((int)$post->id);
+                }
+                $savedId = (int)$post->id;
+            }
+
+            $this->syncSearchIndex($post, $markdown);
+            PublicCacheService::forgetAll();
+
+            $message = $data['status'] === PostStatus::Published->value
+                ? ($id ? '文章已发布' : '文章已发布')
+                : ($id ? '草稿已保存' : '草稿已保存');
+            $this->flashSuccess($message);
+            $this->redirect('/admin/posts/' . $savedId . '/edit');
+        } catch (\Throwable $e) {
+            error_log('LiteNote post save failed: ' . $e->getMessage());
+            $this->flashError('保存失败：' . $e->getMessage());
+            $this->redirect($id ? "/admin/posts/{$id}/edit" : '/admin/posts/create');
+        }
     }
 
     private function normalizeDateTime(string $value, string $fallback): string
@@ -506,6 +535,7 @@ class PostController
             }
             if ($post) {
                 PostContentStorage::delete((string)$post->slug);
+                SearchIndexService::remove('post', $id);
             }
             AttachmentCleanupService::deleteUnusedFromValues($attachmentValues);
         }
@@ -681,11 +711,12 @@ class PostController
 
     private function clearPublicCache(): void
     {
-        $cache = new FileCache();
-        $cache->forget('rss.xml');
-        $cache->forget('llms.txt');
-        $cache->forget('archives.page');
-        $cache->forget('home.posts-heatmap');
+        PublicCacheService::forgetAll();
+    }
+
+    private function syncSearchIndex(Post $post, string $markdown): void
+    {
+        SearchIndexService::syncPost($post, $markdown);
     }
 
     private function notifyPostPublished(int $postId): void

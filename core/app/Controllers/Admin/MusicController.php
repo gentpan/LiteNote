@@ -11,6 +11,8 @@ use App\Core\Session;
 use App\Core\View;
 use App\Enums\Toggle;
 use App\Models\Music;
+use App\Services\PublicCacheService;
+use App\Services\SearchIndexService;
 use App\Models\Talk;
 use App\Services\AttachmentCleanupService;
 use App\Services\MusicAssetCacheService;
@@ -216,6 +218,10 @@ class MusicController
             $message .= '，' . implode('、', $cachedAssets) . '已保存到本地';
         }
         Session::flash('success', $message);
+        if (isset($item) && $item instanceof Music) {
+            SearchIndexService::syncMusic($item);
+        }
+        PublicCacheService::forgetAll();
         Response::redirect('/admin/music');
     }
 
@@ -326,6 +332,11 @@ class MusicController
             Response::redirect("/admin/music/{$id}/edit");
         }
         AttachmentCleanupService::deleteUnusedFromValues($attachmentValues);
+        SearchIndexService::remove('music', $id);
+        foreach ($talkIds as $talkId) {
+            SearchIndexService::remove('talk', $talkId);
+        }
+        PublicCacheService::forgetAll();
 
         if ($talkIds !== []) {
             Session::flash('success', '音乐已删除，关联的音乐说说及其评论、点赞已一并删除');

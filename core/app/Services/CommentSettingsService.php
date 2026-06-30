@@ -6,6 +6,7 @@ namespace App\Services;
 use App\Models\Page;
 use App\Models\Post;
 use App\Models\Setting;
+use App\Enums\PostStatus;
 
 final class CommentSettingsService
 {
@@ -99,6 +100,9 @@ final class CommentSettingsService
 
         if ($type === self::TYPE_POST && $target instanceof Post) {
             Post::ensurePublishingOptionsSchema();
+            if ((string)($target->status ?? '') !== PostStatus::Published->value) {
+                return false;
+            }
             if ((int)($target->is_private ?? 0) === 1) {
                 return false;
             }

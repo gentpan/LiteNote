@@ -82,7 +82,7 @@
                   rows="{{ $editorRows }}"
                   id="{{ $editorId }}"
                   data-editor-textarea
-                  placeholder="{{ $editorPlaceholder }}"<?= $editorRequired ? ' required' : '' ?>>{{ $editorValue }}</textarea>
+                  placeholder="{{ $editorPlaceholder }}">{{ $editorValue }}</textarea>
         <div class="editor-preview" id="{{ $editorPreviewId }}" data-editor-preview>
             <div class="empty">预览会显示在这里</div>
         </div>

@@ -1,6 +1,13 @@
 (function() {
     'use strict';
 
+    function frontCsrf() {
+        var meta = document.querySelector('meta[name="csrf-token"]');
+        if (meta && meta.content) return meta.content;
+        var field = document.querySelector('input[name="_csrf"]');
+        return field ? field.value : '';
+    }
+
     var root = document.documentElement;
     var themeKey = 'litenote-theme';
 
@@ -309,7 +316,8 @@
                 var body = new FormData();
                 body.append('email', next.email);
                 body.append('captcha', capVal);
-                fetch('/comment/verify-identity', { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: body, credentials: 'same-origin' })
+                body.append('_csrf', frontCsrf());
+                fetch('/comment/verify-identity', { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': frontCsrf() }, body: body, credentials: 'same-origin' })
                     .then(function (r) { return r.json(); })
                     .then(function (d) {
                         if (saveBtn) saveBtn.disabled = false;
@@ -482,4 +490,53 @@
             }
         }
     } catch (e) {}
+
+    document.querySelectorAll('.comment-load-more').forEach(function(btn) {
+        if (btn.dataset.lnBound) return;
+        btn.dataset.lnBound = '1';
+        var section = btn.closest('.comments');
+        if (!section) return;
+        var ul = section.querySelector('.comment-list');
+        if (!ul) return;
+        var busy = false;
+        btn.addEventListener('click', function() {
+            if (busy) return;
+            var postId = btn.dataset.postId;
+            var offset = parseInt(btn.dataset.offset, 10) || 0;
+            var limit = parseInt(btn.dataset.limit, 10) || 50;
+            if (!postId) return;
+            busy = true;
+            btn.disabled = true;
+            var originalText = btn.textContent;
+            btn.textContent = '加载中...';
+            fetch('/post/' + encodeURIComponent(postId) + '/comments?offset=' + offset + '&limit=' + limit, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data && data.code === 0 && data.html) {
+                        var wrap = document.createElement('div');
+                        wrap.innerHTML = data.html;
+                        Array.prototype.slice.call(wrap.children).forEach(function(node) {
+                            ul.appendChild(node);
+                        });
+                        if (data.hasMore) {
+                            btn.dataset.offset = String(data.nextOffset || (offset + (data.count || 0)));
+                            btn.disabled = false;
+                            btn.textContent = originalText;
+                        } else if (btn.parentNode) {
+                            btn.parentNode.removeChild(btn);
+                        }
+                    } else {
+                        btn.disabled = false;
+                        btn.textContent = originalText;
+                    }
+                })
+                .catch(function() {
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                })
+                .finally(function() { busy = false; });
+        });
+    });
 })();

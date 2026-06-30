@@ -171,6 +171,28 @@ final class Music extends Model
         return (int) self::db()->fetchColumn('SELECT COALESCE(play_count, 0) FROM music WHERE id = ?', [$id]);
     }
 
+    /** Session 去重后记录播放，避免刷量。 */
+    public static function trackPlay(int $id): int
+    {
+        if ($id <= 0) {
+            return 0;
+        }
+
+        $played = \App\Core\Session::get('played_music', []);
+        $played = is_array($played) ? $played : [];
+        if (!empty($played[$id])) {
+            return (int) self::db()->fetchColumn('SELECT COALESCE(play_count, 0) FROM music WHERE id = ?', [$id]);
+        }
+
+        $count = self::recordPlay($id);
+        $played[$id] = time();
+        if (count($played) > 300) {
+            $played = array_slice($played, -200, null, true);
+        }
+        \App\Core\Session::set('played_music', $played);
+        return $count;
+    }
+
     public function lyricsLines(int $limit = 4): array
     {
         $lyrics = trim(self::plainLyricsText((string)($this->lyrics ?? '')));

@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Controllers\Front;
 
+use App\Core\FileCache;
+use App\Core\FrontCsrf;
 use App\Core\Helper;
 use App\Core\Request;
 use App\Core\Response;
@@ -14,7 +16,10 @@ use App\Models\Comment;
 use App\Models\Talk;
 use App\Services\ActivityService;
 use App\Services\ImageUploadService;
+use App\Services\PublicCacheService;
 use App\Services\WeatherService;
+use App\Services\HeatmapBuilder;
+use App\Services\SearchIndexService;
 
 class TalkController
 {
@@ -73,6 +78,13 @@ class TalkController
     /** 滔客页 hero 数据:活跃热力图(按日计数) + 关键词组(mood) + 统计。 */
     private function talkHero(): array
     {
+        return (new FileCache())->remember('talk.hero', 3600, function (): array {
+            return $this->buildTalkHero();
+        });
+    }
+
+    private function buildTalkHero(): array
+    {
         $where = "COALESCE(music_id, 0) = 0 AND (COALESCE(post_type, '') = '' OR post_type = 'talk') AND is_public = 1";
 
         $moodRows = Talk::db()->fetchAll(
@@ -90,49 +102,24 @@ class TalkController
             }
         }
 
-        $today = new \DateTimeImmutable('today');
-        $rangeStart = $today->modify('-364 days');
-        $cursor = $rangeStart->modify('-' . (int)$rangeStart->format('w') . ' days'); // 对齐到周日起始
-        $gridEnd = $today->modify('+' . (6 - (int)$today->format('w')) . ' days');
-        $days = [];
-        $months = [];
-        $monthSeen = [];
-        $i = 0;
-        while ($cursor <= $gridEnd) {
-            $ds = $cursor->format('Y-m-d');
-            $inRange = $cursor >= $rangeStart && $cursor <= $today;
-            $c = $inRange ? ($counts[$ds] ?? 0) : 0;
-            $week = intdiv($i, 7) + 1;
-            if ($inRange) {
-                $monthKey = $cursor->format('Y-m');
-                if (!isset($monthSeen[$monthKey]) && ((int)$cursor->format('j') <= 7 || $ds === $rangeStart->format('Y-m-d'))) {
-                    $monthSeen[$monthKey] = true;
-                    $months[] = ['label' => $cursor->format('n月'), 'week' => $week];
-                }
-            }
-            $days[] = [
-                'date'  => $ds,
-                'count' => $c,
-                'level' => $c <= 0 ? 0 : ($c === 1 ? 1 : ($c <= 3 ? 2 : ($c <= 6 ? 3 : 4))),
-                'muted' => !$inRange,
-            ];
-            $cursor = $cursor->modify('+1 day');
-            $i++;
-        }
+        $grid = HeatmapBuilder::buildDailyGrid($counts);
+        $days = $grid['days'];
 
         return [
             'days' => $days,
             'weeks' => array_chunk($days, 7),
-            'months' => $months,
-            'weeksCount' => max(1, (int)ceil(count($days) / 7)),
+            'months' => $grid['months'],
+            'weeksCount' => $grid['weeksCount'],
             'moods' => $moods,
             'total' => (int)Talk::db()->fetchColumn("SELECT COUNT(*) FROM talk WHERE {$where}"),
-            'activeDays' => count($counts),
+            'activeDays' => $grid['activeDays'],
         ];
     }
 
     public function like(Request $request, array $params): never
     {
+        FrontCsrf::verify($request);
+
         $id = (int)($params['id'] ?? 0);
         $item = Talk::find((int)$id);
         if (!$item || (int)$item->is_public !== 1) {
@@ -211,6 +198,8 @@ class TalkController
             'published_at' => date('Y-m-d H:i:s'),
         ]);
         $item->save();
+        SearchIndexService::syncTalk($item);
+        PublicCacheService::forget('talk.hero');
         $this->recordTalkActivity($item);
 
         if ($isAjax) {
@@ -414,24 +403,13 @@ class TalkController
     /**
      * @param Talk[] $list
      */
-    private function attachTalkComments(array $list): void
+    private function attachTalkComments(array $list, int $limitPerTalk = 20): void
     {
         $ids = array_map(static fn($item): int => (int)$item->id, $list);
-        $commentsByTalk = [];
-        if ($ids !== []) {
-            $placeholders = implode(',', array_fill(0, count($ids), '?'));
-            $rows = Comment::db()->fetchAll(
-                "SELECT * FROM comments WHERE talk_id IN ({$placeholders}) AND status = ? ORDER BY id ASC",
-                [...$ids, CommentStatus::Approved->value]
-            );
-            foreach ($rows as $row) {
-                $talkId = (int)$row['talk_id'];
-                $commentsByTalk[$talkId][] = new Comment($row);
-            }
-        }
+        $commentsByTalk = Comment::recentGroupedByTarget('talk_id', $ids, $limitPerTalk);
         foreach ($list as $item) {
             $comments = $commentsByTalk[(int)$item->id] ?? [];
-            $item->comments_count = count($comments);
+            $item->comments_count = (int)($item->comments_count ?? count($comments));
             $item->setRelation('comments', $comments);
         }
     }

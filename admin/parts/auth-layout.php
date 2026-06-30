@@ -7,15 +7,15 @@
     {!! \App\Services\FaviconService::adminHeadHtml() !!}
     <link rel="stylesheet" href="https://static.bluecdn.com/libs/fontawesome/7.2.0/css/all.min.css">
     @php
-        $__adminCss = '/admin/assets/css/admin.css';
-        $__adminJs = '/admin/assets/js/admin.js';
+        $__adminCss = \App\Services\PublishedAsset::url('/admin/assets/css/admin.css');
+        $__adminJs = \App\Services\PublishedAsset::url('/admin/assets/js/admin.js');
     @endphp
-    <link rel="stylesheet" href="{{ $__adminCss }}?v={{ @filemtime(BASE_PATH . $__adminCss) ?: time() }}">
+    <link rel="stylesheet" href="{{ $__adminCss }}?v={{ \App\Services\PublishedAsset::version('/admin/assets/css/admin.css') }}">
 </head>
 <body class="admin-body auth-body">
     <div class="auth-container">
         @yield('content')
     </div>
-    <script src="{{ $__adminJs }}?v={{ @filemtime(BASE_PATH . $__adminJs) ?: time() }}"></script>
+    <script src="{{ $__adminJs }}?v={{ \App\Services\PublishedAsset::version('/admin/assets/js/admin.js') }}"></script>
 </body>
 </html>

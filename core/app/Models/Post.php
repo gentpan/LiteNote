@@ -63,28 +63,28 @@ final class Post extends Model
         $whereSql = implode(' AND ', $where);
         $total = (int) self::db()->fetchColumn("SELECT COUNT(*) FROM posts p WHERE {$whereSql}", $params);
 
-        $published = PostStatus::Published->value;
         $sql = "SELECT p.*,
                   (
                     SELECT COUNT(*)
                     FROM posts pn
-                    WHERE pn.status = '{$published}'
+                    WHERE pn.status = '" . PostStatus::Published->value . "'
                       AND COALESCE(pn.is_private, 0) = 0
                       AND (
-                        pn.published_at < p.published_at
-                        OR (pn.published_at = p.published_at AND pn.id <= p.id)
+                        pn.published_at > p.published_at
+                        OR (pn.published_at = p.published_at AND pn.id >= p.id)
                       )
-                  ) as article_number,
-                  (
-                    SELECT COUNT(*)
-                    FROM comments cm
-                    WHERE cm.post_id = p.id AND cm.status = 'approved'
-                  ) AS __comments_count,
+                  ) AS article_number,
+                  COALESCE(cc.total, 0) AS __comments_count,
                   c.name as __category_name, c.slug as __category_slug
                 FROM posts p
                 LEFT JOIN categories c ON p.category_id = c.id
+                LEFT JOIN (
+                    SELECT post_id, COUNT(*) AS total
+                    FROM comments
+                    WHERE status = 'approved'
+                    GROUP BY post_id
+                ) cc ON cc.post_id = p.id
                 WHERE {$whereSql}
-                GROUP BY p.id
                 ORDER BY p.is_top DESC, p.published_at DESC
                 LIMIT {$limit} OFFSET {$offset}";
         $rows = self::db()->fetchAll($sql, $params);
@@ -168,20 +168,9 @@ final class Post extends Model
         ];
     }
 
-    /**
-     * @param int[] $ids
-     * @return self[]
-     */
     public static function whereInIds(array $ids): array
     {
-        $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
-        if ($ids === []) {
-            return [];
-        }
-
-        $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        $rows = self::db()->fetchAll("SELECT * FROM posts WHERE id IN ({$placeholders})", $ids);
-        return array_map(fn($row) => new self($row), $rows);
+        return parent::whereInIds($ids);
     }
 
     public static function archives(): array
@@ -190,14 +179,16 @@ final class Post extends Model
         $published = PostStatus::Published->value;
         return self::db()->fetchAll(
             "SELECT p.id, p.title, p.slug, p.summary, p.category_id, p.views, p.published_at,
-                    (
-                        SELECT COUNT(*)
-                        FROM comments cm
-                        WHERE cm.post_id = p.id AND cm.status = 'approved'
-                    ) AS comments_count,
+                    COALESCE(cc.total, 0) AS comments_count,
                     c.name AS category_name, c.slug AS category_slug, c.icon AS category_icon, c.color AS category_color
              FROM posts p
              LEFT JOIN categories c ON p.category_id = c.id
+             LEFT JOIN (
+                 SELECT post_id, COUNT(*) AS total
+                 FROM comments
+                 WHERE status = 'approved'
+                 GROUP BY post_id
+             ) cc ON cc.post_id = p.id
              WHERE p.status='{$published}' AND COALESCE(p.is_private, 0) = 0
              ORDER BY p.published_at DESC, p.id DESC"
         );
@@ -236,6 +227,28 @@ final class Post extends Model
         self::db()->query('UPDATE posts SET views = views + 1 WHERE id = ?', [$this->id]);
     }
 
+    /** Session 去重后增加浏览量，避免高流量时 SQLite 写放大。 */
+    public function trackView(): void
+    {
+        $id = (int)$this->id;
+        if ($id <= 0) {
+            return;
+        }
+
+        $viewed = \App\Core\Session::get('viewed_posts', []);
+        $viewed = is_array($viewed) ? $viewed : [];
+        if (!empty($viewed[$id])) {
+            return;
+        }
+
+        $this->incrementViews();
+        $viewed[$id] = time();
+        if (count($viewed) > 200) {
+            $viewed = array_slice($viewed, -150, null, true);
+        }
+        \App\Core\Session::set('viewed_posts', $viewed);
+    }
+
     public static function ensureEngagementSchema(): void
     {
         try {
@@ -247,6 +260,12 @@ final class Post extends Model
 
     public static function ensurePublishingOptionsSchema(): void
     {
+        static $checked = false;
+        if ($checked) {
+            return;
+        }
+        $checked = true;
+
         foreach ([
             'allow_comments' => 'INTEGER DEFAULT 1',
             'allow_rss' => 'INTEGER DEFAULT 1',

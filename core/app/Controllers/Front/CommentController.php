@@ -4,10 +4,12 @@ declare(strict_types=1);
 namespace App\Controllers\Front;
 
 use App\Core\Background;
+use App\Core\FrontCsrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Enums\CommentStatus;
+use App\Enums\PostStatus;
 use App\Models\Comment;
 use App\Models\Music;
 use App\Models\Page;
@@ -17,6 +19,7 @@ use App\Services\CommentModerationService;
 use App\Services\Notifications;
 use App\Services\CommentSettingsService;
 use App\Services\IpGeoService;
+use App\Services\ActionRateLimiter;
 
 /**
  * 评论提交（改进版）
@@ -52,6 +55,11 @@ class CommentController
         if (!Session::verifyCsrf($data['_csrf'])) {
             $this->backWithError('会话已过期，请刷新页面后重试');
         }
+
+        if (ActionRateLimiter::tooMany('comment_submit', $request->ip, 20, 600)) {
+            $this->backWithError('评论过于频繁，请稍后再试');
+        }
+        ActionRateLimiter::hit('comment_submit', $request->ip, 20, 600);
 
         $target = $this->resolveTarget((int)$data['post_id'], (int)$data['page_id'], (int)$data['talk_id'], (int)$data['music_id'], (int)$data['x_tweet_id']);
         if (!$target) {
@@ -193,13 +201,18 @@ class CommentController
      */
     public function stats(Request $request): never
     {
+        if (ActionRateLimiter::tooMany('visitor_stats', $request->ip, 30, 300)) {
+            Response::json(['code' => 429, 'msg' => '请求过于频繁'], 429);
+        }
+        ActionRateLimiter::hit('visitor_stats', $request->ip, 30, 300);
+
         $email = trim((string)$request->input('email', ''));
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             Response::json(['code' => 0, 'comments' => 0, 'trusted' => false]);
         }
         Response::json([
             'code' => 0,
-            'comments' => Comment::countApprovedByEmail($email),
+            'comments' => Comment::countApprovedByEmail($email) > 0 ? 1 : 0,
             'trusted' => $this->isTrustedEmail($email),
         ]);
     }
@@ -207,6 +220,13 @@ class CommentController
     /** 身份表单验证码校验:通过后把邮箱写入白名单,之后任何设备评论都免验证码。 */
     public function verifyIdentity(Request $request): never
     {
+        FrontCsrf::verify($request);
+
+        if (ActionRateLimiter::tooMany('verify_identity', $request->ip, 15, 600)) {
+            Response::json(['ok' => false, 'msg' => '操作过于频繁，请稍后再试']);
+        }
+        ActionRateLimiter::hit('verify_identity', $request->ip, 15, 600);
+
         $email = trim((string)$request->input('email', ''));
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             Response::json(['ok' => false, 'msg' => '邮箱格式不正确']);
@@ -249,7 +269,11 @@ class CommentController
     private function resolveTarget(int $postId, int $pageId, int $talkId, int $musicId, int $xTweetId = 0): ?object
     {
         if ($postId) {
-            return Post::find($postId);
+            $post = Post::find($postId);
+            if (!$post || (string)$post->status !== PostStatus::Published->value || (int)($post->is_private ?? 0) === 1) {
+                return null;
+            }
+            return $post;
         }
         if ($pageId) {
             return Page::find($pageId);

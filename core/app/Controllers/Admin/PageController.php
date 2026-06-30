@@ -11,6 +11,8 @@ use App\Core\Session;
 use App\Core\View;
 use App\Enums\Toggle;
 use App\Models\Page;
+use App\Services\PublicCacheService;
+use App\Services\SearchIndexService;
 
 class PageController
 {
@@ -196,6 +198,10 @@ class PageController
             $p->save();
         }
         Session::flash('success', $id ? '页面已更新' : '页面已创建');
+        if (isset($p) && $p instanceof Page) {
+            SearchIndexService::syncPage($p);
+        }
+        PublicCacheService::forgetAll();
         Response::redirect('/admin/pages');
     }
 
@@ -252,7 +258,9 @@ class PageController
                 Response::redirect('/admin/pages');
             }
             Page::db()->delete('pages', 'id = ?', [$id]);
+            SearchIndexService::remove('page', $id);
         }
+        PublicCacheService::forgetAll();
         Session::flash('success', '页面已删除');
         Response::redirect('/admin/pages');
     }

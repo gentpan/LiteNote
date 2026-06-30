@@ -38,12 +38,12 @@
                 <footer class="post-footer-meta">
                     <p class="post-meta">
                         <span><i class="fa-regular fa-eye" aria-hidden="true"></i> {{ $post->views }} 浏览</span>
-                        <span><i class="fa-regular fa-comment" aria-hidden="true"></i> {{ count($comments) }} 评论</span>
+                        <span><i class="fa-regular fa-comment" aria-hidden="true"></i> {{ (int)($commentsTotal ?? count($comments)) }} 评论</span>
                     </p>
                 </footer>
 
                 <section class="comments">
-                    <h3>评论 ({{ count($comments) }})</h3>
+                    <h3>评论 ({{ (int)($commentsTotal ?? count($comments)) }})</h3>
                     @if(\App\Core\Session::hasFlash('comment_success'))
                         <div hidden data-toast-type="success" data-toast-message="{{ \App\Core\Session::getFlash('comment_success') }}"></div>
                     @endif
@@ -94,6 +94,11 @@
                             </li>
                         @endforeach
                     </ul>
+                    @if(!empty($commentsHasMore))
+                    <div class="comment-load-more-wrap">
+                        <button type="button" class="btn comment-load-more" data-post-id="{{ $post->id }}" data-offset="{{ $commentsPerPage }}" data-limit="{{ $commentsPerPage }}">加载更多评论</button>
+                    </div>
+                    @endif
                     @php
                         $adminCommentName = !empty($currentAdmin) ? ($currentAdmin->nickname ?: $currentAdmin->username) : '';
                         $adminCommentEmail = !empty($currentAdmin) ? (string)($currentAdmin->email ?? '') : '';

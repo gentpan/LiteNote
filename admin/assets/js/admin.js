@@ -430,23 +430,33 @@
 
     // \u{8868}\u{5355}\u{63D0}\u{4EA4}\u{7981}\u{7528}\u{6309}\u{94AE}
     document.querySelectorAll('form').forEach(function(form) {
-        form.addEventListener('submit', function() {
+        form.addEventListener('submit', function(e) {
             if (form.hasAttribute('data-no-submit-loading')) {
                 return;
             }
-            var btn = form.querySelector('button[type=submit]');
-            if (btn) {
-                btn.disabled = true;
-                if (form.hasAttribute('data-icon-submit-only') || btn.hasAttribute('data-icon-submit-only')) {
+            var submitter = e.submitter || null;
+            var buttons = form.querySelectorAll('button[type=submit], input[type=submit]');
+            window.setTimeout(function() {
+                buttons.forEach(function(btn) {
+                    btn.disabled = true;
+                });
+                var btn = submitter || form.querySelector('button[type=submit], input[type=submit]');
+                if (btn) {
                     if (!btn.dataset.originalHtml) {
-                        btn.dataset.originalHtml = btn.innerHTML;
+                        btn.dataset.originalHtml = btn.innerHTML || btn.value || '';
                     }
-                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-                } else {
-                    btn.textContent = '\u{5904}\u{7406}\u{4E2D}...';
+                    if (form.hasAttribute('data-icon-submit-only') || btn.hasAttribute('data-icon-submit-only')) {
+                        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                    } else if (btn.tagName === 'BUTTON') {
+                        btn.textContent = '\u{5904}\u{7406}\u{4E2D}...';
+                    }
                 }
-                setTimeout(function() { btn.disabled = false; }, 5000);
-            }
+                window.setTimeout(function() {
+                    buttons.forEach(function(b) {
+                        b.disabled = false;
+                    });
+                }, 5000);
+            }, 0);
         });
     });
 

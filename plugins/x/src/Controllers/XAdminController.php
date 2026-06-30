@@ -9,6 +9,8 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
 use App\Services\AttachmentCleanupService;
+use App\Services\PublicCacheService;
+use App\Services\SearchIndexService;
 use LiteNotePlugin\X\Models\XTweet;
 use LiteNotePlugin\X\Services\TweetFetchService;
 
@@ -55,11 +57,13 @@ final class XAdminController
         $existing = $this->findExistingTweet($data, $url);
         if ($existing) {
             XTweet::db()->update('x_tweets', $this->fieldsFromFetchedTweet($data, $url), 'id = :id', [':id' => (int)$existing->id]);
+            SearchIndexService::syncXTweet((int)$existing->id);
+            PublicCacheService::forgetAll();
             Session::flash('success', '推文已存在，已刷新缓存内容');
             Response::redirect('/admin/x/tweets');
         }
 
-        (new XTweet(array_merge(
+        $tweet = new XTweet(array_merge(
             $this->fieldsFromFetchedTweet($data, $url),
             [
                 'is_public' => 1,
@@ -67,8 +71,11 @@ final class XAdminController
                 'comments_count' => 0,
                 'created_at' => date('Y-m-d H:i:s'),
             ]
-        )))->save();
+        ));
+        $tweet->save();
 
+        SearchIndexService::syncXTweet((int)$tweet->id);
+        PublicCacheService::forgetAll();
         Session::flash('success', '推文已发布');
         Response::redirect('/admin/x/tweets');
     }
@@ -96,6 +103,8 @@ final class XAdminController
         }
 
         XTweet::db()->update('x_tweets', $this->fieldsFromFetchedTweet($data, $source), 'id = :id', [':id' => $id]);
+        SearchIndexService::syncXTweet($id);
+        PublicCacheService::forgetAll();
         Session::flash('success', '推文内容和图片缓存已刷新');
         Response::redirect('/admin/x/tweets');
     }
@@ -123,7 +132,9 @@ final class XAdminController
                 Response::redirect('/admin/x/tweets');
             }
             AttachmentCleanupService::deleteUnusedFromValues($attachmentValues);
+            SearchIndexService::remove('x', $id);
         }
+        PublicCacheService::forgetAll();
         Session::flash('success', '推文已删除');
         Response::redirect('/admin/x/tweets');
     }

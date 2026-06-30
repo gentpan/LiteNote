@@ -110,6 +110,8 @@ unset($__dbPath, $__dbSeed, $__dbDir);
 if (is_file(Config::get('database.sqlite'))) {
     try {
         \App\Services\Installer::ensureDefaultAdmin();
+        \App\Services\Installer::ensureWelcomePostContent();
+        \App\Services\MigrationRunner::run();
     } catch (\Throwable $e) {
         error_log('LiteNote bootstrap: 默认管理员创建失败: ' . $e->getMessage());
     }
@@ -201,6 +203,23 @@ View::composer(['*layouts.front', '*layouts.admin', '*front.*', '*home.*', '*pos
         $data['navItems']      = $cached['navItems'];
     } catch (\Throwable) {
         // 数据库未就绪
+    }
+    return $data;
+});
+
+// 前台布局侧边栏：categories / recentPosts 只注册一次，避免 Controller 构造时重复追加 Composer。
+View::composer(['*layouts.front'], function (array $data): array {
+    static $sidebar = null;
+    try {
+        if ($sidebar === null) {
+            $sidebar = [
+                'categories'  => \App\Models\Category::allEnabled(),
+                'recentPosts' => \App\Models\Post::recent(5),
+            ];
+        }
+        $data['categories']  = $data['categories']  ?? $sidebar['categories'];
+        $data['recentPosts'] = $data['recentPosts'] ?? $sidebar['recentPosts'];
+    } catch (\Throwable) {
     }
     return $data;
 });

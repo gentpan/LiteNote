@@ -53,6 +53,57 @@ final class Installer
         @file_put_contents($path, "用户名: admin\n密码: {$password}\n请登录后立即修改密码。\n");
     }
 
+    /**
+     * 确保 slug=welcome 的示例文章有正文（从种子 Markdown 写入，不覆盖已有内容）。
+     */
+    public static function ensureWelcomePostContent(): void
+    {
+        if (!is_file((string)Config::get('database.sqlite'))) {
+            return;
+        }
+
+        try {
+            $post = \App\Models\Post::findBy('slug', 'welcome');
+            if (!$post) {
+                return;
+            }
+
+            if (trim(PostContentStorage::read('welcome')) !== '') {
+                return;
+            }
+
+            PostContentStorage::write('welcome', self::defaultWelcomeMarkdown());
+
+            $summary = trim((string)($post->summary ?? ''));
+            if ($summary === '' || $summary === '这是第一篇示例文章') {
+                \App\Models\Post::db()->update(
+                    'posts',
+                    ['summary' => '欢迎使用 LiteNote，了解如何写文章、发滔客与配置站点。'],
+                    'id = :id',
+                    [':id' => (int)$post->id]
+                );
+            }
+        } catch (\Throwable $e) {
+            error_log('LiteNote bootstrap: 欢迎文章正文初始化失败: ' . $e->getMessage());
+        }
+    }
+
+    public static function defaultWelcomeMarkdown(): string
+    {
+        $seed = dirname(__DIR__, 2) . '/database/seeds/posts/welcome.md';
+        if (is_file($seed) && is_readable($seed)) {
+            return (string)file_get_contents($seed);
+        }
+
+        return <<<'MD'
+# 欢迎使用我的博客
+
+欢迎使用 **LiteNote**！这是你的第一篇文章。
+
+你可以在 [后台](/admin) 编辑或删除它，并开始发布自己的内容。
+MD;
+    }
+
     private static function randomPassword(int $length = 16): string
     {
         $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*-_=+';
@@ -432,11 +483,11 @@ final class Installer
         $exists = $db->fetchOne('SELECT id FROM posts LIMIT 1');
         if (!$exists) {
             $now = date('Y-m-d H:i:s');
-            $welcomeMarkdown = "欢迎使用 **LiteNote**！这是你的第一篇文章。\n\n你可以在后台编辑或删除它。";
+            $welcomeMarkdown = self::defaultWelcomeMarkdown();
             $db->insert('posts', [
                 'title'        => '欢迎使用我的博客',
                 'slug'         => 'welcome',
-                'summary'      => '这是第一篇示例文章',
+                'summary'      => '欢迎使用 LiteNote，了解如何写文章、发滔客与配置站点。',
                 'content'      => '',
                 'markdown_content' => '',
                 'category_id'  => 1,

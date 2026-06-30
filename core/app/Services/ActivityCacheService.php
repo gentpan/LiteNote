@@ -54,6 +54,12 @@ final class ActivityCacheService
         return $this->cache()->age(self::CACHE_KEY);
     }
 
+    public function forget(): void
+    {
+        $this->cache()->forget(self::CACHE_KEY);
+        (new FileCache())->forget('activity.page-heatmap');
+    }
+
     private static function serializeActivity(Activity $activity): array
     {
         $data = $activity->toArray();

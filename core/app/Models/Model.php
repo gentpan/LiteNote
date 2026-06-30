@@ -77,6 +77,25 @@ abstract class Model
         return $row ? new static($row) : null;
     }
 
+    /**
+     * @param int[] $ids
+     * @return static[]
+     */
+    public static function whereInIds(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
+        if ($ids === []) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $rows = self::db()->fetchAll(
+            'SELECT * FROM ' . static::$table . ' WHERE ' . static::$pk . ' IN (' . $placeholders . ')',
+            $ids
+        );
+        return array_map(fn($row) => new static($row), $rows);
+    }
+
     public static function findBy(string $field, mixed $value): ?static
     {
         self::guardIdentifier($field);

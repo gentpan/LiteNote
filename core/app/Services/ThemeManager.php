@@ -28,13 +28,18 @@ final class ThemeManager
 
     public static function assetVersion(string $asset): int
     {
-        $asset = '/' . ltrim($asset, '/');
-        if (!str_starts_with($asset, self::THEME_ROOT . '/')) {
-            return time();
-        }
+        return PublishedAsset::version($asset);
+    }
 
-        $file = self::themeDirectory() . substr($asset, strlen(self::THEME_ROOT));
-        return is_file($file) ? (int)(filemtime($file) ?: time()) : time();
+    public static function styleAsset(string $asset): string
+    {
+        return PublishedAsset::url($asset);
+    }
+
+    /** @alias styleAsset */
+    public static function scriptAsset(string $asset): string
+    {
+        return PublishedAsset::url($asset);
     }
 
     public static function viewPath(string $template): ?string

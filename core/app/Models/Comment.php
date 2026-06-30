@@ -134,6 +134,42 @@ final class Comment extends Model
     }
 
     /**
+     * 批量取每个目标最近 N 条评论（用于列表页，避免全量加载）。
+     *
+     * @param int[] $ids
+     * @return array<int, self[]>
+     */
+    public static function recentGroupedByTarget(string $column, array $ids, int $limitPerTarget = 20): array
+    {
+        self::ensureGeoColumns();
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
+        if ($ids === [] || $limitPerTarget <= 0) {
+            return [];
+        }
+        self::guardIdentifier($column);
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $approved = CommentStatus::Approved->value;
+        $sql = "SELECT * FROM (
+                    SELECT c.*,
+                           ROW_NUMBER() OVER (PARTITION BY c.{$column} ORDER BY c.id ASC) AS __rn
+                    FROM comments c
+                    WHERE c.{$column} IN ({$placeholders}) AND c.status = ?
+                ) ranked
+                WHERE __rn <= {$limitPerTarget}
+                ORDER BY {$column} ASC, id ASC";
+
+        $rows = self::db()->fetchAll($sql, [...$ids, $approved]);
+        $grouped = [];
+        foreach ($rows as $row) {
+            unset($row['__rn']);
+            $key = (int)$row[$column];
+            $grouped[$key][] = new self($row);
+        }
+        return $grouped;
+    }
+
+    /**
      * 读路径不再同步请求外部 GeoIP:geo 字段已在评论入库时
      * (CommentController::submit) 写入,这里只保证列存在。
      * 历史缺 geo 的评论留空即可,避免访客打开公开页面被外部 API 阻塞。
