@@ -35,6 +35,11 @@
         })();
     </script>
     <link rel="stylesheet" href="{{ $themeCss }}?v={{ \App\Services\ThemeManager::assetVersion($themeCss) }}">
+    @php
+        $needsArticleFont = isset($post)
+            || (isset($page) && is_object($page) && $page instanceof \App\Models\Page);
+    @endphp
+    {!! \App\Services\ArticleFontService::headHtml($needsArticleFont) !!}
     {!! $__pluginFrontHead ?? '' !!}
 </head>
 <body>

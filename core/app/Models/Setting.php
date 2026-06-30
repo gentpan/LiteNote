@@ -49,6 +49,7 @@ final class Setting extends Model
         'home_fixed_posts',
         'home_fixed_talks',
         'post_article_font',
+        'post_title_font',
         'comment_enabled',
         'comment_post_enabled',
         'comment_page_enabled',

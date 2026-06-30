@@ -1963,6 +1963,7 @@ a.post-side-stat:hover {
     border-radius: 2px;
 }
 .page-content {
+    font-family: var(--article-font-family);
     font-size: var(--fs-lg);
     line-height: 1.9;
     color: var(--c-text);

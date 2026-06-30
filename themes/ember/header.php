@@ -40,39 +40,7 @@
     @foreach($themeCssFiles as $themeCss)
         <link rel="stylesheet" href="{{ $themeCss }}?v={{ \App\Services\ThemeManager::assetVersion($themeCss) }}">
     @endforeach
-    @php
-        $articleFontMap = [
-            'source-han-serif' => '"Source Han Serif CN VF", "Source Han Serif CN", "Source Han Serif SC", "Noto Serif CJK SC", "Songti SC", "SimSun", serif',
-            'noto-sans-sc' => '"Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif',
-            'lxgw-wenkai' => '"LXGW WenKai", "LXGW WenKai Screen", "Noto Sans SC", "PingFang SC", sans-serif',
-            'kuaikan' => '"快看世界体", "Source Han Serif CN VF", "Source Han Serif SC", "Songti SC", serif',
-            'luo' => '"Luo", "LXGW WenKai", "Noto Sans SC", "PingFang SC", sans-serif',
-        ];
-        $articleFontCssMap = [
-            'source-han-serif' => 'https://static.bluecdn.com/fonts/source-han-serif-cn.css',
-            'noto-sans-sc' => 'https://static.bluecdn.com/fonts/noto-sans-sc.css',
-            'lxgw-wenkai' => 'https://static.bluecdn.com/fonts/lxgw-wenkai.css',
-            'kuaikan' => 'https://static.bluecdn.com/fonts/kuaikanshijieti.css',
-            'luo' => 'https://static.bluecdn.com/fonts/luo.css',
-        ];
-        $articleFontKey = (string)\App\Models\Setting::get('post_article_font', 'source-han-serif');
-        $articleFontFamily = $articleFontMap[$articleFontKey] ?? $articleFontMap['source-han-serif'];
-        $articleFontCss = $articleFontCssMap[$articleFontKey] ?? $articleFontCssMap['source-han-serif'];
-        $heroTitleFontCss = $articleFontCssMap['kuaikan'];
-        $heroTitleFontFamily = '"快看世界体", "Source Han Serif CN VF", "Source Han Serif SC", "Songti SC", serif';
-    @endphp
-    @if($needsArticleFont)
-        <link rel="stylesheet" href="{{ $articleFontCss }}">
-        @if($articleFontCss !== $heroTitleFontCss)
-            <link rel="stylesheet" href="{{ $heroTitleFontCss }}">
-        @endif
-    @endif
-    <style>
-        :root {
-            --article-font-family: {!! $articleFontFamily !!};
-            --post-hero-title-font-family: {!! $heroTitleFontFamily !!};
-        }
-    </style>
+    {!! \App\Services\ArticleFontService::headHtml($needsArticleFont) !!}
     {!! $__pluginFrontHead ?? '' !!}
 </head>
 <body>
