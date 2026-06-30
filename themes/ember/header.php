@@ -25,7 +25,7 @@
     @endphp
     <link rel="preconnect" href="https://static.bluecdn.com" crossorigin>
     <link rel="preconnect" href="https://gravatar.bluecdn.com" crossorigin>
-    <link rel="stylesheet" href="https://static.bluecdn.com/libs/fontawesome/7.2.0/css/all.min.css">
+    <link rel="stylesheet" href="https://static.bluecdn.com/libs/fontawesome/7.3.0/css/all.min.css">
     <script>
         (function() {
             try {
@@ -49,11 +49,11 @@
             'luo' => '"Luo", "LXGW WenKai", "Noto Sans SC", "PingFang SC", sans-serif',
         ];
         $articleFontCssMap = [
-            'source-han-serif' => 'https://static.bluecdn.com/fonts/cn/source-han-serif-cn/result.css',
-            'noto-sans-sc' => 'https://static.bluecdn.com/fonts/cn/noto-sans-sc/result.css',
-            'lxgw-wenkai' => 'https://static.bluecdn.com/fonts/cn/lxgw-wenkai/result.css',
-            'kuaikan' => 'https://static.bluecdn.com/fonts/cn/kuaikanshijieti/result.css',
-            'luo' => 'https://static.bluecdn.com/fonts/cn/luo/result.css',
+            'source-han-serif' => 'https://static.bluecdn.com/fonts/source-han-serif-cn.css',
+            'noto-sans-sc' => 'https://static.bluecdn.com/fonts/noto-sans-sc.css',
+            'lxgw-wenkai' => 'https://static.bluecdn.com/fonts/lxgw-wenkai.css',
+            'kuaikan' => 'https://static.bluecdn.com/fonts/kuaikanshijieti.css',
+            'luo' => 'https://static.bluecdn.com/fonts/luo.css',
         ];
         $articleFontKey = (string)\App\Models\Setting::get('post_article_font', 'source-han-serif');
         $articleFontFamily = $articleFontMap[$articleFontKey] ?? $articleFontMap['source-han-serif'];

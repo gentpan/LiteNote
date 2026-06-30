@@ -14,7 +14,7 @@
     {!! \App\Services\FaviconService::headHtml($site ?? []) !!}
     <link rel="alternate" type="application/rss+xml" title="{{ $site['title'] ?? 'LiteNote' }} RSS" href="/rss.xml">
     @yield('head')
-    <link rel="stylesheet" href="https://static.bluecdn.com/libs/fontawesome/7.2.0/css/all.min.css">
+    <link rel="stylesheet" href="https://static.bluecdn.com/libs/fontawesome/7.3.0/css/all.min.css">
     @php
         $themeCss = \App\Services\ThemeManager::styleAsset((string)($activeTheme['stylesheet'] ?? '/themes/kami/assets/main.css'));
         $themeJs = \App\Services\ThemeManager::scriptAsset('/themes/' . rawurlencode($siteThemeKey) . '/assets/main.js');
