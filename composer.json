@@ -1,6 +1,7 @@
 {
   "name": "gentpan/litenote",
   "description": "LiteNote development dependencies",
+  "license": "MIT",
   "require": {
     "php": "^8.5",
     "ext-pdo": "*",
