@@ -55,12 +55,28 @@ LiteNote/
 ├── core/            # 框架核心、控制器、模型、服务、路由
 ├── themes/          # 前台主题
 ├── plugins/         # 插件目录
+├── scripts/         # 前端资源构建与备份 CLI（见下方「开发与 CI」）
+├── tests/           # PHPUnit 单元测试
+├── .github/         # GitHub Actions CI 工作流
 ├── uploads/         # 上传文件
 ├── runtime/         # SQLite、缓存、导入文件、生成内容
 ├── config.php       # 应用配置
 ├── .env.example     # 环境变量示例
 └── index.php        # 前台入口
 ```
+
+## 开发与 CI
+
+`scripts/` 与 `tests/` 为工程辅助目录，生产部署不依赖 PHPUnit，但构建压缩资源需要 `scripts/`。
+
+```bash
+composer install          # 安装 PHPUnit（仅开发/CI）
+npm install
+npm run build:assets      # 压缩 themes/admin/plugins 下的 CSS/JS
+vendor/bin/phpunit        # 运行单元测试
+```
+
+生产环境部署资源时可执行 `npm run deploy:assets`（构建后删除已有 `.min` 对应的源文件）。
 
 ## 运行要求
 
