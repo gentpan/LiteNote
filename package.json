@@ -2,7 +2,6 @@
   "private": true,
   "scripts": {
     "build:assets": "node scripts/build-assets.mjs",
-    "build:theme-js": "npm run build:assets",
     "prune:assets": "node scripts/prune-dev-assets.mjs",
     "deploy:assets": "npm run build:assets && npm run prune:assets"
   },

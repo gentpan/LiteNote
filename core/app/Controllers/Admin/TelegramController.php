@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin;
 
+use App\Core\Helper;
 use App\Core\Config;
 use App\Core\Request;
 use App\Core\Response;
@@ -58,7 +59,7 @@ final class TelegramController
             EnvService::setMany($values);
             Session::flash('success', 'Telegram 设置已保存');
         } catch (\Throwable $e) {
-            Session::flash('error', $e->getMessage());
+            Session::flash('error', Helper::publicErrorMessage($e));
         }
 
         Response::redirect(self::SETTINGS_URL);

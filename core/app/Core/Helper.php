@@ -51,6 +51,16 @@ final class Helper
         return htmlspecialchars((string)$str, ENT_QUOTES, 'UTF-8');
     }
 
+    public static function publicErrorMessage(\Throwable $e, string $fallback = '操作失败，请稍后重试。'): string
+    {
+        if (Config::get('app.debug', false)) {
+            $message = trim($e->getMessage());
+            return $message !== '' ? $message : $fallback;
+        }
+        error_log($e->getMessage());
+        return $fallback;
+    }
+
     public static function slugify(string $text): string
     {
         // 中文转拼音跳过，直接保留

@@ -74,7 +74,7 @@ class SettingController
             $data = ImageUploadService::upload($_FILES['logo'], 'site-logo');
             Response::json(['code' => 0, 'msg' => 'Logo 已上传', 'data' => $data]);
         } catch (\Throwable $e) {
-            Response::json(['code' => 1, 'msg' => $e->getMessage()]);
+            Response::json(['code' => 1, 'msg' => Helper::publicErrorMessage($e)]);
         }
     }
 
@@ -122,7 +122,7 @@ class SettingController
             $status = FaviconService::upload($_FILES['favicon']);
             Response::json(['code' => 0, 'msg' => '图标已生成并部署', 'data' => $status]);
         } catch (\Throwable $e) {
-            Response::json(['code' => 1, 'msg' => $e->getMessage()]);
+            Response::json(['code' => 1, 'msg' => Helper::publicErrorMessage($e)]);
         }
     }
 

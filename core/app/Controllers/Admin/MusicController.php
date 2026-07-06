@@ -148,7 +148,7 @@ class MusicController
             $limit = max(1, min(20, (int)$request->input('limit', 10)));
             ApiResponse::ok((new MetingService())->search($provider, $keyword, $page, $limit));
         } catch (\Throwable $e) {
-            ApiResponse::error($e->getMessage(), 400, 'meting_search_failed');
+            ApiResponse::error(Helper::publicErrorMessage($e, '音乐搜索失败'), 400, 'meting_search_failed');
         }
     }
 
@@ -159,7 +159,7 @@ class MusicController
             $id = trim((string)$request->input('id', ''));
             ApiResponse::ok((new MetingService())->songPayload($provider, $id));
         } catch (\Throwable $e) {
-            ApiResponse::error($e->getMessage(), 400, 'meting_song_failed');
+            ApiResponse::error(Helper::publicErrorMessage($e, '获取歌曲信息失败'), 400, 'meting_song_failed');
         }
     }
 

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin;
 
+use App\Core\Helper;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -90,7 +91,7 @@ class ProfileController
             $data = ImageUploadService::upload($_FILES['avatar'], 'avatar');
             Response::json(['code' => 0, 'msg' => 'ok', 'data' => $data]);
         } catch (\Throwable $e) {
-            Response::json(['code' => 1, 'msg' => $e->getMessage()]);
+            Response::json(['code' => 1, 'msg' => Helper::publicErrorMessage($e)]);
         }
     }
 

@@ -1,0 +1,8 @@
+# 上传目录禁止执行脚本
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+
+<FilesMatch "\.(php|php3|php4|php5|phtml|pl|py|jsp|asp|aspx|cgi|sh|bash)$">
+    Require all denied
+</FilesMatch>

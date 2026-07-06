@@ -32,6 +32,11 @@ return [
         'locale'    => 'zh-CN',
         // 强烈建议通过 .env 的 APP_KEY 设置 32 字节以上随机字符串，不要依赖回退值
         'key'       => $env('APP_KEY', 'change-me-32-bytes-random-secret!!'),
+        // 反向代理 IP 列表（逗号分隔），仅当 REMOTE_ADDR 命中时才读取 X-Forwarded-For 等头
+        'trusted_proxies' => array_values(array_filter(array_map(
+            'trim',
+            explode(',', $env('TRUSTED_PROXIES', ''))
+        ))),
     ],
 
     'database' => [

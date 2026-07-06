@@ -39,7 +39,7 @@ LiteNote 是一个基于 PHP 8.5 和 SQLite 的轻量级个人发布系统，适
 
 ## 项目优势
 
-- 不依赖 Composer，核心系统开箱即用。
+- 不依赖 Composer 部署生产环境，核心系统开箱即用；开发与 CI 需 `composer install` 运行测试。
 - SQLite 单文件数据库，备份、迁移、部署都更简单。
 - 后台功能完整，不需要再接入外部 CMS。
 - X 和音乐信息由服务端抓取并缓存，前端加载更稳定。
@@ -70,9 +70,9 @@ LiteNote/
 `scripts/` 与 `tests/` 为工程辅助目录，生产部署不依赖 PHPUnit，但构建压缩资源需要 `scripts/`。
 
 ```bash
-composer install          # 安装 PHPUnit（仅开发/CI）
+composer install          # 安装 PHPUnit（开发/CI）
 npm install
-npm run build:assets      # 压缩 themes/admin/plugins 下的 CSS/JS
+npm run build:assets      # 压缩 themes/、admin/assets/、plugins/ 下的 CSS/JS
 vendor/bin/phpunit        # 运行单元测试
 ```
 
@@ -80,10 +80,10 @@ vendor/bin/phpunit        # 运行单元测试
 
 ## 运行要求
 
-- PHP 8.5+
-- SQLite 扩展
-- PDO 扩展
-- GD 扩展，推荐用于验证码和图片处理
+- PHP **8.5+**
+- 扩展：**PDO**、**pdo_sqlite**、**sqlite3**（必需）
+- **FTS5**（推荐，用于全文搜索；缺失时降级为 LIKE）
+- **GD**（推荐，验证码与图片处理）
 - Web Server，将请求转发到 `index.php`
 
 ## 本地运行

@@ -200,7 +200,7 @@ final class ActivityController
                 'metadata' => $metadata,
             ]);
         } catch (\Throwable $e) {
-            Session::flash('error', $e->getMessage());
+            Session::flash('error', Helper::publicErrorMessage($e));
             Response::redirect("/admin/activities/{$id}/edit");
         }
 

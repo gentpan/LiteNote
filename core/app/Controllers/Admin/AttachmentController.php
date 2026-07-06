@@ -93,6 +93,13 @@ class AttachmentController
             'attachment_backup_keep_versions' => (string)max(1, min(200, (int)$request->input('attachment_backup_keep_versions', '10'))),
         ];
 
+        $secretKeys = ['attachment_s3_secret_key'];
+        foreach ($secretKeys as $key) {
+            if (($values[$key] ?? '') === '') {
+                unset($values[$key]);
+            }
+        }
+
         Setting::setMany($values);
         Session::flash('success', '附件设置已保存');
         $redirect = (string)$request->input('redirect', '/admin/settings/attachments');
@@ -129,7 +136,7 @@ class AttachmentController
             $result = (new S3StorageService($this->s3ConfigFromRequest($request)))->testConnection();
             Response::json(['code' => 0, 'msg' => $result['message'], 'data' => $result]);
         } catch (\Throwable $e) {
-            Response::json(['code' => 1, 'msg' => $e->getMessage()]);
+            Response::json(['code' => 1, 'msg' => Helper::publicErrorMessage($e)]);
         }
     }
 
@@ -143,7 +150,7 @@ class AttachmentController
             }
             Response::json(['code' => 0, 'msg' => $msg, 'data' => $result]);
         } catch (\Throwable $e) {
-            Response::json(['code' => 1, 'msg' => $e->getMessage()]);
+            Response::json(['code' => 1, 'msg' => Helper::publicErrorMessage($e)]);
         }
     }
 
@@ -153,7 +160,7 @@ class AttachmentController
             $command = (new S3StorageService($this->s3ConfigFromRequest($request)))->clearCommand();
             Response::json(['code' => 0, 'msg' => '清空命令已生成', 'data' => ['command' => $command]]);
         } catch (\Throwable $e) {
-            Response::json(['code' => 1, 'msg' => $e->getMessage()]);
+            Response::json(['code' => 1, 'msg' => Helper::publicErrorMessage($e)]);
         }
     }
 
@@ -164,7 +171,7 @@ class AttachmentController
             $result = (new BackupService())->run($settings, true);
             Response::json(['code' => 0, 'msg' => $result['message'], 'data' => $result]);
         } catch (\Throwable $e) {
-            Response::json(['code' => 1, 'msg' => $e->getMessage()]);
+            Response::json(['code' => 1, 'msg' => Helper::publicErrorMessage($e)]);
         }
     }
 
@@ -221,7 +228,7 @@ class AttachmentController
                 $data = ImageUploadService::upload($file, 'attachment');
                 Response::json(['code' => 0, 'msg' => 'ok', 'data' => $data]);
             } catch (\Throwable $e) {
-                Response::json(['code' => 1, 'msg' => $e->getMessage()]);
+                Response::json(['code' => 1, 'msg' => Helper::publicErrorMessage($e)]);
             }
         }
 

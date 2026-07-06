@@ -26,6 +26,7 @@ runtime/storage/logs/*.txt
 # 用户上传文件(头像/附件,生产用)
 uploads/*
 !uploads/.gitkeep
+!uploads/.htaccess
 
 # macOS 系统文件
 .DS_Store
@@ -73,9 +74,8 @@ mavis-uploads/
 avatar-*.png
 nav-avatar-*.png
 
-# PHP Composer(暂未用,留位)
+# PHP Composer（生产不依赖 vendor/，开发/CI 需要）
 vendor/
-composer.lock
 
 # Node 构建依赖
 node_modules/

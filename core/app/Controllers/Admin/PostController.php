@@ -161,7 +161,7 @@ class PostController
             $data = ImageUploadService::upload($file, (string)$request->input('purpose', 'post'));
             Response::json(['code' => 0, 'msg' => 'ok', 'data' => $data]);
         } catch (\Throwable $e) {
-            Response::json(['code' => 1, 'msg' => $e->getMessage()]);
+            Response::json(['code' => 1, 'msg' => Helper::publicErrorMessage($e)]);
         }
     }
 
@@ -174,7 +174,7 @@ class PostController
             );
             Response::json(['code' => 0, 'msg' => 'ok', 'data' => $result]);
         } catch (\Throwable $e) {
-            Response::json(['code' => 1, 'msg' => $e->getMessage()]);
+            Response::json(['code' => 1, 'msg' => Helper::publicErrorMessage($e)]);
         }
     }
 
@@ -397,7 +397,7 @@ class PostController
             $this->redirect('/admin/posts/' . $savedId . '/edit');
         } catch (\Throwable $e) {
             error_log('LiteNote post save failed: ' . $e->getMessage());
-            $this->flashError('保存失败：' . $e->getMessage());
+            $this->flashError('保存失败：' . Helper::publicErrorMessage($e, '请稍后重试'));
             $this->redirect($id ? "/admin/posts/{$id}/edit" : '/admin/posts/create');
         }
     }
@@ -495,7 +495,7 @@ class PostController
                 $db->commit();
             } catch (\Throwable $e) {
                 $db->rollBack();
-                $this->flashError('删除失败: ' . $e->getMessage());
+                $this->flashError('删除失败: ' . Helper::publicErrorMessage($e, '请稍后重试'));
                 $this->redirect('/admin/posts');
             }
             if ($post) {

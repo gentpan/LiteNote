@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin;
 
+use App\Core\Helper;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -31,7 +32,7 @@ final class ThemeController
             ThemeManager::activate($key);
             Session::flash('success', '主题已切换');
         } catch (\Throwable $e) {
-            Session::flash('error', $e->getMessage());
+            Session::flash('error', Helper::publicErrorMessage($e));
         }
         Response::redirect('/admin/themes');
     }
@@ -43,7 +44,7 @@ final class ThemeController
             ThemeManager::delete($key);
             Session::flash('success', '主题已删除');
         } catch (\Throwable $e) {
-            Session::flash('error', $e->getMessage());
+            Session::flash('error', Helper::publicErrorMessage($e));
         }
         Response::redirect('/admin/themes');
     }

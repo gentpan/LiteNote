@@ -267,7 +267,7 @@ class TalkController
             $data = ImageUploadService::upload($file, 'talk');
             Response::json(['code' => 0, 'msg' => 'ok', 'data' => $data]);
         } catch (\Throwable $e) {
-            Response::json(['code' => 1, 'msg' => $e->getMessage()]);
+            Response::json(['code' => 1, 'msg' => Helper::publicErrorMessage($e)]);
         }
     }
 

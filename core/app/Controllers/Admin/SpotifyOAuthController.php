@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin;
 
+use App\Core\Helper;
 use App\Core\Http;
 use App\Core\Request;
 use App\Core\Response;
@@ -98,7 +99,7 @@ final class SpotifyOAuthController
 
             Session::flash('success', 'Spotify 授权成功，动态同步已启用');
         } catch (\Throwable $e) {
-            Session::flash('error', 'Spotify 授权失败：' . $e->getMessage());
+            Session::flash('error', 'Spotify 授权失败：' . Helper::publicErrorMessage($e));
         }
 
         Response::redirect('/admin/activities/integrations/spotify/edit');

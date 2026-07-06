@@ -75,6 +75,8 @@ spl_autoload_register(function (string $class) {
 // 加载配置
 Config::load('config');
 
+\App\Services\RuntimeRequirements::verify();
+
 // 时区
 date_default_timezone_set(Config::get('app.timezone', 'UTC'));
 

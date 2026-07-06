@@ -51,17 +51,41 @@ final class Request
 
     private function resolveIp(): string
     {
-        $keys = ['HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'HTTP_CLIENT_IP', 'REMOTE_ADDR'];
-        foreach ($keys as $k) {
-            if (!empty($_SERVER[$k])) {
-                $ip = explode(',', $_SERVER[$k])[0];
-                $ip = trim($ip);
+        $remote = trim((string) ($_SERVER['REMOTE_ADDR'] ?? ''));
+        $trusted = Config::get('app.trusted_proxies', []);
+        if ($remote !== '' && is_array($trusted) && self::isTrustedProxy($remote, $trusted)) {
+            foreach (['HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'HTTP_CLIENT_IP'] as $key) {
+                if (empty($_SERVER[$key])) {
+                    continue;
+                }
+                $ip = trim(explode(',', (string) $_SERVER[$key])[0]);
                 if (filter_var($ip, FILTER_VALIDATE_IP)) {
                     return $ip;
                 }
             }
         }
+
+        if ($remote !== '' && filter_var($remote, FILTER_VALIDATE_IP)) {
+            return $remote;
+        }
+
         return '0.0.0.0';
+    }
+
+    /**
+     * @param list<string> $trusted
+     */
+    private static function isTrustedProxy(string $remote, array $trusted): bool
+    {
+        if ($trusted === []) {
+            return false;
+        }
+        foreach ($trusted as $entry) {
+            if ($entry === '*' || $entry === $remote) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public function input(string $key, mixed $default = null): mixed

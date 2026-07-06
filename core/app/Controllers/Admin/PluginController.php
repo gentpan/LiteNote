@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin;
 
+use App\Core\Helper;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -32,7 +33,7 @@ final class PluginController
                 Session::flash('success', '插件已启用');
             }
         } catch (\Throwable $e) {
-            Session::flash('error', '操作失败：' . $e->getMessage());
+            Session::flash('error', '操作失败：' . Helper::publicErrorMessage($e));
         }
         Response::redirect('/admin/plugins');
     }
