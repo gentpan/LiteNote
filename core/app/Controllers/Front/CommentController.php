@@ -210,10 +210,12 @@ class CommentController
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             Response::json(['code' => 0, 'comments' => 0, 'trusted' => false]);
         }
+        $sessionTrusted = strtolower((string) Session::get('visitor_trusted_email', ''));
+        $trusted = $sessionTrusted !== '' && hash_equals($sessionTrusted, strtolower($email));
         Response::json([
             'code' => 0,
             'comments' => Comment::countApprovedByEmail($email) > 0 ? 1 : 0,
-            'trusted' => $this->isTrustedEmail($email),
+            'trusted' => $trusted,
         ]);
     }
 
@@ -233,6 +235,7 @@ class CommentController
         }
         // 已在白名单:无需验证码,直接通过
         if ($this->isTrustedEmail($email)) {
+            Session::set('visitor_trusted_email', strtolower($email));
             Response::json(['ok' => true, 'trusted' => true]);
         }
         // 校验验证码(恒启用,一次性使用)
@@ -243,6 +246,7 @@ class CommentController
             Response::json(['ok' => false, 'msg' => '验证码错误，请重新输入']);
         }
         Comment::markEmailVerified($email);
+        Session::set('visitor_trusted_email', strtolower($email));
         Response::json(['ok' => true, 'trusted' => true]);
     }
 

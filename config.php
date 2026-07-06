@@ -39,6 +39,8 @@ return [
         ))),
     ],
 
+    'activity_api_token' => $env('ACTIVITY_API_TOKEN', ''),
+
     'database' => [
         'sqlite' => __DIR__ . '/runtime/storage/database.sqlite',
         'activity' => __DIR__ . '/runtime/storage/activity.sqlite',

@@ -112,6 +112,19 @@ final class FileCache
     {
         $safe = trim($key, '/');
         $safe = preg_replace('/[^a-zA-Z0-9_.\/-]+/', '_', $safe) ?: 'cache';
-        return $this->basePath . '/' . $safe . '.json';
+        $safe = str_replace(['..', '\\'], '', $safe);
+        $path = rtrim($this->basePath, '/') . '/' . ltrim($safe, '/') . '.json';
+        $base = realpath($this->basePath);
+        if ($base !== false) {
+            $parent = dirname($path);
+            if (!is_dir($parent)) {
+                @mkdir($parent, 0775, true);
+            }
+            $realParent = realpath($parent);
+            if ($realParent !== false && !str_starts_with($realParent . '/', $base . '/')) {
+                return $base . '/cache.json';
+            }
+        }
+        return $path;
     }
 }

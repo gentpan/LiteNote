@@ -115,7 +115,10 @@
                                     <span class="comment-admin-name">{{ $adminCommentName }}</span>
                                     @if($adminCommentEmail !== '')<span class="comment-admin-email">{{ $adminCommentEmail }}</span>@endif
                                 </div>
-                                <a class="comment-admin-logout" href="/admin/logout">注销</a>
+                                <form method="post" action="/admin/logout" class="comment-admin-logout-form">
+                                    <input type="hidden" name="_csrf" value="{{ \App\Core\Session::csrfToken() }}">
+                                    <button type="submit" class="comment-admin-logout">注销</button>
+                                </form>
                             </div>
                             <input type="hidden" name="nickname" value="{{ $adminCommentName }}">
                             <input type="hidden" name="email" value="{{ $adminCommentEmail }}">

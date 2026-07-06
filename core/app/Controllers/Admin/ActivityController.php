@@ -101,6 +101,7 @@ final class ActivityController
             'sync_interval_minutes',
             ActivityIntegration::defaultIntervalMinutes($provider)
         )));
+        $metadata = ActivityIntegration::encryptMetadataSecrets($metadata);
 
         ActivityIntegration::saveProvider($provider, [
             'status' => (string)$request->input('status', 'inactive'),

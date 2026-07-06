@@ -90,7 +90,7 @@
     @endif
 
     @if(!empty($site['site_analytics_code']))
-        {!! $site['site_analytics_code'] !!}
+        {!! \App\Core\Helper::sanitizeAnalyticsCode((string)$site['site_analytics_code']) !!}
     @endif
     <script src="{{ $themeJs }}?v={{ \App\Services\ThemeManager::assetVersion($themeJs) }}"></script>
 </body>

@@ -29,7 +29,7 @@ use App\Middleware\CsrfMiddleware;
 
 // 公开:登录页已迁移到前台模拟窗,这里只保留 POST 登录接口。
 $router->post('/admin/login',       [AuthController::class, 'login'], [CsrfMiddleware::class]);
-$router->get('/admin/logout',       [AuthController::class, 'logout']);
+$router->post('/admin/logout',      [AuthController::class, 'logout'], [AdminAuth::class, CsrfMiddleware::class]);
 $router->get('/admin/forgot',       [AuthController::class, 'forgotForm']);
 $router->post('/admin/forgot',      [AuthController::class, 'forgot'], [CsrfMiddleware::class]);
 $router->get('/admin/reset',        [AuthController::class, 'resetForm']);

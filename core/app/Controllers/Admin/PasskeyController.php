@@ -3,22 +3,24 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin;
 
+use App\Core\Helper;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Models\User;
 use App\Services\PasskeyService;
+use App\Services\WebAuthn\WebAuthnVerifier;
 
 class PasskeyController
 {
-    private $service;
+    private PasskeyService $service;
 
     public function __construct()
     {
         $this->service = new PasskeyService();
     }
 
-    public function registerOptions(Request $request)
+    public function registerOptions(Request $request): never
     {
         $adminId = (int) Session::get('admin_user.id', 1);
         $user = User::find($adminId) ?: User::find(1);
@@ -29,7 +31,7 @@ class PasskeyController
         $challenge = $this->base64UrlEncode(random_bytes(32));
         Session::set('passkey_challenge', $challenge);
 
-        $options = [
+        Response::json([
             'challenge' => $challenge,
             'rp' => ['name' => 'LiteNote', 'id' => $this->rpId()],
             'user' => [
@@ -44,30 +46,39 @@ class PasskeyController
                 'residentKey' => 'preferred',
                 'userVerification' => 'preferred',
             ],
-        ];
-
-        Response::json($options);
+        ]);
     }
 
-    public function register(Request $request)
+    public function register(Request $request): never
     {
-        $data = json_decode($request->input('credential'), true);
+        $data = json_decode((string) $request->input('credential'), true);
         if (!is_array($data) || empty($data['id'])) {
             Response::json(['success' => false, 'message' => 'Passkey 凭证数据无效'], 422);
         }
 
-        if (!$this->challengeMatches($data, 'passkey_challenge')) {
-            Response::json(['success' => false, 'message' => 'Passkey 挑战校验失败,请刷新后重试'], 422);
+        $challenge = (string) Session::get('passkey_challenge', '');
+        if ($challenge === '') {
+            Response::json(['success' => false, 'message' => 'Passkey 挑战已过期,请刷新后重试'], 422);
+        }
+
+        try {
+            $verified = WebAuthnVerifier::verifyRegistration(
+                $data,
+                $challenge,
+                $this->rpId(),
+                $this->origin()
+            );
+        } catch (\Throwable $e) {
+            Response::json(['success' => false, 'message' => Helper::publicErrorMessage($e, 'Passkey 绑定验证失败')], 422);
         }
 
         $adminId = (int) Session::get('admin_user.id', 1);
-
         $saved = $this->service->saveCredential([
-            'user_id'       => $adminId,
-            'credential_id' => $data['id'],
-            'public_key'    => json_encode($data['response']),
-            'counter'       => 0,
-            'device_name'   => ''
+            'user_id' => $adminId,
+            'credential_id' => $verified['credential_id'],
+            'public_key' => $verified['public_key'],
+            'counter' => $verified['counter'],
+            'device_name' => '',
         ]);
 
         Session::forget('passkey_challenge');
@@ -77,7 +88,7 @@ class PasskeyController
         ]);
     }
 
-    public function loginOptions(Request $request)
+    public function loginOptions(Request $request): never
     {
         $credentials = $this->service->allCredentials();
         if (!$credentials) {
@@ -90,7 +101,7 @@ class PasskeyController
         $challenge = $this->base64UrlEncode(random_bytes(32));
         Session::set('passkey_login_challenge', $challenge);
 
-        $options = [
+        Response::json([
             'success' => true,
             'challenge' => $challenge,
             'timeout' => 60000,
@@ -100,26 +111,37 @@ class PasskeyController
                 'id' => $credential['credential_id'],
             ], $credentials),
             'userVerification' => 'preferred',
-        ];
-
-        Response::json($options);
+        ]);
     }
 
-    public function login(Request $request)
+    public function login(Request $request): never
     {
-        $data = json_decode($request->input('credential'), true);
+        $data = json_decode((string) $request->input('credential'), true);
         if (!is_array($data) || empty($data['id'])) {
             Response::json(['success' => false, 'message' => 'Passkey 凭证数据无效'], 422);
         }
 
-        if (!$this->challengeMatches($data, 'passkey_login_challenge')) {
-            Response::json(['success' => false, 'message' => 'Passkey 挑战校验失败,请重新登录'], 422);
+        $challenge = (string) Session::get('passkey_login_challenge', '');
+        if ($challenge === '') {
+            Response::json(['success' => false, 'message' => 'Passkey 挑战已过期,请重新登录'], 422);
         }
 
-        $credential = $this->service->getCredentialById($data['id']);
-
+        $credential = $this->service->getCredentialById((string) $data['id']);
         if (!$credential) {
             Response::json(['success' => false, 'message' => '未找到匹配的 Passkey'], 404);
+        }
+
+        try {
+            $result = WebAuthnVerifier::verifyAssertion(
+                $data,
+                $challenge,
+                $this->rpId(),
+                $this->origin(),
+                (string) ($credential['public_key'] ?? ''),
+                (int) ($credential['counter'] ?? 0)
+            );
+        } catch (\Throwable $e) {
+            Response::json(['success' => false, 'message' => Helper::publicErrorMessage($e, 'Passkey 登录验证失败')], 422);
         }
 
         $user = User::find((int) ($credential['user_id'] ?? 1));
@@ -127,18 +149,18 @@ class PasskeyController
             Response::json(['success' => false, 'message' => 'Passkey 对应的管理员账号不存在'], 404);
         }
 
-        $this->service->updateCounter($credential['credential_id'], (int) $credential['counter'] + 1);
+        $this->service->updateCounter((string) $credential['credential_id'], (int) $result['counter']);
         User::db()->update('users', [
             'last_login_at' => date('Y-m-d H:i:s'),
             'last_login_ip' => $request->ip,
         ], 'id = :id', ['id' => $user->id]);
 
         Session::set('admin_user', [
-            'id'       => $user->id,
+            'id' => $user->id,
             'username' => $user->username,
             'nickname' => $user->nickname,
-            'role'     => $user->role,
-            'status'   => isset($user->status) ? (int) $user->status : 1,
+            'role' => $user->role,
+            'status' => isset($user->status) ? (int) $user->status : 1,
         ]);
         Session::forget('passkey_login_challenge');
         Session::regenerate();
@@ -150,38 +172,22 @@ class PasskeyController
     {
         $host = $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'localhost';
         $parsed = parse_url('http://' . $host, PHP_URL_HOST);
-        return $parsed ?: (string) preg_replace('/:\d+$/', '', $host);
+        return $parsed ?: (string) preg_replace('/:\d+$/', '', (string) $host);
+    }
+
+    private function origin(): string
+    {
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $this->rpId();
+        $port = (int) ($_SERVER['SERVER_PORT'] ?? 80);
+        if (($scheme === 'https' && $port === 443) || ($scheme === 'http' && $port === 80)) {
+            return $scheme . '://' . $host;
+        }
+        return $scheme . '://' . $host . ':' . $port;
     }
 
     private function base64UrlEncode(string $value): string
     {
         return rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
-    }
-
-    private function base64UrlDecode(string $value): string
-    {
-        $value = strtr($value, '-_', '+/');
-        $padding = strlen($value) % 4;
-        if ($padding > 0) {
-            $value .= str_repeat('=', 4 - $padding);
-        }
-        return (string) base64_decode($value, true);
-    }
-
-    private function challengeMatches(array $data, string $sessionKey): bool
-    {
-        $expected = (string) Session::get($sessionKey, '');
-        $clientData = (string) ($data['response']['clientDataJSON'] ?? '');
-        if ($expected === '' || $clientData === '') {
-            return false;
-        }
-
-        $decoded = json_decode($this->base64UrlDecode($clientData), true);
-        if (!is_array($decoded)) {
-            $decoded = json_decode((string) base64_decode($clientData, true), true);
-        }
-
-        return is_array($decoded)
-            && hash_equals($expected, (string) ($decoded['challenge'] ?? ''));
     }
 }

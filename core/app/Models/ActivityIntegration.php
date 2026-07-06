@@ -102,7 +102,11 @@ final class ActivityIntegration
 
     public function __get(string $name): mixed
     {
-        return $this->attributes[$name] ?? null;
+        $value = $this->attributes[$name] ?? null;
+        if (in_array($name, ['access_token', 'refresh_token'], true) && is_string($value)) {
+            return \App\Services\SecretCipher::decrypt($value);
+        }
+        return $value;
     }
 
     public function toArray(): array
@@ -159,14 +163,25 @@ final class ActivityIntegration
         ];
 
         if ($existing) {
+            $existingRaw = $existing->toArray();
             if ($payload['access_token'] === '') {
-                $payload['access_token'] = (string)($existing->access_token ?? '');
+                $payload['access_token'] = (string)($existingRaw['access_token'] ?? '');
+            } else {
+                $payload['access_token'] = \App\Services\SecretCipher::encrypt($payload['access_token']);
             }
             if ($payload['refresh_token'] === '') {
-                $payload['refresh_token'] = (string)($existing->refresh_token ?? '');
+                $payload['refresh_token'] = (string)($existingRaw['refresh_token'] ?? '');
+            } else {
+                $payload['refresh_token'] = \App\Services\SecretCipher::encrypt($payload['refresh_token']);
             }
             Activity::db()->update('activity_integrations', $payload, 'provider = :provider', [':provider' => $provider]);
         } else {
+            if ($payload['access_token'] !== '') {
+                $payload['access_token'] = \App\Services\SecretCipher::encrypt($payload['access_token']);
+            }
+            if ($payload['refresh_token'] !== '') {
+                $payload['refresh_token'] = \App\Services\SecretCipher::encrypt($payload['refresh_token']);
+            }
             $payload['created_at'] = $now;
             Activity::db()->insert('activity_integrations', $payload);
         }
@@ -177,7 +192,24 @@ final class ActivityIntegration
     public function metadata(): array
     {
         $data = json_decode((string)($this->metadata ?? ''), true);
-        return is_array($data) ? $data : [];
+        if (!is_array($data)) {
+            return [];
+        }
+        if (isset($data['client_secret']) && is_string($data['client_secret']) && $data['client_secret'] !== '') {
+            $data['client_secret'] = \App\Services\SecretCipher::decrypt($data['client_secret']);
+        }
+        return $data;
+    }
+
+    /**
+     * @param array<string, mixed> $metadata
+     */
+    public static function encryptMetadataSecrets(array $metadata): array
+    {
+        if (isset($metadata['client_secret']) && is_string($metadata['client_secret']) && $metadata['client_secret'] !== '') {
+            $metadata['client_secret'] = \App\Services\SecretCipher::encrypt($metadata['client_secret']);
+        }
+        return $metadata;
     }
 
     public static function defaultIntervalMinutes(string $provider): int

@@ -110,6 +110,7 @@ admin / admin123
 - DeepSeek 或兼容 AI 服务，用于文章摘要。
 - SendFlare，用于找回密码和评论通知邮件。
 - X API Bearer Token，用于服务端抓取 X 内容。
+- `ACTIVITY_API_TOKEN`（可选），为 `/api/v1/activity/*` 启用 Bearer 鉴权。
 
 ## License
 

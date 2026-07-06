@@ -12,6 +12,10 @@ final class Setting extends Model
     /** 请求级缓存:key => 该 key 是否存在于表中(区分"值为 0/false"与"缺失")。 */
     private static array $loaded = [];
 
+    private const SECRET_KEYS = [
+        'attachment_s3_secret_key',
+    ];
+
     private const HIDDEN_KEYS = [
         'theme',
         'beian',
@@ -117,13 +121,17 @@ final class Setting extends Model
             self::$loaded[$key] = $row !== null;
             self::$cache[$key] = $row !== null ? self::cast($row->v) : null;
         }
-        return self::$loaded[$key] ? self::$cache[$key] : $default;
+        return self::$loaded[$key] ? self::castSecret($key, self::$cache[$key]) : $default;
     }
 
     public static function set(string $key, mixed $value): void
     {
         $existing = self::findBy('k', $key);
-        $v = is_array($value) || is_object($value) ? json_encode($value, JSON_UNESCAPED_UNICODE) : (string)$value;
+        $stringValue = is_array($value) || is_object($value) ? json_encode($value, JSON_UNESCAPED_UNICODE) : (string)$value;
+        if (in_array($key, self::SECRET_KEYS, true) && $stringValue !== '') {
+            $stringValue = \App\Services\SecretCipher::encrypt($stringValue);
+        }
+        $v = $stringValue;
         if ($existing) {
             $existing->v = $v;
             $existing->save();
@@ -134,6 +142,14 @@ final class Setting extends Model
         // 同步请求级缓存,使后续 get() 立即可见新值。
         self::$loaded[$key] = true;
         self::$cache[$key] = self::cast($v);
+    }
+
+    private static function castSecret(string $key, mixed $value): mixed
+    {
+        if (in_array($key, self::SECRET_KEYS, true) && is_string($value) && $value !== '') {
+            return \App\Services\SecretCipher::decrypt($value);
+        }
+        return $value;
     }
 
     public static function setMany(array $data): void

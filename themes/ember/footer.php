@@ -44,7 +44,7 @@
     </div>
 
     @if(!empty($site['site_analytics_code']))
-        {!! $site['site_analytics_code'] !!}
+        {!! \App\Core\Helper::sanitizeAnalyticsCode((string)$site['site_analytics_code']) !!}
     @endif
     @if(!empty($needsLiteZoom))
         <script src="/themes/ember/assets/litezoom.min.js?v={{ \App\Services\ThemeManager::assetVersion('/themes/ember/assets/litezoom.min.js') }}" defer></script>

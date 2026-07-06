@@ -6,6 +6,7 @@ namespace App\Controllers\Api;
 use App\Core\ApiResponse;
 use App\Core\Request;
 use App\Core\Response;
+use App\Middleware\ActivityApiAuthMiddleware;
 use App\Models\Activity;
 use App\Models\DailyActivityStat;
 use App\Services\ActivityCacheService;
@@ -71,7 +72,7 @@ final class ActivityApiController
             return true;
         }));
 
-        ApiResponse::ok(array_slice($items, 0, $limit), [
+        ApiResponse::ok(array_map([$this, 'sanitizePublicActivity'], array_slice($items, 0, $limit)), [
             'generated_at' => (string)($snapshot['generated_at'] ?? ''),
             'cache_age_seconds' => $cache->age(),
             'filters' => $filters,
@@ -113,7 +114,7 @@ final class ActivityApiController
 
     private function serializeActivity(Activity $activity): array
     {
-        return [
+        return $this->sanitizePublicActivity([
             'id' => (int)$activity->id,
             'type' => (string)$activity->type,
             'action' => (string)$activity->action,
@@ -124,6 +125,19 @@ final class ActivityApiController
             'icon' => (string)$activity->icon,
             'happened_at' => (string)$activity->happened_at,
             'metadata' => $activity->metadata(),
-        ];
+        ]);
+    }
+
+    /**
+     * @param array<string, mixed> $item
+     * @return array<string, mixed>
+     */
+    private function sanitizePublicActivity(array $item): array
+    {
+        if (!ActivityApiAuthMiddleware::isPublic()) {
+            return $item;
+        }
+        unset($item['metadata']);
+        return $item;
     }
 }

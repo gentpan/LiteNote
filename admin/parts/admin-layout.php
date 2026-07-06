@@ -158,7 +158,10 @@
             <a href="/admin/profile" class="{{ $__isActive('/admin/profile') ? 'active' : '' }}"><i class="fa-regular fa-user"></i><span>个人资料</span></a>
         </nav>
         <div class="admin-sidebar-footer">
-            <a href="/admin/logout" class="admin-sidebar-logout"><i class="fa-solid fa-door-open"></i><span>退出</span></a>
+            <form method="post" action="/admin/logout" class="admin-sidebar-logout-form">
+                <input type="hidden" name="_csrf" value="{{ $csrf ?? \App\Core\Session::csrfToken() }}">
+                <button type="submit" class="admin-sidebar-logout"><i class="fa-solid fa-door-open"></i><span>退出</span></button>
+            </form>
         </div>
     </aside>
     <div class="admin-wrapper">

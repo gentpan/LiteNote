@@ -114,6 +114,7 @@ if (is_file(Config::get('database.sqlite'))) {
         \App\Services\Installer::ensureDefaultAdmin();
         \App\Services\Installer::ensureWelcomePostContent();
         \App\Services\MigrationRunner::run();
+        \App\Services\SearchIndexService::install();
         \App\Services\ArticleFontService::ensureDefaults();
     } catch (\Throwable $e) {
         error_log('LiteNote bootstrap: 默认管理员创建失败: ' . $e->getMessage());

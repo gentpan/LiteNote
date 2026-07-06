@@ -603,6 +603,18 @@ button:hover .admin-check-icon {
     border-top: 1px solid var(--border);
 }
 
+.admin-sidebar-logout-form {
+    margin: 0;
+}
+
+.admin-sidebar-logout-form .admin-sidebar-logout {
+    width: 100%;
+    font: inherit;
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+}
+
 .admin-sidebar-logout {
     display: flex;
     gap: 9px;

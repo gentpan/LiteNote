@@ -142,6 +142,18 @@ class HomeController
     public function readers(): string
     {
         $sort = ($_GET['sort'] ?? '') === 'random' ? 'random' : 'count';
+        $cacheKey = 'home.readers.' . $sort;
+        $cache = new FileCache();
+        $cached = $cache->get($cacheKey, null, 300);
+        if (is_array($cached)) {
+            return View::render('home.readers', [
+                'readers' => $cached,
+                'sort' => $sort,
+                'pageTitle' => '读者墙',
+                'activeNav' => 'readers',
+            ]);
+        }
+
         $orderBy = $sort === 'random' ? 'RANDOM()' : 'comments_count DESC, last_commented_at DESC';
         $rows = Comment::db()->fetchAll(
             "SELECT
@@ -176,6 +188,8 @@ class HomeController
                 'delay' => ($index % 12) * 35,
             ];
         }, $rows, array_keys($rows));
+
+        $cache->set($cacheKey, $readers);
 
         return View::render('home.readers', [
             'readers' => $readers,

@@ -110,7 +110,10 @@
                     </a>
                     <div class="nav-identity-actions" aria-label="头像快捷菜单">
                         @if(!empty($currentAdmin))
-                            <a class="nav-identity-action nav-identity-profile" href="/admin/logout" aria-label="登出" title="登出"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i></a>
+                            <form method="post" action="/admin/logout" class="nav-identity-logout-form">
+                                <input type="hidden" name="_csrf" value="{{ \App\Core\Session::csrfToken() }}">
+                                <button type="submit" class="nav-identity-action nav-identity-profile" aria-label="登出" title="登出"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i></button>
+                            </form>
                         @else
                             <button type="button" class="nav-identity-action nav-identity-profile" data-login-open aria-label="登录" title="登录"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i></button>
                         @endif

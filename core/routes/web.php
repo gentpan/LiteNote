@@ -21,6 +21,7 @@ use App\Controllers\Front\ActivityController;
 use App\Controllers\Front\MailController;
 use App\Controllers\Front\TelegramController;
 use App\Controllers\Api\ActivityApiController;
+use App\Middleware\ActivityApiAuthMiddleware;
 // 首页
 $router->get('/',                 [HomeController::class, 'index']);
 $router->get('/home/feed',        [HomeController::class, 'feed']);
@@ -88,10 +89,10 @@ $router->get('/llms.txt',         [FeedController::class, 'llms']);
 $router->post('/telegram/webhook', [TelegramController::class, 'webhook']);
 $router->post('/telegram/webhook/{secret}', [TelegramController::class, 'webhook']);
 
-$router->get('/api/v1/activity/feed', [ActivityApiController::class, 'feed']);
-$router->get('/api/v1/activity/summary', [ActivityApiController::class, 'summary']);
-$router->get('/api/v1/activity/stats/today', [ActivityApiController::class, 'today']);
-$router->get('/api/v1/activity/stats/{date}', [ActivityApiController::class, 'stat']);
+$router->get('/api/v1/activity/feed', [ActivityApiController::class, 'feed'], [ActivityApiAuthMiddleware::class]);
+$router->get('/api/v1/activity/summary', [ActivityApiController::class, 'summary'], [ActivityApiAuthMiddleware::class]);
+$router->get('/api/v1/activity/stats/today', [ActivityApiController::class, 'today'], [ActivityApiAuthMiddleware::class]);
+$router->get('/api/v1/activity/stats/{date}', [ActivityApiController::class, 'stat'], [ActivityApiAuthMiddleware::class]);
 
 // 插件前台路由:必须在下面的 catch-all 短链接之前注册,否则会被 /{slug} 抢先匹配。
 \App\Services\Plugins\Registry::applyRoutes($router, 'web');

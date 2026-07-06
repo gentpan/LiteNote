@@ -35,7 +35,7 @@ final class FriendRssService
         if (!filter_var($rssUrl, FILTER_VALIDATE_URL) || !preg_match('~^https?://~i', $rssUrl)) {
             return self::result(false, [], 'RSS 地址格式无效');
         }
-        if (!self::isSafeRemoteUrl($rssUrl)) {
+        if (!RemoteUrlValidator::isSafePublicUrl($rssUrl)) {
             return self::result(false, [], 'RSS 地址指向不允许的目标');
         }
 
@@ -53,28 +53,20 @@ final class FriendRssService
 
         $items = [];
         try {
-            $ctx = stream_context_create([
-                'http' => [
-                    'timeout' => 8,
-                    'user_agent' => 'LiteNote-FriendRss/1.0',
-                    'ignore_errors' => true,
-                ],
-                'https' => [
-                    'timeout' => 8,
-                    'user_agent' => 'LiteNote-FriendRss/1.0',
-                    'ignore_errors' => true,
-                ],
+            $response = \App\Core\Http::request('GET', $rssUrl, [
+                'headers' => ['User-Agent: LiteNote-FriendRss/1.0', 'Accept: application/rss+xml, application/xml, text/xml, */*'],
+                'timeout' => 8,
+                'connect_timeout' => 4,
+                'follow' => false,
+                'default_headers' => false,
             ]);
-            $content = @file_get_contents($rssUrl, false, $ctx);
-            $httpCode = self::httpStatusCode($http_response_header ?? []);
-            if ($content === false) {
-                return self::result(false, [], '无法连接或请求超时', false, $httpCode);
+            $httpCode = (int) ($response['status'] ?? 0);
+            $content = (string) ($response['body'] ?? '');
+            if (!$response['ok'] || $content === '') {
+                return self::result(false, [], '无法连接或请求超时', false, $httpCode ?: null);
             }
-            if ($httpCode !== null && ($httpCode < 200 || $httpCode >= 400)) {
+            if ($httpCode !== 0 && ($httpCode < 200 || $httpCode >= 400)) {
                 return self::result(false, [], 'HTTP 状态码 ' . $httpCode, false, $httpCode);
-            }
-            if (trim($content) === '') {
-                return self::result(false, [], 'RSS 响应为空', false, $httpCode);
             }
             $items = self::parseRss($content, $limit);
             if (!$items) {
@@ -307,34 +299,6 @@ final class FriendRssService
             return $published;
         }
         return (int)($item['fetched_at'] ?? 0);
-    }
-
-    private static function isSafeRemoteUrl(string $url): bool
-    {
-        $scheme = strtolower((string)parse_url($url, PHP_URL_SCHEME));
-        if (!in_array($scheme, ['http', 'https'], true)) {
-            return false;
-        }
-
-        $host = strtolower(trim((string)parse_url($url, PHP_URL_HOST), '[]'));
-        if ($host === '' || in_array($host, ['localhost', '127.0.0.1', '0.0.0.0'], true) || str_ends_with($host, '.local')) {
-            return false;
-        }
-
-        if (filter_var($host, FILTER_VALIDATE_IP)) {
-            return filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false;
-        }
-
-        $records = @gethostbynamel($host);
-        if (!is_array($records) || $records === []) {
-            return false;
-        }
-        foreach ($records as $ip) {
-            if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
-                return false;
-            }
-        }
-        return true;
     }
 
     private static function ensureCacheDir(): void
