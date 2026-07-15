@@ -68,25 +68,12 @@ final class Helper
             return '';
         }
 
-        $allowedHosts = [
-            'www.googletagmanager.com',
-            'www.google-analytics.com',
-            'static.cloudflareinsights.com',
-            'cloud.umami.is',
-            'umami.is',
-            'hm.baidu.com',
-            'zz.bdstatic.com',
-            's9.cnzz.com',
-            'v1.cnzz.com',
-            'plausible.io',
-            'analytics.ahrefs.com',
-        ];
-
+        // 域名白名单已移除：允许任意外部 <script src> 统计脚本(含自建统计域名)
         $output = '';
         if (preg_match_all('/<script\b[^>]*\bsrc=["\']([^"\']+)["\'][^>]*>\s*<\/script>/i', $html, $matches, PREG_SET_ORDER)) {
             foreach ($matches as $match) {
                 $host = strtolower((string) parse_url($match[1], PHP_URL_HOST));
-                if ($host !== '' && in_array($host, $allowedHosts, true)) {
+                if ($host !== '') {
                     $output .= $match[0] . "\n";
                 }
             }
