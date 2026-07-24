@@ -1546,7 +1546,6 @@ a.post-side-stat:hover {
     display: none;
 }
 .post-content h1,
-.post-content h2,
 .post-content h3,
 .post-content h4 {
     margin-top: 1.6em;
@@ -1554,8 +1553,11 @@ a.post-side-stat:hover {
     color: var(--c-text);
 }
 .post-content h2 {
+    margin-top: 1.6em;
     padding-bottom: var(--sp-8);
-    font-size: 22px;
+    font-size: 21px;
+    font-weight: 500;
+    color: var(--c-text);
     border-bottom: 1px solid var(--c-border);
 }
 .post-content h3 {
