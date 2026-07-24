@@ -5345,6 +5345,7 @@ html {
     gap: var(--sp-4);
     justify-items: center;
     padding: var(--sp-7) var(--sp-6);
+    cursor: grab;
     background: #000;
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: var(--radius-pill);
@@ -5358,6 +5359,19 @@ html {
     cursor: grabbing;
 }
 
+/* 动画图标 overflow 可见时勿参与命中,避免 hover 缩放导致 pointer/default 闪烁 */
+.side-quick-actions .ln-icon,
+.side-quick-actions .ln-icon > svg {
+    pointer-events: none;
+}
+
+.side-search-toggle,
+.side-admin-entry,
+.side-identity-trigger,
+.side-theme-toggle {
+    cursor: pointer;
+}
+
 .side-search-toggle {
     display: inline-grid;
     place-items: center;
@@ -5365,7 +5379,6 @@ html {
     height: 36px;
     font-size: var(--fs-base);
     color: rgba(255, 255, 255, 0.88);
-    cursor: pointer;
     background: transparent;
     border: 1px solid transparent;
     border-radius: var(--radius-pill);
@@ -5395,7 +5408,6 @@ html {
     padding: 0;
     margin-top: var(--sp-6);
     color: rgba(255, 255, 255, 0.88);
-    cursor: pointer;
     background: transparent;
     border: 1px solid transparent;
     border-radius: var(--radius-pill);
@@ -5412,6 +5424,7 @@ html {
     right: 5px;
     left: 5px;
     height: 1px;
+    pointer-events: none;
     content: "";
     background: rgba(255, 255, 255, 0.18);
 }
@@ -9456,7 +9469,6 @@ html[data-theme="dark"] .talk-comments:not(.music-share-comments) > .comment-for
     padding: 0;
     overflow: hidden;
     color: rgba(255, 255, 255, 0.88);
-    cursor: pointer;
     background: transparent;
     border: 1px solid transparent;
     border-radius: var(--radius-pill);
