@@ -683,9 +683,9 @@ html[data-theme="light"] .home-talk-card .home-actions {
 }
 
 .x-card-body {
-    margin-top: var(--sp-28);
+    margin-top: var(--sp-12);
     font-size: var(--fs-base);
-    line-height: 1.7;
+    line-height: 1.58;
     color: var(--c-text);
     white-space: pre-wrap;
 }
@@ -1574,12 +1574,6 @@ html[data-theme="dark"]
 .home-talk-card .talk-content {
     font-size: var(--fs-base);
     line-height: 1.78;
-}
-
-.x-card-body {
-    margin-top: var(--sp-12);
-    font-size: var(--fs-base);
-    line-height: 1.58;
 }
 
 .home-talk-card .home-actions,
