@@ -36,7 +36,7 @@
             <div class="home-card-meta home-talk-meta">
                 <span>{!! \App\Core\Helper::timeTag($item->publishedAt()) !!}</span>
                 @if($locationName !== '')
-                    <span class="home-talk-location" title="{{ $locationTitle }}"><i class="fa-solid fa-location-dot" aria-hidden="true"></i>{{ $locationName }}</span>
+                    <span class="home-talk-location" title="{{ $locationTitle }}">@include('partials.ln-icon', ['name' => 'map-pin']){{ $locationName }}</span>
                 @endif
                 @if($weatherText !== '')
                     <span class="home-talk-weather"><i class="fa-solid fa-cloud-sun" aria-hidden="true"></i>{{ $weatherText }}</span>
@@ -44,10 +44,10 @@
             </div>
             <div class="home-card-actions home-talk-side">
                 <button type="button" class="home-action talk-like-btn" data-id="{{ $item->id }}" aria-label="点赞">
-                    <i class="fa-regular fa-thumbs-up" aria-hidden="true"></i><span class="like-count">{{ (int)($item->likes_count ?? 0) }}</span>
+                    @include('partials.ln-icon', ['name' => 'heart', 'trigger' => 'both'])<span class="like-count">{{ (int)($item->likes_count ?? 0) }}</span>
                 </button>
                 <button type="button" class="home-action talk-comment-toggle" data-target="talk-comments-{{ $item->id }}">
-                    <i class="fa-regular fa-comment" aria-hidden="true"></i><span>{{ $commentCount }}</span>
+                    @include('partials.ln-icon', ['name' => 'message-circle'])<span>{{ $commentCount }}</span>
                 </button>
             </div>
         </footer>
@@ -111,7 +111,7 @@
                 @endif
                 <textarea name="content" rows="3" placeholder="写评论..." autocomplete="off" required></textarea>
                 <div class="comment-actions">
-                    <button type="submit" aria-label="提交评论"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i></button>
+                    <button type="submit" aria-label="提交评论">@include('partials.ln-icon', ['name' => 'send', 'trigger' => 'both'])</button>
                 </div>
             </form>
         </div>

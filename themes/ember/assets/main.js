@@ -1694,35 +1694,52 @@
             return '<i class="fa-regular fa-thumbs-up" aria-hidden="true"></i>';
         }
         if (name === 'heart-filled') {
-            return '<i class="fa-solid fa-heart" aria-hidden="true"></i>';
+            return '<span class="ln-icon" data-ln-icon="heart" data-ln-filled="1" data-ln-icon-trigger="both" aria-hidden="true"></span>';
         }
-        return '<i class="fa-regular fa-heart" aria-hidden="true"></i>';
+        return '<span class="ln-icon" data-ln-icon="heart" data-ln-icon-trigger="both" aria-hidden="true"></span>';
     }
 
     function musicPlaySvg() {
-        return '<i class="fa-solid fa-play" aria-hidden="true"></i>';
+        return '<span class="ln-icon" data-ln-icon="play" data-ln-icon-trigger="both" aria-hidden="true"></span>';
     }
 
     function musicPauseSvg() {
-        return '<i class="fa-solid fa-pause" aria-hidden="true"></i>';
+        return '<span class="ln-icon" data-ln-icon="pause" data-ln-icon-trigger="both" aria-hidden="true"></span>';
     }
 
     function musicErrorSvg() {
         return '<i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>';
     }
 
+    function mountLnIconNode(node) {
+        if (!node || !window.LnIcons) return node;
+        try {
+            return window.LnIcons.mount(node) || node;
+        } catch (e) {
+            return node;
+        }
+    }
+
+    function replaceButtonIcon(btn, html) {
+        if (!btn) return;
+        var current = btn.querySelector('.ln-icon, i');
+        if (!current) {
+            btn.insertAdjacentHTML('afterbegin', html);
+            mountLnIconNode(btn.querySelector('.ln-icon'));
+            return;
+        }
+        current.outerHTML = html;
+        mountLnIconNode(btn.querySelector('.ln-icon'));
+    }
+
     function setMusicToggleIcon(btn, iconName) {
         if (!btn) return;
-        var icon = btn.querySelector('i');
-        if (!icon) return;
-        if (iconName === 'play') {
-            icon.outerHTML = musicPlaySvg();
-        } else if (iconName === 'pause') {
-            icon.outerHTML = musicPauseSvg();
+        if (iconName === 'pause') {
+            replaceButtonIcon(btn, musicPauseSvg());
         } else if (iconName === 'error') {
-            icon.outerHTML = musicErrorSvg();
+            replaceButtonIcon(btn, musicErrorSvg());
         } else {
-            icon.outerHTML = musicPlaySvg();
+            replaceButtonIcon(btn, musicPlaySvg());
         }
     }
 
@@ -1730,12 +1747,21 @@
         if (!btn) return;
         btn.classList.toggle('is-liked', !!liked);
         btn.setAttribute('aria-pressed', liked ? 'true' : 'false');
+        var lnIcon = btn.querySelector('.ln-icon[data-ln-icon="heart"]');
+        if (lnIcon && window.LnIcons) {
+            window.LnIcons.set(lnIcon, 'heart', { filled: !!liked });
+            if (liked) {
+                try { window.LnIcons.play(lnIcon); } catch (e) {}
+            }
+            return;
+        }
         var icon = btn.querySelector('i');
-        if (!icon) return;
-        if (icon.classList.contains('fa-heart')) {
-            icon.outerHTML = likeSvg(liked ? 'heart-filled' : 'heart');
-        } else if (icon.classList.contains('fa-thumbs-up')) {
-            icon.outerHTML = likeSvg(liked ? 'like' : 'like-outline');
+        if (!icon) {
+            replaceButtonIcon(btn, likeSvg(liked ? 'heart-filled' : 'heart'));
+            return;
+        }
+        if (icon.classList.contains('fa-heart') || icon.classList.contains('fa-thumbs-up')) {
+            replaceButtonIcon(btn, likeSvg(liked ? 'heart-filled' : 'heart'));
         }
     }
 

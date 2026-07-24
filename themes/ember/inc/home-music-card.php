@@ -22,7 +22,7 @@
         <div class="home-music-bg" aria-hidden="true"></div>
         <div class="home-music-actions" aria-label="音乐互动">
             <button type="button" class="home-action music-share-like-btn" data-music-id="{{ $music->id }}" aria-label="喜欢这首音乐">
-                <i class="fa-regular fa-heart" aria-hidden="true"></i><span data-music-like-count>{{ (int)($music->likes_count ?? 0) }}</span>
+                @include('partials.ln-icon', ['name' => 'heart', 'trigger' => 'both'])<span data-music-like-count>{{ (int)($music->likes_count ?? 0) }}</span>
             </button>
         </div>
         <div class="home-music-layout">
@@ -40,7 +40,7 @@
                         <div class="home-music-spindle"></div>
                     </div>
                     <button type="button" class="music-card-control music-card-btn home-music-play" aria-label="播放音乐：{{ $musicTitle }}">
-                        <i class="fa-solid fa-play" aria-hidden="true"></i>
+                        @include('partials.ln-icon', ['name' => 'play', 'trigger' => 'both'])
                     </button>
                 </div>
             </div>

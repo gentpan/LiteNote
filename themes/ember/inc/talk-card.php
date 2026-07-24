@@ -30,7 +30,7 @@
         <div class="talk-meta-main">
             <span class="time">{!! \App\Core\Helper::timeTag($s->publishedAt()) !!}</span>
             @if($locationName !== '')
-                <span class="talk-location" title="{{ $locationTitle }}"><i class="fa-solid fa-location-dot" aria-hidden="true"></i>{{ $locationName }}</span>
+                <span class="talk-location" title="{{ $locationTitle }}">@include('partials.ln-icon', ['name' => 'map-pin']){{ $locationName }}</span>
             @endif
             @if($weatherText !== '')
                 <span class="talk-weather"><i class="fa-solid fa-cloud-sun" aria-hidden="true"></i>{{ $weatherText }}</span>
@@ -38,10 +38,10 @@
         </div>
         <div class="talk-meta-actions">
             <button type="button" class="feed-action talk-like-btn" data-id="{{ $s->id }}">
-                <i class="fa-regular fa-thumbs-up" aria-hidden="true"></i><span class="like-count">{{ (int)($s->likes_count ?? 0) }}</span>
+                @include('partials.ln-icon', ['name' => 'heart', 'trigger' => 'both'])<span class="like-count">{{ (int)($s->likes_count ?? 0) }}</span>
             </button>
             <button type="button" class="feed-action talk-comment-toggle" data-target="talk-comments-{{ $s->id }}">
-                <i class="fa-regular fa-comment" aria-hidden="true"></i><span>{{ $commentCount }}</span>
+                @include('partials.ln-icon', ['name' => 'message-circle'])<span>{{ $commentCount }}</span>
             </button>
         </div>
     </div>
@@ -105,7 +105,7 @@
             @endif
             <textarea name="content" rows="3" placeholder="写评论..." autocomplete="off" required></textarea>
             <div class="comment-actions">
-                <button type="submit" aria-label="提交评论"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i></button>
+                <button type="submit" aria-label="提交评论">@include('partials.ln-icon', ['name' => 'send', 'trigger' => 'both'])</button>
             </div>
         </form>
     </div>

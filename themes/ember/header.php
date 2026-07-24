@@ -20,8 +20,18 @@
             \App\Services\ThemeManager::styleAsset('/themes/ember/assets/main.css'),
             \App\Services\ThemeManager::styleAsset('/themes/ember/assets/pages.css'),
             $needsHomeCss ? \App\Services\ThemeManager::styleAsset('/themes/ember/assets/home.css') : null,
+            \App\Services\ThemeManager::styleAsset('/themes/ember/assets/icons/ln-icons.css'),
         ]);
         $mainJs = \App\Services\ThemeManager::scriptAsset('/themes/ember/assets/main.js');
+        $lnIconsJs = \App\Services\ThemeManager::scriptAsset('/themes/ember/assets/icons/ln-icons.js');
+        $emberLnIconBySlug = [
+            'activity' => 'activity',
+            'talk' => 'message-circle',
+            'music' => 'audio-lines',
+            'archives' => 'archive',
+            'friends' => 'users',
+            'posts' => 'file-text',
+        ];
     @endphp
     <link rel="preconnect" href="https://static.bluecdn.com" crossorigin>
     <link rel="preconnect" href="https://gravatar.bluecdn.com" crossorigin>
@@ -104,9 +114,9 @@
                         @if(!empty($author))
                             <img class="nav-avatar-img" src="{{ $author->getAvatarUrl(40) }}" alt="{{ $author->nickname }}" width="32" height="32" loading="lazy" data-blogger-avatar="{{ $author->getAvatarUrl(40) }}" data-blogger-name="{{ $author->nickname ?: $author->username }}">
                         @else
-                            <span class="nav-avatar-fallback"><i class="fa-solid fa-house" aria-hidden="true"></i></span>
+                            <span class="nav-avatar-fallback">@include('partials.ln-icon', ['name' => 'home'])</span>
                         @endif
-                        <span class="nav-avatar-home" aria-hidden="true"><i class="fa-solid fa-house" aria-hidden="true"></i></span>
+                        <span class="nav-avatar-home" aria-hidden="true">@include('partials.ln-icon', ['name' => 'home'])</span>
                     </a>
                     <div class="nav-identity-actions" aria-label="头像快捷菜单">
                         @if(!empty($currentAdmin))
@@ -117,20 +127,27 @@
                         @else
                             <button type="button" class="nav-identity-action nav-identity-profile" data-login-open aria-label="登录" title="登录"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i></button>
                         @endif
-                        <a class="nav-identity-action nav-identity-about" href="/about" aria-label="关于我" title="关于我"><i class="fa-regular fa-circle-user" aria-hidden="true"></i></a>
-                        <a class="nav-identity-action nav-identity-archives" href="/archives" aria-label="归档" title="归档"><i class="fa-solid fa-box-archive" aria-hidden="true"></i></a>
+                        <a class="nav-identity-action nav-identity-about" href="/about" aria-label="关于我" title="关于我">@include('partials.ln-icon', ['name' => 'user'])</a>
+                        <a class="nav-identity-action nav-identity-archives" href="/archives" aria-label="归档" title="归档">@include('partials.ln-icon', ['name' => 'archive'])</a>
                     </div>
                 </div>
                 <div class="nav-main-links">
                     <a href="/posts" class="nav-link nav-dd-trigger {{ ($activeNav ?? '') === 'posts' ? 'active' : '' }}" aria-haspopup="true">
-                        <i class="fa-regular fa-file-lines nav-link-icon" aria-hidden="true"></i>
+                        @include('partials.ln-icon', ['name' => 'file-text', 'class' => 'nav-link-icon'])
                         <span>文章</span>
                         <i class="fa-solid fa-chevron-down nav-dd-caret" aria-hidden="true"></i>
                     </a>
                     @foreach($navMainItems as $navItem)
-                        @php $navItemActive = ($activeNav ?? '') === ($navItem['slug'] ?? ''); @endphp
+                        @php
+                            $navItemActive = ($activeNav ?? '') === ($navItem['slug'] ?? '');
+                            $navLnIcon = $emberLnIconBySlug[$navItem['slug'] ?? ''] ?? '';
+                        @endphp
                         <a href="{{ $navItem['url'] ?? '#' }}" class="nav-link {{ $navItemActive ? 'active' : '' }}">
-                            <i class="{{ $navItem['icon'] ?? 'fa-regular fa-file-lines' }} nav-link-icon" aria-hidden="true"></i>
+                            @if($navLnIcon !== '')
+                                @include('partials.ln-icon', ['name' => $navLnIcon, 'class' => 'nav-link-icon'])
+                            @else
+                                <i class="{{ $navItem['icon'] ?? 'fa-regular fa-file-lines' }} nav-link-icon" aria-hidden="true"></i>
+                            @endif
                             <span>{{ $navItem['title'] ?? '' }}</span>
                         </a>
                     @endforeach
@@ -140,27 +157,33 @@
                         @php
                             $navCtaSlug = $navCtaItem['slug'] ?? '';
                             $navCtaActive = ($activeNav ?? '') === $navCtaSlug || ($navCtaSlug === 'activity' && ($pageTitle ?? '') === '动态');
+                            $navCtaLn = $emberLnIconBySlug[$navCtaSlug] ?? 'activity';
                         @endphp
                         <a href="{{ $navCtaItem['url'] ?? '#' }}" class="nav-cta {{ $navCtaActive ? 'active' : '' }} {{ $hasRecentActivity ? 'has-recent-activity' : '' }}">
                             @if($navCtaSlug === 'activity')
-                                <i class="fa-solid fa-chart-simple nav-activity-bars" aria-hidden="true"></i>
+                                @include('partials.ln-icon', ['name' => $navCtaLn, 'class' => 'nav-activity-bars'])
                                 <i class="fa-solid fa-gamepad nav-cta-mobile-icon" aria-hidden="true"></i>
                             @else
-                                <i class="fa-solid fa-chart-simple" aria-hidden="true"></i>
+                                @include('partials.ln-icon', ['name' => $navCtaLn])
                             @endif
                             <span>{{ $navCtaItem['title'] ?? '动态' }}</span>
                         </a>
                     @endif
                     @if(!empty($navMoreItems))
                         <button type="button" class="nav-more-toggle" data-nav-more aria-label="更多" aria-expanded="false" aria-haspopup="true">
-                            <i class="fa-solid fa-bars nav-more-bars" aria-hidden="true"></i>
-                            <i class="fa-solid fa-circle-xmark nav-more-close" aria-hidden="true"></i>
+                            @include('partials.ln-icon', ['name' => 'menu', 'class' => 'nav-more-bars'])
+                            @include('partials.ln-icon', ['name' => 'x', 'class' => 'nav-more-close'])
                             <span>更多</span>
                         </button>
                         <div class="nav-more-menu" data-nav-more-menu role="menu" aria-label="更多页面">
                             @foreach($navMoreItems as $moreItem)
+                                @php $moreLnIcon = $emberLnIconBySlug[$moreItem['slug'] ?? ''] ?? ''; @endphp
                                 <a href="{{ $moreItem['url'] ?? '#' }}" class="nav-more-item" role="menuitem">
-                                    <i class="{{ $moreItem['icon'] ?? 'fa-regular fa-file-lines' }} nav-link-icon" aria-hidden="true"></i>
+                                    @if($moreLnIcon !== '')
+                                        @include('partials.ln-icon', ['name' => $moreLnIcon, 'class' => 'nav-link-icon'])
+                                    @else
+                                        <i class="{{ $moreItem['icon'] ?? 'fa-regular fa-file-lines' }} nav-link-icon" aria-hidden="true"></i>
+                                    @endif
                                     <span>{{ $moreItem['title'] ?? '' }}</span>
                                 </a>
                             @endforeach
@@ -187,14 +210,14 @@
     <div class="side-quick-actions" aria-label="快捷操作">
     @if(!empty($currentAdmin))
     <a class="side-admin-entry" href="/admin" aria-label="进入后台" title="进入后台">
-        <i class="fa-solid fa-gauge-high" aria-hidden="true"></i>
+        @include('partials.ln-icon', ['name' => 'gauge'])
     </a>
     @endif
     @if(empty($currentAdmin))
     <div class="side-identity" data-side-identity>
         <button type="button" class="side-identity-trigger" data-nav-identity-edit aria-label="评论身份" title="评论身份">
             <img class="side-identity-avatar" data-side-identity-avatar alt="" hidden>
-            <span class="side-identity-fallback" aria-hidden="true"><i class="fa-regular fa-circle-user" aria-hidden="true"></i></span>
+            <span class="side-identity-fallback" aria-hidden="true">@include('partials.ln-icon', ['name' => 'user'])</span>
         </button>
         <div class="side-identity-card" aria-hidden="true">
             <span class="side-identity-name" data-side-identity-name></span>
@@ -203,12 +226,12 @@
     </div>
     @endif
     <button type="button" class="side-search-toggle" data-search-toggle aria-label="搜索" title="搜索">
-        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+        @include('partials.ln-icon', ['name' => 'search'])
     </button>
     <button type="button" class="side-theme-toggle" data-theme-toggle aria-label="切换深色模式" title="切换深色模式">
         <span class="side-theme-icon" aria-hidden="true">
-            <i class="fa-solid fa-moon theme-icon-moon" aria-hidden="true"></i>
-            <i class="fa-solid fa-sun theme-icon-sun" aria-hidden="true"></i>
+            <span class="theme-icon-moon">@include('partials.ln-icon', ['name' => 'moon'])</span>
+            <span class="theme-icon-sun">@include('partials.ln-icon', ['name' => 'sun'])</span>
         </span>
         <span class="side-theme-label" data-theme-label>深色模式</span>
     </button>
@@ -217,11 +240,11 @@
     <div class="site-search-overlay" data-search-overlay hidden>
         <div class="site-search-panel" role="search" aria-label="站内搜索">
             <form action="/search" method="get" class="site-search-pop-form">
-                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                @include('partials.ln-icon', ['name' => 'search'])
                 <input type="search" name="q" value="{{ $keyword ?? '' }}" placeholder="搜索文章、页面、滔客、音乐、X" autocomplete="off" data-search-input>
                 <button type="submit">搜索</button>
                 <button type="button" class="site-search-close" data-search-close aria-label="关闭搜索">
-                    <i class="fa-solid fa-circle-xmark" aria-hidden="true"></i>
+                    @include('partials.ln-icon', ['name' => 'x'])
                 </button>
             </form>
         </div>
@@ -248,12 +271,12 @@
             </div>
             <form class="login-modal-form" data-login-form>
                 <input type="hidden" name="_csrf" value="{{ \App\Core\Session::csrfToken() }}">
-                <label class="login-modal-field"><i class="fa-regular fa-circle-user" aria-hidden="true"></i><input name="username" placeholder="用户名" autocomplete="username" required></label>
-                <label class="login-modal-field"><i class="fa-solid fa-lock" aria-hidden="true"></i><input name="password" type="password" placeholder="密码" autocomplete="current-password" required></label>
+                <label class="login-modal-field">@include('partials.ln-icon', ['name' => 'user'])<input name="username" placeholder="用户名" autocomplete="username" required></label>
+                <label class="login-modal-field">@include('partials.ln-icon', ['name' => 'lock'])<input name="password" type="password" placeholder="密码" autocomplete="current-password" required></label>
                 <p class="login-modal-error" data-login-error hidden></p>
                 <button type="submit" class="login-modal-submit"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> 登录</button>
                 @if($loginPasskeyAvailable)
-                <button type="button" class="login-modal-passkey" data-login-passkey><i class="fa-solid fa-key" aria-hidden="true"></i> 使用 Passkey 登录</button>
+                <button type="button" class="login-modal-passkey" data-login-passkey>@include('partials.ln-icon', ['name' => 'key']) 使用 Passkey 登录</button>
                 @endif
                 <a class="login-modal-forgot" href="/admin/forgot">忘记密码？</a>
             </form>

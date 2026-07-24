@@ -116,16 +116,18 @@ final class View
     }
 
     /**
-     * 把 @include('x') 替换成运行时 `include '<编译缓存文件>'`。
-     * - 被包含模板在调用处的作用域内执行(能用 @foreach 循环变量、$currentAdmin 等)。
+     * 把 @include('x') / @include('x', [...]) 替换成运行时 include。
+     * - 无第二参数时：在调用处作用域执行（可用 @foreach 变量等）。
+     * - 有第二参数时：在闭包内 extract 后 include，避免污染外层变量。
      * - 递归解析嵌套 @include。
      */
     private static function resolveIncludes(string $source): string
     {
         return preg_replace_callback(
-            '/@include\(\s*[\'"](.+?)[\'"]\s*\)/',
+            '/@include\(\s*[\'"]([^\'"]+)[\'"]\s*(?:,\s*(\[[^\]]*\]))?\s*\)/',
             function ($m) {
                 $name = $m[1];
+                $dataExpr = isset($m[2]) && $m[2] !== '' ? $m[2] : null;
                 $incPath = self::resolvePath($name);
                 if (!is_file($incPath)) {
                     return '';
@@ -134,7 +136,15 @@ final class View
                 $incSource = self::resolveIncludes($incSource); // 递归处理嵌套 @include
                 $incPhp = self::compile($incSource);
                 $incFile = self::getCacheFile($name, $incPhp, $incPath);
-                return '<?php include ' . var_export($incFile, true) . '; ?>';
+                $incExport = var_export($incFile, true);
+                if ($dataExpr === null) {
+                    return '<?php include ' . $incExport . '; ?>';
+                }
+
+                return '<?php (static function (array $__lnIncludeData) { '
+                    . 'extract($__lnIncludeData, EXTR_OVERWRITE); '
+                    . 'include ' . $incExport . '; '
+                    . '})(' . $dataExpr . '); ?>';
             },
             $source
         );

@@ -1,0 +1,74 @@
+/* LiteNote animated icons — lucide-animated style (vanilla SVG) */
+.ln-icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 1em;
+    height: 1em;
+    line-height: 1;
+    vertical-align: -0.125em;
+    color: inherit;
+}
+
+.ln-icon > svg {
+    display: block;
+    width: 1em;
+    height: 1em;
+    overflow: visible;
+}
+
+.ln-icon[data-ln-filled="1"] > svg path,
+.ln-icon.is-filled > svg path {
+    fill: currentColor;
+}
+
+.nav-link .ln-icon,
+.nav-cta .ln-icon,
+.nav-more-item .ln-icon,
+.nav-avatar-fallback .ln-icon,
+.nav-avatar-home .ln-icon,
+.nav-identity-action .ln-icon {
+    font-size: inherit;
+}
+
+.side-theme-icon .ln-icon {
+    width: 20px;
+    height: 20px;
+    font-size: var(--fs-lg);
+}
+
+.side-theme-icon .ln-icon > svg {
+    width: 20px;
+    height: 20px;
+}
+
+.side-search-toggle .ln-icon,
+.side-admin-entry .ln-icon,
+.side-identity-fallback .ln-icon {
+    font-size: inherit;
+}
+
+.home-action .ln-icon,
+.feed-action .ln-icon,
+.music-card-btn .ln-icon,
+.comment-actions .ln-icon {
+    font-size: inherit;
+}
+
+@media (max-width: 768px) {
+    .side-theme-icon .ln-icon,
+    .side-theme-icon .ln-icon > svg {
+        width: 18px;
+        height: 18px;
+        font-size: var(--fs-base);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ln-icon > svg,
+    .ln-icon > svg * {
+        animation: none !important;
+        transition: none !important;
+    }
+}

@@ -958,9 +958,13 @@ button.feed-action:disabled {
     color: var(--c-text-muted);
 }
 .home-action.is-liked i,
+.home-action.is-liked .ln-icon,
 .feed-action.is-liked i,
+.feed-action.is-liked .ln-icon,
 .talk-like-btn.is-liked i,
-.music-share-like-btn.is-liked i {
+.talk-like-btn.is-liked .ln-icon,
+.music-share-like-btn.is-liked i,
+.music-share-like-btn.is-liked .ln-icon {
     color: #e65245;
 }
 .home-action.is-liked:hover,
@@ -3447,7 +3451,8 @@ html[data-theme="dark"] .nav-pill::after {
         background 0.2s ease,
         color 0.2s ease;
 }
-.nav-link i {
+.nav-link i,
+.nav-link .ln-icon {
     font-size: var(--fs-md);
     color: rgba(255, 255, 255, 0.6);
     transition: color 0.2s ease;
@@ -3457,14 +3462,16 @@ html[data-theme="dark"] .nav-pill::after {
     text-decoration: none;
     background: rgba(255, 255, 255, 0.08);
 }
-.nav-link:hover i {
+.nav-link:hover i,
+.nav-link:hover .ln-icon {
     color: var(--c-white);
 }
 .nav-link.active {
     color: var(--c-white);
     background: rgba(255, 255, 255, 0.12);
 }
-.nav-link.active i {
+.nav-link.active i,
+.nav-link.active .ln-icon {
     color: var(--c-white);
 }
 .nav-dd-trigger {
@@ -5505,6 +5512,17 @@ html {
     display: none;
 }
 
+.side-theme-toggle .theme-icon-moon,
+.side-theme-toggle .theme-icon-sun {
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.side-theme-toggle .theme-icon-moon {
+    display: inline-flex;
+}
+
 .side-theme-toggle .theme-icon-sun {
     display: none;
 }
@@ -5514,7 +5532,7 @@ html[data-theme="dark"] .side-theme-toggle .theme-icon-moon {
 }
 
 html[data-theme="dark"] .side-theme-toggle .theme-icon-sun {
-    display: inline-block;
+    display: inline-flex;
 }
 
 @media (max-width: 768px) {
@@ -6200,15 +6218,17 @@ html[data-theme="dark"]
     /* tab 内容统一浅色(导航胶囊恒黑底) */
     .site-nav-bar .nav-row a,
     .site-nav-bar .nav-row a i,
+    .site-nav-bar .nav-row a .ln-icon,
     .site-nav-bar .nav-actions .nav-cta,
     .site-nav-bar .nav-actions .nav-more-toggle,
-    .site-nav-bar .nav-actions .nav-more-toggle i {
+    .site-nav-bar .nav-actions .nav-more-toggle i,
+    .site-nav-bar .nav-actions .nav-more-toggle .ln-icon {
         color: rgba(255, 255, 255, 0.7);
     }
 
     /* 图标统一 18px,显示全部(含桌面隐藏的) */
     .site-nav-bar .nav-main-links .nav-link .nav-link-icon {
-        display: inline-block;
+        display: inline-flex;
         flex: none;
         margin: 0;
         font-size: var(--fs-xl);
@@ -6299,11 +6319,12 @@ html[data-theme="dark"]
     }
 
     .site-nav-bar .nav-actions .nav-more-toggle.is-open .nav-more-close {
-        display: inline-block;
+        display: inline-flex;
     }
 
     .site-nav-bar .nav-actions .nav-more-toggle.is-open,
-    .site-nav-bar .nav-actions .nav-more-toggle.is-open i {
+    .site-nav-bar .nav-actions .nav-more-toggle.is-open i,
+    .site-nav-bar .nav-actions .nav-more-toggle.is-open .ln-icon {
         color: var(--c-white);
     }
 
@@ -8714,8 +8735,10 @@ html[data-theme="dark"] .site-nav-bar .nav-cta.has-recent-activity:hover {
 }
 
 .site-nav-bar .nav-activity-bars {
-    display: inline-block;
+    display: inline-flex;
     flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
     width: 1em;
     height: 1em;
     margin: 0;
@@ -8732,8 +8755,11 @@ html[data-theme="dark"] .site-nav-bar .nav-link.active {
 }
 
 .site-nav-bar .nav-link.active i,
+.site-nav-bar .nav-link.active .ln-icon,
 html[data-theme="light"] .site-nav-bar .nav-link.active i,
-html[data-theme="dark"] .site-nav-bar .nav-link.active i {
+html[data-theme="light"] .site-nav-bar .nav-link.active .ln-icon,
+html[data-theme="dark"] .site-nav-bar .nav-link.active i,
+html[data-theme="dark"] .site-nav-bar .nav-link.active .ln-icon {
     color: var(--c-white);
 }
 

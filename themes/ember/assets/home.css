@@ -444,8 +444,11 @@ html[data-theme="light"] .home-talk-card .home-actions {
 }
 
 .home-action.is-liked i,
+.home-action.is-liked .ln-icon,
 .talk-like-btn.is-liked i,
-.music-share-like-btn.is-liked i {
+.talk-like-btn.is-liked .ln-icon,
+.music-share-like-btn.is-liked i,
+.music-share-like-btn.is-liked .ln-icon {
     color: var(--c-primary);
 }
 
