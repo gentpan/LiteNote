@@ -116,7 +116,7 @@
                     </svg>
                 </span>
                 <div class="admin-brand-text">
-                    <h1>LiteNote <span class="admin-version-badge" aria-label="LiteNote v1.0">v1.0</span></h1>
+                    <h1>LiteNote <span class="admin-version-badge" aria-label="LiteNote v1.1.0">v1.1.0</span></h1>
                 </div>
             </a>
         </div>

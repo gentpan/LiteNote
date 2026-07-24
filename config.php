@@ -25,7 +25,7 @@ $envBool = static function (string $key, bool $default = false) use ($env): bool
 return [
     'app' => [
         'name'      => 'LiteNote',
-        'version'   => '1.0.0',
+        'version'   => '1.1.0',
         'url'       => $env('APP_URL', 'http://127.0.0.1:5555'),
         'debug'     => $envBool('APP_DEBUG', false),
         'timezone'  => 'Asia/Shanghai',

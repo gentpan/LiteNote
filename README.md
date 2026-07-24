@@ -9,7 +9,7 @@
 ![PHP](https://img.shields.io/badge/PHP-8.5+-777BB4?logo=php&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-3-003B57?logo=sqlite&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Version](https://img.shields.io/badge/version-1.0.0-0052D9)
+![Version](https://img.shields.io/badge/version-1.1.0-0052D9)
 
 ---
 
