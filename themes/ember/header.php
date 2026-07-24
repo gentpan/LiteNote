@@ -207,17 +207,18 @@
         </div>
     </nav>
 
+    <div class="side-quick-rail">
     <div class="side-quick-actions" aria-label="快捷操作">
     @if(!empty($currentAdmin))
     <a class="side-admin-entry" href="/admin" aria-label="进入后台" title="进入后台">
-        @include('partials.ln-icon', ['name' => 'gauge'])
+        @include('partials.ln-icon', ['name' => 'gauge', 'trigger' => 'none'])
     </a>
     @endif
     @if(empty($currentAdmin))
     <div class="side-identity" data-side-identity>
         <button type="button" class="side-identity-trigger" data-nav-identity-edit aria-label="评论身份" title="评论身份">
             <img class="side-identity-avatar" data-side-identity-avatar alt="" hidden>
-            <span class="side-identity-fallback" aria-hidden="true">@include('partials.ln-icon', ['name' => 'user'])</span>
+            <span class="side-identity-fallback" aria-hidden="true">@include('partials.ln-icon', ['name' => 'user', 'trigger' => 'none'])</span>
         </button>
         <div class="side-identity-card" aria-hidden="true">
             <span class="side-identity-name" data-side-identity-name></span>
@@ -226,15 +227,16 @@
     </div>
     @endif
     <button type="button" class="side-search-toggle" data-search-toggle aria-label="搜索" title="搜索">
-        @include('partials.ln-icon', ['name' => 'search'])
+        @include('partials.ln-icon', ['name' => 'search', 'trigger' => 'none'])
     </button>
     <button type="button" class="side-theme-toggle" data-theme-toggle aria-label="切换深色模式" title="切换深色模式">
         <span class="side-theme-icon" aria-hidden="true">
-            <span class="theme-icon-moon">@include('partials.ln-icon', ['name' => 'moon'])</span>
-            <span class="theme-icon-sun">@include('partials.ln-icon', ['name' => 'sun'])</span>
+            <span class="theme-icon-moon">@include('partials.ln-icon', ['name' => 'moon', 'trigger' => 'none'])</span>
+            <span class="theme-icon-sun">@include('partials.ln-icon', ['name' => 'sun', 'trigger' => 'none'])</span>
         </span>
         <span class="side-theme-label" data-theme-label>深色模式</span>
     </button>
+    </div>
     </div>
 
     <div class="site-search-overlay" data-search-overlay hidden>

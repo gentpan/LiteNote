@@ -5335,54 +5335,64 @@ html {
     margin-left: 0;
 }
 
-/* ===== 侧边工具组 Dock: 跟随 header 的实色导航风格 ===== */
-.side-quick-actions {
+/* ===== 侧边工具组 Dock =====
+   Chrome: grid gap / transform:translateY(-50%) 会导致按钮间命中落到页面,
+   光标在默认箭头↔手指间闪烁。用 rail 垂直居中(无 transform),按钮无 gap 紧贴. */
+.side-quick-rail {
     position: fixed;
-    top: 50%;
-    right: 14px;
+    top: 0;
+    right: 0;
+    bottom: 0;
     z-index: 1200;
+    display: flex;
+    align-items: center;
+    padding-right: 14px;
+    pointer-events: none;
+}
+
+.side-quick-actions {
+    position: relative;
+    top: auto;
+    right: auto;
+    z-index: 1;
     display: grid;
-    gap: var(--sp-4);
+    gap: 0;
     justify-items: center;
-    padding: var(--sp-7) var(--sp-6);
+    padding: var(--sp-6) var(--sp-5);
+    pointer-events: auto;
+    cursor: pointer;
     background: #000;
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: var(--radius-pill);
     box-shadow: none;
-    transform: translateY(-50%);
+    transform: none;
     touch-action: none;
     user-select: none;
 }
 
-/* 整组统一手指光标:避免按钮/缝隙/图标溢出时在 arrow↔pointer 间闪烁 */
-.side-quick-actions,
-.side-quick-actions * {
-    cursor: pointer !important;
-}
-
-.side-quick-actions.is-dragging,
-.side-quick-actions.is-dragging * {
-    cursor: grabbing !important;
-}
-
-/* 动画图标限制在按钮盒内,防止 overflow 画出按钮后命中落到页面(黑箭头) */
-.side-quick-actions .side-search-toggle,
-.side-quick-actions .side-admin-entry,
-.side-quick-actions .side-identity-trigger,
-.side-quick-actions .side-theme-icon {
-    overflow: hidden;
+.side-quick-actions.is-dragging {
+    cursor: grabbing;
 }
 
 .side-quick-actions .ln-icon,
-.side-quick-actions .ln-icon > svg {
+.side-quick-actions .ln-icon > svg,
+.side-theme-toggle::before {
     pointer-events: none;
+}
+
+.side-search-toggle,
+.side-admin-entry,
+.side-identity-trigger,
+.side-theme-toggle {
+    box-sizing: border-box;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
 }
 
 .side-search-toggle {
     display: inline-grid;
     place-items: center;
-    width: 36px;
-    height: 36px;
     font-size: var(--fs-base);
     color: rgba(255, 255, 255, 0.88);
     background: transparent;
@@ -5404,15 +5414,12 @@ html {
     box-shadow: none;
 }
 
-/* 主题切换:与组内其他按钮同款圆钮,上方一条分割线 */
+/* 主题切换:与组内其他按钮同款圆钮,上方一条分割线(画在按钮内,不伸出造成缝隙) */
 .side-theme-toggle {
     position: relative;
     display: inline-grid;
     place-items: center;
-    width: 36px;
-    height: 36px;
     padding: 0;
-    margin-top: var(--sp-6);
     color: rgba(255, 255, 255, 0.88);
     background: transparent;
     border: 1px solid transparent;
@@ -5426,11 +5433,10 @@ html {
 
 .side-theme-toggle::before {
     position: absolute;
-    top: -5px;
-    right: 5px;
-    left: 5px;
+    top: 4px;
+    right: 8px;
+    left: 8px;
     height: 1px;
-    pointer-events: none;
     content: "";
     background: rgba(255, 255, 255, 0.18);
 }
@@ -5444,18 +5450,14 @@ html {
     box-shadow: none;
 }
 
-.side-theme-toggle:active .side-theme-icon {
-    transform: scale(0.96);
-}
-
 .side-theme-icon {
     display: inline-grid;
     place-items: center;
     width: 20px;
     height: 20px;
+    overflow: hidden;
     font-size: var(--fs-lg);
     line-height: 1;
-    transition: transform 0.12s ease;
 }
 
 /* dock 模式下不展示文字 label,语义留给 title/aria-label */
@@ -5487,23 +5489,21 @@ html[data-theme="dark"] .side-theme-toggle .theme-icon-sun {
 }
 
 @media (max-width: 768px) {
+    .side-quick-rail {
+        padding-right: 10px;
+    }
+
     .side-quick-actions {
-        right: 10px;
-        gap: 3px;
-        padding: var(--sp-6) var(--sp-5);
+        padding: var(--sp-5) var(--sp-4);
     }
 
     .side-search-toggle,
     .side-theme-toggle,
     .side-admin-entry,
     .side-identity-trigger {
-        width: 32px;
-        height: 32px;
+        width: 36px;
+        height: 36px;
         font-size: var(--fs-md);
-    }
-
-    .side-theme-toggle {
-        margin-top: var(--sp-5);
     }
 
     .side-theme-icon {
@@ -9438,8 +9438,6 @@ html[data-theme="dark"] .talk-comments:not(.music-share-comments) > .comment-for
 .side-admin-entry {
     display: inline-grid;
     place-items: center;
-    width: 36px;
-    height: 36px;
     font-size: var(--fs-base);
     color: rgba(255, 255, 255, 0.88);
     text-decoration: none;
@@ -9471,8 +9469,6 @@ html[data-theme="dark"] .talk-comments:not(.music-share-comments) > .comment-for
     position: relative;
     display: inline-grid;
     place-items: center;
-    width: 36px;
-    height: 36px;
     padding: 0;
     overflow: hidden;
     color: rgba(255, 255, 255, 0.88);

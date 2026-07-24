@@ -144,6 +144,7 @@
 
     (function() {
         var dock = document.querySelector('.side-quick-actions');
+        var rail = document.querySelector('.side-quick-rail');
         if (!dock || !window.PointerEvent) return;
 
         var pointerId = null;
@@ -165,6 +166,17 @@
                 width: window.innerWidth || document.documentElement.clientWidth || 0,
                 height: window.innerHeight || document.documentElement.clientHeight || 0
             };
+        }
+
+        function promoteDockToFixed() {
+            if (dock.style.position === 'fixed') return;
+            var rect = dock.getBoundingClientRect();
+            dock.style.position = 'fixed';
+            dock.style.left = rect.left + 'px';
+            dock.style.top = rect.top + 'px';
+            dock.style.right = 'auto';
+            dock.style.transform = 'none';
+            if (rail) rail.style.display = 'contents';
         }
 
         function clampDockPosition() {
@@ -222,6 +234,10 @@
             if (!dragging && Math.hypot(dx, dy) < dragThreshold) return;
 
             if (!dragging) {
+                promoteDockToFixed();
+                var rect0 = dock.getBoundingClientRect();
+                dockX = rect0.left - dx;
+                dockY = rect0.top - dy;
                 capturePointer(pointerId);
             }
 
