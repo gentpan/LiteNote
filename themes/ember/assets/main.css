@@ -5336,8 +5336,8 @@ html {
 }
 
 /* ===== 侧边工具组 Dock =====
-   热区必须是整颗圆钮,不能只有中间 icon。
-   子元素全部 pointer-events:none,由按钮本身吃满 40×40 圆形命中. */
+   光标约定:默认箭头;只有悬停在整颗圆钮上才是手指。
+   圆钮热区必须是整圆(40×40),不能只有中间 icon,否则圆边箭头/圆心手指会闪. */
 .side-quick-rail {
     position: fixed;
     top: 0;
@@ -5349,8 +5349,8 @@ html {
     justify-content: flex-end;
     width: 72px;
     padding-right: 14px;
-    pointer-events: auto;
-    cursor: pointer;
+    pointer-events: none;
+    cursor: default;
     background: transparent;
 }
 
@@ -5364,7 +5364,7 @@ html {
     width: 52px;
     padding: 8px 6px;
     pointer-events: auto;
-    cursor: pointer;
+    cursor: default;
     background: #000;
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 999px;
@@ -5372,18 +5372,12 @@ html {
     user-select: none;
 }
 
-.side-quick-actions,
-.side-quick-actions a,
-.side-quick-actions button {
-    cursor: pointer;
-}
-
 .side-quick-actions.is-dragging,
 .side-quick-actions.is-dragging * {
     cursor: grabbing !important;
 }
 
-/* 整圆热区:固定正方形 + 50% 圆角 = 完整圆形可点区域 */
+/* 整圆热区:只有这些圆钮才是 pointer */
 .side-search-toggle,
 .side-admin-entry,
 .side-identity-trigger,
@@ -5411,7 +5405,7 @@ html {
         background-color 0.18s ease;
 }
 
-/* 圆形命中板:盖住整颗按钮,保证点到圆边也是手指 */
+/* 圆形命中板:盖住整颗圆钮(含边缘),悬停圆边也是手指 */
 .side-search-toggle::after,
 .side-admin-entry::after,
 .side-identity-trigger::after,
@@ -5421,6 +5415,7 @@ html {
     z-index: 0;
     pointer-events: auto;
     content: "";
+    cursor: pointer;
     border-radius: 50%;
 }
 
@@ -5509,6 +5504,8 @@ html[data-theme="dark"] .side-theme-toggle .theme-icon-sun {
     place-items: center;
     width: 40px;
     height: 40px;
+    pointer-events: auto;
+    cursor: default;
 }
 
 @media (max-width: 768px) {
