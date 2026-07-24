@@ -318,8 +318,8 @@ html[data-theme="light"] .home-talk-card .home-actions {
 
 .home-talk-card .talk-content {
     margin: 0;
-    font-size: var(--fs-lg);
-    line-height: 1.9;
+    font-size: var(--fs-base);
+    line-height: 1.78;
     color: var(--c-text);
     white-space: pre-wrap;
 }
@@ -683,9 +683,9 @@ html[data-theme="light"] .home-talk-card .home-actions {
 }
 
 .x-card-body {
-    margin-top: var(--sp-28);
+    margin-top: var(--sp-12);
     font-size: var(--fs-base);
-    line-height: 1.7;
+    line-height: 1.58;
     color: var(--c-text);
     white-space: pre-wrap;
 }
@@ -1569,17 +1569,6 @@ html[data-theme="dark"]
 .home-card.home-talk-card:not(.home-x-card):not(.music-talk-card),
 .home-card.home-x-card.x-card {
     padding: var(--sp-22) var(--sp-28) 0;
-}
-
-.home-talk-card .talk-content {
-    font-size: var(--fs-base);
-    line-height: 1.78;
-}
-
-.x-card-body {
-    margin-top: var(--sp-12);
-    font-size: var(--fs-base);
-    line-height: 1.58;
 }
 
 .home-talk-card .home-actions,
