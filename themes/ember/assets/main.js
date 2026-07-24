@@ -176,7 +176,12 @@
             dock.style.top = rect.top + 'px';
             dock.style.right = 'auto';
             dock.style.transform = 'none';
-            if (rail) rail.style.display = 'contents';
+            // 拖出后 rail 不再占命中列,避免右侧留下透明拦截层
+            if (rail) {
+                rail.style.pointerEvents = 'none';
+                rail.style.width = '0';
+                rail.style.paddingRight = '0';
+            }
         }
 
         function clampDockPosition() {
