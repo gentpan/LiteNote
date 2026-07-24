@@ -5345,7 +5345,6 @@ html {
     gap: var(--sp-4);
     justify-items: center;
     padding: var(--sp-7) var(--sp-6);
-    cursor: grab;
     background: #000;
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: var(--radius-pill);
@@ -5355,21 +5354,28 @@ html {
     user-select: none;
 }
 
-.side-quick-actions.is-dragging {
-    cursor: grabbing;
+/* 整组统一手指光标:避免按钮/缝隙/图标溢出时在 arrow↔pointer 间闪烁 */
+.side-quick-actions,
+.side-quick-actions * {
+    cursor: pointer !important;
 }
 
-/* 动画图标 overflow 可见时勿参与命中,避免 hover 缩放导致 pointer/default 闪烁 */
+.side-quick-actions.is-dragging,
+.side-quick-actions.is-dragging * {
+    cursor: grabbing !important;
+}
+
+/* 动画图标限制在按钮盒内,防止 overflow 画出按钮后命中落到页面(黑箭头) */
+.side-quick-actions .side-search-toggle,
+.side-quick-actions .side-admin-entry,
+.side-quick-actions .side-identity-trigger,
+.side-quick-actions .side-theme-icon {
+    overflow: hidden;
+}
+
 .side-quick-actions .ln-icon,
 .side-quick-actions .ln-icon > svg {
     pointer-events: none;
-}
-
-.side-search-toggle,
-.side-admin-entry,
-.side-identity-trigger,
-.side-theme-toggle {
-    cursor: pointer;
 }
 
 .side-search-toggle {
@@ -5438,7 +5444,7 @@ html {
     box-shadow: none;
 }
 
-.side-theme-toggle:active {
+.side-theme-toggle:active .side-theme-icon {
     transform: scale(0.96);
 }
 
@@ -5449,6 +5455,7 @@ html {
     height: 20px;
     font-size: var(--fs-lg);
     line-height: 1;
+    transition: transform 0.12s ease;
 }
 
 /* dock 模式下不展示文字 label,语义留给 title/aria-label */
