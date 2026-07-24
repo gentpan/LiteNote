@@ -11,7 +11,6 @@
     $locationName = method_exists($s, 'locationDisplayName') ? $s->locationDisplayName() : trim((string)($s->location_name ?: $s->location_city));
     $locationTitle = method_exists($s, 'locationFullName') ? $s->locationFullName() : trim((string)($s->location_name ?: $s->location_city));
     $weatherText = method_exists($s, 'weatherDisplayText') ? $s->weatherDisplayText() : '';
-    $weatherIcon = method_exists($s, 'weatherIconClass') ? $s->weatherIconClass() : 'fa-solid fa-cloud';
 @endphp
 <article class="talk-card" id="talk-{{ $s->id }}">
     @if(trim((string)$displayContent) !== '' || !empty($keywords))

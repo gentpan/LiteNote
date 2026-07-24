@@ -14,7 +14,6 @@
     $locationName = method_exists($item, 'locationDisplayName') ? $item->locationDisplayName() : trim((string)($item->location_name ?: $item->location_city ?: ''));
     $locationTitle = method_exists($item, 'locationFullName') ? $item->locationFullName() : trim((string)($item->location_name ?: $item->location_city ?: ''));
     $weatherText = method_exists($item, 'weatherDisplayText') ? $item->weatherDisplayText() : '';
-    $weatherIcon = method_exists($item, 'weatherIconClass') ? $item->weatherIconClass() : 'fa-solid fa-cloud';
 @endphp
 @if($isMusicTalk)
     @include('partials.home-music-card')

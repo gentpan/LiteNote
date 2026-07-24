@@ -150,12 +150,6 @@ final class Talk extends Model
         return $temp !== '' ? $label . ' ' . $temp . '°C' : $label;
     }
 
-    public function weatherIconClass(): string
-    {
-        $icon = trim((string)($this->weather_icon ?? ''));
-        return preg_match('/^[a-zA-Z0-9 _-]+$/', $icon) ? $icon : 'fa-solid fa-cloud';
-    }
-
     public static function recentPublic(int $limit = 10): array
     {
         self::ensureLocationSchema();

@@ -19,13 +19,6 @@
     }
     window.siteLoadingSpinnerSvg = siteLoadingSpinnerSvg;
 
-    function formatDuration(seconds) {
-        seconds = Math.floor(seconds || 0);
-        var minutes = Math.floor(seconds / 60);
-        var remaining = seconds % 60;
-        return minutes + ':' + (remaining < 10 ? '0' : '') + remaining;
-    }
-
     // Front theme switcher: user choice wins; otherwise follow the system.
     (function() {
         var storageKey = 'litenote-theme';
@@ -867,58 +860,6 @@
         if (dialog) dialog.classList.remove('is-open');
     }
 
-    // 移动端验证码 dialog:评论框内不显示验证码,提交时弹出输入,确认后写回表单 captcha 字段并继续提交。
-    var captchaDialogState = { onDone: null, captchaInput: null };
-    function openCaptchaDialog(form, onDone) {
-        var captchaInput = form.querySelector('[name=captcha]');
-        if (!captchaInput) { if (onDone) onDone(); return; }
-        captchaDialogState.onDone = onDone || null;
-        captchaDialogState.captchaInput = captchaInput;
-        var dialog = document.querySelector('.captcha-dialog');
-        if (!dialog) {
-            dialog = document.createElement('div');
-            dialog.className = 'captcha-dialog';
-            dialog.innerHTML = '<div class="captcha-dialog-panel" role="dialog" aria-modal="true" tabindex="-1">'
-                + '<p class="captcha-dialog-title">请输入验证码</p>'
-                + '<div class="captcha-dialog-row">'
-                + '<input class="captcha-dialog-input" type="text" inputmode="latin" autocomplete="off" maxlength="4" placeholder="验证码">'
-                + '<img class="captcha-dialog-img" src="/captcha" alt="点击刷新验证码" title="看不清?点击刷新">'
-                + '</div>'
-                + '<div class="captcha-dialog-buttons">'
-                + '<button type="button" data-captcha-cancel>取消</button>'
-                + '<button type="button" class="captcha-dialog-submit" data-captcha-ok>确认并提交</button>'
-                + '</div></div>';
-            document.body.appendChild(dialog);
-            var inputEl = dialog.querySelector('.captcha-dialog-input');
-            var imgEl = dialog.querySelector('.captcha-dialog-img');
-            var confirmFn = function() {
-                var val = inputEl.value.trim();
-                if (val.length < 4) { inputEl.focus(); return; }
-                if (captchaDialogState.captchaInput) captchaDialogState.captchaInput.value = val;
-                var cb = captchaDialogState.onDone;
-                closeCaptchaDialog();
-                if (cb) cb();
-            };
-            dialog.addEventListener('click', function(e) { if (e.target === dialog) closeCaptchaDialog(); });
-            imgEl.addEventListener('click', function() { this.src = '/captcha?t=' + Date.now(); });
-            dialog.querySelector('[data-captcha-cancel]').addEventListener('click', closeCaptchaDialog);
-            dialog.querySelector('[data-captcha-ok]').addEventListener('click', confirmFn);
-            inputEl.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); confirmFn(); } });
-            document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeCaptchaDialog(); });
-        }
-        var img = dialog.querySelector('.captcha-dialog-img');
-        var input = dialog.querySelector('.captcha-dialog-input');
-        img.src = '/captcha?t=' + Date.now();
-        input.value = '';
-        dialog.classList.add('is-open');
-        window.setTimeout(function() { try { input.focus(); } catch (e) {} }, 50);
-    }
-    function closeCaptchaDialog() {
-        captchaDialogState.onDone = null;
-        var dialog = document.querySelector('.captcha-dialog');
-        if (dialog) dialog.classList.remove('is-open');
-    }
-
     // 可信邮箱(后端确认有审核通过评论)免验证码:本地缓存一份,提交时跳过验证码并隐藏验证码框。
     var trustedEmailsKey = 'litenote_trusted_emails';
     function loadTrustedEmails() {
@@ -1687,12 +1628,6 @@
     }
 
     function likeSvg(name) {
-        if (name === 'like') {
-            return '<i class="fa-solid fa-thumbs-up" aria-hidden="true"></i>';
-        }
-        if (name === 'like-outline') {
-            return '<i class="fa-regular fa-thumbs-up" aria-hidden="true"></i>';
-        }
         if (name === 'heart-filled') {
             return '<span class="ln-icon" data-ln-icon="heart" data-ln-filled="1" data-ln-icon-trigger="both" aria-hidden="true"></span>';
         }

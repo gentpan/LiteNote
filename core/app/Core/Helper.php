@@ -41,11 +41,6 @@ final class Helper
         return self::url('/category/' . rawurlencode($slug));
     }
 
-    public static function asset(string $path): string
-    {
-        return self::url('/admin/assets/' . ltrim($path, '/'));
-    }
-
     public static function e(?string $str): string
     {
         return htmlspecialchars((string)$str, ENT_QUOTES, 'UTF-8');
@@ -126,11 +121,6 @@ final class Helper
         };
     }
 
-    public static function fullDate(string|int|\DateTimeInterface $date): string
-    {
-        return self::formatDate(self::timestamp($date), 'Y-m-d H:i:s');
-    }
-
     public static function timeTag(string|int|\DateTimeInterface $date, ?string $class = null): string
     {
         $ts = self::timestamp($date);
@@ -205,21 +195,6 @@ final class Helper
         ) ?? $text;
     }
 
-    public static function clientIp(): string
-    {
-        $keys = ['HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'HTTP_CLIENT_IP', 'REMOTE_ADDR'];
-        foreach ($keys as $k) {
-            if (!empty($_SERVER[$k])) {
-                $ip = explode(',', $_SERVER[$k])[0];
-                $ip = trim($ip);
-                if (filter_var($ip, FILTER_VALIDATE_IP)) {
-                    return $ip;
-                }
-            }
-        }
-        return '0.0.0.0';
-    }
-
     public static function isHttps(): bool
     {
         return (
@@ -227,11 +202,6 @@ final class Helper
             || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https'
             || ($_SERVER['SERVER_PORT'] ?? '') == 443
         );
-    }
-
-    public static function randomToken(int $length = 32): string
-    {
-        return bin2hex(random_bytes($length));
     }
 
     public static function safeFilename(string $name): string
