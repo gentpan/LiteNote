@@ -5335,9 +5335,8 @@ html {
     margin-left: 0;
 }
 
-/* ===== 侧边工具组 Dock =====
-   光标约定:默认箭头;只有悬停在整颗圆钮上才是手指。
-   圆钮热区必须是整圆(40×40),不能只有中间 icon,否则圆边箭头/圆心手指会闪. */
+/* ===== 侧边工具组 Dock（唯一权威样式）=====
+   默认箭头;仅悬停整颗 40×40 圆钮为手指。icon 不参与命中. */
 .side-quick-rail {
     position: fixed;
     top: 0;
@@ -5350,8 +5349,6 @@ html {
     width: 72px;
     padding-right: 14px;
     pointer-events: none;
-    cursor: default;
-    background: transparent;
 }
 
 .side-quick-actions {
@@ -5377,7 +5374,6 @@ html {
     cursor: grabbing !important;
 }
 
-/* 整圆热区:只有这些圆钮才是 pointer */
 .side-search-toggle,
 .side-admin-entry,
 .side-identity-trigger,
@@ -5390,12 +5386,10 @@ html {
     width: 40px;
     height: 40px;
     padding: 0;
-    margin: 0;
     overflow: hidden;
     font-size: var(--fs-base);
     color: rgba(255, 255, 255, 0.88);
     text-decoration: none;
-    pointer-events: auto;
     cursor: pointer;
     background: rgba(255, 255, 255, 0.02);
     border: 0;
@@ -5405,34 +5399,13 @@ html {
         background-color 0.18s ease;
 }
 
-/* 圆形命中板:盖住整颗圆钮(含边缘),悬停圆边也是手指 */
-.side-search-toggle::after,
-.side-admin-entry::after,
-.side-identity-trigger::after,
-.side-theme-toggle::after {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    pointer-events: auto;
-    content: "";
-    cursor: pointer;
-    border-radius: 50%;
-}
-
+/* 子节点(含 icon/svg)不抢命中,热区始终是整颗圆钮 */
 .side-search-toggle > *,
 .side-admin-entry > *,
 .side-identity-trigger > *,
-.side-theme-toggle > * {
-    position: relative;
-    z-index: 1;
-    pointer-events: none;
-}
-
-.side-quick-actions .ln-icon,
-.side-quick-actions .ln-icon > svg,
-.side-quick-actions img,
+.side-theme-toggle > *,
 .side-theme-toggle::before {
-    pointer-events: none !important;
+    pointer-events: none;
 }
 
 .side-search-toggle:hover,
@@ -5448,13 +5421,11 @@ html {
     background: rgba(255, 255, 255, 0.1);
 }
 
-/* 主题切换上方分割线(画在圆钮顶部内侧) */
 .side-theme-toggle::before {
     position: absolute;
     top: 3px;
     right: 10px;
     left: 10px;
-    z-index: 2;
     height: 1px;
     content: "";
     background: rgba(255, 255, 255, 0.18);
@@ -5470,15 +5441,15 @@ html {
     line-height: 1;
 }
 
-.side-theme-label {
-    display: none;
+.side-theme-icon .ln-icon,
+.side-theme-icon .ln-icon > svg {
+    width: 20px;
+    height: 20px;
+    font-size: var(--fs-lg);
 }
 
-.side-theme-toggle .theme-icon-moon,
-.side-theme-toggle .theme-icon-sun {
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
+.side-theme-label {
+    display: none;
 }
 
 .side-theme-toggle .theme-icon-moon {
@@ -5504,8 +5475,67 @@ html[data-theme="dark"] .side-theme-toggle .theme-icon-sun {
     place-items: center;
     width: 40px;
     height: 40px;
-    pointer-events: auto;
     cursor: default;
+}
+
+.side-identity-avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.side-identity-fallback {
+    display: inline-grid;
+    place-items: center;
+    font-size: var(--fs-base);
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.side-identity.has-identity .side-identity-fallback {
+    display: none;
+}
+
+.side-identity-card {
+    position: absolute;
+    top: 50%;
+    right: 48px;
+    display: grid;
+    gap: 3px;
+    min-width: 168px;
+    max-width: 240px;
+    padding: var(--sp-10) var(--sp-14);
+    color: rgba(255, 255, 255, 0.92);
+    pointer-events: none;
+    background: #000;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius);
+    opacity: 0;
+    transform: translateY(-50%) translateX(6px);
+    transition:
+        opacity 0.18s ease,
+        transform 0.18s ease;
+}
+
+.side-identity:hover .side-identity-card,
+.side-identity:focus-within .side-identity-card {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+}
+
+.side-identity-name {
+    font-size: var(--fs-md);
+    font-weight: 650;
+}
+
+.side-identity-name:empty {
+    display: none;
+}
+
+.side-identity-stat {
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.68);
 }
 
 @media (max-width: 768px) {
@@ -5529,7 +5559,9 @@ html[data-theme="dark"] .side-theme-toggle .theme-icon-sun {
         font-size: var(--fs-md);
     }
 
-    .side-theme-icon {
+    .side-theme-icon,
+    .side-theme-icon .ln-icon,
+    .side-theme-icon .ln-icon > svg {
         width: 18px;
         height: 18px;
         font-size: var(--fs-base);
@@ -9454,63 +9486,8 @@ html[data-theme="dark"] .talk-comments:not(.music-share-comments) > .comment-for
 }
 
 /* ============================================================
-   侧边访客身份卡片 / 登录弹窗
-   圆钮尺寸与热区见上方 .side-quick-actions 统一规则
+   登录弹窗
    ============================================================ */
-
-.side-identity-avatar {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 50%;
-}
-.side-identity-fallback {
-    display: inline-grid;
-    place-items: center;
-    font-size: var(--fs-base);
-    color: rgba(255, 255, 255, 0.82);
-}
-.side-identity.has-identity .side-identity-fallback {
-    display: none;
-}
-.side-identity-card {
-    position: absolute;
-    top: 50%;
-    right: 48px;
-    display: grid;
-    gap: 3px;
-    min-width: 168px;
-    max-width: 240px;
-    padding: var(--sp-10) var(--sp-14);
-    color: rgba(255, 255, 255, 0.92);
-    pointer-events: none;
-    background: #000;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: var(--radius);
-    box-shadow: none;
-    opacity: 0;
-    transform: translateY(-50%) translateX(6px);
-    transition:
-        opacity 0.18s ease,
-        transform 0.18s ease;
-}
-.side-identity:hover .side-identity-card,
-.side-identity:focus-within .side-identity-card {
-    opacity: 1;
-    transform: translateY(-50%) translateX(0);
-}
-.side-identity-name {
-    font-size: var(--fs-md);
-    font-weight: 650;
-}
-.side-identity-name:empty {
-    display: none;
-}
-.side-identity-stat {
-    font-size: 12.5px;
-    line-height: 1.5;
-    color: rgba(255, 255, 255, 0.68);
-}
 
 .login-overlay {
     position: fixed;

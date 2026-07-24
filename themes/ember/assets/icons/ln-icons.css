@@ -32,37 +32,13 @@
     font-size: inherit;
 }
 
-.side-theme-icon .ln-icon {
-    width: 20px;
-    height: 20px;
-    font-size: var(--fs-lg);
-}
-
-.side-theme-icon .ln-icon > svg {
-    width: 20px;
-    height: 20px;
-}
-
-.side-search-toggle .ln-icon,
-.side-admin-entry .ln-icon,
-.side-identity-fallback .ln-icon {
-    font-size: inherit;
-}
+/* dock 圆钮图标尺寸见 main.css .side-quick-actions */
 
 .home-action .ln-icon,
 .feed-action .ln-icon,
 .music-card-btn .ln-icon,
 .comment-actions .ln-icon {
     font-size: inherit;
-}
-
-@media (max-width: 768px) {
-    .side-theme-icon .ln-icon,
-    .side-theme-icon .ln-icon > svg {
-        width: 18px;
-        height: 18px;
-        font-size: var(--fs-base);
-    }
 }
 
 @media (prefers-reduced-motion: reduce) {
