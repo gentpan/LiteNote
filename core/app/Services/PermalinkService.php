@@ -321,7 +321,7 @@ final class PermalinkService
         return [
             'admin', 'api', 'category', 'posts', 'readers', 'activity', 'talk', 'x',
             'music', 'archives', 'search', 'links', 'subscribe', 'comment',
-            'captcha', 'rss.xml', 'feed', 'mail', 'themes', 'uploads',
+            'captcha', 'auth', 'rss.xml', 'feed', 'mail', 'themes', 'uploads',
         ];
     }
 }

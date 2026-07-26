@@ -108,4 +108,25 @@ class PasskeyService
         );
         return true;
     }
+
+    public function deleteCredential(int $id, int $userId): bool
+    {
+        if ($id <= 0 || $userId <= 0) {
+            return false;
+        }
+
+        $row = $this->db->fetchOne(
+            'SELECT id FROM webauthn_credentials WHERE id = ? AND user_id = ?',
+            [$id, $userId]
+        );
+        if (!$row) {
+            return false;
+        }
+
+        $this->db->delete('webauthn_credentials', 'id = :id AND user_id = :user_id', [
+            'id' => $id,
+            'user_id' => $userId,
+        ]);
+        return true;
+    }
 }

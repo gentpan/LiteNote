@@ -2,17 +2,6 @@
 (function() {
     'use strict';
 
-    function frontCsrf() {
-        var meta = document.querySelector('meta[name="csrf-token"]');
-        if (meta && meta.content) return meta.content;
-        var field = document.querySelector('input[name="_csrf"]');
-        return field ? field.value : '';
-    }
-
-    function frontAjaxHeaders() {
-        return { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': frontCsrf() };
-    }
-
     function siteLoadingSpinnerSvg(extraClass) {
         var cls = 'site-loading-spinner' + (extraClass ? ' ' + extraClass : '');
         return '<span class="' + cls + '" aria-hidden="true"></span>';
@@ -118,13 +107,9 @@
                 return;
             }
 
-            if (document.body.classList.contains('site-search-open') && !target.closest('[data-search-overlay]')) {
-                closeSearch();
-                return;
-            }
-
-            var panel = target.closest('[data-search-overlay]');
-            if (panel && target === panel) {
+            // 点磨砂遮罩空白处关闭（点搜索框本身不关）
+            var overlayEl = target.closest('[data-search-overlay]');
+            if (overlayEl && !target.closest('.site-search-panel')) {
                 closeSearch();
             }
         });
@@ -332,6 +317,17 @@
 // 前台脚本
 (function() {
     'use strict';
+
+    function frontCsrf() {
+        var meta = document.querySelector('meta[name="csrf-token"]');
+        if (meta && meta.content) return meta.content;
+        var field = document.querySelector('input[name="_csrf"]');
+        return field ? field.value : '';
+    }
+
+    function frontAjaxHeaders() {
+        return { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': frontCsrf() };
+    }
 
     // 平滑滚动到锚点
     document.querySelectorAll('a[href^="#"]').forEach(function(a) {
@@ -683,7 +679,7 @@
         }
         if (nameEl) nameEl.textContent = (identity && identity.nickname) ? identity.nickname : '';
         if (!hasIdentity) {
-            if (statEl) statEl.textContent = '设置评论身份，留下你的足迹';
+            if (statEl) statEl.textContent = '设置评论身份 / 注册';
             return;
         }
         if (statEl && identity.email) {
@@ -718,11 +714,12 @@
     }
 
     var navIdentitySaveCallback = null;
+    var identityFormBound = false;
 
     function showNavIdentityHint() {
-        var anchor = document.querySelector('[data-nav-identity]');
+        var anchor = document.querySelector('[data-side-identity]') || document.querySelector('[data-nav-identity]');
         if (!anchor) {
-            frontToast('评论身份已保存，可从菜单头像修改资料', 'success');
+            frontToast('评论身份已保存，可从侧栏头像修改资料', 'success');
             return;
         }
         var old = document.querySelector('.nav-identity-hint');
@@ -732,9 +729,9 @@
         hint.textContent = '修改资料从这里修改';
         document.body.appendChild(hint);
         var rect = anchor.getBoundingClientRect();
-        var left = Math.max(16, rect.left + rect.width / 2);
+        var left = Math.max(16, Math.min(window.innerWidth - 16, rect.left + rect.width / 2));
         hint.style.left = left + 'px';
-        hint.style.top = (rect.bottom + 12) + 'px';
+        hint.style.top = Math.max(12, rect.top - 12) + 'px';
         requestAnimationFrame(function() {
             hint.classList.add('is-visible');
         });
@@ -746,10 +743,161 @@
         }, 2600);
     }
 
+    function identityFormRoot() {
+        return document.querySelector('[data-account-overlay] [data-identity-form]')
+            || document.querySelector('.nav-identity-dialog .nav-identity-form');
+    }
+
+    function bindIdentityFormOnce(form) {
+        if (!form || form.dataset.lnIdentityBound) return;
+        form.dataset.lnIdentityBound = '1';
+        identityFormBound = true;
+        var root = form.closest('[data-account-overlay]') || form.closest('.nav-identity-dialog') || document;
+        var clearBtn = root.querySelector('[data-nav-identity-clear]');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', function() {
+                clearCommentIdentity();
+                closeNavIdentityDialog();
+            });
+        }
+        var captchaImg = root.querySelector('[data-nav-identity-captcha-img]');
+        if (captchaImg) {
+            captchaImg.addEventListener('click', function() {
+                this.src = '/captcha?t=' + Date.now();
+            });
+        }
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var next = {
+                nickname: form.nickname.value.trim(),
+                email: form.email.value.trim(),
+                website: form.website.value.trim()
+            };
+            if (!next.nickname || !next.email) { return; }
+            var finishSave = function() {
+                next.avatar_url = gravatarUrl(next.email, 80);
+                try { localStorage.setItem(commentIdentityKey, JSON.stringify(next)); } catch (err) {}
+                addTrustedEmail(next.email);
+                updateNavIdentity(next);
+                syncAllCommentForms();
+                closeNavIdentityDialog(false);
+                showNavIdentityHint();
+                if (navIdentitySaveCallback) {
+                    var cb = navIdentitySaveCallback;
+                    navIdentitySaveCallback = null;
+                    cb(next);
+                }
+            };
+            var captchaWrap = root.querySelector('[data-nav-identity-captcha]');
+            var needCaptcha = captchaWrap && !captchaWrap.hidden;
+            if (!needCaptcha) { finishSave(); return; }
+            var captchaVal = (form.captcha.value || '').trim();
+            if (captchaVal.length < 4) { form.captcha.focus(); return; }
+            var saveBtn = form.querySelector('button[type=submit]');
+            if (saveBtn) saveBtn.disabled = true;
+            var body = new FormData();
+            body.append('email', next.email);
+            body.append('captcha', captchaVal);
+            body.append('_csrf', frontCsrf());
+            fetch('/comment/verify-identity', { method: 'POST', headers: frontAjaxHeaders(), body: body, credentials: 'same-origin' })
+                .then(function(r) { return r.json(); })
+                .then(function(d) {
+                    if (saveBtn) saveBtn.disabled = false;
+                    if (d && d.ok) { finishSave(); return; }
+                    frontToast((d && d.msg) || '验证码错误', 'error');
+                    var img = root.querySelector('[data-nav-identity-captcha-img]');
+                    if (img) img.src = '/captcha?t=' + Date.now();
+                    form.captcha.value = '';
+                    form.captcha.focus();
+                })
+                .catch(function() {
+                    if (saveBtn) saveBtn.disabled = false;
+                    frontToast('网络错误,请重试', 'error');
+                });
+        });
+        var emailInput = form.querySelector('[name=email]');
+        if (emailInput) {
+            emailInput.addEventListener('input', function(e) {
+                var preview = root.querySelector('.nav-identity-preview');
+                if (preview) preview.src = gravatarUrl(e.target.value, 80) || grayGravatar(80);
+                navIdentityRefreshCaptcha(root, e.target.value);
+            });
+        }
+    }
+
+    function setAccountTab(tab) {
+        var overlay = document.querySelector('[data-account-overlay]');
+        if (!overlay) return;
+        var modal = overlay.querySelector('.account-modal');
+        var memberOnly = modal && modal.getAttribute('data-account-member') === '1';
+        if (memberOnly) tab = 'identity';
+        if (tab !== 'register' && tab !== 'identity') tab = 'identity';
+        overlay.querySelectorAll('[data-account-tab]').forEach(function(btn) {
+            var on = btn.getAttribute('data-account-tab') === tab;
+            btn.classList.toggle('is-active', on);
+            btn.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        overlay.querySelectorAll('[data-account-panel]').forEach(function(panel) {
+            panel.hidden = panel.getAttribute('data-account-panel') !== tab;
+        });
+    }
+
+    function setAuthMode(mode) {
+        var overlay = document.querySelector('[data-account-overlay]');
+        if (!overlay) return;
+        if (mode !== 'login' && mode !== 'register') mode = 'register';
+        overlay.querySelectorAll('[data-auth-mode-panel]').forEach(function(panel) {
+            panel.hidden = panel.getAttribute('data-auth-mode-panel') !== mode;
+        });
+        if (mode === 'register') {
+            var img = overlay.querySelector('[data-register-captcha-img]');
+            if (img) img.src = '/captcha?t=' + Date.now();
+        }
+    }
+
+    function openAccountModal(options) {
+        options = options || {};
+        var overlay = document.querySelector('[data-account-overlay]') || document.querySelector('[data-login-overlay]');
+        if (!overlay) {
+            window.location.href = '/?login=1';
+            return;
+        }
+        var tab = options.tab || 'identity';
+        var mode = options.mode || 'login';
+        setAccountTab(tab);
+        if (tab === 'register') setAuthMode(mode);
+        overlay.hidden = false;
+        document.body.classList.add('login-modal-open');
+        var focusSel = tab === 'identity'
+            ? '[data-account-panel="identity"] [name=nickname]'
+            : (mode === 'login'
+                ? '[data-auth-mode-panel="login"] [name=username]'
+                : '[data-auth-mode-panel="register"] [name=username]');
+        var focusEl = overlay.querySelector(focusSel);
+        if (focusEl) setTimeout(function() { try { focusEl.focus(); } catch (e) {} }, 60);
+    }
+
     function openNavIdentityDialog(options) {
         options = options || {};
         navIdentitySaveCallback = typeof options.onSave === 'function' ? options.onSave : null;
         var identity = loadCommentIdentity() || {};
+        var accountOverlay = document.querySelector('[data-account-overlay]');
+        if (accountOverlay) {
+            var form = accountOverlay.querySelector('[data-identity-form]');
+            bindIdentityFormOnce(form);
+            if (form) {
+                form.nickname.value = identity.nickname || '';
+                form.email.value = identity.email || '';
+                form.website.value = identity.website || '';
+                if (form.captcha) form.captcha.value = '';
+            }
+            var preview = accountOverlay.querySelector('.nav-identity-preview');
+            if (preview) preview.src = identity.avatar_url || gravatarUrl(identity.email, 80) || grayGravatar(80);
+            navIdentityRefreshCaptcha(accountOverlay, identity.email || '');
+            openAccountModal({ tab: 'identity' });
+            return;
+        }
+
         var dialog = document.querySelector('.nav-identity-dialog');
         if (!dialog) {
             dialog = document.createElement('div');
@@ -759,78 +907,18 @@
             dialog.addEventListener('click', function(e) {
                 if (e.target === dialog) closeNavIdentityDialog();
             });
-            dialog.querySelector('[data-nav-identity-close]').addEventListener('click', closeNavIdentityDialog);
-            dialog.querySelector('[data-nav-identity-clear]').addEventListener('click', function() {
-                clearCommentIdentity();
-                closeNavIdentityDialog();
-            });
-            dialog.querySelector('[data-nav-identity-captcha-img]').addEventListener('click', function() {
-                this.src = '/captcha?t=' + Date.now();
-            });
-            dialog.querySelector('.nav-identity-form').addEventListener('submit', function(e) {
-                e.preventDefault();
-                var form = e.currentTarget;
-                var next = {
-                    nickname: form.nickname.value.trim(),
-                    email: form.email.value.trim(),
-                    website: form.website.value.trim()
-                };
-                if (!next.nickname || !next.email) { return; }
-                var finishSave = function() {
-                    next.avatar_url = gravatarUrl(next.email, 80);
-                    try { localStorage.setItem(commentIdentityKey, JSON.stringify(next)); } catch (err) {}
-                    addTrustedEmail(next.email);
-                    updateNavIdentity(next);
-                    syncAllCommentForms();
-                    closeNavIdentityDialog(false);
-                    showNavIdentityHint();
-                    if (navIdentitySaveCallback) {
-                        var cb = navIdentitySaveCallback;
-                        navIdentitySaveCallback = null;
-                        cb(next);
-                    }
-                };
-                var captchaWrap = dialog.querySelector('[data-nav-identity-captcha]');
-                var needCaptcha = captchaWrap && !captchaWrap.hidden;
-                if (!needCaptcha) { finishSave(); return; }
-                // 非白名单邮箱:把验证码交后端校验,通过后该邮箱进白名单
-                var captchaVal = (form.captcha.value || '').trim();
-                if (captchaVal.length < 4) { form.captcha.focus(); return; }
-                var saveBtn = form.querySelector('button[type=submit]');
-                if (saveBtn) saveBtn.disabled = true;
-                var body = new FormData();
-                body.append('email', next.email);
-                body.append('captcha', captchaVal);
-                body.append('_csrf', frontCsrf());
-                fetch('/comment/verify-identity', { method: 'POST', headers: frontAjaxHeaders(), body: body, credentials: 'same-origin' })
-                    .then(function(r) { return r.json(); })
-                    .then(function(d) {
-                        if (saveBtn) saveBtn.disabled = false;
-                        if (d && d.ok) { finishSave(); return; }
-                        frontToast((d && d.msg) || '验证码错误', 'error');
-                        var img = dialog.querySelector('[data-nav-identity-captcha-img]');
-                        if (img) img.src = '/captcha?t=' + Date.now();
-                        form.captcha.value = '';
-                        form.captcha.focus();
-                    })
-                    .catch(function() {
-                        if (saveBtn) saveBtn.disabled = false;
-                        frontToast('网络错误,请重试', 'error');
-                    });
-            });
-            dialog.querySelector('[name=email]').addEventListener('input', function(e) {
-                var preview = dialog.querySelector('.nav-identity-preview');
-                preview.src = gravatarUrl(e.target.value, 80) || grayGravatar(80);
-                navIdentityRefreshCaptcha(dialog, e.target.value);
-            });
+            var closeBtn = dialog.querySelector('[data-nav-identity-close]');
+            if (closeBtn) closeBtn.addEventListener('click', closeNavIdentityDialog);
+            bindIdentityFormOnce(dialog.querySelector('.nav-identity-form'));
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape') closeNavIdentityDialog();
             });
         }
-        dialog.querySelector('[name=nickname]').value = identity.nickname || '';
-        dialog.querySelector('[name=email]').value = identity.email || '';
-        dialog.querySelector('[name=website]').value = identity.website || '';
-        var capInput = dialog.querySelector('[name=captcha]');
+        var form = dialog.querySelector('.nav-identity-form');
+        form.querySelector('[name=nickname]').value = identity.nickname || '';
+        form.querySelector('[name=email]').value = identity.email || '';
+        form.querySelector('[name=website]').value = identity.website || '';
+        var capInput = form.querySelector('[name=captcha]');
         if (capInput) capInput.value = '';
         dialog.querySelector('.nav-identity-preview').src = identity.avatar_url || gravatarUrl(identity.email, 80) || grayGravatar(80);
         navIdentityRefreshCaptcha(dialog, identity.email || '');
@@ -879,6 +967,11 @@
         }
         var dialog = document.querySelector('.nav-identity-dialog');
         if (dialog) dialog.classList.remove('is-open');
+        var overlay = document.querySelector('[data-account-overlay]');
+        if (overlay && !overlay.hidden) {
+            overlay.hidden = true;
+            document.body.classList.remove('login-modal-open');
+        }
     }
 
     // 可信邮箱(后端确认有审核通过评论)免验证码:本地缓存一份,提交时跳过验证码并隐藏验证码框。
@@ -935,75 +1028,7 @@
     function bindNavIdentityOrb(root) {
         root = root || document;
         updateNavIdentity(loadCommentIdentity());
-        root.querySelectorAll('[data-nav-identity]').forEach(function(orb) {
-            if (orb.dataset.lnMenuBound) return; orb.dataset.lnMenuBound = '1';
-            var avatar = orb.querySelector('.nav-avatar');
-            var hideTimer = 0;
-            var suppressHover = false;
-            var suppressStorageKey = 'litenote_nav_identity_suppress_until';
-            function isSuppressingHover() {
-                if (suppressHover) return true;
-                try {
-                    var until = parseInt(sessionStorage.getItem(suppressStorageKey) || '0', 10) || 0;
-                    return until > Date.now();
-                } catch (e) {
-                    return false;
-                }
-            }
-            function clearStoredSuppress() {
-                try { sessionStorage.removeItem(suppressStorageKey); } catch (e) {}
-            }
-            try {
-                var storedSuppressUntil = parseInt(sessionStorage.getItem(suppressStorageKey) || '0', 10) || 0;
-                if (storedSuppressUntil <= Date.now()) clearStoredSuppress();
-                else window.setTimeout(clearStoredSuppress, storedSuppressUntil - Date.now());
-            } catch (e) {}
-            function clearHideTimer() {
-                window.clearTimeout(hideTimer);
-                window.clearTimeout(orb.__lnIdentityHideTimer || 0);
-                orb.__lnIdentityHideTimer = 0;
-            }
-            function scheduleHide() {
-                clearHideTimer();
-                hideTimer = window.setTimeout(function() {
-                    orb.classList.remove('is-menu-open');
-                    orb.__lnIdentityHideTimer = 0;
-                }, 2000);
-                orb.__lnIdentityHideTimer = hideTimer;
-            }
-            orb.__lnCloseIdentityMenu = function() {
-                clearHideTimer();
-                orb.classList.remove('is-menu-open');
-            };
-            function showMenu() {
-                if (isSuppressingHover()) return;
-                var shell = document.getElementById('nav-shell');
-                if (shell) shell.classList.remove('nav-open');
-                orb.classList.add('is-menu-open');
-                scheduleHide();
-            }
-            if (avatar) {
-                avatar.addEventListener('mouseenter', showMenu);
-                avatar.addEventListener('mouseleave', function() {
-                    suppressHover = false;
-                    clearStoredSuppress();
-                });
-                avatar.addEventListener('click', function(e) {
-                    suppressHover = true;
-                    orb.classList.add('is-avatar-navigating');
-                    if (window.location.pathname === '/' || window.location.pathname === '') {
-                        e.preventDefault();
-                        window.location.assign(avatar.href || '/');
-                        return;
-                    }
-                    try { sessionStorage.setItem(suppressStorageKey, String(Date.now() + 1600)); } catch (err) {}
-                });
-            }
-            orb.querySelectorAll('.nav-identity-action').forEach(function(action) {
-                action.addEventListener('mouseenter', clearHideTimer);
-                action.addEventListener('mouseleave', scheduleHide);
-            });
-        });
+        // 侧栏合并入口改由账号弹窗处理；保留旧 data-nav-identity-edit 兼容
         root.querySelectorAll('[data-nav-identity-edit]').forEach(function(btn) {
             if (btn.dataset.lnBound) return; btn.dataset.lnBound = '1';
             btn.addEventListener('click', function(e) {
@@ -4481,9 +4506,15 @@
     }
     bindHomeFeedMore(document);
 
+    // 供独立登录 IIFE 调用（账号弹窗 / 身份 Tab）
+    window.lnOpenAccountModal = openAccountModal;
+    window.lnSetAccountTab = setAccountTab;
+    window.lnSetAuthMode = setAuthMode;
+    window.lnOpenNavIdentityDialog = openNavIdentityDialog;
+
 })();
 
-/* 登录 dialog + Passkey(WebAuthn 逻辑移植自后台 admin.js) —— 头像菜单"登录"触发,不依赖独立登录页 */
+/* 登录 dialog + Passkey(WebAuthn 逻辑移植自后台 admin.js) —— 侧栏账号入口触发,不依赖独立登录页 */
 (function () {
     function lnLoginCsrf() {
         var f = document.querySelector('[data-login-form] input[name="_csrf"]') || document.querySelector('input[name="_csrf"]');
@@ -4539,34 +4570,217 @@
         return await lnPkJson(loginRes);
     }
 
-    function lnOverlay() { return document.querySelector('[data-login-overlay]'); }
+    function lnOverlay() { return document.querySelector('[data-account-overlay]') || document.querySelector('[data-login-overlay]'); }
     function lnErr(msg) { var e = document.querySelector('[data-login-error]'); if (e) { e.textContent = msg || ''; e.hidden = !msg; } }
-    function lnOpen(trigger) {
+    function lnRegisterErr(msg) { var e = document.querySelector('[data-register-error]'); if (e) { e.textContent = msg || ''; e.hidden = !msg; } }
+    function lnRegisterOk(msg) { var e = document.querySelector('[data-register-success]'); if (e) { e.textContent = msg || ''; e.hidden = !msg; } }
+    function lnShowResend(show) {
+        var btn = document.querySelector('[data-resend-verify]');
+        if (btn) btn.hidden = !show;
+    }
+    function lnSaveIdentity(identity) {
+        if (!identity || !identity.email) return;
+        var next = {
+            nickname: identity.nickname || '',
+            email: identity.email || '',
+            website: identity.website || '',
+            avatar_url: (typeof gravatarUrl === 'function') ? gravatarUrl(identity.email, 80) : ''
+        };
+        try { localStorage.setItem('litenote_comment_identity', JSON.stringify(next)); } catch (err) {}
+    }
+    function lnOpen(trigger, options) {
+        options = options || {};
         var o = lnOverlay();
         if (!o) {
             window.location.href = '/?login=1';
             return;
         }
-        var orb = trigger && trigger.closest ? trigger.closest('[data-nav-identity]') : null;
-        if (orb) orb.classList.remove('is-menu-open');
-        o.hidden = false; document.body.classList.add('login-modal-open');
-        var u = o.querySelector('[name=username]'); if (u) setTimeout(function () { try { u.focus(); } catch (e) {} }, 60);
+        var preferredTab = options.tab;
+        if (!preferredTab && trigger && trigger.getAttribute) {
+            preferredTab = trigger.getAttribute('data-account-tab') || '';
+        }
+        if (!preferredTab) preferredTab = 'identity';
+        if (typeof window.lnOpenAccountModal === 'function') {
+            if (preferredTab === 'identity' && typeof window.lnOpenNavIdentityDialog === 'function') {
+                window.lnOpenNavIdentityDialog();
+                return;
+            }
+            window.lnOpenAccountModal({
+                tab: preferredTab,
+                mode: options.mode || (preferredTab === 'register' ? 'register' : 'login')
+            });
+            return;
+        }
+        o.hidden = false;
+        document.body.classList.add('login-modal-open');
+        var u = o.querySelector('[data-auth-mode-panel="login"] [name=username], [name=username]');
+        if (u) setTimeout(function () { try { u.focus(); } catch (e) {} }, 60);
     }
-    function lnClose() { var o = lnOverlay(); if (o) { o.hidden = true; document.body.classList.remove('login-modal-open'); lnErr(''); } }
+    function lnClose() {
+        var o = lnOverlay();
+        if (o) {
+            o.hidden = true;
+            document.body.classList.remove('login-modal-open');
+            lnErr('');
+            lnRegisterErr('');
+            lnRegisterOk('');
+            lnShowResend(false);
+        }
+    }
+
+    async function lnBindPasskey() {
+        if (!window.PublicKeyCredential || !navigator.credentials) throw new Error('当前浏览器不支持 Passkey');
+        var name = window.prompt('给这个 Passkey 起个名字（如 iPhone、MacBook）', 'Passkey ' + new Date().toLocaleDateString()) || '';
+        name = String(name).trim() || 'Passkey';
+        var res = await fetch('/auth/passkey/register-options', { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' });
+        var options = await lnPkJson(res);
+        var credential = await navigator.credentials.create({
+            publicKey: {
+                challenge: lnB64UrlToBytes(options.challenge),
+                rp: options.rp,
+                user: {
+                    id: lnB64UrlToBytes(options.user.id),
+                    name: options.user.name,
+                    displayName: options.user.displayName
+                },
+                pubKeyCredParams: options.pubKeyCredParams,
+                timeout: options.timeout,
+                attestation: options.attestation,
+                authenticatorSelection: options.authenticatorSelection
+            }
+        });
+        var data = {
+            id: credential.id,
+            rawId: lnBytesToB64Url(credential.rawId),
+            response: {
+                clientDataJSON: lnBytesToB64Url(credential.response.clientDataJSON),
+                attestationObject: lnBytesToB64Url(credential.response.attestationObject)
+            }
+        };
+        var saveRes = await fetch('/auth/passkey/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': lnLoginCsrf(), 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ credential: JSON.stringify(data), device_name: name })
+        });
+        return await lnPkJson(saveRes);
+    }
 
     document.addEventListener('click', function (e) {
-        var openTrigger = e.target.closest('[data-login-open]');
+        var tabBtn = e.target.closest('[data-account-tab]');
+        if (tabBtn) {
+            e.preventDefault();
+            var tabName = tabBtn.getAttribute('data-account-tab');
+            if (tabName === 'identity' && typeof window.lnOpenNavIdentityDialog === 'function') {
+                window.lnOpenNavIdentityDialog();
+            } else if (typeof window.lnSetAccountTab === 'function') {
+                window.lnSetAccountTab(tabName);
+            }
+            return;
+        }
+        var modeBtn = e.target.closest('[data-auth-mode]');
+        if (modeBtn) {
+            e.preventDefault();
+            if (typeof window.lnSetAuthMode === 'function') window.lnSetAuthMode(modeBtn.getAttribute('data-auth-mode'));
+            return;
+        }
+        var captchaImg = e.target.closest('[data-register-captcha-img]');
+        if (captchaImg) {
+            e.preventDefault();
+            captchaImg.src = '/captcha?t=' + Date.now();
+            return;
+        }
+        var resendBtn = e.target.closest('[data-resend-verify]');
+        if (resendBtn) {
+            e.preventDefault();
+            var loginForm = document.querySelector('[data-login-form]');
+            var account = loginForm && loginForm.username ? (loginForm.username.value || '').trim() : '';
+            var body = new URLSearchParams();
+            body.set('_csrf', lnLoginCsrf());
+            body.set('account', account);
+            resendBtn.disabled = true;
+            fetch('/auth/resend-verify', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded' },
+                credentials: 'same-origin',
+                body: body.toString()
+            }).then(function (res) { return res.json().catch(function () { return {}; }); })
+              .then(function (d) { lnErr((d && d.message) || '已处理'); })
+              .catch(function (err) { lnErr('重发失败：' + err.message); })
+              .then(function () { resendBtn.disabled = false; });
+            return;
+        }
+        var bindPk = e.target.closest('[data-bind-passkey]');
+        if (bindPk) {
+            e.preventDefault();
+            bindPk.disabled = true;
+            lnBindPasskey().then(function (r) {
+                if (typeof frontToast === 'function') frontToast((r && r.message) || 'Passkey 已绑定', 'success');
+                else window.alert((r && r.message) || 'Passkey 已绑定');
+            }).catch(function (err) {
+                if (typeof frontToast === 'function') frontToast(err.message || '绑定失败', 'error');
+                else window.alert(err.message || '绑定失败');
+            }).then(function () { bindPk.disabled = false; });
+            return;
+        }
+        var openTrigger = e.target.closest('[data-account-open], [data-login-open]');
         if (openTrigger) { e.preventDefault(); lnOpen(openTrigger); return; }
-        if (e.target.closest('[data-login-close]')) { e.preventDefault(); lnClose(); return; }
+        if (e.target.closest('[data-login-close], [data-account-close]')) { e.preventDefault(); lnClose(); return; }
         var o = lnOverlay();
         if (o && !o.hidden && e.target === o) lnClose();
     });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') lnClose(); });
 
     document.addEventListener('submit', function(e) {
+        var regForm = e.target && e.target.closest ? e.target.closest('[data-register-form]') : null;
+        if (regForm) {
+            e.preventDefault();
+            lnRegisterErr('');
+            lnRegisterOk('');
+            var regBtn = regForm.querySelector('.login-modal-submit');
+            if (regBtn) regBtn.disabled = true;
+            var regBody = new URLSearchParams();
+            regBody.set('_csrf', lnLoginCsrf());
+            ['username', 'password', 'nickname', 'email', 'website', 'captcha'].forEach(function(k) {
+                if (regForm[k]) regBody.set(k, (regForm[k].value || '').trim());
+            });
+            if (regForm.password) regBody.set('password', regForm.password.value || '');
+            fetch('/auth/register', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded' },
+                credentials: 'same-origin',
+                body: regBody.toString()
+            }).then(function (res) {
+                return res.json().catch(function () { return {}; }).then(function (data) { return { ok: res.ok, data: data }; });
+            }).then(function (r) {
+                if (r.ok && r.data && r.data.ok) {
+                    if (r.data.need_verify) {
+                        lnRegisterOk(r.data.message || '请查收验证邮件完成激活');
+                        if (typeof window.lnSetAuthMode === 'function') window.lnSetAuthMode('login');
+                        lnErr('请先完成邮箱验证后再登录');
+                        lnShowResend(true);
+                        if (regBtn) regBtn.disabled = false;
+                        return;
+                    }
+                    if (r.data.identity) lnSaveIdentity(r.data.identity);
+                    window.location.href = r.data.redirect || '/';
+                    return;
+                }
+                lnRegisterErr((r.data && r.data.message) || '注册失败');
+                var img = document.querySelector('[data-register-captcha-img]');
+                if (img) img.src = '/captcha?t=' + Date.now();
+                if (regForm.captcha) regForm.captcha.value = '';
+                if (regBtn) regBtn.disabled = false;
+            }).catch(function (err) {
+                lnRegisterErr('注册失败：' + err.message);
+                if (regBtn) regBtn.disabled = false;
+            });
+            return;
+        }
+
         var form = e.target && e.target.closest ? e.target.closest('[data-login-form]') : null;
         if (!form) return;
-        e.preventDefault(); lnErr('');
+        e.preventDefault(); lnErr(''); lnShowResend(false);
         var btn = form.querySelector('.login-modal-submit');
         if (btn) btn.disabled = true;
         var body = new URLSearchParams();
@@ -4581,26 +4795,48 @@
         }).then(function (res) {
             return res.json().catch(function () { return {}; }).then(function (data) { return { ok: res.ok, data: data }; });
         }).then(function (r) {
-            if (r.ok && r.data && r.data.ok) { window.location.href = r.data.redirect || '/admin'; }
-            else { lnErr((r.data && r.data.message) || '用户名或密码错误'); if (btn) btn.disabled = false; }
+            if (r.ok && r.data && r.data.ok) {
+                if (r.data.identity) lnSaveIdentity(r.data.identity);
+                window.location.href = r.data.redirect || ((r.data.role === 'admin') ? '/admin' : '/');
+            } else {
+                lnErr((r.data && r.data.message) || '用户名或密码错误');
+                if (r.data && r.data.need_verify) lnShowResend(true);
+                if (btn) btn.disabled = false;
+            }
         }).catch(function (err) { lnErr('登录失败：' + err.message); if (btn) btn.disabled = false; });
     });
 
     document.addEventListener('click', function(e) {
         var pk = e.target.closest('[data-login-passkey]');
-        if (!pk) return;
+        if (!pk || pk.hasAttribute('data-bind-passkey')) return;
         e.preventDefault();
         lnErr('');
         lnLoginWithPasskey().then(function (r) {
-            if (r && r.success !== false) window.location.href = '/admin';
+            if (r && r.identity) lnSaveIdentity(r.identity);
+            if (r && r.success !== false) window.location.href = r.redirect || ((r.role === 'admin') ? '/admin' : '/');
             else lnErr((r && r.message) || 'Passkey 登录失败');
-        }).catch(function (err) { lnErr('Passkey 登录失败：' + err.message); });
+        }).catch(function (err) {
+            lnErr('Passkey 登录失败：' + err.message);
+            if (String(err.message || '').indexOf('验证') !== -1) lnShowResend(true);
+        });
     });
 
     try {
         var params = new URLSearchParams(window.location.search || '');
+        if (params.get('verified') === '1') {
+            if (typeof frontToast === 'function') frontToast('邮箱已验证，欢迎回来', 'success');
+        }
         if (params.get('login') === '1') {
-            lnOpen();
+            var tab = 'identity';
+            var mode = 'login';
+            if (params.get('tab') === 'register') {
+                tab = 'register';
+                mode = params.get('mode') === 'login' ? 'login' : 'register';
+            } else if (params.get('mode') === 'login' || params.get('password_changed') === '1') {
+                tab = 'register';
+                mode = 'login';
+            }
+            lnOpen(null, { tab: tab, mode: mode });
             if (params.get('password_changed') === '1') {
                 lnErr('密码已修改，请重新登录');
             }

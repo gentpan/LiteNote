@@ -175,6 +175,11 @@ final class Mailer
         return MailTemplate::passwordReset($resetUrl, $username);
     }
 
+    public static function renderEmailVerify(string $verifyUrl, string $displayName): string
+    {
+        return MailTemplate::emailVerify($verifyUrl, $displayName);
+    }
+
     private static function sendSendflare(array $cfg, string $to, string $subject, string $html): bool
     {
         $payload = [

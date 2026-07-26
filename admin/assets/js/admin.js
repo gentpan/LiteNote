@@ -1550,8 +1550,16 @@ function passkeySupported() {
 }
 
 // \u{6CE8}\u{518C} Passkey
-async function registerPasskey() {
+async function registerPasskey(deviceName) {
     passkeySupported();
+    var name = String(deviceName || '').trim();
+    if (!name) {
+        throw new Error('\u{8BF7}\u{4E3A} Passkey \u{8BBE}\u{7F6E}\u{540D}\u{79F0}');
+    }
+    if (name.length > 100) {
+        throw new Error('Passkey \u{540D}\u{79F0}\u{4E0D}\u{80FD}\u{8D85}\u{8FC7} 100 \u{4E2A}\u{5B57}\u{7B26}');
+    }
+
     const res = await fetch('/admin/passkey/register-options', {
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
         credentials: 'same-origin'
@@ -1591,10 +1599,31 @@ async function registerPasskey() {
             'X-Requested-With': 'XMLHttpRequest'
         },
         credentials: 'same-origin',
-        body: JSON.stringify({ credential: JSON.stringify(data) })
+        body: JSON.stringify({
+            credential: JSON.stringify(data),
+            device_name: name
+        })
     });
 
     return await passkeyJson(saveRes);
+}
+
+async function deletePasskey(id) {
+    var passkeyId = parseInt(id, 10) || 0;
+    if (passkeyId <= 0) {
+        throw new Error('Passkey \u{6807}\u{8BC6}\u{65E0}\u{6548}');
+    }
+    const res = await fetch('/admin/passkey/delete', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': passkeyCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({ id: passkeyId })
+    });
+    return await passkeyJson(res);
 }
 
 // \u{4F7F}\u{7528} Passkey \u{767B}\u{5F55}

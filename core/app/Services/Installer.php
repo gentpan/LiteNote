@@ -33,6 +33,43 @@ final class Installer
         }
     }
 
+    /**
+     * 读者注册所需列（幂等）。bootstrap 每次都会调用。
+     */
+    public static function ensureUserAuthColumns(): void
+    {
+        if (!is_file((string) Config::get('database.sqlite'))) {
+            return;
+        }
+        try {
+            $db = Database::getInstance();
+        } catch (\Throwable) {
+            return;
+        }
+        foreach ([
+            ['users', 'email_verified_at', 'DATETIME'],
+            ['users', 'verify_token', 'VARCHAR(64)'],
+            ['users', 'verify_expires_at', 'DATETIME'],
+            ['users', 'status', 'INTEGER DEFAULT 1'],
+        ] as [$table, $col, $type]) {
+            try {
+                $db->query("ALTER TABLE {$table} ADD COLUMN {$col} {$type}");
+            } catch (\Throwable) {
+                // 列已存在
+            }
+        }
+        try {
+            // 管理员视为已验证；旧 member 统一为 reader
+            $db->query(
+                "UPDATE users SET email_verified_at = COALESCE(NULLIF(email_verified_at, ''), created_at, CURRENT_TIMESTAMP)
+                 WHERE role = 'admin' AND (email_verified_at IS NULL OR email_verified_at = '')"
+            );
+            $db->query("UPDATE users SET role = 'reader' WHERE role = 'member'");
+        } catch (\Throwable) {
+            // ignore
+        }
+    }
+
     public static function ensureDefaultAdmin(): void
     {
         if (\App\Models\User::count() > 0) {
@@ -543,6 +580,10 @@ MD;
             ['users',    'socials', 'TEXT'],         // 2026-06: 个人资料社交链接
             ['users',    'reset_token', 'VARCHAR(64)'],   // 2026-06: 密码找回 token(sha256)
             ['users',    'reset_expires_at', 'DATETIME'], // 2026-06: 密码找回 token 过期时间
+            ['users',    'email_verified_at', 'DATETIME'], // 2026-07: 读者邮箱验证时间
+            ['users',    'verify_token', 'VARCHAR(64)'],   // 2026-07: 邮箱验证 token(sha256)
+            ['users',    'verify_expires_at', 'DATETIME'], // 2026-07: 邮箱验证过期
+            ['users',    'status', 'INTEGER DEFAULT 1'],   // 2026-07: 账号状态 1=正常
             ['categories', 'icon', 'VARCHAR(64)'],          // 2026-06: 分类菜单图标(fontawesome)
             ['categories', 'show_in_nav', 'INTEGER DEFAULT 1'], // 2026-06: 是否在导航菜单显示
             ['categories', 'color', 'INTEGER'],             // 2026-06: 分类配色 0-5(空则按 id 取色)

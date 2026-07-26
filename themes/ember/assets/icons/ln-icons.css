@@ -16,6 +16,12 @@
     width: 1em;
     height: 1em;
     overflow: visible;
+    /* 避免按描边像素命中(visiblePainted),否则热区呈文字形并与外层光标来回切换 */
+    pointer-events: none !important;
+}
+
+.ln-icon > svg * {
+    pointer-events: none !important;
 }
 
 .ln-icon[data-ln-filled="1"] > svg path,

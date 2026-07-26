@@ -37,10 +37,39 @@ class AuthController
                 Response::json(['ok' => false, 'message' => '用户名或密码错误'], 401);
             }
             Session::flash('login_error', '用户名或密码错误');
-            Response::redirect('/?login=1');
+            Response::redirect('/?login=1&mode=login');
+        }
+
+        if (!$user->isActive()) {
+            if ($isAjax) {
+                Response::json(['ok' => false, 'message' => '账号已停用'], 403);
+            }
+            Session::flash('login_error', '账号已停用');
+            Response::redirect('/?login=1&mode=login');
+        }
+
+        // 读者必须先完成邮箱验证；管理员不受限
+        if (!$user->isEmailVerified()) {
+            $message = '请先点击注册邮箱里的验证链接完成激活';
+            if ($isAjax) {
+                Response::json([
+                    'ok' => false,
+                    'need_verify' => true,
+                    'message' => $message,
+                    'email' => (string) ($user->email ?? ''),
+                ], 403);
+            }
+            Session::flash('login_error', $message);
+            Response::redirect('/?login=1&mode=login');
         }
 
         LoginRateLimiter::clear($ip, $username);
+
+        // 防止历史脏数据：非管理员一律按 reader 落库
+        $role = $user->isAdmin() ? 'admin' : 'reader';
+        if (!$user->isAdmin() && (string) ($user->role ?? '') !== 'reader') {
+            User::db()->update('users', ['role' => 'reader'], 'id = :id', ['id' => $user->id]);
+        }
 
         User::db()->update('users', [
             'last_login_at' => date('Y-m-d H:i:s'),
@@ -51,21 +80,30 @@ class AuthController
             'id'       => $user->id,
             'username' => $user->username,
             'nickname' => $user->nickname,
-            'role'     => $user->role,
+            'role'     => $role,
             'status'   => isset($user->status) ? (int) $user->status : 1,
         ]);
         Session::regenerate();
 
+        $isAdmin = $role === 'admin';
+        $redirect = $isAdmin ? '/admin' : '/';
+        $identity = \App\Controllers\Front\AuthController::identityPayload($user);
+
         if ($isAjax) {
-            Response::json(['ok' => true, 'redirect' => '/admin']);
+            Response::json([
+                'ok'       => true,
+                'redirect' => $redirect,
+                'role'     => $role,
+                'identity' => $identity,
+            ]);
         }
-        Response::redirect('/admin');
+        Response::redirect($redirect);
     }
 
     public function logout(): never
     {
         Session::destroy();
-        Response::redirect('/?login=1');
+        Response::redirect('/');
     }
 
     /**

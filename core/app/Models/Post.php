@@ -225,28 +225,18 @@ final class Post extends Model
     public function incrementViews(): void
     {
         self::db()->query('UPDATE posts SET views = views + 1 WHERE id = ?', [$this->id]);
+        $this->views = (int) ($this->views ?? 0) + 1;
     }
 
-    /** Session 去重后增加浏览量，避免高流量时 SQLite 写放大。 */
+    /** 记录一次浏览（与页面一致：每次打开都 +1，并同步到当前对象供模板显示）。 */
     public function trackView(): void
     {
-        $id = (int)$this->id;
+        $id = (int) $this->id;
         if ($id <= 0) {
             return;
         }
 
-        $viewed = \App\Core\Session::get('viewed_posts', []);
-        $viewed = is_array($viewed) ? $viewed : [];
-        if (!empty($viewed[$id])) {
-            return;
-        }
-
         $this->incrementViews();
-        $viewed[$id] = time();
-        if (count($viewed) > 200) {
-            $viewed = array_slice($viewed, -150, null, true);
-        }
-        \App\Core\Session::set('viewed_posts', $viewed);
     }
 
     public static function ensureEngagementSchema(): void

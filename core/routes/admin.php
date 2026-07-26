@@ -29,7 +29,8 @@ use App\Middleware\CsrfMiddleware;
 
 // 公开:登录页已迁移到前台模拟窗,这里只保留 POST 登录接口。
 $router->post('/admin/login',       [AuthController::class, 'login'], [CsrfMiddleware::class]);
-$router->post('/admin/logout',      [AuthController::class, 'logout'], [AdminAuth::class, CsrfMiddleware::class]);
+// 登出不强制 admin：前台 member 也走此接口
+$router->post('/admin/logout',      [AuthController::class, 'logout'], [CsrfMiddleware::class]);
 $router->get('/admin/forgot',       [AuthController::class, 'forgotForm']);
 $router->post('/admin/forgot',      [AuthController::class, 'forgot'], [CsrfMiddleware::class]);
 $router->get('/admin/reset',        [AuthController::class, 'resetForm']);
@@ -166,6 +167,7 @@ $router->group('/admin', function ($r) {
     // Passkey
     $r->get('/passkey/register-options',  [PasskeyController::class, 'registerOptions']);
     $r->post('/passkey/register',         [PasskeyController::class, 'register'], [\App\Middleware\CsrfMiddleware::class]);
+    $r->post('/passkey/delete',           [PasskeyController::class, 'delete'], [\App\Middleware\CsrfMiddleware::class]);
 
 }, [AdminAuth::class]);
 

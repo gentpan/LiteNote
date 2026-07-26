@@ -383,13 +383,24 @@
             <table class="admin-table passkey-table">
                 <thead>
                     <tr>
+                        <th>名称</th>
                         <th>绑定时间</th>
                         <th>最近使用</th>
+                        <th class="col-actions">操作</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($passkeys as $passkey)
-                        <tr>
+                        @php
+                            $passkeyName = trim((string)($passkey['device_name'] ?? ''));
+                            if ($passkeyName === '') {
+                                $passkeyName = 'Passkey';
+                            }
+                        @endphp
+                        <tr data-passkey-row="{{ (int)($passkey['id'] ?? 0) }}">
+                            <td>
+                                <strong class="passkey-name">{{ $passkeyName }}</strong>
+                            </td>
                             <td>{!! \App\Core\Helper::dateTimeTag((string)($passkey['created_at'] ?? '')) !!}</td>
                             <td>
                                 @if(!empty($passkey['last_used_at']))
@@ -397,6 +408,18 @@
                                 @else
                                     <span class="muted">从未</span>
                                 @endif
+                            </td>
+                            <td class="col-actions">
+                                <div class="admin-action-bar">
+                                    <button type="button"
+                                            class="admin-action-btn admin-action-delete"
+                                            data-passkey-delete="{{ (int)($passkey['id'] ?? 0) }}"
+                                            data-passkey-name="{{ $passkeyName }}"
+                                            title="删除"
+                                            aria-label="删除 Passkey">
+                                        <i class="fa-regular fa-trash-can"></i>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     @endforeach
@@ -407,24 +430,135 @@
 
     <script>
     (function () {
-        var btn = document.getElementById('passkeyRegisterBtn');
-        if (!btn) return;
-        btn.addEventListener('click', function () {
-            var original = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 绑定中';
-            registerPasskey()
-                .then(function (res) {
-                    window.adminToast && window.adminToast(res.message || 'Passkey 已绑定', 'success');
-                    setTimeout(function () { window.location.reload(); }, 600);
-                })
-                .catch(function (err) {
-                    window.adminToast && window.adminToast(err.message || 'Passkey 绑定失败', 'error');
-                })
-                .finally(function () {
-                    btn.disabled = false;
-                    btn.innerHTML = original;
+        function askPasskeyName(defaultName) {
+            return new Promise(function (resolve) {
+                var suggested = String(defaultName || '').trim() || ('Passkey ' + new Date().toLocaleDateString());
+                var id = 'passkey-name-' + Date.now();
+                var backdrop = document.createElement('div');
+                backdrop.className = 'admin-dialog-backdrop';
+                backdrop.innerHTML = ''
+                    + '<div class="admin-dialog-shell">'
+                    + '  <section class="admin-dialog" role="dialog" aria-modal="true" aria-labelledby="' + id + '-title">'
+                    + '    <div class="admin-dialog-body">'
+                    + '      <div class="admin-dialog-layout">'
+                    + '        <div class="admin-dialog-icon admin-dialog-icon-primary"><i class="fa-solid fa-fingerprint"></i></div>'
+                    + '        <div class="admin-dialog-copy">'
+                    + '          <h3 id="' + id + '-title">绑定 Passkey</h3>'
+                    + '          <p>给这个 Passkey 起个名字，方便区分设备（如 MacBook、iPhone）。</p>'
+                    + '          <label class="passkey-name-field">'
+                    + '            <span>名称</span>'
+                    + '            <input type="text" maxlength="100" value="" autocomplete="off" data-passkey-name-input>'
+                    + '          </label>'
+                    + '        </div>'
+                    + '      </div>'
+                    + '    </div>'
+                    + '    <div class="admin-dialog-actions">'
+                    + '      <button type="button" class="btn btn-primary" data-passkey-name-confirm>继续绑定</button>'
+                    + '      <button type="button" class="btn" data-passkey-name-cancel>取消</button>'
+                    + '    </div>'
+                    + '  </section>'
+                    + '</div>';
+
+                var input = backdrop.querySelector('[data-passkey-name-input]');
+                var confirmBtn = backdrop.querySelector('[data-passkey-name-confirm]');
+                var cancelBtn = backdrop.querySelector('[data-passkey-name-cancel]');
+                input.value = suggested;
+
+                function close(value) {
+                    document.removeEventListener('keydown', onKey, true);
+                    backdrop.remove();
+                    document.body.classList.remove('admin-dialog-open');
+                    resolve(value);
+                }
+                function onKey(e) {
+                    if (e.key === 'Escape') {
+                        e.preventDefault();
+                        close(null);
+                    } else if (e.key === 'Enter' && document.activeElement === input) {
+                        e.preventDefault();
+                        confirmBtn.click();
+                    }
+                }
+
+                cancelBtn.addEventListener('click', function () { close(null); });
+                backdrop.addEventListener('click', function (e) {
+                    if (e.target === backdrop || e.target.classList.contains('admin-dialog-shell')) {
+                        close(null);
+                    }
                 });
+                confirmBtn.addEventListener('click', function () {
+                    var name = String(input.value || '').trim();
+                    if (!name) {
+                        window.adminToast && window.adminToast('请填写 Passkey 名称', 'error');
+                        input.focus();
+                        return;
+                    }
+                    close(name);
+                });
+
+                document.body.appendChild(backdrop);
+                document.body.classList.add('admin-dialog-open');
+                document.addEventListener('keydown', onKey, true);
+                setTimeout(function () {
+                    input.focus();
+                    input.select();
+                }, 0);
+            });
+        }
+
+        var btn = document.getElementById('passkeyRegisterBtn');
+        if (btn) {
+            btn.addEventListener('click', function () {
+                askPasskeyName().then(function (name) {
+                    if (!name) return;
+                    var original = btn.innerHTML;
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 绑定中';
+                    registerPasskey(name)
+                        .then(function (res) {
+                            window.adminToast && window.adminToast(res.message || 'Passkey 已绑定', 'success');
+                            setTimeout(function () { window.location.reload(); }, 600);
+                        })
+                        .catch(function (err) {
+                            window.adminToast && window.adminToast(err.message || 'Passkey 绑定失败', 'error');
+                        })
+                        .finally(function () {
+                            btn.disabled = false;
+                            btn.innerHTML = original;
+                        });
+                });
+            });
+        }
+
+        document.querySelectorAll('[data-passkey-delete]').forEach(function (deleteBtn) {
+            deleteBtn.addEventListener('click', function () {
+                var id = deleteBtn.getAttribute('data-passkey-delete');
+                var name = deleteBtn.getAttribute('data-passkey-name') || 'Passkey';
+                var confirmFn = window.adminConfirm
+                    ? window.adminConfirm({
+                        title: '删除 Passkey',
+                        message: '确定删除「' + name + '」？删除后将无法再用它登录。',
+                        confirmText: '确认删除',
+                        tone: 'danger'
+                    })
+                    : Promise.resolve(window.confirm('确定删除「' + name + '」？'));
+
+                confirmFn.then(function (ok) {
+                    if (!ok) return;
+                    deleteBtn.disabled = true;
+                    deletePasskey(id)
+                        .then(function (res) {
+                            window.adminToast && window.adminToast(res.message || 'Passkey 已删除', 'success');
+                            var row = deleteBtn.closest('[data-passkey-row]');
+                            if (row) row.remove();
+                            setTimeout(function () { window.location.reload(); }, 500);
+                        })
+                        .catch(function (err) {
+                            window.adminToast && window.adminToast(err.message || '删除失败', 'error');
+                            deleteBtn.disabled = false;
+                        });
+                });
+            });
         });
     })();
     </script>

@@ -72,20 +72,45 @@ class PasskeyController
             Response::json(['success' => false, 'message' => Helper::publicErrorMessage($e, 'Passkey 绑定验证失败')], 422);
         }
 
+        $deviceName = trim((string) $request->input('device_name', ''));
+        if (mb_strlen($deviceName) > 100) {
+            Response::json(['success' => false, 'message' => 'Passkey 名称不能超过 100 个字符'], 422);
+        }
+        if ($deviceName === '') {
+            $deviceName = 'Passkey';
+        }
+
         $adminId = (int) Session::get('admin_user.id', 1);
         $saved = $this->service->saveCredential([
             'user_id' => $adminId,
             'credential_id' => $verified['credential_id'],
             'public_key' => $verified['public_key'],
             'counter' => $verified['counter'],
-            'device_name' => '',
+            'device_name' => $deviceName,
         ]);
 
         Session::forget('passkey_challenge');
         Response::json([
             'success' => $saved,
             'message' => $saved ? 'Passkey 已绑定' : 'Passkey 绑定失败',
+            'device_name' => $deviceName,
         ]);
+    }
+
+    public function delete(Request $request): never
+    {
+        $id = (int) $request->input('id', 0);
+        if ($id <= 0) {
+            Response::json(['success' => false, 'message' => 'Passkey 标识无效'], 422);
+        }
+
+        $adminId = (int) Session::get('admin_user.id', 1);
+        $deleted = $this->service->deleteCredential($id, $adminId);
+
+        Response::json([
+            'success' => $deleted,
+            'message' => $deleted ? 'Passkey 已删除' : '未找到可删除的 Passkey',
+        ], $deleted ? 200 : 404);
     }
 
     public function loginOptions(Request $request): never
@@ -146,7 +171,18 @@ class PasskeyController
 
         $user = User::find((int) ($credential['user_id'] ?? 1));
         if (!$user) {
-            Response::json(['success' => false, 'message' => 'Passkey 对应的管理员账号不存在'], 404);
+            Response::json(['success' => false, 'message' => 'Passkey 对应的账号不存在'], 404);
+        }
+        if (!$user->isActive()) {
+            Response::json(['success' => false, 'message' => '账号已停用'], 403);
+        }
+        if (!$user->isEmailVerified()) {
+            Response::json(['success' => false, 'need_verify' => true, 'message' => '请先完成邮箱验证后再登录'], 403);
+        }
+
+        $role = $user->isAdmin() ? 'admin' : 'reader';
+        if (!$user->isAdmin() && (string) ($user->role ?? '') !== 'reader') {
+            User::db()->update('users', ['role' => 'reader'], 'id = :id', ['id' => $user->id]);
         }
 
         $this->service->updateCounter((string) $credential['credential_id'], (int) $result['counter']);
@@ -159,13 +195,19 @@ class PasskeyController
             'id' => $user->id,
             'username' => $user->username,
             'nickname' => $user->nickname,
-            'role' => $user->role,
+            'role' => $role,
             'status' => isset($user->status) ? (int) $user->status : 1,
         ]);
         Session::forget('passkey_login_challenge');
         Session::regenerate();
 
-        Response::json(['success' => true, 'message' => 'Passkey 登录成功']);
+        Response::json([
+            'success' => true,
+            'message' => 'Passkey 登录成功',
+            'redirect' => $role === 'admin' ? '/admin' : '/',
+            'role' => $role,
+            'identity' => \App\Controllers\Front\AuthController::identityPayload($user),
+        ]);
     }
 
     private function rpId(): string

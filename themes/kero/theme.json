@@ -1,0 +1,8 @@
+{
+  "name": "Kero",
+  "description": "kero.sh-like: narrow column, dark canvas, label|body rows. Calm developer landing language for a blog.",
+  "version": "3.0.0",
+  "author": "LiteNote",
+  "screenshot": "screenshot.svg",
+  "stylesheet": "/themes/kero/assets/main.css"
+}

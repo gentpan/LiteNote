@@ -24,6 +24,18 @@ final class MailTemplate
         ]);
     }
 
+    public static function emailVerify(string $verifyUrl, string $displayName): string
+    {
+        $body = '<p>你好 <strong>' . self::e($displayName) . '</strong>，感谢注册成为本站读者。</p>'
+            . '<p>请点击下面的按钮验证邮箱，激活账号后即可登录。链接 <strong>24 小时</strong>内有效。</p>'
+            . '<p class="muted">如果这不是你本人操作，请忽略本邮件。</p>';
+
+        return self::layout('验证读者邮箱', $body, [
+            'button_url' => $verifyUrl,
+            'button_text' => '验证邮箱并登录',
+        ]);
+    }
+
     public static function newComment(Comment $comment, array $target): string
     {
         $content = self::commentContent($comment);

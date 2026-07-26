@@ -572,8 +572,9 @@
                 var frames = (node.getAttribute('data-ln-frames') || '').split('|').filter(Boolean);
                 if (frames.length < 2) return;
                 var infinite = node.getAttribute('data-ln-infinite') === '1';
+                // WAAPI 要求 d 使用 CSS path('...') 语法,裸路径字符串会报 Invalid keyframe
                 var keyframes = frames.map(function (d) {
-                    return { d: d };
+                    return { d: "path('" + String(d).replace(/'/g, '') + "')" };
                 });
                 var anim;
                 try {
@@ -584,10 +585,13 @@
                         fill: node.getAttribute('data-ln-fill') || (infinite ? 'none' : 'forwards'),
                     });
                 } catch (err) {
-                    // Fallback: toggle d on a timer for morph
                     if (!infinite) {
                         node.setAttribute('d', frames[frames.length - 1]);
                     }
+                    return;
+                }
+                if (!anim) {
+                    if (!infinite) node.setAttribute('d', frames[frames.length - 1]);
                     return;
                 }
                 track(host, anim);

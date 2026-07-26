@@ -111,6 +111,7 @@ unset($__dbPath, $__dbSeed, $__dbDir);
 // 自动创建默认管理员（如果不存在）
 if (is_file(Config::get('database.sqlite'))) {
     try {
+        \App\Services\Installer::ensureUserAuthColumns();
         \App\Services\Installer::ensureDefaultAdmin();
         \App\Services\Installer::ensureWelcomePostContent();
         \App\Services\MigrationRunner::run();
@@ -142,14 +143,29 @@ if (is_file(Config::get('database.sqlite'))) {
 View::share('site', Config::get('site'));
 
 $currentAdmin = null;
+$currentMember = null;
 try {
-    $adminId = (int) Session::get('admin_user.id', 0);
-    $currentAdmin = $adminId > 0 ? \App\Models\User::find($adminId) : null;
+    $sessionUser = Session::get('admin_user');
+    $userId = is_array($sessionUser) ? (int) ($sessionUser['id'] ?? 0) : 0;
+    if ($userId > 0) {
+        $sessionRole = (string) ($sessionUser['role'] ?? '');
+        $loaded = \App\Models\User::find($userId);
+        if ($loaded) {
+            $role = (string) ($loaded->role ?: $sessionRole);
+            if ($role === 'admin') {
+                $currentAdmin = $loaded;
+            } elseif (in_array($role, ['reader', 'member'], true) && $loaded->isEmailVerified() && $loaded->isActive()) {
+                $currentMember = $loaded;
+            }
+        }
+    }
 } catch (\Throwable) {
     // 数据库未就绪时静默忽略
     $currentAdmin = null;
+    $currentMember = null;
 }
 View::share('currentAdmin', $currentAdmin);
+View::share('currentMember', $currentMember);
 
 // 全局 View Composer:任意前台模板渲染时,自动注入 site author
 //   - $author  : App\Models\User(站点主理人,id=1)

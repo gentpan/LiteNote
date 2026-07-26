@@ -24,6 +24,26 @@ final class User extends Model
         return $this->role === 'admin';
     }
 
+    /** 前台注册读者（含历史 member）。 */
+    public function isReader(): bool
+    {
+        return in_array((string) ($this->role ?? ''), ['reader', 'member'], true);
+    }
+
+    /** 管理员免验证；读者需有 email_verified_at。 */
+    public function isEmailVerified(): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+        return trim((string) ($this->email_verified_at ?? '')) !== '';
+    }
+
+    public function isActive(): bool
+    {
+        return (int) ($this->status ?? 1) === 1;
+    }
+
     /**
      * 头像 URL(优先级:用户手动填的 avatar 字段 > gravatar 邮箱哈希)。
      */

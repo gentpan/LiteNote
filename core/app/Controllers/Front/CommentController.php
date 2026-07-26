@@ -76,7 +76,10 @@ class CommentController
 
         // 评论验证码(恒启用,无后台开关):管理员与白名单邮箱豁免,其余必须先通过验证码。
         // 白名单 = 有审核通过的评论,或已通过身份表单验证码。
-        $isAdmin = (int) Session::get('admin_user.id', 0) > 0;
+        $sessionUser = Session::get('admin_user');
+        $isAdmin = is_array($sessionUser)
+            && ($sessionUser['role'] ?? '') === 'admin'
+            && (int) ($sessionUser['id'] ?? 0) > 0;
         $emailTrusted = $this->isTrustedEmail((string)$data['email']);
         if (!$isAdmin && !$emailTrusted) {
             $captchaInput = strtolower(trim((string) $request->input('captcha', '')));

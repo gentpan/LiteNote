@@ -2687,7 +2687,7 @@ body.admin-body.auth-body {
     cursor: pointer;
     background: #fff;
     border: 1px solid transparent;
-    border-radius: 0;
+    border-radius: var(--radius);
     box-shadow: none;
     transition:
         background 0.15s,
@@ -2705,7 +2705,7 @@ body.admin-body.auth-body {
     height: 34px;
     min-height: 34px;
     aspect-ratio: 1 / 1;
-    border-radius: 0;
+    border-radius: var(--radius);
 }
 
 .post-action-btn:hover,
@@ -5849,6 +5849,85 @@ body.admin-body.auth-body {
     color: var(--text-soft);
 }
 
+.passkey-name-field {
+    display: grid;
+    gap: 6px;
+    margin-top: 14px;
+}
+
+.passkey-name-field span {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-soft);
+}
+
+.passkey-name-field input {
+    width: 100%;
+    min-height: var(--control-height);
+    padding: 0 12px;
+    font: inherit;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.passkey-name-field input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: var(--ring);
+}
+
+.passkey-name {
+    font-weight: 650;
+    color: var(--text);
+}
+
+.passkey-table {
+    table-layout: fixed;
+}
+
+.passkey-table th,
+.passkey-table td {
+    text-align: left;
+    vertical-align: middle;
+}
+
+.passkey-table thead th {
+    text-align: left !important;
+}
+
+.passkey-table th:nth-child(1),
+.passkey-table td:nth-child(1) {
+    width: 26%;
+}
+
+.passkey-table th:nth-child(2),
+.passkey-table td:nth-child(2),
+.passkey-table th:nth-child(3),
+.passkey-table td:nth-child(3) {
+    width: 28%;
+}
+
+.passkey-table th:nth-child(4),
+.passkey-table td:nth-child(4),
+.passkey-table th.col-actions,
+.passkey-table td.col-actions {
+    width: 18%;
+    text-align: center;
+}
+
+.passkey-table thead th:nth-child(4),
+.passkey-table thead th.col-actions {
+    text-align: center !important;
+}
+
+.passkey-table .admin-action-bar {
+    justify-content: center;
+    width: auto;
+    margin: 0 auto;
+}
+
 .admin-dialog-actions {
     display: flex;
     flex-direction: row-reverse;
@@ -8443,8 +8522,10 @@ body.admin-body.auth-body {
         display: none;
     }
 
-    .passkey-table td:nth-child(1)::before { content: "绑定时间"; }
-    .passkey-table td:nth-child(2)::before { content: "最近使用"; }
+    .passkey-table td:nth-child(1)::before { content: "名称"; }
+    .passkey-table td:nth-child(2)::before { content: "绑定时间"; }
+    .passkey-table td:nth-child(3)::before { content: "最近使用"; }
+    .passkey-table td:nth-child(4)::before { content: "操作"; }
 
     .dashboard-post-table td:nth-child(1)::before { content: "标题"; }
     .dashboard-post-table td:nth-child(2)::before { content: "状态"; }
