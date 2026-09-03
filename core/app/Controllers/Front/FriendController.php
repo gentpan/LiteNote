@@ -9,7 +9,9 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
 use App\Models\Category;
+use App\Models\Comment;
 use App\Models\Link;
+use App\Models\Page;
 use App\Models\Post;
 use App\Models\Setting;
 use App\Models\User;
@@ -17,11 +19,6 @@ use App\Services\FriendRssService;
 
 class FriendController
 {
-    public function index(): string
-    {
-        return $this->page('links');
-    }
-
     public function links(): string
     {
         return $this->page('links');
@@ -55,6 +52,9 @@ class FriendController
         $rssItems = array_slice($rssPool, 0, 50);
         $rssFreshByLink = $this->recentRssMap($links, $rssPool);
 
+        $friendPage = Page::findBySlug('friends');
+        $comments = $friendPage ? Comment::forPage((int)$friendPage->id) : [];
+
         return View::render('friend.index', [
             'links'    => $links,
             'rssItems' => $rssItems,
@@ -62,6 +62,8 @@ class FriendController
             'lastUpdated' => FriendRssService::lastUpdated(),
             'siteCopyItems' => $this->siteCopyItems(),
             'activeFriendTab' => $activeTab,
+            'friendPage' => $friendPage,
+            'comments' => $comments,
             'pageTitle' => $activeTab === 'feeds' ? '订阅文章' : '友情链接',
             'activeNav' => $activeTab === 'feeds' ? 'feeds' : 'friends',
             'categories' => Category::allEnabled(),

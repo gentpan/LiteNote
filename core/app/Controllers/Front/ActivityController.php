@@ -122,9 +122,6 @@ final class ActivityController
         if ($source === 'litenote') {
             return '文章 / 说说';
         }
-        if ($source === 'x_bookmarks') {
-            return '书签';
-        }
 
         $providers = ActivityIntegration::providers();
         if (isset($providers[$source]['label'])) {
@@ -143,7 +140,6 @@ final class ActivityController
 
         return match ($source) {
             'litenote' => 'fa-regular fa-file-lines',
-            'x_bookmarks' => 'fa-solid fa-bookmark',
             default => 'fa-solid fa-chart-simple',
         };
     }

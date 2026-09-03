@@ -7,7 +7,6 @@ use App\Core\ApiResponse;
 use App\Core\Request;
 use App\Core\Response;
 use App\Middleware\ActivityApiAuthMiddleware;
-use App\Models\Activity;
 use App\Models\DailyActivityStat;
 use App\Services\ActivityCacheService;
 use App\Services\ActivityInstaller;
@@ -15,29 +14,6 @@ use App\Services\ActivityStatsService;
 
 final class ActivityApiController
 {
-    public function index(Request $request): never
-    {
-        ActivityInstaller::install();
-        $page = max(1, (int)$request->input('page', 1));
-        $limit = max(1, min(100, (int)$request->input('limit', 20)));
-        $filters = [];
-        foreach (['type', 'source', 'date'] as $key) {
-            $value = trim((string)$request->input($key, ''));
-            if ($value !== '') {
-                $filters[$key] = $value;
-            }
-        }
-        $result = Activity::paginate($page, $limit, $filters, true);
-        Response::json([
-            'data' => array_map([$this, 'serializeActivity'], $result['items']),
-            'pagination' => [
-                'page' => $page,
-                'limit' => $limit,
-                'total' => $result['total'],
-            ],
-        ]);
-    }
-
     public function feed(Request $request): never
     {
         ActivityInstaller::install();
@@ -110,22 +86,6 @@ final class ActivityApiController
             ApiResponse::ok($stat, ['date' => $date]);
         }
         Response::json($stat);
-    }
-
-    private function serializeActivity(Activity $activity): array
-    {
-        return $this->sanitizePublicActivity([
-            'id' => (int)$activity->id,
-            'type' => (string)$activity->type,
-            'action' => (string)$activity->action,
-            'source' => (string)$activity->source,
-            'title' => (string)$activity->title,
-            'content' => (string)$activity->content,
-            'url' => (string)$activity->url,
-            'icon' => (string)$activity->icon,
-            'happened_at' => (string)$activity->happened_at,
-            'metadata' => $activity->metadata(),
-        ]);
     }
 
     /**

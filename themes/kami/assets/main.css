@@ -449,11 +449,6 @@ html[data-site-theme="kami"] .x-bookmarks-head {
     border-bottom: 1px solid var(--c-border);
 }
 
-html[data-site-theme="kami"] .x-bookmarks-back {
-    color: var(--c-accent);
-    text-decoration: none;
-}
-
 html[data-site-theme="kami"] .post-content,
 html[data-site-theme="kami"] .page-content {
     font-family: var(--article-font-family, var(--font-sans));

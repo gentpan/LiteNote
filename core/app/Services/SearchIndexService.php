@@ -94,7 +94,7 @@ final class SearchIndexService
   public static function syncXTweet(int $id): void
   {
     self::install();
-    if ($id <= 0) {
+    if ($id <= 0 || !PluginManager::isEnabled('x')) {
       return;
     }
     try {
@@ -187,16 +187,18 @@ final class SearchIndexService
     }
 
     try {
-      foreach (Post::db()->fetchAll(
-        'SELECT id, content, tweet_author_name, tweet_author_handle FROM x_tweets WHERE is_public = ?',
-        [Toggle::On->value]
-      ) as $row) {
-        self::upsert(
-          'x',
-          (int)$row['id'],
-          'X #' . (int)$row['id'],
-          trim((string)($row['content'] ?? '') . "\n" . (string)($row['tweet_author_name'] ?? '') . "\n" . (string)($row['tweet_author_handle'] ?? ''))
-        );
+      if (PluginManager::isEnabled('x')) {
+        foreach (Post::db()->fetchAll(
+          'SELECT id, content, tweet_author_name, tweet_author_handle FROM x_tweets WHERE is_public = ?',
+          [Toggle::On->value]
+        ) as $row) {
+          self::upsert(
+            'x',
+            (int)$row['id'],
+            'X #' . (int)$row['id'],
+            trim((string)($row['content'] ?? '') . "\n" . (string)($row['tweet_author_name'] ?? '') . "\n" . (string)($row['tweet_author_handle'] ?? ''))
+          );
+        }
       }
     } catch (\Throwable) {
     }

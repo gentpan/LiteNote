@@ -14,6 +14,7 @@ use App\Models\Setting;
 use App\Services\CommentModerationService;
 use App\Services\CommentSettingsService;
 use App\Services\IpGeoService;
+use App\Services\PluginManager;
 use App\Services\PublicCacheService;
 use App\Traits\HasFlashRedirect;
 
@@ -50,6 +51,11 @@ class CommentController
             $params
         );
         $offset = ($page - 1) * $perPage;
+        $xEnabled = PluginManager::isEnabled('x');
+        $xCase = $xEnabled ? "WHEN c.x_tweet_id > 0 THEN 'X #' || c.x_tweet_id" : '';
+        $xContent = $xEnabled ? 'xt.content, ' : '';
+        $xSlug = $xEnabled ? ', xt.id' : '';
+        $xJoin = $xEnabled ? 'LEFT JOIN x_tweets xt ON c.x_tweet_id = xt.id' : '';
         $rows = Comment::db()->fetchAll(
             "SELECT c.*,
                     p.id AS target_post_id,
@@ -59,18 +65,18 @@ class CommentController
                         WHEN c.page_id > 0 THEN COALESCE(pg.title, '页面 #' || c.page_id)
                         WHEN c.talk_id > 0 THEN '滔客 #' || c.talk_id
                         WHEN c.music_id > 0 THEN COALESCE(m.title, '音乐 #' || c.music_id)
-                        WHEN c.x_tweet_id > 0 THEN 'X #' || c.x_tweet_id
+                        {$xCase}
                         ELSE ''
                     END AS target_title,
-                    COALESCE(s.content, xt.content, '') AS target_content,
-                    COALESCE(p.slug, pg.slug, s.id, m.id, xt.id) AS target_slug
+                    COALESCE(s.content, {$xContent}'') AS target_content,
+                    COALESCE(p.slug, pg.slug, s.id, m.id{$xSlug}) AS target_slug
              FROM comments c
              LEFT JOIN posts p ON c.post_id = p.id
              LEFT JOIN categories pc ON p.category_id = pc.id
              LEFT JOIN pages pg ON c.page_id = pg.id
              LEFT JOIN talk s ON c.talk_id = s.id
              LEFT JOIN music m ON c.music_id = m.id
-             LEFT JOIN x_tweets xt ON c.x_tweet_id = xt.id
+             {$xJoin}
              " . ($whereSql ? ' WHERE ' . $whereSql : '') . "
              ORDER BY c.id DESC LIMIT {$perPage} OFFSET {$offset}",
             $params

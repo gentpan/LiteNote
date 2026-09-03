@@ -13,7 +13,8 @@
                         @php
                             $socialKey = strtolower((string)($s['key'] ?? ''));
                             $socialUrl = (string)($s['url'] ?? '');
-                            if ($socialKey === 'x' || $socialKey === 'twitter') {
+                            if (($socialKey === 'x' || $socialKey === 'twitter')
+                                && \App\Services\PluginManager::isEnabled('x')) {
                                 $socialUrl = '/xmarks';
                             } elseif ($socialKey === 'github') {
                                 $socialUrl = 'https://xifeng.dev';
@@ -65,6 +66,10 @@
     @if(!empty($site['site_analytics_code']))
         {!! \App\Core\Helper::sanitizeAnalyticsCode((string)$site['site_analytics_code']) !!}
     @endif
+    @php $authUtilsJs = \App\Services\ThemeManager::scriptAsset('/themes/shared/assets/front-auth-utils.js'); @endphp
+    @php $identityShellJs = \App\Services\ThemeManager::scriptAsset('/themes/shared/assets/front-identity-shell.js'); @endphp
+    <script src="{{ $authUtilsJs }}?v={{ \App\Services\ThemeManager::assetVersion($authUtilsJs) }}"></script>
+    <script src="{{ $identityShellJs }}?v={{ \App\Services\ThemeManager::assetVersion($identityShellJs) }}"></script>
     <script src="{{ $themeJs }}?v={{ \App\Services\ThemeManager::assetVersion($themeJs) }}"></script>
 </body>
 </html>

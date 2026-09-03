@@ -1494,27 +1494,6 @@ a.post-side-stat:hover {
     cursor: default;
     opacity: 0.76;
 }
-.post-end-divider {
-    display: flex;
-    gap: var(--sp-14);
-    align-items: center;
-    margin: var(--sp-18) 0 var(--sp-6);
-    font-family: var(--font-mono);
-    font-size: var(--fs-xs);
-    color: var(--c-text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-}
-.post-end-divider::before,
-.post-end-divider::after {
-    flex: 1 1 auto;
-    height: 1px;
-    content: "";
-    background: var(--c-border-soft);
-}
-.post-end-divider span {
-    flex: 0 0 auto;
-}
 .post-end-tag {
     display: inline-flex;
     flex: 0 0 auto;
@@ -7786,21 +7765,12 @@ html[data-theme="light"] .site-nav-bar .nav-avatar.active {
 .site-nav-bar .nav-avatar-img,
 .site-nav-bar .nav-avatar-fallback,
 .site-nav-bar .nav-avatar-home,
-.site-nav-bar .nav-identity-orb.is-menu-open .nav-avatar-home,
 html[data-theme="dark"] .site-nav-bar .nav-avatar-img,
 html[data-theme="dark"] .site-nav-bar .nav-avatar-fallback,
 html[data-theme="dark"] .site-nav-bar .nav-avatar-home,
-html[data-theme="dark"]
-    .site-nav-bar
-    .nav-identity-orb.is-menu-open
-    .nav-avatar-home,
 html[data-theme="light"] .site-nav-bar .nav-avatar-img,
 html[data-theme="light"] .site-nav-bar .nav-avatar-fallback,
-html[data-theme="light"] .site-nav-bar .nav-avatar-home,
-html[data-theme="light"]
-    .site-nav-bar
-    .nav-identity-orb.is-menu-open
-    .nav-avatar-home {
+html[data-theme="light"] .site-nav-bar .nav-avatar-home {
     background: transparent;
     box-shadow: none;
 }
@@ -8729,22 +8699,6 @@ html[data-theme="light"] .site-nav-bar .nav-avatar-home {
     margin: -18px 0 0 -18px; /* 36px 的一半,与容器尺寸无关,始终精确居中 */
 }
 
-.site-nav-bar .nav-identity-orb.is-menu-open .nav-avatar-img,
-.site-nav-bar .nav-identity-orb.is-avatar-navigating .nav-avatar-img,
-.site-nav-bar .nav-identity-orb.is-menu-open .nav-avatar-fallback,
-.site-nav-bar .nav-identity-orb.is-avatar-navigating .nav-avatar-fallback {
-    opacity: 0;
-    transform: scale(0.88);
-}
-
-.site-nav-bar .nav-identity-orb.is-menu-open .nav-avatar-home,
-.site-nav-bar .nav-identity-orb.is-avatar-navigating .nav-avatar-home {
-    background: rgba(255, 255, 255, 0.12);
-    opacity: 1;
-    transform: scale(1);
-}
-
-
 .site-nav-bar .nav-cta.has-recent-activity,
 .site-nav-bar .nav-cta.has-recent-activity.active,
 .site-nav-bar .nav-cta.has-recent-activity:hover,
@@ -8979,45 +8933,6 @@ html[data-theme="dark"]
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
 }
 
-.comment-identity-summary {
-    display: flex;
-    gap: var(--sp-6);
-    align-items: center;
-    padding-top: var(--sp-18);
-    margin: 0 0 var(--sp-22);
-    font-size: var(--fs-base);
-    line-height: 1.7;
-    color: var(--c-text-muted);
-    border-top: 1px dashed var(--c-border);
-}
-
-.comment-identity-summary strong {
-    font-weight: 500;
-    color: var(--c-primary);
-}
-
-.comment-identity-summary button {
-    width: auto;
-    min-height: 0;
-    padding: 0;
-    margin: 0;
-    font: inherit;
-    color: var(--c-primary);
-    cursor: pointer;
-    background: transparent;
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-}
-
-.comment-identity-summary button:hover {
-    color: var(--c-primary-hover, var(--c-primary));
-    text-decoration: underline;
-    background: transparent;
-    box-shadow: none;
-    transform: none;
-}
-
 .comment-form.has-saved-identity:not(.is-editing-identity)
     .comment-profile-fields,
 .post-detail
@@ -9111,11 +9026,6 @@ html[data-theme="dark"]
         left: 18px;
     }
 
-    .comment-identity-summary {
-        flex-wrap: wrap;
-        padding-top: var(--sp-14);
-        margin-bottom: var(--sp-16);
-    }
 }
 
 /* Unified front comment component. Music share cards keep their own list skin. */

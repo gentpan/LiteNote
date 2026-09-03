@@ -53,16 +53,6 @@ final class Link extends Model
         self::$requestColumnsChecked = true;
     }
 
-    public static function findByUrl(string $url): ?self
-    {
-        self::ensureRequestColumns();
-        $row = self::db()->fetchOne(
-            "SELECT * FROM links WHERE url = ? OR rtrim(url, '/') = rtrim(?, '/') LIMIT 1",
-            [$url, $url]
-        );
-        return $row ? new self($row) : null;
-    }
-
     public static function findEnabledByUrl(string $url): ?self
     {
         self::ensureRequestColumns();

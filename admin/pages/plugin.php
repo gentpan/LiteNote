@@ -34,7 +34,9 @@
                         <div class="plugin-meta-row">
                             <div class="plugin-meta plugin-version" title="版本">{{ $plugin['version'] ?: '-' }}</div>
                         </div>
-                        <span class="plugin-state-text">{{ ($plugin['enabled'] ?? false) ? '已启用' : '未启用' }}</span>
+                        @if(!($plugin['enabled'] ?? false))
+                            <span class="badge plugin-disabled-badge">未启用</span>
+                        @endif
                     </div>
                     <button type="submit" class="plugin-card-submit" aria-label="{{ ($plugin['enabled'] ?? false) ? '禁用插件 ' . $plugin['name'] : '启用插件 ' . $plugin['name'] }}"></button>
                 </form>

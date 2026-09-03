@@ -13,6 +13,7 @@ use App\Models\Post;
 use App\Models\Talk;
 use App\Enums\PostStatus;
 use App\Enums\Toggle;
+use App\Services\PluginManager;
 use App\Services\SearchIndexService;
 
 class SearchController
@@ -120,7 +121,7 @@ class SearchController
                 'page' => isset($pages[$id]) ? $this->mapPageHit($id, $title, $pages[$id]) : null,
                 'talk' => isset($talks[$id]) ? $this->mapTalkHit($id, $title, $talks[$id]) : null,
                 'music' => isset($musicItems[$id]) ? $this->mapMusicHit($id, $title, $musicItems[$id]) : null,
-                'x' => $this->mapXHit($id, $title),
+                'x' => PluginManager::isEnabled('x') ? $this->mapXHit($id, $title) : null,
                 default => null,
             };
             if ($item !== null) {
@@ -140,8 +141,10 @@ class SearchController
             $this->searchPages($keyword, $page, $perPage),
             $this->searchTalks($keyword, $page, $perPage),
             $this->searchMusic($keyword, $page, $perPage),
-            $this->searchXTweets($keyword, $page, $perPage),
         ];
+        if (PluginManager::isEnabled('x')) {
+            $buckets[] = $this->searchXTweets($keyword, $page, $perPage);
+        }
 
         $all = [];
         $total = 0;
@@ -183,7 +186,7 @@ class SearchController
             'page' => $this->mapPageHit($id, $title),
             'talk' => $this->mapTalkHit($id, $title),
             'music' => $this->mapMusicHit($id, $title),
-            'x' => $this->mapXHit($id, $title),
+            'x' => PluginManager::isEnabled('x') ? $this->mapXHit($id, $title) : null,
             default => null,
         };
     }
@@ -276,6 +279,9 @@ class SearchController
      */
     private function mapXHit(int $id, string $title): ?array
     {
+        if (!PluginManager::isEnabled('x')) {
+            return null;
+        }
         try {
             $row = Post::db()->fetchOne('SELECT * FROM x_tweets WHERE id = ? AND is_public = ?', [$id, Toggle::On->value]);
         } catch (\Throwable) {
@@ -419,6 +425,9 @@ class SearchController
      */
     private function searchXTweets(string $keyword, int $page, int $perPage): array
     {
+        if (!PluginManager::isEnabled('x')) {
+            return ['items' => [], 'total' => 0];
+        }
         $like = '%' . $keyword . '%';
         $offset = max(0, ($page - 1) * $perPage);
         try {

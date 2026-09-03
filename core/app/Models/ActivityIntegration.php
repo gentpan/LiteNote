@@ -273,13 +273,4 @@ final class ActivityIntegration
         ], 'provider = :provider', [':provider' => (string)$this->provider]);
     }
 
-    public function updateMetadata(array $metadata): void
-    {
-        $current = $this->metadata();
-        $merged = array_replace($current, $metadata);
-        Activity::db()->update('activity_integrations', [
-            'metadata' => json_encode($merged, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-            'updated_at' => date('Y-m-d H:i:s'),
-        ], 'provider = :provider', [':provider' => (string)$this->provider]);
-    }
 }

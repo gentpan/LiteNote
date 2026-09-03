@@ -81,8 +81,9 @@ final class Page extends Model
         }
 
         $now = date('Y-m-d H:i:s');
+        $defs = self::systemDefinitions();
 
-        foreach (self::systemDefinitions() as $slug => $def) {
+        foreach ($defs as $slug => $def) {
             $row = $db->fetchOne('SELECT id, title, is_nav, sort, is_system FROM pages WHERE slug = ? LIMIT 1', [$slug]);
             if ($row) {
                 $wasSystem = (int)($row['is_system'] ?? 0) === Toggle::On->value;
@@ -126,6 +127,23 @@ final class Page extends Model
                 'created_at' => $now,
                 'updated_at' => $now,
             ]);
+        }
+
+        // 插件禁用后若未走 uninstall，pages 里可能残留系统导航（如 xmarks）。
+        // 只删 is_system=1 且不在当前 systemDefinitions 中的项，用户自定义页不受影响。
+        $keep = array_keys($defs);
+        if ($keep === []) {
+            return;
+        }
+        $placeholders = implode(',', array_fill(0, count($keep), '?'));
+        $params = array_merge([Toggle::On->value], $keep);
+        try {
+            $db->query(
+                "DELETE FROM pages WHERE is_system = ? AND slug NOT IN ({$placeholders})",
+                $params
+            );
+        } catch (\Throwable) {
+            // 忽略清理失败，避免影响前台导航读取。
         }
     }
 

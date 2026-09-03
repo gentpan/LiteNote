@@ -106,16 +106,6 @@ final class Comment extends Model
         return self::forTarget('page_id', $pageId, $status, $limit, $offset);
     }
 
-    public static function forTalk(int $talkId, string|CommentStatus $status = CommentStatus::Approved, int $limit = 0, int $offset = 0): array
-    {
-        return self::forTarget('talk_id', $talkId, $status, $limit, $offset);
-    }
-
-    public static function forMusic(int $musicId, string|CommentStatus $status = CommentStatus::Approved, int $limit = 0, int $offset = 0): array
-    {
-        return self::forTarget('music_id', $musicId, $status, $limit, $offset);
-    }
-
     /**
      * @return self[]
      */
@@ -181,22 +171,6 @@ final class Comment extends Model
         self::ensureGeoColumns();
     }
 
-    public static function recent(int $limit = 10): array
-    {
-        $rows = self::db()->fetchAll(
-            "SELECT c.*,
-                    COALESCE(p.title, pg.title, '滔客 #' || s.id, '音乐 #' || m.id) AS target_title,
-                    COALESCE(p.slug, pg.slug, s.id, m.id) AS target_slug
-             FROM comments c
-             LEFT JOIN posts p ON c.post_id = p.id
-             LEFT JOIN pages pg ON c.page_id = pg.id
-             LEFT JOIN talk s ON c.talk_id = s.id
-             LEFT JOIN music m ON c.music_id = m.id
-             ORDER BY c.id DESC LIMIT {$limit}"
-        );
-        return $rows;
-    }
-
     /**
      * 按邮箱统计某访客的已审核评论数(用于侧边访客身份卡)。
      */
@@ -218,15 +192,6 @@ final class Comment extends Model
         return (int) self::db()->fetchColumn(
             'SELECT COUNT(*) FROM comments WHERE post_id = ? AND status = ?',
             [$postId, $statusValue]
-        );
-    }
-
-    public static function countByPage(int $pageId, string|CommentStatus $status = CommentStatus::Approved): int
-    {
-        $statusValue = $status instanceof CommentStatus ? $status->value : $status;
-        return (int) self::db()->fetchColumn(
-            'SELECT COUNT(*) FROM comments WHERE page_id = ? AND status = ?',
-            [$pageId, $statusValue]
         );
     }
 
@@ -301,19 +266,15 @@ final class Comment extends Model
 
     public static function syncCountForXTweet(int $xTweetId): void
     {
-        if ($xTweetId <= 0) {
+        if ($xTweetId <= 0 || !\App\Services\PluginManager::isEnabled('x')) {
             return;
         }
-        $count = self::countByXTweet($xTweetId, CommentStatus::Approved);
-        self::db()->update('x_tweets', ['comments_count' => $count], 'id = :id', [':id' => $xTweetId]);
-    }
-
-    public function parent(): ?self
-    {
-        if (!$this->parent_id) {
-            return null;
+        try {
+            $count = self::countByXTweet($xTweetId, CommentStatus::Approved);
+            self::db()->update('x_tweets', ['comments_count' => $count], 'id = :id', [':id' => $xTweetId]);
+        } catch (\Throwable) {
+            // 插件表缺失时忽略，避免拖垮评论提交。
         }
-        return self::find($this->parent_id);
     }
 
     /**
@@ -324,11 +285,6 @@ final class Comment extends Model
     {
         $email = (string)($this->email ?? '');
         return Gravatar::url($email, $size, 'identicon');
-    }
-
-    public function flagUrl(): string
-    {
-        return IpGeoService::flagUrl((string)($this->geo_country_code ?? ''));
     }
 
     public function locationLabel(): string

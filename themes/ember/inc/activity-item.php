@@ -30,7 +30,7 @@
         $ratingText = str_repeat('★', $full) . str_repeat('☆', 5 - $full);
     }
     // X 书签:精简为「收藏了 谁 的帖子」+ 去链接开头摘要,跳 /xmarks(不外链 x.com、不显示图片链接)
-    $isXmark = $source === 'x_bookmarks';
+    $isXmark = $source === 'x_bookmarks' && \App\Services\PluginManager::isEnabled('x');
     $xmarkTitle = $xmarkExcerpt = $xmarkUrl = '';
     if ($isXmark) {
         $tw = is_array($meta['tweet'] ?? null) ? $meta['tweet'] : [];

@@ -18,6 +18,7 @@ use App\Models\Talk;
 use App\Services\CommentModerationService;
 use App\Services\Notifications;
 use App\Services\CommentSettingsService;
+use App\Services\PluginManager;
 use App\Services\IpGeoService;
 use App\Services\ActionRateLimiter;
 
@@ -297,8 +298,8 @@ class CommentController
                 return $music;
             }
         }
-        if ($xTweetId) {
-            // 不依赖插件类:对 x_tweets 表做通用查询(插件禁用 / 表不存在时静默容错)。
+        if ($xTweetId && PluginManager::isEnabled('x')) {
+            // 插件启用时才查 x_tweets；表不存在时静默容错。
             try {
                 $row = Comment::db()->fetchOne('SELECT id, is_public FROM x_tweets WHERE id = ? LIMIT 1', [$xTweetId]);
                 if ($row && (int)($row['is_public'] ?? 0) === 1) {

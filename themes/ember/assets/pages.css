@@ -1,42 +1,6 @@
 .post-feature-cover,
-.post-hero-card .post-cover,
-.cover-preview {
+.post-hero-card .post-cover {
     border-radius: var(--radius-card);
-}
-
-html[data-theme="dark"] .post-feature-card,
-html[data-theme="dark"] .post-compact-row,
-html[data-theme="dark"] .talk-card,
-html[data-theme="dark"] .front-publish-form,
-html[data-theme="dark"] .post-body-card,
-html[data-theme="dark"] .post-hero-card,
-html[data-theme="dark"] .page-detail,
-html[data-theme="dark"] .widget,
-html[data-theme="dark"] .subscribe-feed-card,
-html[data-theme="dark"] .reader-tile-link,
-html[data-theme="dark"] .category-hero,
-html[data-theme="dark"] .archive-hero,
-html[data-theme="dark"] .archive-year,
-html[data-theme="dark"] .archive-category-card {
-    background: rgba(255, 255, 255, 0.025);
-    border-color: var(--c-border);
-    box-shadow: var(--shadow-sm);
-}
-
-@media (max-width: 760px) {
-    .x-page-head {
-        flex-direction: column;
-        gap: var(--sp-6);
-        align-items: flex-start;
-    }
-
-    .x-masonry {
-        column-count: 1;
-    }
-
-    .x-masonry-item {
-        margin-bottom: var(--sp-16);
-    }
 }
 
 /* Category page */
@@ -1201,64 +1165,6 @@ html[data-theme="dark"] .activity-item-icon {
 }
 .music-comment-thread[hidden] {
     display: none;
-}
-.music-song-comment-list {
-    display: block;
-    padding: 0;
-    margin: var(--sp-20) 0;
-    list-style: none;
-}
-.music-song-comment {
-    display: grid;
-    grid-template-columns: 32px minmax(0, 1fr);
-    gap: 0 var(--sp-10);
-    align-items: start;
-    padding: var(--sp-14) 0;
-    background: transparent;
-    border: 0;
-    border-bottom: 1px solid var(--c-border-soft);
-    border-radius: 0;
-    box-shadow: none;
-}
-.music-song-comment-avatar {
-    display: block;
-    flex: none;
-    width: 32px;
-    height: 32px;
-    overflow: hidden;
-    color: var(--c-text-muted);
-    background: var(--c-surface);
-    border-radius: 50%;
-}
-.music-song-comment-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition:
-        opacity 0.34s ease,
-        filter 0.42s ease;
-}
-.music-song-comment-body {
-    grid-column: 2;
-    min-width: 0;
-}
-.music-song-comment-meta {
-    display: flex;
-    gap: var(--sp-8);
-    align-items: center;
-    font-size: var(--fs-sm);
-    color: var(--c-text-muted);
-}
-.music-song-comment-meta em {
-    font-size: var(--fs-xs);
-    font-style: normal;
-    color: var(--c-primary);
-}
-.music-song-comment-content {
-    margin-top: var(--sp-4);
-    font-size: var(--fs-md);
-    line-height: 1.6;
-    color: var(--c-text);
 }
 .music-comment-empty {
     padding: var(--sp-18);

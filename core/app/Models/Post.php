@@ -194,16 +194,6 @@ final class Post extends Model
         );
     }
 
-    public static function popular(int $limit = 10): array
-    {
-        self::ensurePublishingOptionsSchema();
-        $published = PostStatus::Published->value;
-        $rows = self::db()->fetchAll(
-            "SELECT id, title, slug, views FROM posts WHERE status='{$published}' AND COALESCE(is_private, 0) = 0 ORDER BY views DESC LIMIT {$limit}"
-        );
-        return array_map(fn($r) => new self($r), $rows);
-    }
-
     public static function recent(int $limit = 10): array
     {
         self::ensurePublishingOptionsSchema();
@@ -317,47 +307,4 @@ final class Post extends Model
         return (string)$this->content;
     }
 
-    public function getTextForStats(): string
-    {
-        $raw = $this->markdown();
-        if ($raw === '') {
-            $raw = (string)$this->content;
-        }
-
-        $plain = preg_replace('/```[\s\S]*?```/u', ' ', $raw);
-        $plain = preg_replace('/!\[[^\]]*\]\([^)]+\)/u', ' ', (string)$plain);
-        $plain = preg_replace('/\[(.*?)\]\([^)]+\)/u', '$1', (string)$plain);
-        $plain = preg_replace('/`{1,3}(.*?)`{1,3}/u', '$1', (string)$plain);
-        $plain = preg_replace('/[#*_~>\-+=|`]/u', ' ', (string)$plain);
-        $plain = strip_tags((string)$plain);
-        $plain = html_entity_decode($plain, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        $plain = preg_replace('/\s+/u', ' ', (string)$plain);
-        return trim((string)$plain);
-    }
-
-    public function textWordCount(): int
-    {
-        $text = $this->getTextForStats();
-        if ($text === '') {
-            return 0;
-        }
-
-        $hanCount = preg_match_all('/\p{Han}/u', $text, $matches);
-        if ($hanCount === false) {
-            $hanCount = 0;
-        }
-
-        $latinText = preg_replace('/\p{Han}/u', ' ', $text);
-        $latinText = preg_replace('/[^\pL\pN\s]/u', ' ', (string)$latinText);
-        $latinText = trim((string)preg_replace('/\s+/u', ' ', $latinText));
-        $latinCount = $latinText === '' ? 0 : count(preg_split('/\s+/u', $latinText, -1, PREG_SPLIT_NO_EMPTY));
-
-        return (int) $hanCount + (int) $latinCount;
-    }
-
-    public function readingMinutes(int $speedPerMinute = 200): int
-    {
-        $count = max(1, $this->textWordCount());
-        return (int)max(1, (int)ceil($count / max(1, $speedPerMinute)));
-    }
 }

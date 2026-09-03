@@ -65,15 +65,6 @@ final class Category extends Model
         return rawurldecode(trim($slug));
     }
 
-    public function postCount(): int
-    {
-        Post::ensurePublishingOptionsSchema();
-        return (int) self::db()->fetchColumn(
-            'SELECT COUNT(*) FROM posts WHERE category_id = ? AND status = ? AND COALESCE(is_private, 0) = 0',
-            [$this->id, PostStatus::Published->value]
-        );
-    }
-
     public function getArticleStats(): array
     {
         Post::ensurePublishingOptionsSchema();

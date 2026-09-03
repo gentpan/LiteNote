@@ -267,51 +267,6 @@
         window.addEventListener('resize', clampDockPosition);
     })();
 
-    (function() {
-        var storageKey = 'litenote-accent';
-        var accents = ['ember', 'sky', 'mint', 'violet', 'rose'];
-
-        function isAccent(value) {
-            return accents.indexOf(value) !== -1;
-        }
-
-        function savedAccent() {
-            try {
-                var value = localStorage.getItem(storageKey);
-                return isAccent(value) ? value : 'ember';
-            } catch (e) {
-                return 'ember';
-            }
-        }
-
-        function setAccent(accent, persist) {
-            accent = isAccent(accent) ? accent : 'ember';
-            if (accent === 'ember') {
-                document.documentElement.removeAttribute('data-accent');
-            } else {
-                document.documentElement.setAttribute('data-accent', accent);
-            }
-
-            document.querySelectorAll('[data-accent-option]').forEach(function(button) {
-                var active = button.dataset.accentOption === accent;
-                button.classList.toggle('is-active', active);
-                button.setAttribute('aria-pressed', active ? 'true' : 'false');
-            });
-
-            if (persist) {
-                try { localStorage.setItem(storageKey, accent); } catch (e) {}
-            }
-        }
-
-        setAccent(savedAccent(), false);
-
-        document.addEventListener('click', function(event) {
-            var button = event.target.closest ? event.target.closest('[data-accent-option]') : null;
-            if (!button) return;
-            setAccent(button.dataset.accentOption || 'ember', true);
-        });
-    })();
-
 })();
 
 // 前台脚本
@@ -319,10 +274,7 @@
     'use strict';
 
     function frontCsrf() {
-        var meta = document.querySelector('meta[name="csrf-token"]');
-        if (meta && meta.content) return meta.content;
-        var field = document.querySelector('input[name="_csrf"]');
-        return field ? field.value : '';
+        return window.LiteNoteAuth.csrf();
     }
 
     function frontAjaxHeaders() {
@@ -384,16 +336,10 @@
         return identity;
     }
 
-    function gravatarUrl(email, size) {
-        email = String(email || '').trim().toLowerCase();
-        if (!email) return '';
-        return 'https://gravatar.bluecdn.com/avatar/' + md5(email) + '?s=' + (size || 80);
-    }
+    function gravatarUrl(email, size) { return window.LiteNoteAuth.gravatarUrl(email, size); }
 
     // 没有邮箱时的灰色默认头像(gravatar mystery-person),不再回退到博主头像
-    function grayGravatar(size) {
-        return 'https://gravatar.bluecdn.com/avatar/00000000000000000000000000000000?s=' + (size || 80);
-    }
+    function grayGravatar(size) { return window.LiteNoteAuth.grayGravatar(size); }
 
     function normalizeCommentWebsite(value) {
         value = String(value || '').trim();
@@ -422,76 +368,6 @@
         link.rel = 'nofollow noopener';
         link.appendChild(strong);
         return link;
-    }
-
-    function md5(input) {
-        function cmn(q, a, b, x, s, t) { a = add32(add32(a, q), add32(x, t)); return add32((a << s) | (a >>> (32 - s)), b); }
-        function ff(a, b, c, d, x, s, t) { return cmn((b & c) | ((~b) & d), a, b, x, s, t); }
-        function gg(a, b, c, d, x, s, t) { return cmn((b & d) | (c & (~d)), a, b, x, s, t); }
-        function hh(a, b, c, d, x, s, t) { return cmn(b ^ c ^ d, a, b, x, s, t); }
-        function ii(a, b, c, d, x, s, t) { return cmn(c ^ (b | (~d)), a, b, x, s, t); }
-        function add32(a, b) { return (a + b) & 0xffffffff; }
-        function md5blk(s) {
-            var blocks = [], i;
-            for (i = 0; i < 64; i += 4) {
-                blocks[i >> 2] = s.charCodeAt(i) + (s.charCodeAt(i + 1) << 8) + (s.charCodeAt(i + 2) << 16) + (s.charCodeAt(i + 3) << 24);
-            }
-            return blocks;
-        }
-        function md5cycle(x, k) {
-            var a = x[0], b = x[1], c = x[2], d = x[3];
-            a = ff(a, b, c, d, k[0], 7, -680876936); d = ff(d, a, b, c, k[1], 12, -389564586);
-            c = ff(c, d, a, b, k[2], 17, 606105819); b = ff(b, c, d, a, k[3], 22, -1044525330);
-            a = ff(a, b, c, d, k[4], 7, -176418897); d = ff(d, a, b, c, k[5], 12, 1200080426);
-            c = ff(c, d, a, b, k[6], 17, -1473231341); b = ff(b, c, d, a, k[7], 22, -45705983);
-            a = ff(a, b, c, d, k[8], 7, 1770035416); d = ff(d, a, b, c, k[9], 12, -1958414417);
-            c = ff(c, d, a, b, k[10], 17, -42063); b = ff(b, c, d, a, k[11], 22, -1990404162);
-            a = ff(a, b, c, d, k[12], 7, 1804603682); d = ff(d, a, b, c, k[13], 12, -40341101);
-            c = ff(c, d, a, b, k[14], 17, -1502002290); b = ff(b, c, d, a, k[15], 22, 1236535329);
-            a = gg(a, b, c, d, k[1], 5, -165796510); d = gg(d, a, b, c, k[6], 9, -1069501632);
-            c = gg(c, d, a, b, k[11], 14, 643717713); b = gg(b, c, d, a, k[0], 20, -373897302);
-            a = gg(a, b, c, d, k[5], 5, -701558691); d = gg(d, a, b, c, k[10], 9, 38016083);
-            c = gg(c, d, a, b, k[15], 14, -660478335); b = gg(b, c, d, a, k[4], 20, -405537848);
-            a = gg(a, b, c, d, k[9], 5, 568446438); d = gg(d, a, b, c, k[14], 9, -1019803690);
-            c = gg(c, d, a, b, k[3], 14, -187363961); b = gg(b, c, d, a, k[8], 20, 1163531501);
-            a = gg(a, b, c, d, k[13], 5, -1444681467); d = gg(d, a, b, c, k[2], 9, -51403784);
-            c = gg(c, d, a, b, k[7], 14, 1735328473); b = gg(b, c, d, a, k[12], 20, -1926607734);
-            a = hh(a, b, c, d, k[5], 4, -378558); d = hh(d, a, b, c, k[8], 11, -2022574463);
-            c = hh(c, d, a, b, k[11], 16, 1839030562); b = hh(b, c, d, a, k[14], 23, -35309556);
-            a = hh(a, b, c, d, k[1], 4, -1530992060); d = hh(d, a, b, c, k[4], 11, 1272893353);
-            c = hh(c, d, a, b, k[7], 16, -155497632); b = hh(b, c, d, a, k[10], 23, -1094730640);
-            a = hh(a, b, c, d, k[13], 4, 681279174); d = hh(d, a, b, c, k[0], 11, -358537222);
-            c = hh(c, d, a, b, k[3], 16, -722521979); b = hh(b, c, d, a, k[6], 23, 76029189);
-            a = hh(a, b, c, d, k[9], 4, -640364487); d = hh(d, a, b, c, k[12], 11, -421815835);
-            c = hh(c, d, a, b, k[15], 16, 530742520); b = hh(b, c, d, a, k[2], 23, -995338651);
-            a = ii(a, b, c, d, k[0], 6, -198630844); d = ii(d, a, b, c, k[7], 10, 1126891415);
-            c = ii(c, d, a, b, k[14], 15, -1416354905); b = ii(b, c, d, a, k[5], 21, -57434055);
-            a = ii(a, b, c, d, k[12], 6, 1700485571); d = ii(d, a, b, c, k[3], 10, -1894986606);
-            c = ii(c, d, a, b, k[10], 15, -1051523); b = ii(b, c, d, a, k[1], 21, -2054922799);
-            a = ii(a, b, c, d, k[8], 6, 1873313359); d = ii(d, a, b, c, k[15], 10, -30611744);
-            c = ii(c, d, a, b, k[6], 15, -1560198380); b = ii(b, c, d, a, k[13], 21, 1309151649);
-            a = ii(a, b, c, d, k[4], 6, -145523070); d = ii(d, a, b, c, k[11], 10, -1120210379);
-            c = ii(c, d, a, b, k[2], 15, 718787259); b = ii(b, c, d, a, k[9], 21, -343485551);
-            x[0] = add32(a, x[0]); x[1] = add32(b, x[1]); x[2] = add32(c, x[2]); x[3] = add32(d, x[3]);
-        }
-        function md51(s) {
-            s = unescape(encodeURIComponent(s));
-            var n = s.length, state = [1732584193, -271733879, -1732584194, 271733878], i, tail = new Array(16).fill(0);
-            for (i = 64; i <= n; i += 64) md5cycle(state, md5blk(s.substring(i - 64, i)));
-            s = s.substring(i - 64);
-            for (i = 0; i < s.length; i++) tail[i >> 2] |= s.charCodeAt(i) << ((i % 4) << 3);
-            tail[i >> 2] |= 0x80 << ((i % 4) << 3);
-            if (i > 55) { md5cycle(state, tail); tail = new Array(16).fill(0); }
-            tail[14] = n * 8;
-            md5cycle(state, tail);
-            return state;
-        }
-        function hex(x) {
-            var out = '', i, j;
-            for (i = 0; i < x.length; i++) for (j = 0; j < 4; j++) out += ('0' + ((x[i] >> (j * 8 + 4)) & 15).toString(16)).slice(-1) + ('0' + ((x[i] >> (j * 8)) & 15).toString(16)).slice(-1);
-            return out;
-        }
-        return hex(md51(input));
     }
 
     function fillCommentIdentity(form) {
@@ -646,13 +522,6 @@
             avatar.src = (identity && identity.avatar_url) || avatar.dataset.commentAvatarDefault || avatar.src;
             avatar.alt = (identity && identity.nickname) || '';
         }
-
-        syncCommentIdentitySummary(form, identity, editing);
-    }
-
-    function syncCommentIdentitySummary(form, identity, editing) {
-        var summary = form.querySelector('.comment-identity-summary');
-        if (summary) summary.remove();
     }
 
     function syncAllCommentForms() {
@@ -707,14 +576,11 @@
             if (form.dataset.commentAdmin === '1') return;
             form.classList.remove('has-saved-identity');
             form.classList.add('is-editing-identity');
-            var summary = form.querySelector('.comment-identity-summary');
-            if (summary) summary.remove();
             refreshCommentComposerStatus(form);
         });
     }
 
     var navIdentitySaveCallback = null;
-    var identityFormBound = false;
 
     function showNavIdentityHint() {
         var anchor = document.querySelector('[data-side-identity]') || document.querySelector('[data-nav-identity]');
@@ -751,7 +617,6 @@
     function bindIdentityFormOnce(form) {
         if (!form || form.dataset.lnIdentityBound) return;
         form.dataset.lnIdentityBound = '1';
-        identityFormBound = true;
         var root = form.closest('[data-account-overlay]') || form.closest('.nav-identity-dialog') || document;
         var clearBtn = root.querySelector('[data-nav-identity-clear]');
         if (clearBtn) {
@@ -1028,14 +893,6 @@
     function bindNavIdentityOrb(root) {
         root = root || document;
         updateNavIdentity(loadCommentIdentity());
-        // 侧栏合并入口改由账号弹窗处理；保留旧 data-nav-identity-edit 兼容
-        root.querySelectorAll('[data-nav-identity-edit]').forEach(function(btn) {
-            if (btn.dataset.lnBound) return; btn.dataset.lnBound = '1';
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                openNavIdentityDialog();
-            });
-        });
         // 移动端底部「更多」上浮菜单开关
         root.querySelectorAll('[data-nav-more]').forEach(function(btn) {
             if (btn.dataset.lnBound) return; btn.dataset.lnBound = '1';
@@ -4192,16 +4049,6 @@
             }
         }
 
-        function closeIdentityMenus() {
-            document.querySelectorAll('[data-nav-identity].is-menu-open').forEach(function(orb) {
-                if (typeof orb.__lnCloseIdentityMenu === 'function') {
-                    orb.__lnCloseIdentityMenu();
-                } else {
-                    orb.classList.remove('is-menu-open');
-                }
-            });
-        }
-
         function moveIndicator(target) {
             if (!row || !indicator || !target || target.classList.contains('nav-avatar')) {
                 hideIndicator();
@@ -4223,11 +4070,9 @@
 
             items.forEach(function(item) {
                 item.addEventListener('mouseenter', function() {
-                    if (!item.classList.contains('nav-avatar')) closeIdentityMenus();
                     moveIndicator(item);
                 });
                 item.addEventListener('focus', function() {
-                    if (!item.classList.contains('nav-avatar')) closeIdentityMenus();
                     moveIndicator(item);
                 });
             });
@@ -4285,7 +4130,6 @@
         if (!trigger) return;
         trigger.addEventListener('mouseenter', function() {
             window.clearTimeout(navCloseTimer);
-            closeIdentityMenus();
             shell.classList.add('nav-open');
         });
         trigger.addEventListener('mouseleave', scheduleCloseNavDrawer);
@@ -4427,7 +4271,7 @@
                         chip.classList.remove('is-active');
                         if (previous) previous.classList.add('is-active');
                         resetLoading();
-                        if (window.frontToast) window.frontToast('关键词加载失败，请稍后重试', 'error');
+                        frontToast('关键词加载失败，请稍后重试', 'error');
                     });
             });
         });
@@ -4516,59 +4360,7 @@
 
 /* 登录 dialog + Passkey(WebAuthn 逻辑移植自后台 admin.js) —— 侧栏账号入口触发,不依赖独立登录页 */
 (function () {
-    function lnLoginCsrf() {
-        var f = document.querySelector('[data-login-form] input[name="_csrf"]') || document.querySelector('input[name="_csrf"]');
-        return f ? f.value : '';
-    }
-    function lnB64UrlToBytes(value) {
-        value = String(value || '').replace(/-/g, '+').replace(/_/g, '/');
-        while (value.length % 4) value += '=';
-        return Uint8Array.from(atob(value), function (c) { return c.charCodeAt(0); });
-    }
-    function lnBytesToB64Url(buffer) {
-        var bytes = new Uint8Array(buffer), s = '';
-        for (var i = 0; i < bytes.length; i += 1) s += String.fromCharCode(bytes[i]);
-        return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-    }
-    async function lnPkJson(res) {
-        var type = res.headers.get('content-type') || '';
-        if (type.indexOf('application/json') === -1) { await res.text(); throw new Error('Passkey 接口返回非 JSON 响应'); }
-        var data = await res.json();
-        if (!res.ok || data.success === false) throw new Error(data.message || data.error || 'Passkey 请求失败');
-        return data;
-    }
-    async function lnLoginWithPasskey() {
-        if (!window.PublicKeyCredential || !navigator.credentials) throw new Error('当前浏览器不支持 Passkey');
-        var res = await fetch('/admin/passkey/login-options', { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' });
-        var options = await lnPkJson(res);
-        var allow = (options.allowCredentials || []).map(function (it) { return { type: it.type || 'public-key', id: lnB64UrlToBytes(it.id) }; });
-        var assertion = await navigator.credentials.get({
-            publicKey: {
-                challenge: lnB64UrlToBytes(options.challenge),
-                timeout: options.timeout,
-                rpId: options.rpId,
-                allowCredentials: allow,
-                userVerification: options.userVerification || 'preferred'
-            }
-        });
-        var data = {
-            id: assertion.id,
-            rawId: lnBytesToB64Url(assertion.rawId),
-            response: {
-                clientDataJSON: lnBytesToB64Url(assertion.response.clientDataJSON),
-                authenticatorData: lnBytesToB64Url(assertion.response.authenticatorData),
-                signature: lnBytesToB64Url(assertion.response.signature),
-                userHandle: assertion.response.userHandle ? lnBytesToB64Url(assertion.response.userHandle) : ''
-            }
-        };
-        var loginRes = await fetch('/admin/passkey/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': lnLoginCsrf(), 'X-Requested-With': 'XMLHttpRequest' },
-            credentials: 'same-origin',
-            body: JSON.stringify({ credential: JSON.stringify(data) })
-        });
-        return await lnPkJson(loginRes);
-    }
+    function lnLoginWithPasskey() { return window.LiteNoteAuth.loginWithPasskey(); }
 
     function lnOverlay() { return document.querySelector('[data-account-overlay]') || document.querySelector('[data-login-overlay]'); }
     function lnErr(msg) { var e = document.querySelector('[data-login-error]'); if (e) { e.textContent = msg || ''; e.hidden = !msg; } }
@@ -4584,7 +4376,7 @@
             nickname: identity.nickname || '',
             email: identity.email || '',
             website: identity.website || '',
-            avatar_url: (typeof gravatarUrl === 'function') ? gravatarUrl(identity.email, 80) : ''
+            avatar_url: window.LiteNoteAuth.gravatarUrl(identity.email, 80)
         };
         try { localStorage.setItem('litenote_comment_identity', JSON.stringify(next)); } catch (err) {}
     }
@@ -4633,13 +4425,13 @@
         var name = window.prompt('给这个 Passkey 起个名字（如 iPhone、MacBook）', 'Passkey ' + new Date().toLocaleDateString()) || '';
         name = String(name).trim() || 'Passkey';
         var res = await fetch('/auth/passkey/register-options', { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' });
-        var options = await lnPkJson(res);
+        var options = await window.LiteNoteAuth.pkJson(res);
         var credential = await navigator.credentials.create({
             publicKey: {
-                challenge: lnB64UrlToBytes(options.challenge),
+                challenge: window.LiteNoteAuth.b64urlToBytes(options.challenge),
                 rp: options.rp,
                 user: {
-                    id: lnB64UrlToBytes(options.user.id),
+                    id: window.LiteNoteAuth.b64urlToBytes(options.user.id),
                     name: options.user.name,
                     displayName: options.user.displayName
                 },
@@ -4651,19 +4443,19 @@
         });
         var data = {
             id: credential.id,
-            rawId: lnBytesToB64Url(credential.rawId),
+            rawId: window.LiteNoteAuth.bytesToB64url(credential.rawId),
             response: {
-                clientDataJSON: lnBytesToB64Url(credential.response.clientDataJSON),
-                attestationObject: lnBytesToB64Url(credential.response.attestationObject)
+                clientDataJSON: window.LiteNoteAuth.bytesToB64url(credential.response.clientDataJSON),
+                attestationObject: window.LiteNoteAuth.bytesToB64url(credential.response.attestationObject)
             }
         };
         var saveRes = await fetch('/auth/passkey/register', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': lnLoginCsrf(), 'X-Requested-With': 'XMLHttpRequest' },
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': window.LiteNoteAuth.loginCsrf(), 'X-Requested-With': 'XMLHttpRequest' },
             credentials: 'same-origin',
             body: JSON.stringify({ credential: JSON.stringify(data), device_name: name })
         });
-        return await lnPkJson(saveRes);
+        return await window.LiteNoteAuth.pkJson(saveRes);
     }
 
     document.addEventListener('click', function (e) {
@@ -4696,7 +4488,7 @@
             var loginForm = document.querySelector('[data-login-form]');
             var account = loginForm && loginForm.username ? (loginForm.username.value || '').trim() : '';
             var body = new URLSearchParams();
-            body.set('_csrf', lnLoginCsrf());
+            body.set('_csrf', window.LiteNoteAuth.loginCsrf());
             body.set('account', account);
             resendBtn.disabled = true;
             fetch('/auth/resend-verify', {
@@ -4740,7 +4532,7 @@
             var regBtn = regForm.querySelector('.login-modal-submit');
             if (regBtn) regBtn.disabled = true;
             var regBody = new URLSearchParams();
-            regBody.set('_csrf', lnLoginCsrf());
+            regBody.set('_csrf', window.LiteNoteAuth.loginCsrf());
             ['username', 'password', 'nickname', 'email', 'website', 'captcha'].forEach(function(k) {
                 if (regForm[k]) regBody.set(k, (regForm[k].value || '').trim());
             });
@@ -4784,7 +4576,7 @@
         var btn = form.querySelector('.login-modal-submit');
         if (btn) btn.disabled = true;
         var body = new URLSearchParams();
-        body.set('_csrf', lnLoginCsrf());
+        body.set('_csrf', window.LiteNoteAuth.loginCsrf());
         body.set('username', (form.username.value || '').trim());
         body.set('password', form.password.value || '');
         fetch('/admin/login', {

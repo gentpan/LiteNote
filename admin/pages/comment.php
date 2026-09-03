@@ -79,8 +79,10 @@
                         <a href="/#talk-{{ $c['talk_id'] }}" target="_blank" title="{{ $targetContent }}"><i class="fa-regular fa-comments"></i> {{ $targetTitle }}</a>
                     @elseif($c['music_id'])
                         <a href="/music#music-comments" target="_blank"><i class="fa-solid fa-music"></i> {{ $targetTitle }}</a>
-                    @elseif(!empty($c['x_tweet_id']))
+                    @elseif(!empty($c['x_tweet_id']) && \App\Services\PluginManager::isEnabled('x'))
                         <a href="/x#xmark-{{ $c['x_tweet_id'] }}" target="_blank" title="{{ $targetContent }}"><i class="fa-brands fa-x-twitter"></i> {{ $targetTitle }}</a>
+                    @elseif(!empty($c['x_tweet_id']))
+                        <span class="muted"><i class="fa-brands fa-x-twitter"></i> {{ $targetTitle }}</span>
                     @else
                         <span class="muted">无</span>
                     @endif

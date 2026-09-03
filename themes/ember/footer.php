@@ -49,6 +49,8 @@
     @if(!empty($needsLiteZoom))
         <script src="/themes/ember/assets/litezoom.min.js?v={{ \App\Services\ThemeManager::assetVersion('/themes/ember/assets/litezoom.min.js') }}" defer></script>
     @endif
+    @php $authUtilsJs = \App\Services\ThemeManager::scriptAsset('/themes/shared/assets/front-auth-utils.js'); @endphp
+    <script src="{{ $authUtilsJs }}?v={{ \App\Services\ThemeManager::assetVersion($authUtilsJs) }}" defer></script>
     <script src="{{ $lnIconsJs ?? \App\Services\ThemeManager::scriptAsset('/themes/ember/assets/icons/ln-icons.js') }}?v={{ \App\Services\ThemeManager::assetVersion($lnIconsJs ?? '/themes/ember/assets/icons/ln-icons.js') }}" defer></script>
     <script src="{{ $mainJs }}?v={{ \App\Services\ThemeManager::assetVersion($mainJs) }}" defer></script>
 </body>

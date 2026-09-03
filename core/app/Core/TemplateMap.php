@@ -8,7 +8,7 @@ final class TemplateMap
     private const ADMIN_PREFIXES = [
         'activity.', 'attachment.', 'auth.', 'comment.', 'dashboard.', 'link.', 'mail.',
         'music.', 'page.form', 'page.index', 'plugin.', 'post.form', 'post.import',
-        'post.index', 'profile.', 'setting.', 'stat.', 'talk.', 'telegram.', 'theme.',
+        'post.index', 'profile.', 'setting.', 'talk.', 'telegram.', 'theme.',
     ];
 
     private const SITE_PREFIXES = [

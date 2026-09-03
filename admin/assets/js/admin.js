@@ -17,12 +17,7 @@
             + '</span>';
     }
 
-    function adminLoadingMarkup(text) {
-        return adminLoadingSpinnerSvg() + (text ? '<span>' + text + '</span>' : '');
-    }
-
     window.adminLoadingSpinner = adminLoadingSpinnerSvg;
-    window.adminLoadingMarkup = adminLoadingMarkup;
 
     var nativeFormSubmit = HTMLFormElement.prototype.submit;
     var dialogId = 0;
@@ -1388,30 +1383,6 @@
         });
     }
 
-    function initAdminMobileMenu() {
-        var sidebar = document.querySelector('.admin-sidebar');
-        var toggle = document.querySelector('[data-admin-mobile-menu-toggle]');
-        if (!sidebar || !toggle || toggle.dataset.bound === '1') {
-            return;
-        }
-        toggle.dataset.bound = '1';
-        var label = toggle.querySelector('span');
-        var icon = toggle.querySelector('i');
-
-        function sync() {
-            var open = sidebar.classList.contains('is-mobile-menu-open');
-            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-            if (label) label.textContent = open ? '收起菜单' : '展开菜单';
-            if (icon) icon.className = open ? 'fa-solid fa-chevron-up' : 'fa-solid fa-ellipsis';
-        }
-
-        toggle.addEventListener('click', function() {
-            sidebar.classList.toggle('is-mobile-menu-open');
-            sync();
-        });
-        sync();
-    }
-
     function initMusicShareDialog() {
         var dialog = document.querySelector('[data-music-share-dialog]');
         var form = dialog ? dialog.querySelector('[data-music-share-form]') : null;
@@ -1481,7 +1452,6 @@
     }
 
     initAdminMenuBranches();
-    initAdminMobileMenu();
     initAdminSidebarSearch();
     initMusicShareDialog();
     initCoverUpload();
@@ -1624,54 +1594,4 @@ async function deletePasskey(id) {
         body: JSON.stringify({ id: passkeyId })
     });
     return await passkeyJson(res);
-}
-
-// \u{4F7F}\u{7528} Passkey \u{767B}\u{5F55}
-async function loginWithPasskey() {
-    passkeySupported();
-    const res = await fetch('/admin/passkey/login-options', {
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
-        credentials: 'same-origin'
-    });
-    const options = await passkeyJson(res);
-    const allowCredentials = (options.allowCredentials || []).map(function(item) {
-        return {
-            type: item.type || 'public-key',
-            id: passkeyBase64UrlToBytes(item.id)
-        };
-    });
-
-    const assertion = await navigator.credentials.get({
-        publicKey: {
-            challenge: passkeyBase64UrlToBytes(options.challenge),
-            timeout: options.timeout,
-            rpId: options.rpId,
-            allowCredentials: allowCredentials,
-            userVerification: options.userVerification || 'preferred'
-        }
-    });
-
-    const data = {
-        id: assertion.id,
-        rawId: passkeyBytesToBase64Url(assertion.rawId),
-        response: {
-            clientDataJSON: passkeyBytesToBase64Url(assertion.response.clientDataJSON),
-            authenticatorData: passkeyBytesToBase64Url(assertion.response.authenticatorData),
-            signature: passkeyBytesToBase64Url(assertion.response.signature),
-            userHandle: assertion.response.userHandle ? passkeyBytesToBase64Url(assertion.response.userHandle) : ''
-        }
-    };
-
-    const loginRes = await fetch('/admin/passkey/login', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': passkeyCsrfToken(),
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        credentials: 'same-origin',
-        body: JSON.stringify({ credential: JSON.stringify(data) })
-    });
-
-    return await passkeyJson(loginRes);
 }

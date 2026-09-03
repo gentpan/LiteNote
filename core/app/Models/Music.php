@@ -63,39 +63,6 @@ final class Music extends Model
         return $result;
     }
 
-    public static function paginatePublic(int $page = 1, int $perPage = 10): array
-    {
-        self::ensurePublishedAtColumn();
-        return parent::paginate(
-            $page,
-            $perPage,
-            'published_at DESC, sort ASC, id DESC',
-            'is_public = ?',
-            [Toggle::On->value]
-        );
-    }
-
-    public static function recentPublic(int $limit = 6): array
-    {
-        self::ensurePublishedAtColumn();
-        $rows = self::db()->fetchAll(
-            "SELECT * FROM music WHERE is_public = ? ORDER BY published_at DESC, sort ASC, id DESC LIMIT {$limit}",
-            [Toggle::On->value]
-        );
-        return self::withRealCommentCounts(array_map(fn(array $row) => new self($row), $rows));
-    }
-
-    public static function publicOptions(int $limit = 120): array
-    {
-        self::ensurePublishedAtColumn();
-        $limit = max(1, min(300, $limit));
-        $rows = self::db()->fetchAll(
-            "SELECT * FROM music WHERE is_public = ? ORDER BY published_at DESC, sort ASC, id DESC LIMIT {$limit}",
-            [Toggle::On->value]
-        );
-        return array_map(fn(array $row) => new self($row), $rows);
-    }
-
     /**
      * @param int[] $ids
      * @return array<int, self>
@@ -256,12 +223,6 @@ final class Music extends Model
             (string)($this->published_at ?? ''),
             (string)($this->created_at ?? '')
         );
-    }
-
-    public function publishedInputValue(): string
-    {
-        $ts = strtotime($this->publishedAt()) ?: time();
-        return date('Y-m-d\TH:i', $ts);
     }
 
     public function fallbackInitial(): string
