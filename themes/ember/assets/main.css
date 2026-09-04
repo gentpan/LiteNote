@@ -10311,9 +10311,15 @@ html[data-theme="dark"] {
     .site-nav-bar > .nav-pill,
     body.nav-scrolled .site-nav-bar > .nav-pill,
     body.nav-scrolled .site-nav-bar > .nav-pill.nav-open {
-        flex-basis: min(var(--content-width), calc(100vw - 48px));
+        flex: 0 1 auto;
+        width: max-content !important;
+        max-width: calc(100vw - 48px);
+    }
+
+    .site-nav-bar > .nav-pill.nav-open,
+    body.nav-scrolled .site-nav-bar > .nav-pill.nav-open {
         width: min(var(--content-width), calc(100vw - 48px)) !important;
-        max-width: var(--content-width);
+        max-width: min(var(--content-width), calc(100vw - 48px));
     }
 }
 
