@@ -20,14 +20,9 @@
                         @include('partials.ln-icon', ['name' => 'gauge'])
                     </a>
                 @else
-                    <div class="footer-identity side-identity" data-side-identity>
-                        <button type="button" class="footer-social footer-account-button nav-account-btn" data-account-open data-login-open aria-label="设置评论身份" title="设置评论身份">
-                            <img class="side-identity-avatar" data-side-identity-avatar alt="" hidden>
-                            <span class="side-identity-fallback" aria-hidden="true">@include('partials.ln-icon', ['name' => 'user'])</span>
-                        </button>
-                        <span data-side-identity-name hidden></span>
-                        <span data-side-identity-stat hidden>设置评论身份 / 注册</span>
-                    </div>
+                    <a class="footer-social footer-account-button" href="/?login=1&mode=login" aria-label="管理员登录" title="管理员登录">
+                        <i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i>
+                    </a>
                 @endif
                 @if(!empty($socials))
                     @foreach($socials as $s)
