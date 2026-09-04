@@ -6952,8 +6952,8 @@ body.site-search-open {
 
     body.nav-scrolled .site-nav-bar .nav-pill,
     body.nav-scrolled .site-nav-bar .nav-pill.nav-open {
-        width: min(var(--content-width), calc(100vw - 32px)) !important;
-        max-width: min(var(--content-width), calc(100vw - 32px));
+        width: max-content !important;
+        max-width: calc(100vw - 32px);
         margin: 0 auto;
         background: transparent;
         border-width: 0;
