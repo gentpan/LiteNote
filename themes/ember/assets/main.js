@@ -1054,12 +1054,13 @@
         }, 2400);
     }
 
-    // 评论提交后的统一 toast 提示
+    // 评论提交后的统一反馈：成功时同时显示操作位对号和右下角通知。
     function commentFlash(form, msg, type) {
         if (type === 'success') {
-            showSuccessCheck(form.querySelector('button[type=submit]') || form);
+            showSuccessFeedback(form.querySelector('button[type=submit]') || form, msg);
+            return;
         }
-        frontToast(msg, type === 'success' ? 'success' : 'error');
+        frontToast(msg, 'error');
     }
 
     function setCommentSubmitLoading(form, loading) {
@@ -1418,8 +1419,14 @@
         }, 1050);
     }
 
+    function showSuccessFeedback(anchor, message) {
+        showSuccessCheck(anchor);
+        frontToast(message || '操作成功', 'success');
+    }
+
     // 供插件的独立互动脚本复用同一套成功反馈。
     window.LiteNoteSuccessCheck = showSuccessCheck;
+    window.LiteNoteSuccessFeedback = showSuccessFeedback;
 
     function likedStorageKey(type) {
         return 'litenote-liked-' + type;
@@ -1577,8 +1584,7 @@
                             return;
                         }
                         likeConfetti(btn);
-                        showSuccessCheck(btn);
-                        frontToast('已点赞', 'success');
+                        showSuccessFeedback(btn, '已点赞');
                     } else {
                         frontToast((data && data.msg) || '点赞失败，请稍后再试', 'error');
                     }
@@ -1626,8 +1632,7 @@
                             return;
                         }
                         likeConfetti(btn);
-                        showSuccessCheck(btn);
-                        frontToast('已点赞', 'success');
+                        showSuccessFeedback(btn, '已点赞');
                     } else {
                         frontToast((data && data.msg) || '点赞失败，请稍后再试', 'error');
                     }
@@ -1729,8 +1734,7 @@
                         return;
                     }
                     likeConfetti(btn);
-                    showSuccessCheck(btn);
-                    frontToast('已喜欢这首音乐', 'success');
+                    showSuccessFeedback(btn, '已喜欢这首音乐');
                 } else {
                     frontToast((data && data.msg) || '点赞失败，请稍后再试', 'error');
                 }
@@ -2653,8 +2657,7 @@
                             return;
                         }
                         likeConfetti(likeBtn);
-                        showSuccessCheck(likeBtn);
-                        frontToast('已喜欢这首音乐', 'success');
+                        showSuccessFeedback(likeBtn, '已喜欢这首音乐');
                     } else {
                         frontToast((data && data.msg) || '点赞失败，请稍后再试', 'error');
                     }

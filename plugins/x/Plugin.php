@@ -128,7 +128,13 @@ final class Plugin implements PluginInterface
         .then(function(d){
           if(d && typeof d.likes !== 'undefined'){
             var c=btn.querySelector('.like-count'); if(c){c.textContent=d.likes;} btn.classList.add('liked');
-            if(d.code===0 && typeof window.LiteNoteSuccessCheck==='function'){ window.LiteNoteSuccessCheck(btn); }
+            if(d.code===0){
+              if(typeof window.LiteNoteSuccessFeedback==='function'){ window.LiteNoteSuccessFeedback(btn, '已点赞'); }
+              else {
+                if(typeof window.LiteNoteSuccessCheck==='function'){ window.LiteNoteSuccessCheck(btn); }
+                if(typeof window.siteToast==='function'){ window.siteToast('已点赞', 'success'); }
+              }
+            }
           }
         })
         .catch(function(){});
