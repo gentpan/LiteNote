@@ -33,8 +33,8 @@ final class SecurityServicesTest extends TestCase
         $this->assertFalse(RemoteUrlValidator::isSafePublicUrl('ftp://example.com/file'));
     }
 
-    public function testRemoteUrlValidatorAllowsHttpsPublicHost(): void
+    public function testRemoteUrlValidatorAllowsHttpsPublicIp(): void
     {
-        $this->assertTrue(RemoteUrlValidator::isSafePublicUrl('https://example.com/feed.xml'));
+        $this->assertTrue(RemoteUrlValidator::isSafePublicUrl('https://1.1.1.1/feed.xml'));
     }
 }

@@ -1,12 +1,12 @@
 # LiteNote
 
-**基于 PHP 8.5 与 SQLite 的轻量自托管个人发布系统。**
+**兼容 PHP 8.5 / 8.6 与 SQLite 的轻量自托管个人发布系统。**
 
 一套代码，覆盖博客、短动态、音乐分享、X 卡片、评论与 RSS。生产环境无需 Composer，上传即可运行；后台功能完整，适合个人站点长期维护与二次开发。
 
 [在线演示](https://litenote.io) · [问题反馈](https://github.com/gentpan/LiteNote/issues)
 
-![PHP](https://img.shields.io/badge/PHP-8.5+-777BB4?logo=php&logoColor=white)
+![PHP](https://img.shields.io/badge/PHP-8.5%20%7C%208.6-777BB4?logo=php&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-3-003B57?logo=sqlite&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Version](https://img.shields.io/badge/version-1.1.0-0052D9)
@@ -60,7 +60,7 @@
 
 | 层级 | 选型 |
 |------|------|
-| 运行时 | PHP 8.5+ |
+| 运行时 | PHP 8.5 / 8.6 |
 | 数据库 | SQLite 3（WAL + FTS5 全文搜索） |
 | 架构 | 自研 MVC · 路由 · 中间件 · 服务层 |
 | 模板 | 编译型模板引擎 |
@@ -73,7 +73,7 @@
 
 ### 环境要求
 
-- PHP **8.5+**
+- PHP **8.5 或 8.6**（8.6 正式版发布前仅建议用于兼容性测试）
 - 扩展：**pdo**、**pdo_sqlite**、**sqlite3**（必需）
 - **FTS5**（推荐，全文搜索；缺失时降级为 LIKE）
 - **GD**（推荐，验证码与图片处理）
@@ -157,13 +157,13 @@ LiteNote/
 composer install          # PHPUnit
 npm install
 npm run build:assets      # 压缩 themes/、admin/assets/、plugins/ 资源
-vendor/bin/phpunit        # 运行测试
+composer test             # 运行测试，并把弃用提示视为失败
 ```
 
 - `npm run deploy:assets` — 构建后删除已有 `.min` 对应的源文件（生产裁剪）
 - `php scripts/backup.php` — 按设置执行数据库/文件备份（可挂 cron）
 
-推送至 `main` 分支会触发 GitHub Actions：PHP 8.5 语法检查、PHPUnit、资源构建校验。
+推送至 `main` 分支会触发 GitHub Actions：PHP 8.5 / 8.6 语法检查与 PHPUnit，以及资源构建校验。
 
 ---
 

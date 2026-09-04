@@ -49,7 +49,7 @@ return [
     'site' => [
         'title'       => '我的个人博客',
         'subtitle'    => '记录、分享、思考',
-        'description' => '一个用 PHP 8.5 写的小博客',
+        'description' => '一个兼容 PHP 8.5 / 8.6 的小博客',
         'keywords'    => 'PHP,博客,个人',
         'site_analytics_code' => '',
         'comment_need_audit' => true,
