@@ -8,6 +8,27 @@
                 <button type="button" class="footer-social footer-rss-copy" data-copy-url="/rss.xml" title="复制本站 RSS 地址" aria-label="复制本站 RSS 地址">
                     <i class="fa-solid fa-square-rss" aria-hidden="true"></i>
                 </button>
+                <button type="button" class="footer-social footer-theme-toggle" data-theme-toggle aria-label="切换深色模式" title="切换深色模式">
+                    <span class="side-theme-icon" aria-hidden="true">
+                        <span class="theme-icon-moon">@include('partials.ln-icon', ['name' => 'moon'])</span>
+                        <span class="theme-icon-sun">@include('partials.ln-icon', ['name' => 'sun'])</span>
+                    </span>
+                    <span data-theme-label hidden>深色模式</span>
+                </button>
+                @if(!empty($currentAdmin))
+                    <a class="footer-social footer-account-button" href="/admin" aria-label="进入后台" title="进入后台">
+                        @include('partials.ln-icon', ['name' => 'gauge'])
+                    </a>
+                @else
+                    <div class="footer-identity side-identity" data-side-identity>
+                        <button type="button" class="footer-social footer-account-button nav-account-btn" data-account-open data-login-open aria-label="设置评论身份" title="设置评论身份">
+                            <img class="side-identity-avatar" data-side-identity-avatar alt="" hidden>
+                            <span class="side-identity-fallback" aria-hidden="true">@include('partials.ln-icon', ['name' => 'user'])</span>
+                        </button>
+                        <span data-side-identity-name hidden></span>
+                        <span data-side-identity-stat hidden>设置评论身份 / 注册</span>
+                    </div>
+                @endif
                 @if(!empty($socials))
                     @foreach($socials as $s)
                         @php

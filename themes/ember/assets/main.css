@@ -3645,8 +3645,7 @@ html[data-theme="dark"] .nav-pill::after {
     align-items: center;
     padding: var(--sp-7) var(--sp-8);
 }
-/* 抽屉高度由内容撑开：0fr → 1fr 可过渡，且不受分类数量限制。
-   不要退回写死的 max-height，分类变多会被 overflow 裁掉。 */
+/* 抽屉高度由全部分类内容撑开：0fr → 1fr 可过渡，不设内部滚动区。 */
 .nav-drawer {
     display: grid;
     grid-template-rows: 0fr;
@@ -3658,12 +3657,6 @@ html[data-theme="dark"] .nav-pill::after {
 }
 .nav-drawer > * {
     min-height: 0;
-}
-/* inner 不带内边距，0fr 才能真正压到 0；分类极多时以视口封顶并内部滚动 */
-.nav-drawer-inner {
-    max-height: calc(100vh - 120px);
-    overflow-y: auto;
-    overscroll-behavior: contain;
 }
 .nav-pill.nav-open {
     border-radius: var(--radius-xl);
@@ -10268,5 +10261,129 @@ html[data-theme="dark"] {
     .footer-social-qr::after {
         right: 10px;
         left: auto;
+    }
+}
+
+/* 导航恢复为单一胶囊：头像回到导航内，搜索紧邻动态。 */
+@media (min-width: 769px) {
+    .site-nav-bar,
+    body.nav-scrolled .site-nav-bar {
+        justify-content: center;
+    }
+
+    .site-nav-bar > .nav-pill,
+    body.nav-scrolled .site-nav-bar > .nav-pill,
+    body.nav-scrolled .site-nav-bar > .nav-pill.nav-open {
+        flex-basis: min(var(--content-width), calc(100vw - 48px));
+        width: min(var(--content-width), calc(100vw - 48px)) !important;
+        max-width: var(--content-width);
+    }
+}
+
+.nav-search-toggle {
+    display: inline-flex;
+    flex: 0 0 auto;
+    gap: var(--sp-5);
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    min-height: 36px;
+    padding: var(--sp-7) var(--sp-9);
+    font: inherit;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-pill);
+    transition: color 0.18s ease, background-color 0.18s ease;
+}
+
+.nav-search-toggle:hover,
+.nav-search-toggle:focus-visible {
+    color: var(--c-white);
+    background: rgba(255, 255, 255, 0.1);
+    outline: none;
+}
+
+.nav-search-toggle .ln-icon,
+.nav-search-toggle .ln-icon > svg {
+    width: 18px;
+    height: 18px;
+}
+
+.nav-search-toggle > span {
+    display: none;
+}
+
+.footer-identity {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.footer-theme-toggle .theme-icon-moon {
+    display: inline-grid;
+}
+
+.footer-theme-toggle .theme-icon-sun {
+    display: none;
+}
+
+html[data-theme="dark"] .footer-theme-toggle .theme-icon-moon {
+    display: none;
+}
+
+html[data-theme="dark"] .footer-theme-toggle .theme-icon-sun {
+    display: inline-grid;
+}
+
+.footer-theme-toggle .side-theme-icon,
+.footer-theme-toggle .ln-icon,
+.footer-theme-toggle .ln-icon > svg,
+.footer-account-button .ln-icon,
+.footer-account-button .ln-icon > svg,
+.footer-account-button .side-identity-fallback {
+    width: 1em;
+    height: 1em;
+    font-size: inherit;
+}
+
+.footer-account-button .side-identity-avatar {
+    display: block;
+    width: 1em;
+    height: 1em;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.footer-account-button .side-identity-avatar[hidden] {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .site-nav-bar .nav-actions {
+        flex: 3 1 0;
+    }
+
+    .site-nav-bar .nav-actions .nav-search-toggle {
+        display: flex;
+        flex: 1 1 0;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+        min-height: 0;
+        padding: var(--sp-5) 1px;
+        border-radius: var(--radius-md);
+    }
+
+    .site-nav-bar .nav-actions .nav-search-toggle > span {
+        display: block;
+        max-width: 100%;
+        overflow: hidden;
+        font-size: 10px;
+        font-weight: 500;
+        line-height: 1;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 }
