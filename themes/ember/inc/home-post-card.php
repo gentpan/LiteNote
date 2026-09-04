@@ -4,6 +4,7 @@
     $commentsCount = (int)($item->comments_count ?? 0);
     $cover = $item->displayCover();
     $avatarComments = $item->getRelation('avatarComments') ?: [];
+    $avatarTotalCount = $commentsCount;
 @endphp
 <article class="home-card home-card--post post-card has-cover">
     <a class="home-card-media home-post-cover" href="{{ $item->getUrl() }}" aria-label="{{ $item->title }}">

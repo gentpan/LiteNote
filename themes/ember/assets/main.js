@@ -3753,6 +3753,42 @@
         });
     }
 
+    function bindAvatarGroups(root) {
+        var scope = root && root.querySelectorAll ? root : document;
+        scope.querySelectorAll('.t-avatar-group').forEach(function(group) {
+            if (group.dataset.avatarSpringBound) return;
+            group.dataset.avatarSpringBound = '1';
+            var items = Array.prototype.slice.call(group.querySelectorAll('.t-avatar'));
+            if (!items.length) return;
+
+            var styles = window.getComputedStyle(group);
+            var lift = parseFloat(styles.getPropertyValue('--avatar-lift')) || -4;
+            var scale = parseFloat(styles.getPropertyValue('--avatar-scale')) || 1.05;
+            var falloff = parseFloat(styles.getPropertyValue('--avatar-falloff')) || 0.45;
+            var easeIn = styles.getPropertyValue('--avatar-ease-in').trim();
+            var easeOut = styles.getPropertyValue('--avatar-ease-out').trim();
+
+            items.forEach(function(item, activeIndex) {
+                item.addEventListener('mouseenter', function() {
+                    items.forEach(function(sibling, index) {
+                        sibling.style.transitionTimingFunction = easeIn;
+                        var distance = Math.abs(index - activeIndex);
+                        sibling.style.setProperty('--shift', (lift * Math.pow(falloff, distance)).toFixed(3) + 'px');
+                        sibling.style.setProperty('--scale-active', index === activeIndex ? String(scale) : '1');
+                    });
+                });
+            });
+
+            group.addEventListener('mouseleave', function() {
+                items.forEach(function(item) {
+                    item.style.transitionTimingFunction = easeOut;
+                    item.style.setProperty('--shift', '0px');
+                    item.style.setProperty('--scale-active', '1');
+                });
+            });
+        });
+    }
+
     function bindDynamic(root) {
         root = root || document;
         bindToastSeeds(root);
@@ -3783,6 +3819,7 @@
         bindTalkKeywordFilter(root);
         bindTooltips(root);
         bindScrollReveal(root);
+        bindAvatarGroups(root);
     }
     bindDynamic(document);
 

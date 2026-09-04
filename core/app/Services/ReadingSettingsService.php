@@ -169,7 +169,7 @@ final class ReadingSettingsService
 
     /**
      * 给首页文章卡片批量附上少量近期评论，用于评论者头像组。
-     * 多取几条，模板去重后仍能尽量展示 4 位不同的评论者。
+     * 多取几条，模板按时间倒序展示最近 6 条评论的头像。
      *
      * @param Post[] $posts
      */
@@ -179,7 +179,7 @@ final class ReadingSettingsService
             static fn(Post $post): int => (int)$post->id,
             $posts
         ))));
-        $commentsByPost = self::batchRecentComments('post_id', $postIds, 12);
+        $commentsByPost = self::batchRecentComments('post_id', $postIds, 6);
 
         foreach ($posts as $post) {
             $post->setRelation('avatarComments', $commentsByPost[(int)$post->id] ?? []);
