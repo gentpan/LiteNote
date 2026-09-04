@@ -7784,6 +7784,12 @@ html[data-theme="light"] .footer-social:hover {
     box-shadow: none;
 }
 
+.footer-account-button > i,
+.footer-account-button .ln-icon,
+.footer-account-button .ln-icon > svg {
+    color: currentColor;
+}
+
 .footer-rss-copy.is-copied,
 .footer-rss-copy.is-copied:hover,
 html[data-theme="dark"] .footer-rss-copy.is-copied,
