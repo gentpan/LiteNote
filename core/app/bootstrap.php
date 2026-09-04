@@ -14,7 +14,7 @@ use App\Core\Session;
 use App\Core\View;
 use App\Models\Setting;
 
-require __DIR__ . '/Core/Config.php';
+require_once __DIR__ . '/Core/Config.php';
 require __DIR__ . '/Core/Database.php';
 require __DIR__ . '/Core/Request.php';
 require __DIR__ . '/Core/Response.php';

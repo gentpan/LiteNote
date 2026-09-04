@@ -7,6 +7,10 @@ declare(strict_types=1);
 define('APP_START', microtime(true));
 define('BASE_PATH', __DIR__);
 
+// 静态资源分支跑在 bootstrap 注册自动加载之前，依赖类必须手动引入，
+// 否则每个 css/js 请求都会因 PublishedAsset 未定义而致命错误。
+require_once BASE_PATH . '/core/app/Core/Config.php';
+require_once BASE_PATH . '/core/app/Services/PublishedAsset.php';
 require_once BASE_PATH . '/core/app/Core/StaticAssetServer.php';
 
 $__requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';

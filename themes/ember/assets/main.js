@@ -2856,14 +2856,15 @@
         });
     }
 
+    // 身份弹窗只在用户主动点击/聚焦评论输入框时出现。
+    // 不要改回 IntersectionObserver/scroll 触发：滚到评论区就弹属于打断阅读。
     function bindArticleCommentIdentityPrompt(root) {
         root = root || document;
         var section = root.querySelector('.post-detail .comments');
         if (!section || section.dataset.lnIdentityPromptBound) return;
-        section.dataset.lnIdentityPromptBound = '1';
         var form = section.querySelector('.comment-form');
-        if (form && form.dataset.commentAdmin === '1') return;
-        if (hasUsableCommentIdentity()) return;
+        if (!form || form.dataset.commentAdmin === '1') return;
+        section.dataset.lnIdentityPromptBound = '1';
 
         function promptOnce() {
             if (section.dataset.lnIdentityPrompted === '1' || hasUsableCommentIdentity()) return;
@@ -2871,26 +2872,15 @@
             openNavIdentityDialog();
         }
 
-        if ('IntersectionObserver' in window) {
-            var observer = new IntersectionObserver(function(entries) {
-                entries.forEach(function(entry) {
-                    if (!entry.isIntersecting) return;
-                    observer.disconnect();
-                    promptOnce();
-                });
-            }, { rootMargin: '0px 0px -25% 0px', threshold: 0.16 });
-            observer.observe(section);
-        } else {
-            var onScroll = function() {
-                var rect = section.getBoundingClientRect();
-                if (rect.top < window.innerHeight * 0.78 && rect.bottom > 0) {
-                    window.removeEventListener('scroll', onScroll);
-                    promptOnce();
-                }
-            };
-            window.addEventListener('scroll', onScroll, { passive: true });
-            onScroll();
+        function onField(e) {
+            var el = e.target;
+            if (!el || !el.matches) return;
+            if (!el.matches('textarea[name=content], .comment-profile-fields input')) return;
+            promptOnce();
         }
+
+        form.addEventListener('focusin', onField);
+        form.addEventListener('click', onField);
     }
 
     // 发布表单:图片上传按钮
@@ -3784,6 +3774,58 @@
         });
     }
 
+    // Tooltip:把 title 迁移到 data-tooltip,由 CSS 伪元素渲染。
+    // 迁走 title 是为了不让浏览器原生提示和自定义提示同时出现;
+    // 元素原本 position 不是 static 时不加锚点类,避免打乱既有定位。
+    function bindTooltips(root) {
+        root = root || document;
+        var scope = root.querySelectorAll ? root : document;
+        scope.querySelectorAll('[title]').forEach(function(el) {
+            var text = (el.getAttribute('title') || '').trim();
+            if (!text) { el.removeAttribute('title'); return; }
+            el.setAttribute('data-tooltip', text);
+            el.removeAttribute('title');
+            el.classList.add('ln-tt');
+            if (window.getComputedStyle(el).position === 'static') {
+                el.classList.add('ln-tt--anchor');
+            }
+        });
+    }
+
+    // Scroll Reveal:元素滚入视口时淡入上移,同批次错开。
+    // 三条降级红线:不支持 IntersectionObserver、用户偏好减弱动效、元素已在首屏内 ——
+    // 任一命中就完全不介入,内容保持默认可见,绝不能出现内容被永久隐藏。
+    var REVEAL_SELECTOR = '.home-card, .category-post-card, .comments .comment-item';
+    var revealObserver = null;
+    function bindScrollReveal(root) {
+        root = root || document;
+        if (!('IntersectionObserver' in window)) return;
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+        if (!revealObserver) {
+            document.documentElement.classList.add('ln-reveal-ready');
+            revealObserver = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (!entry.isIntersecting) return;
+                    entry.target.classList.add('is-revealed');
+                    revealObserver.unobserve(entry.target);
+                });
+            }, { rootMargin: '0px 0px -8% 0px', threshold: 0.06 });
+        }
+
+        var viewportH = window.innerHeight || document.documentElement.clientHeight;
+        var index = 0;
+        var scope = root.querySelectorAll ? root : document;
+        scope.querySelectorAll(REVEAL_SELECTOR).forEach(function(el) {
+            if (el.dataset.lnReveal) return;
+            el.dataset.lnReveal = '1';
+            if (el.getBoundingClientRect().top < viewportH) return;
+            el.classList.add('ln-reveal');
+            el.style.setProperty('--reveal-index', String(Math.min(index++, 4)));
+            revealObserver.observe(el);
+        });
+    }
+
     function bindDynamic(root) {
         root = root || document;
         bindToastSeeds(root);
@@ -3812,6 +3854,8 @@
         bindHomeFeedMore(root);
         bindCommentLoadMore(root);
         bindTalkKeywordFilter(root);
+        bindTooltips(root);
+        bindScrollReveal(root);
     }
     bindDynamic(document);
 

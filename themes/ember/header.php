@@ -196,6 +196,8 @@
                 </div>
             </div>
             <div class="nav-drawer">
+                {{-- inner 不带内边距，收起时 0fr 轨道才能真正压到 0 --}}
+                <div class="nav-drawer-inner">
                 <div class="nav-cat-list">
                     @if(!empty($navCategories))
                         @foreach($navCategories as $cat)
@@ -206,6 +208,7 @@
                             </a>
                         @endforeach
                     @endif
+                </div>
                 </div>
             </div>
         </div>
