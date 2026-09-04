@@ -1,21 +1,29 @@
 @php
     $avatarPeople = [];
+    $avatarIdentityKeys = [];
     foreach (array_reverse(array_values($avatarComments ?? [])) as $avatarComment) {
         $avatarName = trim((string)($avatarComment->nickname ?? '')) ?: '访客';
+        $avatarEmail = strtolower(trim((string)($avatarComment->email ?? '')));
+        $avatarIdentityKey = $avatarEmail !== ''
+            ? 'email:' . $avatarEmail
+            : 'name:' . mb_strtolower($avatarName);
+        if (isset($avatarIdentityKeys[$avatarIdentityKey])) {
+            continue;
+        }
+        $avatarIdentityKeys[$avatarIdentityKey] = true;
         $avatarPeople[] = [
             'name' => $avatarName,
             'url' => $avatarComment->getAvatarUrl(48),
         ];
-        if (count($avatarPeople) >= 6) {
-            break;
-        }
     }
+    $avatarUniqueCount = count($avatarPeople);
+    $avatarPeople = array_slice($avatarPeople, 0, 6);
     $avatarPeopleCount = count($avatarPeople);
-    $avatarRemainingCount = max(0, (int)($avatarTotalCount ?? count($avatarComments ?? [])) - $avatarPeopleCount);
+    $avatarRemainingCount = max(0, $avatarUniqueCount - $avatarPeopleCount);
     $avatarCircleCount = $avatarPeopleCount + ($avatarRemainingCount > 0 ? 1 : 0);
     $avatarGroupLabel = $avatarPeopleCount > 0
         ? '最新评论：' . implode('、', array_column($avatarPeople, 'name'))
-            . ($avatarRemainingCount > 0 ? '，另有 ' . $avatarRemainingCount . ' 条评论' : '')
+            . ($avatarRemainingCount > 0 ? '，另有 ' . $avatarRemainingCount . ' 位评论者' : '')
         : '';
     $avatarGroupWidth = $avatarCircleCount > 0 ? 24 + (($avatarCircleCount - 1) * 14) : 0;
 @endphp

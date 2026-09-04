@@ -50,4 +50,14 @@ final class PublicAuthSurfaceTest extends TestCase
         self::assertStringContainsString('translateY(var(--shift, 0px))', $css);
         self::assertStringContainsString('transition: transform var(--avatar-dur) var(--avatar-ease-in);', $css);
     }
+
+    public function testCommentAvatarGroupDeduplicatesCommenters(): void
+    {
+        $partial = (string) file_get_contents(dirname(__DIR__) . '/themes/ember/inc/home-comment-avatars.php');
+
+        self::assertStringContainsString("'email:' . \$avatarEmail", $partial);
+        self::assertStringContainsString('isset($avatarIdentityKeys[$avatarIdentityKey])', $partial);
+        self::assertStringContainsString('array_slice($avatarPeople, 0, 6)', $partial);
+        self::assertStringContainsString('$avatarUniqueCount - $avatarPeopleCount', $partial);
+    }
 }

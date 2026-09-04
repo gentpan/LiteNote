@@ -168,8 +168,7 @@ final class ReadingSettingsService
     }
 
     /**
-     * 给首页文章卡片批量附上少量近期评论，用于评论者头像组。
-     * 多取几条，模板按时间倒序展示最近 6 条评论的头像。
+     * 给首页文章卡片批量附上评论，用于按评论者去重后展示最近 6 位头像。
      *
      * @param Post[] $posts
      */
@@ -179,7 +178,7 @@ final class ReadingSettingsService
             static fn(Post $post): int => (int)$post->id,
             $posts
         ))));
-        $commentsByPost = self::batchRecentComments('post_id', $postIds, 6);
+        $commentsByPost = self::batchRecentComments('post_id', $postIds, 0);
 
         foreach ($posts as $post) {
             $post->setRelation('avatarComments', $commentsByPost[(int)$post->id] ?? []);
@@ -249,11 +248,12 @@ final class ReadingSettingsService
     private static function batchRecentComments(string $column, array $ids, int $limitPerTarget): array
     {
         $result = [];
-        if ($ids === [] || $limitPerTarget <= 0) {
+        if ($ids === []) {
             return $result;
         }
 
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $limitSql = $limitPerTarget > 0 ? "WHERE __row_number <= {$limitPerTarget}" : '';
         $rows = Comment::db()->fetchAll(
             "SELECT * FROM (
                  SELECT comments.*,
@@ -261,7 +261,7 @@ final class ReadingSettingsService
                  FROM comments
                  WHERE {$column} IN ({$placeholders}) AND status = ?
              ) ranked
-             WHERE __row_number <= {$limitPerTarget}
+             {$limitSql}
              ORDER BY {$column} ASC, id ASC",
             [...$ids, CommentStatus::Approved->value]
         );
