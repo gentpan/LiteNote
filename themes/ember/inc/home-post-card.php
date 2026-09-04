@@ -3,6 +3,7 @@
     $likesCount = (int)($item->likes_count ?? 0);
     $commentsCount = (int)($item->comments_count ?? 0);
     $cover = $item->displayCover();
+    $avatarComments = $item->getRelation('avatarComments') ?: [];
 @endphp
 <article class="home-card home-card--post post-card has-cover">
     <a class="home-card-media home-post-cover" href="{{ $item->getUrl() }}" aria-label="{{ $item->title }}">
@@ -27,6 +28,7 @@
     <footer class="home-card-footer home-card-meta-bar home-post-footer">
         <div class="home-card-meta home-post-meta">
             <span class="home-post-time">{!! \App\Core\Helper::timeTag($item->published_at) !!}</span>
+            @include('partials.home-comment-avatars')
         </div>
         <div class="home-card-actions home-post-actions">
             <button type="button" class="home-action post-like-btn" data-id="{{ $item->id }}" aria-label="点赞">

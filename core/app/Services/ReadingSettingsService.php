@@ -42,6 +42,7 @@ final class ReadingSettingsService
         $wanted = min($offset + $limit + 1, 200);
 
         $latestPosts = self::latestPosts($wanted, []);
+        self::attachPostCommentPreviews($latestPosts);
         $latestTalks = self::latestTalks($wanted, []);
         self::attachTalkRelations($latestTalks);
 
@@ -167,6 +168,25 @@ final class ReadingSettingsService
     }
 
     /**
+     * 给首页文章卡片批量附上少量近期评论，用于评论者头像组。
+     * 多取几条，模板去重后仍能尽量展示 4 位不同的评论者。
+     *
+     * @param Post[] $posts
+     */
+    private static function attachPostCommentPreviews(array $posts): void
+    {
+        $postIds = array_values(array_unique(array_filter(array_map(
+            static fn(Post $post): int => (int)$post->id,
+            $posts
+        ))));
+        $commentsByPost = self::batchRecentComments('post_id', $postIds, 12);
+
+        foreach ($posts as $post) {
+            $post->setRelation('avatarComments', $commentsByPost[(int)$post->id] ?? []);
+        }
+    }
+
+    /**
      * @param Talk[] $talks
      */
     private static function attachTalkRelations(array $talks): void
@@ -217,6 +237,36 @@ final class ReadingSettingsService
             [...$ids, CommentStatus::Approved->value]
         );
         foreach ($rows as $row) {
+            $key = (int)$row[$column];
+            $result[$key][] = new Comment($row);
+        }
+        return $result;
+    }
+
+    /**
+     * @return array<int, Comment[]>
+     */
+    private static function batchRecentComments(string $column, array $ids, int $limitPerTarget): array
+    {
+        $result = [];
+        if ($ids === [] || $limitPerTarget <= 0) {
+            return $result;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $rows = Comment::db()->fetchAll(
+            "SELECT * FROM (
+                 SELECT comments.*,
+                        ROW_NUMBER() OVER (PARTITION BY {$column} ORDER BY id DESC) AS __row_number
+                 FROM comments
+                 WHERE {$column} IN ({$placeholders}) AND status = ?
+             ) ranked
+             WHERE __row_number <= {$limitPerTarget}
+             ORDER BY {$column} ASC, id ASC",
+            [...$ids, CommentStatus::Approved->value]
+        );
+        foreach ($rows as $row) {
+            unset($row['__row_number']);
             $key = (int)$row[$column];
             $result[$key][] = new Comment($row);
         }

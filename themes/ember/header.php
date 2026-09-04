@@ -123,20 +123,23 @@
 
     {{-- 顶部导航栏（桌面端） / 底部导航栏（移动端） --}}
     <nav class="site-nav-bar">
+        <div class="nav-brand">
+            <div class="nav-identity-orb" data-nav-identity>
+                <a href="/" class="nav-avatar {{ ($activeNav ?? '') === 'home' ? 'active' : '' }}" aria-label="{{ !empty($author) ? ('返回首页 · ' . ($author->nickname ?: $author->username)) : '返回首页' }}">
+                    @if(!empty($author))
+                        <img class="nav-avatar-img" src="{{ $author->getAvatarUrl(40) }}" alt="{{ $author->nickname }}" width="32" height="32" loading="lazy" data-blogger-avatar="{{ $author->getAvatarUrl(40) }}" data-blogger-name="{{ $author->nickname ?: $author->username }}">
+                    @else
+                        <span class="nav-avatar-fallback">@include('partials.ln-icon', ['name' => 'home'])</span>
+                    @endif
+                    <span class="nav-avatar-home" aria-hidden="true">@include('partials.ln-icon', ['name' => 'home'])</span>
+                </a>
+            </div>
+        </div>
+
         <div class="nav-pill" id="nav-shell">
             <div class="nav-row">
-                <div class="nav-identity-orb" data-nav-identity>
-                    <a href="/" class="nav-avatar {{ ($activeNav ?? '') === 'home' ? 'active' : '' }}" aria-label="{{ !empty($author) ? ('返回首页 · ' . ($author->nickname ?: $author->username)) : '返回首页' }}">
-                        @if(!empty($author))
-                            <img class="nav-avatar-img" src="{{ $author->getAvatarUrl(40) }}" alt="{{ $author->nickname }}" width="32" height="32" loading="lazy" data-blogger-avatar="{{ $author->getAvatarUrl(40) }}" data-blogger-name="{{ $author->nickname ?: $author->username }}">
-                        @else
-                            <span class="nav-avatar-fallback">@include('partials.ln-icon', ['name' => 'home'])</span>
-                        @endif
-                        <span class="nav-avatar-home" aria-hidden="true">@include('partials.ln-icon', ['name' => 'home'])</span>
-                    </a>
-                </div>
                 <div class="nav-main-links">
-                    <a href="/posts" class="nav-link nav-dd-trigger {{ ($activeNav ?? '') === 'posts' ? 'active' : '' }}" aria-haspopup="true">
+                    <a href="/posts" class="nav-link nav-dd-trigger {{ ($activeNav ?? '') === 'posts' ? 'active' : '' }}" aria-label="文章" aria-haspopup="true">
                         @include('partials.ln-icon', ['name' => 'file-text', 'class' => 'nav-link-icon'])
                         <span>文章</span>
                         <i class="fa-solid fa-chevron-down nav-dd-caret" aria-hidden="true"></i>
@@ -146,7 +149,7 @@
                             $navItemActive = ($activeNav ?? '') === ($navItem['slug'] ?? '');
                             $navLnIcon = $emberLnIconBySlug[$navItem['slug'] ?? ''] ?? '';
                         @endphp
-                        <a href="{{ $navItem['url'] ?? '#' }}" class="nav-link {{ $navItemActive ? 'active' : '' }}">
+                        <a href="{{ $navItem['url'] ?? '#' }}" class="nav-link {{ $navItemActive ? 'active' : '' }}" data-nav-slug="{{ $navItem['slug'] ?? '' }}" aria-label="{{ $navItem['title'] ?? '' }}">
                             @if($navLnIcon !== '')
                                 @include('partials.ln-icon', ['name' => $navLnIcon, 'class' => 'nav-link-icon'])
                             @else
@@ -212,62 +215,51 @@
                 </div>
             </div>
         </div>
-    </nav>
 
-    <div class="side-quick-rail">
-    <div class="side-quick-actions" aria-label="快捷操作">
-    @if(!empty($currentAdmin))
-    <div class="side-dock-slot">
-        <a class="side-dock-btn side-admin-entry" href="/admin" aria-label="进入后台" title="进入后台">
-            @include('partials.ln-icon', ['name' => 'gauge'])
-        </a>
-    </div>
-    <div class="side-dock-slot">
-        <form method="post" action="/admin/logout" class="side-dock-logout-form">
-            <input type="hidden" name="_csrf" value="{{ \App\Core\Session::csrfToken() }}">
-            <button type="submit" class="side-dock-btn side-logout-btn" aria-label="登出" title="登出">
-                <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
+        {{-- 右：搜索、主题与账号工具区 --}}
+        <div class="nav-tools" aria-label="快捷操作">
+            <button type="button" class="nav-tool-btn" data-search-toggle aria-label="搜索" title="搜索">
+                @include('partials.ln-icon', ['name' => 'search'])
             </button>
-        </form>
-    </div>
-    @else
-    <div class="side-dock-slot side-identity" data-side-identity>
-        <button type="button" class="side-dock-btn side-account-btn" data-account-open data-login-open aria-label="账号与身份" title="账号与身份">
-            <img class="side-identity-avatar" data-side-identity-avatar alt="" hidden>
-            <span class="side-identity-fallback" aria-hidden="true">@include('partials.ln-icon', ['name' => 'user'])</span>
-        </button>
-        <div class="side-identity-card" aria-hidden="true">
-            <span class="side-identity-name" data-side-identity-name></span>
-            <span class="side-identity-stat" data-side-identity-stat>设置评论身份 / 注册</span>
+            <button type="button" class="nav-tool-btn nav-tool-theme" data-theme-toggle aria-label="切换深色模式" title="切换深色模式">
+                <span class="side-theme-icon" aria-hidden="true">
+                    <span class="theme-icon-moon">@include('partials.ln-icon', ['name' => 'moon'])</span>
+                    <span class="theme-icon-sun">@include('partials.ln-icon', ['name' => 'sun'])</span>
+                </span>
+                <span class="side-theme-label" data-theme-label hidden>深色模式</span>
+            </button>
+            @if(!empty($currentAdmin))
+                <a class="nav-tool-btn" href="/admin" aria-label="进入后台" title="进入后台">
+                    @include('partials.ln-icon', ['name' => 'gauge'])
+                </a>
+                <form method="post" action="/admin/logout" class="nav-tool-form">
+                    <input type="hidden" name="_csrf" value="{{ \App\Core\Session::csrfToken() }}">
+                    <button type="submit" class="nav-tool-btn" aria-label="登出" title="登出">
+                        <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
+                    </button>
+                </form>
+            @else
+                <div class="nav-tool-identity side-identity" data-side-identity>
+                    <button type="button" class="nav-tool-btn nav-account-btn" data-account-open data-login-open aria-label="账号与身份">
+                        <img class="side-identity-avatar" data-side-identity-avatar alt="" hidden>
+                        <span class="side-identity-fallback" aria-hidden="true">@include('partials.ln-icon', ['name' => 'user'])</span>
+                    </button>
+                    <div class="side-identity-card" aria-hidden="true">
+                        <span class="side-identity-name" data-side-identity-name></span>
+                        <span class="side-identity-stat" data-side-identity-stat>设置评论身份 / 注册</span>
+                    </div>
+                </div>
+                @if(!empty($currentMember))
+                    <form method="post" action="/admin/logout" class="nav-tool-form">
+                        <input type="hidden" name="_csrf" value="{{ \App\Core\Session::csrfToken() }}">
+                        <button type="submit" class="nav-tool-btn" aria-label="登出" title="登出">
+                            <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
+                        </button>
+                    </form>
+                @endif
+            @endif
         </div>
-    </div>
-    @if(!empty($currentMember))
-    <div class="side-dock-slot">
-        <form method="post" action="/admin/logout" class="side-dock-logout-form">
-            <input type="hidden" name="_csrf" value="{{ \App\Core\Session::csrfToken() }}">
-            <button type="submit" class="side-dock-btn side-logout-btn" aria-label="登出" title="登出">
-                <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
-            </button>
-        </form>
-    </div>
-    @endif
-    @endif
-    <div class="side-dock-slot">
-        <button type="button" class="side-dock-btn side-search-toggle" data-search-toggle aria-label="搜索">
-            @include('partials.ln-icon', ['name' => 'search'])
-        </button>
-    </div>
-    <div class="side-dock-slot side-dock-slot--theme">
-        <button type="button" class="side-dock-btn side-theme-toggle" data-theme-toggle aria-label="切换深色模式">
-            <span class="side-theme-icon" aria-hidden="true">
-                <span class="theme-icon-moon">@include('partials.ln-icon', ['name' => 'moon'])</span>
-                <span class="theme-icon-sun">@include('partials.ln-icon', ['name' => 'sun'])</span>
-            </span>
-            <span class="side-theme-label" data-theme-label>深色模式</span>
-        </button>
-    </div>
-    </div>
-    </div>
+    </nav>
 
     <div class="site-search-overlay" data-search-overlay hidden>
         <button type="button" class="site-search-close" data-search-close aria-label="关闭搜索">

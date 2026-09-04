@@ -30,9 +30,14 @@
             document.documentElement.setAttribute('data-theme', theme);
             document.querySelectorAll('[data-theme-toggle]').forEach(function(button) {
                 var isDark = theme === 'dark';
+                var nextLabel = isDark ? '切换浅色模式' : '切换深色模式';
                 button.setAttribute('aria-pressed', isDark ? 'true' : 'false');
-                button.setAttribute('aria-label', isDark ? '切换浅色模式' : '切换深色模式');
-                button.setAttribute('title', isDark ? '切换浅色模式' : '切换深色模式');
+                button.setAttribute('aria-label', nextLabel);
+                if (button.hasAttribute('data-tooltip')) {
+                    button.setAttribute('data-tooltip', nextLabel);
+                } else {
+                    button.setAttribute('title', nextLabel);
+                }
                 var label = button.querySelector('[data-theme-label]');
                 if (label) {
                     label.textContent = isDark ? '浅色模式' : '深色模式';
@@ -125,146 +130,6 @@
                 openSearch();
             }
         });
-    })();
-
-    (function() {
-        var dock = document.querySelector('.side-quick-actions');
-        var rail = document.querySelector('.side-quick-rail');
-        if (!dock || !window.PointerEvent) return;
-
-        var pointerId = null;
-        var startX = 0;
-        var startY = 0;
-        var dockX = 0;
-        var dockY = 0;
-        var dragging = false;
-        var suppressClick = false;
-        var dragThreshold = 6;
-        var edgeGap = 8;
-
-        function clamp(value, min, max) {
-            return Math.min(Math.max(value, min), max);
-        }
-
-        function viewport() {
-            return {
-                width: window.innerWidth || document.documentElement.clientWidth || 0,
-                height: window.innerHeight || document.documentElement.clientHeight || 0
-            };
-        }
-
-        function promoteDockToFixed() {
-            if (dock.style.position === 'fixed') return;
-            var rect = dock.getBoundingClientRect();
-            dock.style.position = 'fixed';
-            dock.style.left = rect.left + 'px';
-            dock.style.top = rect.top + 'px';
-            dock.style.right = 'auto';
-            dock.style.transform = 'none';
-            // 拖出后 rail 不再占命中列,避免右侧留下透明拦截层
-            if (rail) {
-                rail.style.pointerEvents = 'none';
-                rail.style.width = '0';
-                rail.style.paddingRight = '0';
-            }
-        }
-
-        function clampDockPosition() {
-            if (!dock.style.left || !dock.style.top) return;
-            var rect = dock.getBoundingClientRect();
-            var vp = viewport();
-            var nextX = clamp(rect.left, edgeGap, Math.max(edgeGap, vp.width - rect.width - edgeGap));
-            var nextY = clamp(rect.top, edgeGap, Math.max(edgeGap, vp.height - rect.height - edgeGap));
-            dock.style.left = nextX + 'px';
-            dock.style.top = nextY + 'px';
-            dock.style.right = 'auto';
-            dock.style.transform = 'none';
-        }
-
-        function capturePointer(id) {
-            if (!dock.setPointerCapture) return;
-            try { dock.setPointerCapture(id); } catch (e) {}
-        }
-
-        function releasePointer(id) {
-            if (!dock.releasePointerCapture) return;
-            try { dock.releasePointerCapture(id); } catch (e) {}
-        }
-
-        function resetDragState() {
-            if (pointerId !== null) {
-                releasePointer(pointerId);
-            }
-            pointerId = null;
-            dragging = false;
-            dock.classList.remove('is-dragging');
-        }
-
-        dock.addEventListener('pointerdown', function(event) {
-            if (event.button !== undefined && event.button !== 0) return;
-            pointerId = event.pointerId;
-            startX = event.clientX;
-            startY = event.clientY;
-            var rect = dock.getBoundingClientRect();
-            dockX = rect.left;
-            dockY = rect.top;
-            dragging = false;
-            suppressClick = false;
-        });
-
-        dock.addEventListener('pointermove', function(event) {
-            if (pointerId !== event.pointerId) return;
-            if (event.pointerType === 'mouse' && event.buttons !== 1) {
-                resetDragState();
-                return;
-            }
-
-            var dx = event.clientX - startX;
-            var dy = event.clientY - startY;
-            if (!dragging && Math.hypot(dx, dy) < dragThreshold) return;
-
-            if (!dragging) {
-                promoteDockToFixed();
-                var rect0 = dock.getBoundingClientRect();
-                dockX = rect0.left - dx;
-                dockY = rect0.top - dy;
-                capturePointer(pointerId);
-            }
-
-            dragging = true;
-            suppressClick = true;
-            dock.classList.add('is-dragging');
-
-            var rect = dock.getBoundingClientRect();
-            var vp = viewport();
-            var nextX = clamp(dockX + dx, edgeGap, Math.max(edgeGap, vp.width - rect.width - edgeGap));
-            var nextY = clamp(dockY + dy, edgeGap, Math.max(edgeGap, vp.height - rect.height - edgeGap));
-
-            dock.style.left = nextX + 'px';
-            dock.style.top = nextY + 'px';
-            dock.style.right = 'auto';
-            dock.style.transform = 'none';
-            event.preventDefault();
-        });
-
-        function endDrag(event) {
-            if (pointerId !== event.pointerId) return;
-            resetDragState();
-        }
-
-        dock.addEventListener('pointerup', endDrag);
-        dock.addEventListener('pointercancel', endDrag);
-        window.addEventListener('pointerup', endDrag, true);
-        window.addEventListener('pointercancel', endDrag, true);
-
-        dock.addEventListener('click', function(event) {
-            if (!suppressClick) return;
-            event.preventDefault();
-            event.stopPropagation();
-            suppressClick = false;
-        }, true);
-
-        window.addEventListener('resize', clampDockPosition);
     })();
 
 })();
@@ -1191,6 +1056,9 @@
 
     // 评论提交后的统一 toast 提示
     function commentFlash(form, msg, type) {
+        if (type === 'success') {
+            showSuccessCheck(form.querySelector('button[type=submit]') || form);
+        }
         frontToast(msg, type === 'success' ? 'success' : 'error');
     }
 
@@ -1475,6 +1343,9 @@
 
     // 点赞撒花:在按钮周围迸发小彩花
     function likeConfetti(btn) {
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            return;
+        }
         var rect = btn.getBoundingClientRect();
         var cx = rect.left + rect.width / 2;
         var cy = rect.top + rect.height / 2;
@@ -1499,6 +1370,44 @@
                 setTimeout(function() { if (el.parentNode) el.remove(); }, 750);
             })(p);
         }
+    }
+
+    // 点赞/评论成功后,从操作位置呼出一次勾选反馈。
+    // 全页只保留一个实例,重复触发时重置动画并续期,避免堆积悬空节点。
+    var successCheckTimer = 0;
+    function showSuccessCheck(anchor) {
+        var check = document.querySelector('.success-check');
+        if (!check) {
+            check = document.createElement('span');
+            check.className = 'success-check';
+            check.setAttribute('aria-hidden', 'true');
+            check.innerHTML = '<span class="success-check-badge"><svg viewBox="0 0 48 48" focusable="false"><path class="success-check-tick" d="M13 24.5l7.2 7.2L35 16.9" /></svg></span>';
+            document.body.appendChild(check);
+        }
+
+        var viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+        var viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+        var x = viewportWidth / 2;
+        var y = viewportHeight / 2;
+        if (anchor && anchor.getBoundingClientRect) {
+            var rect = anchor.getBoundingClientRect();
+            if (rect.width || rect.height) {
+                x = rect.left + rect.width / 2;
+                y = rect.top;
+            }
+        }
+        x = Math.max(32, Math.min(viewportWidth - 32, x));
+        y = Math.max(64, Math.min(viewportHeight - 12, y));
+        check.style.left = x + 'px';
+        check.style.top = y + 'px';
+
+        window.clearTimeout(successCheckTimer);
+        check.classList.remove('is-visible');
+        check.getBoundingClientRect();
+        check.classList.add('is-visible');
+        successCheckTimer = window.setTimeout(function() {
+            check.classList.remove('is-visible');
+        }, 1050);
     }
 
     function likedStorageKey(type) {
@@ -1657,6 +1566,7 @@
                             return;
                         }
                         likeConfetti(btn);
+                        showSuccessCheck(btn);
                         frontToast('已点赞', 'success');
                     } else {
                         frontToast((data && data.msg) || '点赞失败，请稍后再试', 'error');
@@ -1705,6 +1615,7 @@
                             return;
                         }
                         likeConfetti(btn);
+                        showSuccessCheck(btn);
                         frontToast('已点赞', 'success');
                     } else {
                         frontToast((data && data.msg) || '点赞失败，请稍后再试', 'error');
@@ -1807,6 +1718,7 @@
                         return;
                     }
                     likeConfetti(btn);
+                    showSuccessCheck(btn);
                     frontToast('已喜欢这首音乐', 'success');
                 } else {
                     frontToast((data && data.msg) || '点赞失败，请稍后再试', 'error');
@@ -2730,6 +2642,7 @@
                             return;
                         }
                         likeConfetti(likeBtn);
+                        showSuccessCheck(likeBtn);
                         frontToast('已喜欢这首音乐', 'success');
                     } else {
                         frontToast((data && data.msg) || '点赞失败，请稍后再试', 'error');

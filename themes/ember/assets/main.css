@@ -3854,6 +3854,152 @@ html[data-theme="dark"] .nav-pill::after {
         scale(0.2);
 }
 
+/* 点赞/评论成功反馈:从操作位置上方呼出,文本仍由 toast 承担。 */
+.success-check {
+    position: fixed;
+    z-index: 3100;
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, calc(-100% - 10px)) scale(0.45);
+    transform-origin: 50% 100%;
+}
+
+.success-check-badge {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    color: var(--c-white);
+    background: linear-gradient(145deg, #34d66b, var(--c-success-vivid));
+    border: 2px solid rgba(255, 255, 255, 0.92);
+    border-radius: 50%;
+    box-shadow:
+        0 8px 24px rgba(34, 197, 94, 0.3),
+        0 2px 7px rgba(15, 23, 42, 0.16);
+}
+
+.success-check-badge::after {
+    position: absolute;
+    inset: -3px;
+    content: "";
+    border: 2px solid rgba(34, 197, 94, 0.48);
+    border-radius: inherit;
+    opacity: 0;
+}
+
+.success-check svg {
+    width: 30px;
+    height: 30px;
+    overflow: visible;
+}
+
+.success-check-tick {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 30;
+    stroke-dashoffset: 30;
+}
+
+.success-check.is-visible {
+    animation: success-check-callout 1.05s cubic-bezier(0.2, 0.9, 0.25, 1)
+        both;
+}
+
+.success-check.is-visible .success-check-tick {
+    animation: success-check-draw 0.38s 0.13s ease-out both;
+}
+
+.success-check.is-visible .success-check-badge::after {
+    animation: success-check-ring 0.62s 0.08s ease-out both;
+}
+
+@keyframes success-check-callout {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, calc(-100% + 4px)) scale(0.42)
+            rotate(-8deg);
+    }
+    20% {
+        opacity: 1;
+        transform: translate(-50%, calc(-100% - 11px)) scale(1.14)
+            rotate(2deg);
+    }
+    34% {
+        transform: translate(-50%, calc(-100% - 9px)) scale(0.96)
+            rotate(0);
+    }
+    48%,
+    76% {
+        opacity: 1;
+        transform: translate(-50%, calc(-100% - 10px)) scale(1)
+            rotate(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, calc(-100% - 22px)) scale(0.88)
+            rotate(0);
+    }
+}
+
+@keyframes success-check-draw {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes success-check-ring {
+    0% {
+        opacity: 0.72;
+        transform: scale(0.78);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1.55);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .like-confetti {
+        display: none;
+    }
+
+    .success-check {
+        transform: translate(-50%, calc(-100% - 10px)) scale(1);
+    }
+
+    .success-check.is-visible {
+        animation: success-check-fade 0.72s ease both;
+    }
+
+    .success-check.is-visible .success-check-tick,
+    .success-check.is-visible .success-check-badge::after {
+        animation: none;
+    }
+
+    .success-check-tick {
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes success-check-fade {
+    0%,
+    100% {
+        opacity: 0;
+    }
+    15%,
+    80% {
+        opacity: 1;
+    }
+}
+
 .comment-reply-list,
 .talk-reply-list {
     padding: 2px 0 0 var(--sp-16);
@@ -5348,107 +5494,64 @@ html {
     margin-left: 0;
 }
 
-/* ===== 侧边工具组 Dock（唯一权威样式）=====
-   标准结构: pill(箭头) > slot(手指) > 圆钮(inherit 手指)。
-   slot 与圆钮光标相同,圆边不再和箭头交接,从根上消除闪烁. */
-.side-quick-rail {
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 1200;
+/* 导航工具区：搜索、主题与账号入口。 */
+.nav-tools {
     display: flex;
+    gap: var(--sp-6);
     align-items: center;
-    justify-content: flex-end;
-    width: 72px;
-    padding-right: 14px;
-    pointer-events: none;
 }
 
-.side-quick-actions {
-    position: relative;
-    z-index: 1;
+.nav-tool-form {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
-    align-items: center;
-    box-sizing: border-box;
-    width: 56px;
-    padding: 8px;
-    pointer-events: auto;
-    cursor: default;
-    background: #000;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 999px;
-    touch-action: none;
-    user-select: none;
-}
-
-.side-quick-actions.is-dragging,
-.side-quick-actions.is-dragging * {
-    cursor: grabbing !important;
-}
-
-/* 方槽:整块手指,作为圆钮与 pill 箭头之间的缓冲层 */
-.side-dock-slot {
-    position: relative;
-    display: grid;
-    flex: 0 0 auto;
-    place-items: center;
-    width: 40px;
-    height: 40px;
-    cursor: pointer;
-}
-
-.side-dock-slot--theme {
-    margin-top: 2px;
-    padding-top: 6px;
-    height: 46px;
-    border-top: 1px solid rgba(255, 255, 255, 0.18);
-}
-
-.side-dock-logout-form {
-    display: grid;
-    place-items: center;
-    width: 100%;
-    height: 100%;
     margin: 0;
 }
 
-/* 圆钮本身:视觉圆 + 继承 slot 的手指,子节点不抢命中 */
-.side-dock-btn {
+.nav-tool-btn {
     box-sizing: border-box;
     display: inline-grid;
     place-items: center;
     width: 40px;
     height: 40px;
     padding: 0;
-    overflow: hidden;
+    overflow: visible;
     font-size: 20px;
     line-height: 1;
-    color: rgba(255, 255, 255, 0.88);
+    color: rgba(255, 255, 255, 0.85);
     text-decoration: none;
-    cursor: inherit;
-    background: rgba(255, 255, 255, 0.02);
-    border: 0;
+    cursor: pointer;
+    background: rgba(18, 18, 22, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 50%;
+    -webkit-backdrop-filter: saturate(160%) blur(16px);
+    backdrop-filter: saturate(160%) blur(16px);
     transition:
         color 0.18s ease,
-        background-color 0.18s ease;
+        background-color 0.18s ease,
+        border-color 0.18s ease;
 }
 
-.side-dock-btn *,
-.side-dock-btn *::before,
-.side-dock-btn *::after {
-    pointer-events: none !important;
-    cursor: inherit !important;
+.nav-tool-btn * {
+    pointer-events: none;
 }
 
-.side-dock-slot:hover .side-dock-btn,
-.side-dock-btn:focus-visible {
+.nav-tool-btn:hover,
+.nav-tool-btn:focus-visible {
     color: var(--c-white);
     outline: none;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(38, 38, 44, 0.72);
+    border-color: rgba(255, 255, 255, 0.22);
+}
+
+.nav-tool-btn .ln-icon,
+.nav-tool-btn .ln-icon > svg {
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+}
+
+.nav-tool-identity {
+    position: relative;
+    display: inline-flex;
 }
 
 .side-theme-icon,
@@ -5464,30 +5567,23 @@ html {
     line-height: 1;
 }
 
-.side-dock-btn .ln-icon,
-.side-dock-btn .ln-icon > svg {
-    width: 20px;
-    height: 20px;
-    font-size: 20px;
-}
-
 .side-theme-label {
     display: none;
 }
 
-.side-theme-toggle .theme-icon-moon {
+.nav-tool-theme .theme-icon-moon {
     display: inline-grid;
 }
 
-.side-theme-toggle .theme-icon-sun {
+.nav-tool-theme .theme-icon-sun {
     display: none;
 }
 
-html[data-theme="dark"] .side-theme-toggle .theme-icon-moon {
+html[data-theme="dark"] .nav-tool-theme .theme-icon-moon {
     display: none;
 }
 
-html[data-theme="dark"] .side-theme-toggle .theme-icon-sun {
+html[data-theme="dark"] .nav-tool-theme .theme-icon-sun {
     display: inline-grid;
 }
 
@@ -5506,8 +5602,7 @@ html[data-theme="dark"] .side-theme-toggle .theme-icon-sun {
     display: none;
 }
 
-.side-identity.has-identity .side-account-btn,
-.side-identity.has-identity .side-identity-trigger {
+.side-identity.has-identity .nav-account-btn {
     background: transparent;
     padding: 0;
     overflow: hidden;
@@ -5555,42 +5650,6 @@ html[data-theme="dark"] .side-theme-toggle .theme-icon-sun {
     font-size: 12.5px;
     line-height: 1.5;
     color: rgba(255, 255, 255, 0.68);
-}
-
-@media (max-width: 768px) {
-    .side-quick-rail {
-        width: 64px;
-        padding-right: 10px;
-    }
-
-    .side-quick-actions {
-        width: 50px;
-        padding: 6px;
-        gap: 3px;
-    }
-
-    .side-dock-slot,
-    .side-dock-btn {
-        width: 36px;
-        height: 36px;
-        font-size: 18px;
-    }
-
-    .side-dock-slot--theme {
-        height: 42px;
-        padding-top: 5px;
-    }
-
-    .side-theme-icon,
-    .side-theme-icon .theme-icon-moon,
-    .side-theme-icon .theme-icon-sun,
-    .side-identity-fallback,
-    .side-dock-btn .ln-icon,
-    .side-dock-btn .ln-icon > svg {
-        width: 18px;
-        height: 18px;
-        font-size: 18px;
-    }
 }
 
 .site-search-overlay[hidden] {
@@ -6234,10 +6293,10 @@ body.site-search-open {
     }
 
     /* 音乐、友链、归档、关于 移动端从底栏隐藏(改由「更多」浮层进入;桌面端仍显示) */
-    .site-nav-bar .nav-main-links .nav-link[href="/music"],
-    .site-nav-bar .nav-main-links .nav-link[href="/links"],
-    .site-nav-bar .nav-main-links .nav-link[href="/archives"],
-    .site-nav-bar .nav-main-links .nav-link[href="/about"] {
+    .site-nav-bar .nav-main-links .nav-link[data-nav-slug="music"],
+    .site-nav-bar .nav-main-links .nav-link[data-nav-slug="friends"],
+    .site-nav-bar .nav-main-links .nav-link[data-nav-slug="archives"],
+    .site-nav-bar .nav-main-links .nav-link[data-nav-slug="about"] {
         display: none;
     }
 
@@ -9879,5 +9938,338 @@ html[data-theme="dark"] {
 @media (prefers-reduced-motion: reduce) {
     .ln-tt::after {
         transition: none;
+    }
+}
+
+/* ============================================================
+   Navigation layout authority
+   Desktop: brand / centered menu / tools are three normal-flow columns.
+   Mobile: the brand rejoins the bottom tab bar; tools remain a compact rail.
+   Keep this block last because the theme contains older navigation variants.
+   ============================================================ */
+.nav-brand {
+    display: flex;
+    align-items: flex-start;
+    min-width: 0;
+}
+
+@media (min-width: 769px) {
+    .site-nav-bar,
+    body.nav-scrolled .site-nav-bar {
+        top: 20px;
+        right: 24px;
+        left: 24px;
+        z-index: 1000;
+        display: flex;
+        gap: var(--sp-16);
+        align-items: flex-start;
+        width: auto;
+        max-width: none;
+        transform: none;
+        pointer-events: none;
+    }
+
+    body.nav-scrolled .site-nav-bar {
+        top: 10px;
+    }
+
+    .site-nav-bar::before,
+    body.nav-scrolled .site-nav-bar::before {
+        display: none;
+    }
+
+    .site-nav-bar > .nav-brand,
+    .site-nav-bar > .nav-tools {
+        display: flex;
+        flex: 1 1 0;
+        min-width: 0;
+        pointer-events: auto;
+    }
+
+    .site-nav-bar > .nav-brand {
+        justify-content: flex-start;
+    }
+
+    .site-nav-bar > .nav-tools {
+        position: static;
+        justify-content: flex-end;
+        transform: none;
+    }
+
+    .site-nav-bar > .nav-pill,
+    body.nav-scrolled .site-nav-bar > .nav-pill,
+    body.nav-scrolled .site-nav-bar > .nav-pill.nav-open,
+    html[data-theme="dark"] body.nav-scrolled .site-nav-bar > .nav-pill,
+    html[data-theme="light"] body.nav-scrolled .site-nav-bar > .nav-pill {
+        position: relative;
+        display: flex;
+        flex: 0 1 560px;
+        flex-direction: column;
+        align-items: stretch;
+        width: 560px !important;
+        min-width: 0;
+        max-width: 560px;
+        margin: 0;
+        overflow: visible;
+        pointer-events: auto;
+        background: #000;
+        border: 0;
+        border-radius: var(--radius-xl);
+        box-shadow:
+            0 1px 1px rgba(0, 0, 0, 0.08),
+            0 0 0 1px rgba(0, 0, 0, 0.05),
+            0 18px 46px rgba(0, 0, 0, 0.18);
+        -webkit-backdrop-filter: blur(18px);
+        backdrop-filter: blur(18px);
+    }
+
+    .site-nav-bar > .nav-pill .nav-row,
+    body.nav-scrolled .site-nav-bar > .nav-pill .nav-row {
+        display: flex;
+        gap: var(--sp-4);
+        align-items: center;
+        width: 100%;
+        min-height: 52px;
+        padding: var(--sp-6) var(--sp-8);
+    }
+
+    .site-nav-bar > .nav-pill .nav-main-links {
+        flex: 1 1 auto;
+    }
+
+    .site-nav-bar > .nav-pill .nav-actions {
+        flex: 0 0 auto;
+    }
+
+    .site-nav-bar .nav-brand .nav-identity-orb {
+        box-sizing: border-box;
+        position: relative;
+        top: auto;
+        left: auto;
+        z-index: 1;
+        flex: 0 0 44px;
+        width: 44px;
+        height: 44px;
+        margin: 0;
+        background: #000;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 50%;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24);
+        -webkit-backdrop-filter: blur(16px) saturate(145%);
+        backdrop-filter: blur(16px) saturate(145%);
+    }
+
+    .site-nav-bar .nav-brand .nav-avatar {
+        width: 44px;
+        height: 44px;
+        margin: 0;
+    }
+
+    .site-nav-bar .nav-brand .nav-avatar-img,
+    .site-nav-bar .nav-brand .nav-avatar-fallback,
+    .site-nav-bar .nav-brand .nav-avatar-home {
+        width: 36px;
+        height: 36px;
+    }
+
+    .site-nav-bar .nav-tool-btn {
+        width: 44px;
+        height: 44px;
+        background: #000;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24);
+    }
+
+    .nav-tools .ln-tt::after {
+        top: calc(100% + var(--tt-gap));
+        right: 0;
+        bottom: auto;
+        left: auto;
+        transform: scale(var(--tt-scale));
+        transform-origin: 100% 0;
+    }
+
+    .nav-tools .ln-tt:hover::after,
+    .nav-tools .ln-tt:focus-visible::after {
+        transform: scale(1);
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1049px) {
+    .site-nav-bar,
+    body.nav-scrolled .site-nav-bar {
+        right: 16px;
+        left: 16px;
+        gap: var(--sp-12);
+    }
+
+    .site-nav-bar > .nav-pill,
+    body.nav-scrolled .site-nav-bar > .nav-pill,
+    body.nav-scrolled .site-nav-bar > .nav-pill.nav-open {
+        flex-basis: clamp(380px, calc(100vw - 390px), 560px);
+        width: clamp(380px, calc(100vw - 390px), 560px) !important;
+    }
+
+    .site-nav-bar > .nav-tools {
+        gap: var(--sp-4);
+    }
+
+    .site-nav-bar .nav-tool-btn {
+        width: 36px;
+        height: 36px;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 880px) {
+    .site-nav-bar .nav-main-links .nav-link span,
+    .site-nav-bar .nav-dd-caret {
+        display: none;
+    }
+
+    .site-nav-bar .nav-main-links .nav-link:not(.nav-dd-trigger) .nav-link-icon {
+        display: inline-flex;
+    }
+
+    .site-nav-bar .nav-link,
+    .site-nav-bar .nav-dd-trigger {
+        padding-right: var(--sp-9);
+        padding-left: var(--sp-9);
+    }
+}
+
+@media (max-width: 768px) {
+    .site-nav-bar,
+    body.nav-scrolled .site-nav-bar {
+        top: auto;
+        right: 12px;
+        bottom: 12px;
+        left: 12px;
+        z-index: 1000;
+        display: flex;
+        gap: 0;
+        align-items: stretch;
+        width: auto;
+        max-width: 360px;
+        margin: 0 auto;
+        overflow: visible;
+        background: #000;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 22px;
+        box-shadow:
+            0 18px 42px rgba(15, 23, 42, 0.22),
+            0 1px 0 rgba(255, 255, 255, 0.08) inset;
+        transform: none;
+    }
+
+    .site-nav-bar > .nav-brand {
+        display: flex;
+        flex: 1 1 0;
+        align-items: stretch;
+        min-width: 0;
+    }
+
+    .site-nav-bar > .nav-pill,
+    .site-nav-bar > .nav-pill.nav-open,
+    body.nav-scrolled .site-nav-bar > .nav-pill,
+    html[data-theme="dark"] .site-nav-bar > .nav-pill,
+    html[data-theme="light"] .site-nav-bar > .nav-pill {
+        display: flex;
+        flex: 5 1 0;
+        flex-direction: column;
+        width: auto !important;
+        min-width: 0;
+        max-width: none;
+        min-height: 0;
+        margin: 0;
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+
+    .site-nav-bar .nav-brand .nav-identity-orb {
+        position: relative;
+        display: flex;
+        flex: 1 1 0;
+        align-items: stretch;
+        width: 100%;
+        height: auto;
+        margin: 0;
+    }
+
+    .site-nav-bar .nav-brand .nav-avatar {
+        flex: 1 1 0;
+        width: 100%;
+        height: auto;
+    }
+
+    .site-nav-bar > .nav-pill .nav-row {
+        display: flex;
+        flex: 1 1 auto;
+        gap: 0;
+        align-items: stretch;
+        width: 100%;
+        min-width: 0;
+        min-height: 50px;
+        padding: var(--sp-4) 0;
+    }
+
+    .site-nav-bar > .nav-tools {
+        position: fixed;
+        top: 50%;
+        right: 8px;
+        bottom: auto;
+        left: auto;
+        z-index: 1200;
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp-5);
+        width: auto;
+        margin: 0;
+        transform: translateY(-50%);
+    }
+
+    .site-nav-bar .nav-tool-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+        background: #000;
+    }
+
+    .site-nav-bar .nav-tool-btn .ln-icon,
+    .site-nav-bar .nav-tool-btn .ln-icon > svg,
+    .site-nav-bar .side-theme-icon,
+    .site-nav-bar .side-theme-icon .theme-icon-moon,
+    .site-nav-bar .side-theme-icon .theme-icon-sun,
+    .site-nav-bar .side-identity-fallback {
+        width: 18px;
+        height: 18px;
+        font-size: 18px;
+    }
+
+    .nav-tools .ln-tt::after {
+        display: none;
+    }
+}
+
+/* The desktop footer is still one row at this narrow band; keep its QR popover
+   inside the viewport so an invisible popup cannot create horizontal scroll. */
+@media (min-width: 769px) and (max-width: 840px) {
+    .footer-social-qr {
+        right: 0;
+        left: auto;
+        transform: translateY(8px) scale(0.96);
+        transform-origin: 100% 100%;
+    }
+
+    .footer-social-has-qr:hover .footer-social-qr,
+    .footer-social-has-qr:focus-visible .footer-social-qr {
+        transform: translateY(0) scale(1);
+    }
+
+    .footer-social-qr::after {
+        right: 10px;
+        left: auto;
     }
 }

@@ -30,34 +30,6 @@ require __DIR__ . '/Core/Validator.php';
 require __DIR__ . '/Core/Markdown.php';
 require __DIR__ . '/Core/Rss.php';
 
-// Load local environment variables before config.php reads env values.
-// This keeps secrets out of SQLite/admin settings while preserving zero dependencies.
-$__envPath = dirname(__DIR__, 2) . '/.env';
-if (is_file($__envPath) && is_readable($__envPath)) {
-    foreach (file($__envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $__line) {
-        $__line = trim($__line);
-        if ($__line === '' || str_starts_with($__line, '#') || !str_contains($__line, '=')) {
-            continue;
-        }
-        [$__key, $__value] = array_map('trim', explode('=', $__line, 2));
-        if ($__key === '' || getenv($__key) !== false || isset($_ENV[$__key]) || isset($_SERVER[$__key])) {
-            continue;
-        }
-        if (
-            (str_starts_with($__value, '"') && str_ends_with($__value, '"')) ||
-            (str_starts_with($__value, "'") && str_ends_with($__value, "'"))
-        ) {
-            $__value = substr($__value, 1, -1);
-        }
-        if (function_exists('putenv')) {
-            putenv($__key . '=' . $__value);
-        }
-        $_ENV[$__key] = $__value;
-        $_SERVER[$__key] = $__value;
-    }
-}
-unset($__envPath, $__line, $__key, $__value);
-
 // 简易自动加载（按命名空间映射目录）
 spl_autoload_register(function (string $class) {
     $prefix = 'App\\';

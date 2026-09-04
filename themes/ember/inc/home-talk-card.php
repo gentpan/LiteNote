@@ -11,6 +11,7 @@
         : $item->getKeywords();
     $displayContent = $item->contentWithoutKeywords();
     $commentCount = count($comments);
+    $avatarComments = $comments;
     $locationName = method_exists($item, 'locationDisplayName') ? $item->locationDisplayName() : trim((string)($item->location_name ?: $item->location_city ?: ''));
     $locationTitle = method_exists($item, 'locationFullName') ? $item->locationFullName() : trim((string)($item->location_name ?: $item->location_city ?: ''));
     $weatherText = method_exists($item, 'weatherDisplayText') ? $item->weatherDisplayText() : '';
@@ -34,6 +35,7 @@
         <footer class="home-actions home-card-footer home-card-meta-bar">
             <div class="home-card-meta home-talk-meta">
                 <span>{!! \App\Core\Helper::timeTag($item->publishedAt()) !!}</span>
+                @include('partials.home-comment-avatars')
                 @if($locationName !== '')
                     <span class="home-talk-location" title="{{ $locationTitle }}">@include('partials.ln-icon', ['name' => 'map-pin']){{ $locationName }}</span>
                 @endif
