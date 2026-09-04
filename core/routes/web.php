@@ -15,8 +15,6 @@ use App\Controllers\Front\ArchiveController;
 use App\Controllers\Front\SearchController;
 use App\Controllers\Front\FriendController;
 use App\Controllers\Front\CommentController;
-use App\Controllers\Front\AuthController;
-use App\Controllers\Front\PasskeyController as FrontPasskeyController;
 use App\Controllers\Front\CaptchaController;
 use App\Middleware\CsrfMiddleware;
 use App\Controllers\Front\FeedController;
@@ -66,13 +64,6 @@ $router->get('/links',            [FriendController::class, 'links']);
 $router->get('/subscribe',        [FriendController::class, 'subscribe']);
 $router->post('/links/apply',     [FriendController::class, 'apply']);
 $router->post('/links/modify',    [FriendController::class, 'modify']);
-
-// 前台读者注册 / 邮箱验证 / Passkey 绑定（role=reader，不能进后台）
-$router->post('/auth/register',              [AuthController::class, 'register'], [CsrfMiddleware::class]);
-$router->get('/auth/verify',                 [AuthController::class, 'verify']);
-$router->post('/auth/resend-verify',         [AuthController::class, 'resendVerify'], [CsrfMiddleware::class]);
-$router->get('/auth/passkey/register-options', [FrontPasskeyController::class, 'registerOptions']);
-$router->post('/auth/passkey/register',      [FrontPasskeyController::class, 'register'], [CsrfMiddleware::class]);
 
 // 评论提交
 $router->post('/comment/submit',  [CommentController::class, 'submit']);

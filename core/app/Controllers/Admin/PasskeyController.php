@@ -115,7 +115,13 @@ class PasskeyController
 
     public function loginOptions(Request $request): never
     {
-        $credentials = $this->service->allCredentials();
+        $credentials = array_values(array_filter(
+            $this->service->allCredentials(),
+            static function (array $credential): bool {
+                $user = User::find((int) ($credential['user_id'] ?? 0));
+                return $user !== null && $user->isAdmin() && $user->isActive();
+            }
+        ));
         if (!$credentials) {
             Response::json([
                 'success' => false,
@@ -176,14 +182,14 @@ class PasskeyController
         if (!$user->isActive()) {
             Response::json(['success' => false, 'message' => '账号已停用'], 403);
         }
+        if (!$user->isAdmin()) {
+            Response::json(['success' => false, 'message' => '仅允许管理员登录'], 403);
+        }
         if (!$user->isEmailVerified()) {
             Response::json(['success' => false, 'need_verify' => true, 'message' => '请先完成邮箱验证后再登录'], 403);
         }
 
-        $role = $user->isAdmin() ? 'admin' : 'reader';
-        if (!$user->isAdmin() && (string) ($user->role ?? '') !== 'reader') {
-            User::db()->update('users', ['role' => 'reader'], 'id = :id', ['id' => $user->id]);
-        }
+        $role = 'admin';
 
         $this->service->updateCounter((string) $credential['credential_id'], (int) $result['counter']);
         User::db()->update('users', [
@@ -204,9 +210,8 @@ class PasskeyController
         Response::json([
             'success' => true,
             'message' => 'Passkey 登录成功',
-            'redirect' => $role === 'admin' ? '/admin' : '/',
+            'redirect' => '/admin',
             'role' => $role,
-            'identity' => \App\Controllers\Front\AuthController::identityPayload($user),
         ]);
     }
 

@@ -20,7 +20,7 @@
                         @include('partials.ln-icon', ['name' => 'gauge'])
                     </a>
                 @else
-                    <a class="footer-social footer-account-button" href="/?login=1&mode=login" aria-label="管理员登录" title="管理员登录">
+                    <a class="footer-social footer-account-button" href="/?login=1" data-admin-login-open aria-label="管理员登录" title="管理员登录">
                         <i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i>
                     </a>
                 @endif

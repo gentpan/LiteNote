@@ -237,111 +237,54 @@
     </div>
 
     @if(empty($currentAdmin))
-    @php
-        $accountMemberLoggedIn = !empty($currentMember);
-    @endphp
-    <div class="login-overlay account-overlay" data-login-overlay data-account-overlay hidden>
-        <div class="login-modal account-modal" role="dialog" aria-modal="true" aria-label="账号与评论身份" data-account-member="{{ $accountMemberLoggedIn ? '1' : '0' }}">
-            <button type="button" class="login-modal-close" data-login-close data-account-close aria-label="关闭"><i class="fa-solid fa-circle-xmark" aria-hidden="true"></i></button>
-            @if(!$accountMemberLoggedIn)
-            <div class="account-tabs" role="tablist" aria-label="账号面板">
-                <button type="button" class="account-tab is-active" role="tab" aria-selected="true" data-account-tab="identity">身份信息</button>
-                <button type="button" class="account-tab" role="tab" aria-selected="false" data-account-tab="register">注册</button>
-            </div>
-            @else
+    <div class="login-overlay identity-overlay" data-identity-overlay hidden>
+        <div class="login-modal account-modal identity-modal" role="dialog" aria-modal="true" aria-label="评论身份">
+            <button type="button" class="login-modal-close" data-identity-close aria-label="关闭"><i class="fa-solid fa-circle-xmark" aria-hidden="true"></i></button>
             <div class="login-modal-head account-modal-head">
                 <span class="login-modal-icon"><i class="fa-regular fa-circle-user" aria-hidden="true"></i></span>
                 <div>
                     <p class="login-modal-title">评论身份</p>
-                    <p class="login-modal-subtitle">读者 · {{ $currentMember->nickname ?: $currentMember->username }}</p>
+                    <p class="login-modal-subtitle">仅用于评论，不创建用户账号</p>
                 </div>
             </div>
-            <div class="account-passkey-bar">
-                <button type="button" class="login-modal-passkey" data-bind-passkey>@include('partials.ln-icon', ['name' => 'key']) 绑定 Passkey</button>
-                <p class="login-modal-hint">绑定后可用指纹 / Face ID / 安全密钥登录</p>
-            </div>
-            @endif
+            <form class="login-modal-form" data-identity-form>
+                <div class="account-identity-preview-wrap"><img class="nav-identity-preview account-identity-preview" alt=""></div>
+                <label class="login-modal-field"><i class="fa-regular fa-circle-user" aria-hidden="true"></i><input name="nickname" placeholder="昵称 *" required maxlength="50"></label>
+                <label class="login-modal-field"><i class="fa-regular fa-envelope" aria-hidden="true"></i><input name="email" type="email" placeholder="邮箱 *" required></label>
+                <label class="login-modal-field"><i class="fa-solid fa-link" aria-hidden="true"></i><input name="website" placeholder="网站（选填）"></label>
+                <label class="login-modal-field login-modal-captcha nav-identity-captcha" data-nav-identity-captcha hidden>
+                    <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+                    <input name="captcha" placeholder="验证码 *" autocomplete="off" maxlength="4">
+                    <img class="login-modal-captcha-img nav-identity-captcha-img" data-nav-identity-captcha-img src="" alt="点击刷新验证码" title="看不清？点击刷新">
+                </label>
+                <p class="login-modal-hint" data-nav-identity-captcha-tip hidden>首次使用此邮箱评论需要验证码，通过后以后免验。</p>
+                <div class="account-identity-actions">
+                    <button type="button" class="login-modal-ghost" data-nav-identity-clear>清除</button>
+                    <button type="submit" class="login-modal-submit">保存身份</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-            <div class="account-panel" data-account-panel="identity">
-                @if(!$accountMemberLoggedIn)
-                <div class="login-modal-head account-modal-head">
-                    <span class="login-modal-icon"><i class="fa-regular fa-circle-user" aria-hidden="true"></i></span>
-                    <div>
-                        <p class="login-modal-title">评论身份</p>
-                        <p class="login-modal-subtitle">保存后评论表单会自动使用这份资料</p>
-                    </div>
-                </div>
-                @endif
-                <form class="login-modal-form" data-identity-form>
-                    <div class="account-identity-preview-wrap">
-                        <img class="nav-identity-preview account-identity-preview" alt="">
-                    </div>
-                    <label class="login-modal-field"><i class="fa-regular fa-circle-user" aria-hidden="true"></i><input name="nickname" placeholder="昵称 *" required maxlength="50"></label>
-                    <label class="login-modal-field"><i class="fa-regular fa-envelope" aria-hidden="true"></i><input name="email" type="email" placeholder="邮箱 *" required></label>
-                    <label class="login-modal-field"><i class="fa-solid fa-link" aria-hidden="true"></i><input name="website" placeholder="网站（选填）"></label>
-                    <label class="login-modal-field login-modal-captcha nav-identity-captcha" data-nav-identity-captcha hidden>
-                        <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
-                        <input name="captcha" placeholder="验证码 *" autocomplete="off" maxlength="4">
-                        <img class="login-modal-captcha-img nav-identity-captcha-img" data-nav-identity-captcha-img src="" alt="点击刷新验证码" title="看不清？点击刷新">
-                    </label>
-                    <p class="login-modal-hint" data-nav-identity-captcha-tip hidden>首次用此邮箱评论需填验证码，通过后以后免验。</p>
-                    <p class="login-modal-error" data-identity-error hidden></p>
-                    <div class="account-identity-actions">
-                        <button type="button" class="login-modal-ghost" data-nav-identity-clear>清除</button>
-                        <button type="submit" class="login-modal-submit">保存</button>
-                    </div>
-                </form>
-            </div>
-
-            <div class="account-panel" data-account-panel="register" hidden>
-                <div class="account-auth-mode" data-auth-mode-panel="register">
-                    <div class="login-modal-head account-modal-head">
-                        <span class="login-modal-icon"><i class="fa-solid fa-user-plus" aria-hidden="true"></i></span>
-                        <div>
-                            <p class="login-modal-title">注册读者账号</p>
-                            <p class="login-modal-subtitle">需验证邮箱后才能登录 · 读者身份，非管理员</p>
-                        </div>
-                    </div>
-                    <form class="login-modal-form" data-register-form>
-                        <input type="hidden" name="_csrf" value="{{ \App\Core\Session::csrfToken() }}">
-                        <label class="login-modal-field">@include('partials.ln-icon', ['name' => 'user'])<input name="username" placeholder="用户名 *" autocomplete="username" required pattern="[A-Za-z0-9_]{3,30}" title="3–30 位字母、数字或下划线"></label>
-                        <label class="login-modal-field">@include('partials.ln-icon', ['name' => 'lock'])<input name="password" type="password" placeholder="密码 *（至少 6 位）" autocomplete="new-password" required minlength="6"></label>
-                        <label class="login-modal-field"><i class="fa-regular fa-circle-user" aria-hidden="true"></i><input name="nickname" placeholder="昵称 *" autocomplete="nickname" required maxlength="50"></label>
-                        <label class="login-modal-field"><i class="fa-regular fa-envelope" aria-hidden="true"></i><input name="email" type="email" placeholder="邮箱 *（用于验证）" autocomplete="email" required></label>
-                        <label class="login-modal-field"><i class="fa-solid fa-link" aria-hidden="true"></i><input name="website" placeholder="网站（选填）" autocomplete="url"></label>
-                        <label class="login-modal-field login-modal-captcha">
-                            <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
-                            <input name="captcha" placeholder="验证码 *" autocomplete="off" maxlength="4" required>
-                            <img class="login-modal-captcha-img" data-register-captcha-img src="/captcha?t={{ time() }}" alt="点击刷新验证码" title="看不清？点击刷新">
-                        </label>
-                        <p class="login-modal-hint">注册后会发送验证邮件，点击链接激活后即可登录。用户名 admin / xifeng 及昵称「西风」等不可用。</p>
-                        <p class="login-modal-error" data-register-error hidden></p>
-                        <p class="login-modal-success" data-register-success hidden></p>
-                        <button type="submit" class="login-modal-submit"><i class="fa-solid fa-user-plus" aria-hidden="true"></i> 注册并发送验证邮件</button>
-                        <button type="button" class="login-modal-switch" data-auth-mode="login">已有账号？去登录</button>
-                    </form>
-                </div>
-                <div class="account-auth-mode" data-auth-mode-panel="login" hidden>
-                    <div class="login-modal-head account-modal-head">
-                        <span class="login-modal-icon"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i></span>
-                        <div>
-                            <p class="login-modal-title">登录</p>
-                            <p class="login-modal-subtitle">{{ $site['title'] ?? 'LiteNote' }} 账号入口</p>
-                        </div>
-                    </div>
-                    <form class="login-modal-form" data-login-form>
-                        <input type="hidden" name="_csrf" value="{{ \App\Core\Session::csrfToken() }}">
-                        <label class="login-modal-field">@include('partials.ln-icon', ['name' => 'user'])<input name="username" placeholder="用户名" autocomplete="username" required></label>
-                        <label class="login-modal-field">@include('partials.ln-icon', ['name' => 'lock'])<input name="password" type="password" placeholder="密码" autocomplete="current-password" required></label>
-                        <p class="login-modal-error" data-login-error hidden></p>
-                        <button type="submit" class="login-modal-submit"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> 登录</button>
-                        <button type="button" class="login-modal-passkey" data-login-passkey>@include('partials.ln-icon', ['name' => 'key']) 使用 Passkey 登录</button>
-                        <button type="button" class="login-modal-switch" data-resend-verify hidden>重发验证邮件</button>
-                        <a class="login-modal-forgot" href="/admin/forgot">忘记密码？</a>
-                        <button type="button" class="login-modal-switch" data-auth-mode="register">没有账号？去注册</button>
-                    </form>
+    <div class="login-overlay admin-login-overlay" data-admin-login-overlay hidden>
+        <div class="login-modal admin-login-modal" role="dialog" aria-modal="true" aria-label="管理员登录">
+            <button type="button" class="login-modal-close" data-admin-login-close aria-label="关闭"><i class="fa-solid fa-circle-xmark" aria-hidden="true"></i></button>
+            <div class="login-modal-head">
+                <span class="login-modal-icon"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i></span>
+                <div>
+                    <p class="login-modal-title">管理员登录</p>
+                    <p class="login-modal-subtitle">{{ $site['title'] ?? 'LiteNote' }} 管理后台</p>
                 </div>
             </div>
+            <form class="login-modal-form" data-admin-login-form>
+                <input type="hidden" name="_csrf" value="{{ \App\Core\Session::csrfToken() }}">
+                <label class="login-modal-field">@include('partials.ln-icon', ['name' => 'user'])<input name="username" placeholder="管理员用户名" autocomplete="username" required></label>
+                <label class="login-modal-field">@include('partials.ln-icon', ['name' => 'lock'])<input name="password" type="password" placeholder="管理员密码" autocomplete="current-password" required></label>
+                <p class="login-modal-error" data-admin-login-error hidden></p>
+                <button type="submit" class="login-modal-submit"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> 登录后台</button>
+                <button type="button" class="login-modal-passkey" data-admin-login-passkey>@include('partials.ln-icon', ['name' => 'key']) 使用 Passkey 登录</button>
+                <a class="login-modal-forgot" href="/admin/forgot">忘记密码？</a>
+            </form>
         </div>
     </div>
     @endif

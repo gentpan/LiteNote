@@ -126,8 +126,9 @@ try {
             $role = (string) ($loaded->role ?: $sessionRole);
             if ($role === 'admin') {
                 $currentAdmin = $loaded;
-            } elseif (in_array($role, ['reader', 'member'], true) && $loaded->isEmailVerified() && $loaded->isActive()) {
-                $currentMember = $loaded;
+            } else {
+                // 前台不再提供普通用户账号；旧读者会话按访客评论身份处理。
+                Session::forget('admin_user');
             }
         }
     }

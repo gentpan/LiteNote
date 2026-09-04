@@ -40,6 +40,15 @@ class AuthController
             Response::redirect('/?login=1&mode=login');
         }
 
+        if (!$user->isAdmin()) {
+            LoginRateLimiter::recordFailure($ip, $username);
+            if ($isAjax) {
+                Response::json(['ok' => false, 'message' => '仅允许管理员登录'], 403);
+            }
+            Session::flash('login_error', '仅允许管理员登录');
+            Response::redirect('/?login=1');
+        }
+
         if (!$user->isActive()) {
             if ($isAjax) {
                 Response::json(['ok' => false, 'message' => '账号已停用'], 403);
@@ -48,9 +57,8 @@ class AuthController
             Response::redirect('/?login=1&mode=login');
         }
 
-        // 读者必须先完成邮箱验证；管理员不受限
         if (!$user->isEmailVerified()) {
-            $message = '请先点击注册邮箱里的验证链接完成激活';
+            $message = '请先完成管理员邮箱验证';
             if ($isAjax) {
                 Response::json([
                     'ok' => false,
@@ -65,11 +73,7 @@ class AuthController
 
         LoginRateLimiter::clear($ip, $username);
 
-        // 防止历史脏数据：非管理员一律按 reader 落库
-        $role = $user->isAdmin() ? 'admin' : 'reader';
-        if (!$user->isAdmin() && (string) ($user->role ?? '') !== 'reader') {
-            User::db()->update('users', ['role' => 'reader'], 'id = :id', ['id' => $user->id]);
-        }
+        $role = 'admin';
 
         User::db()->update('users', [
             'last_login_at' => date('Y-m-d H:i:s'),
@@ -85,16 +89,12 @@ class AuthController
         ]);
         Session::regenerate();
 
-        $isAdmin = $role === 'admin';
-        $redirect = $isAdmin ? '/admin' : '/';
-        $identity = \App\Controllers\Front\AuthController::identityPayload($user);
-
+        $redirect = '/admin';
         if ($isAjax) {
             Response::json([
                 'ok'       => true,
                 'redirect' => $redirect,
                 'role'     => $role,
-                'identity' => $identity,
             ]);
         }
         Response::redirect($redirect);
