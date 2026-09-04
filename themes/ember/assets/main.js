@@ -1373,17 +1373,22 @@
     }
 
     // 点赞/评论成功后,从操作位置呼出一次勾选反馈。
-    // 全页只保留一个实例,重复触发时重置动画并续期,避免堆积悬空节点。
+    // 外层只负责定位,内层以 data-state 驱动入场;重复触发会完整重播而不堆积节点。
     var successCheckTimer = 0;
+    var successCheckRun = 0;
     function showSuccessCheck(anchor) {
-        var check = document.querySelector('.success-check');
+        var check = document.querySelector('.success-check[data-success-check]');
         if (!check) {
             check = document.createElement('span');
             check.className = 'success-check';
+            check.setAttribute('data-success-check', '');
             check.setAttribute('aria-hidden', 'true');
-            check.innerHTML = '<span class="success-check-badge"><svg viewBox="0 0 48 48" focusable="false"><path class="success-check-tick" d="M13 24.5l7.2 7.2L35 16.9" /></svg></span>';
+            check.innerHTML = '<span class="t-success-check success-check-badge" data-state="out"><svg viewBox="0 0 48 48" fill="none" focusable="false" aria-hidden="true"><path class="success-check-tick" pathLength="20" d="M13 24.5l7.2 7.2L35 16.9" /></svg></span>';
             document.body.appendChild(check);
         }
+
+        var animatedCheck = check.querySelector('.t-success-check');
+        if (!animatedCheck) return;
 
         var viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
         var viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
@@ -1402,13 +1407,19 @@
         check.style.top = y + 'px';
 
         window.clearTimeout(successCheckTimer);
-        check.classList.remove('is-visible');
-        check.getBoundingClientRect();
-        check.classList.add('is-visible');
+        var run = ++successCheckRun;
+        animatedCheck.dataset.state = 'out';
+        animatedCheck.getBoundingClientRect();
+        animatedCheck.dataset.state = 'in';
         successCheckTimer = window.setTimeout(function() {
-            check.classList.remove('is-visible');
+            if (run !== successCheckRun) return;
+            animatedCheck.dataset.state = 'out';
+            successCheckTimer = 0;
         }, 1050);
     }
+
+    // 供插件的独立互动脚本复用同一套成功反馈。
+    window.LiteNoteSuccessCheck = showSuccessCheck;
 
     function likedStorageKey(type) {
         return 'litenote-liked-' + type;

@@ -3854,7 +3854,7 @@ html[data-theme="dark"] .nav-pill::after {
         scale(0.2);
 }
 
-/* 点赞/评论成功反馈:从操作位置上方呼出,文本仍由 toast 承担。 */
+/* 点赞/评论成功反馈:定位在操作上方,图标从下方呼出,文本仍由 toast 承担。 */
 .success-check {
     position: fixed;
     z-index: 3100;
@@ -3863,12 +3863,24 @@ html[data-theme="dark"] .nav-pill::after {
     width: 52px;
     height: 52px;
     pointer-events: none;
-    opacity: 0;
-    transform: translate(-50%, calc(-100% - 10px)) scale(0.45);
-    transform-origin: 50% 100%;
+    transform: translate(-50%, calc(-100% - 10px));
 }
 
 .success-check-badge {
+    --check-opacity-dur: 500ms;
+    --check-rotate-dur: 500ms;
+    --check-rotate-from: 80deg;
+    --check-bob-dur: 500ms;
+    --check-y-amount: 40px;
+    --check-blur-dur: 500ms;
+    --check-blur-from: 10px;
+    --check-path-dur: 500ms;
+    --check-path-delay: 80ms;
+    --check-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --check-ease-opacity: var(--check-ease-out);
+    --check-ease-rotate: var(--check-ease-out);
+    --check-ease-bob: cubic-bezier(0.34, 1.35, 0.64, 1);
+    --check-ease-path: var(--check-ease-out);
     position: relative;
     display: grid;
     place-items: center;
@@ -3881,6 +3893,12 @@ html[data-theme="dark"] .nav-pill::after {
     box-shadow:
         0 8px 24px rgba(34, 197, 94, 0.3),
         0 2px 7px rgba(15, 23, 42, 0.16);
+    opacity: 0;
+    filter: blur(var(--check-blur-from));
+    transform: rotate(var(--check-rotate-from));
+    transform-origin: center;
+    translate: 0 var(--check-y-amount);
+    will-change: transform, translate, opacity, filter;
 }
 
 .success-check-badge::after {
@@ -3893,6 +3911,7 @@ html[data-theme="dark"] .nav-pill::after {
 }
 
 .success-check svg {
+    display: block;
     width: 30px;
     height: 30px;
     overflow: visible;
@@ -3904,52 +3923,64 @@ html[data-theme="dark"] .nav-pill::after {
     stroke-width: 4;
     stroke-linecap: round;
     stroke-linejoin: round;
-    stroke-dasharray: 30;
-    stroke-dashoffset: 30;
+    stroke-dasharray: 20;
+    stroke-dashoffset: 20;
 }
 
-.success-check.is-visible {
-    animation: success-check-callout 1.05s cubic-bezier(0.2, 0.9, 0.25, 1)
-        both;
+.t-success-check[data-state="in"] {
+    animation:
+        t-check-fade var(--check-opacity-dur) var(--check-ease-opacity) forwards,
+        t-check-rotate var(--check-rotate-dur) var(--check-ease-rotate) forwards,
+        t-check-blur var(--check-blur-dur) var(--check-ease-out) forwards,
+        t-check-bob var(--check-bob-dur) var(--check-ease-bob) forwards;
 }
 
-.success-check.is-visible .success-check-tick {
-    animation: success-check-draw 0.38s 0.13s ease-out both;
+.t-success-check[data-state="in"] svg path {
+    animation: t-check-draw var(--check-path-dur) var(--check-ease-path)
+        var(--check-path-delay) forwards;
 }
 
-.success-check.is-visible .success-check-badge::after {
+.t-success-check[data-state="in"]::after {
     animation: success-check-ring 0.62s 0.08s ease-out both;
 }
 
-@keyframes success-check-callout {
-    0% {
+@keyframes t-check-fade {
+    from {
         opacity: 0;
-        transform: translate(-50%, calc(-100% + 4px)) scale(0.42)
-            rotate(-8deg);
     }
-    20% {
+    to {
         opacity: 1;
-        transform: translate(-50%, calc(-100% - 11px)) scale(1.14)
-            rotate(2deg);
-    }
-    34% {
-        transform: translate(-50%, calc(-100% - 9px)) scale(0.96)
-            rotate(0);
-    }
-    48%,
-    76% {
-        opacity: 1;
-        transform: translate(-50%, calc(-100% - 10px)) scale(1)
-            rotate(0);
-    }
-    100% {
-        opacity: 0;
-        transform: translate(-50%, calc(-100% - 22px)) scale(0.88)
-            rotate(0);
     }
 }
 
-@keyframes success-check-draw {
+@keyframes t-check-rotate {
+    from {
+        transform: rotate(var(--check-rotate-from));
+    }
+    to {
+        transform: rotate(0deg);
+    }
+}
+
+@keyframes t-check-blur {
+    from {
+        filter: blur(var(--check-blur-from));
+    }
+    to {
+        filter: blur(0);
+    }
+}
+
+@keyframes t-check-bob {
+    from {
+        translate: 0 var(--check-y-amount);
+    }
+    to {
+        translate: 0 0;
+    }
+}
+
+@keyframes t-check-draw {
     to {
         stroke-dashoffset: 0;
     }
@@ -3971,32 +4002,28 @@ html[data-theme="dark"] .nav-pill::after {
         display: none;
     }
 
-    .success-check {
-        transform: translate(-50%, calc(-100% - 10px)) scale(1);
+    .t-success-check {
+        animation: none !important;
+        filter: none;
+        transform: none;
+        translate: 0 0;
     }
 
-    .success-check.is-visible {
-        animation: success-check-fade 0.72s ease both;
-    }
-
-    .success-check.is-visible .success-check-tick,
-    .success-check.is-visible .success-check-badge::after {
-        animation: none;
-    }
-
-    .success-check-tick {
-        stroke-dashoffset: 0;
-    }
-}
-
-@keyframes success-check-fade {
-    0%,
-    100% {
+    .t-success-check[data-state="out"] {
         opacity: 0;
     }
-    15%,
-    80% {
+
+    .t-success-check[data-state="in"] {
         opacity: 1;
+    }
+
+    .t-success-check[data-state="in"] svg path {
+        animation: none !important;
+        stroke-dashoffset: 0;
+    }
+
+    .t-success-check::after {
+        animation: none !important;
     }
 }
 

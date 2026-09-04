@@ -125,7 +125,12 @@ final class Plugin implements PluginInterface
       var id = btn.getAttribute('data-id'); if(!id){return;}
       fetch(endpoint+encodeURIComponent(id)+'/like', {method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}})
         .then(function(r){return r.json();})
-        .then(function(d){ if(d && typeof d.likes !== 'undefined'){ var c=btn.querySelector('.like-count'); if(c){c.textContent=d.likes;} btn.classList.add('liked'); } })
+        .then(function(d){
+          if(d && typeof d.likes !== 'undefined'){
+            var c=btn.querySelector('.like-count'); if(c){c.textContent=d.likes;} btn.classList.add('liked');
+            if(d.code===0 && typeof window.LiteNoteSuccessCheck==='function'){ window.LiteNoteSuccessCheck(btn); }
+          }
+        })
         .catch(function(){});
     });
   }
