@@ -38,4 +38,16 @@ final class PublicAuthSurfaceTest extends TestCase
         self::assertStringContainsString('if (!$user->isAdmin())', $passkeyController);
         self::assertStringContainsString("'redirect' => '/admin'", $passkeyController);
     }
+
+    public function testCommentAvatarMotionMatchesTransitionRecipe(): void
+    {
+        $css = (string) file_get_contents(dirname(__DIR__) . '/themes/ember/assets/home.css');
+
+        self::assertStringContainsString('--avatar-lift: -4px;', $css);
+        self::assertStringContainsString('--avatar-dur: 320ms;', $css);
+        self::assertStringContainsString('--avatar-scale: 1.05;', $css);
+        self::assertStringContainsString('--avatar-falloff: 0.45;', $css);
+        self::assertStringContainsString('translateY(var(--shift, 0px))', $css);
+        self::assertStringContainsString('transition: transform var(--avatar-dur) var(--avatar-ease-in);', $css);
+    }
 }
