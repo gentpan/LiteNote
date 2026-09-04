@@ -59,5 +59,7 @@ final class PublicAuthSurfaceTest extends TestCase
         self::assertStringContainsString('isset($avatarIdentityKeys[$avatarIdentityKey])', $partial);
         self::assertStringContainsString('array_slice($avatarPeople, 0, 6)', $partial);
         self::assertStringContainsString('$avatarUniqueCount - $avatarPeopleCount', $partial);
+        self::assertStringContainsString('--avatar-layer: {{ $avatarIndex + 1 }}', $partial);
+        self::assertStringContainsString('--avatar-layer: {{ $avatarCircleCount }}', $partial);
     }
 }

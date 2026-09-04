@@ -30,12 +30,12 @@
 @if($avatarPeopleCount > 0)
     <span class="home-comment-avatars t-avatar-group" role="group" tabindex="0" aria-label="{{ $avatarGroupLabel }}" style="--avatar-group-width: {{ $avatarGroupWidth }}px">
         @foreach($avatarPeople as $avatarIndex => $avatarPerson)
-            <span class="home-comment-avatar t-avatar" aria-hidden="true" style="--avatar-offset: {{ $avatarIndex * 14 }}px; --avatar-layer: {{ $avatarCircleCount - $avatarIndex }}">
+            <span class="home-comment-avatar t-avatar" aria-hidden="true" style="--avatar-offset: {{ $avatarIndex * 14 }}px; --avatar-layer: {{ $avatarIndex + 1 }}">
                 <img src="{{ $avatarPerson['url'] }}" alt="" width="24" height="24" loading="lazy" decoding="async">
             </span>
         @endforeach
         @if($avatarRemainingCount > 0)
-            <span class="home-comment-avatar home-comment-avatar-more t-avatar" aria-hidden="true" style="--avatar-offset: {{ $avatarPeopleCount * 14 }}px; --avatar-layer: 1">+{{ $avatarRemainingCount }}</span>
+            <span class="home-comment-avatar home-comment-avatar-more t-avatar" aria-hidden="true" style="--avatar-offset: {{ $avatarPeopleCount * 14 }}px; --avatar-layer: {{ $avatarCircleCount }}">+{{ $avatarRemainingCount }}</span>
         @endif
     </span>
 @endif
