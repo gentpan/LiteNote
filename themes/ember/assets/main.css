@@ -4198,7 +4198,7 @@ html[data-theme="dark"] .nav-pill::after {
     color: var(--c-primary);
     background: none;
     border: none;
-    transform: scale(1.5);
+    transform: scale(1.2);
 }
 .footer-rss-copy {
     font-family: inherit;
