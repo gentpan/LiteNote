@@ -4191,19 +4191,14 @@ html[data-theme="dark"] .nav-pill::after {
     border-radius: 0;
     transform-origin: center;
     transition:
-        transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.18s ease,
         color 0.18s ease;
 }
-.footer-social:hover,
-.footer-social:focus-visible {
+.footer-social:hover {
     color: var(--c-primary);
     background: none;
     border: none;
-    outline: none;
-    transform: translateY(-2px) scale(1.08);
-}
-.footer-social:active {
-    transform: translateY(0) scale(0.96);
+    transform: scale(1.5);
 }
 .footer-rss-copy {
     font-family: inherit;
@@ -9870,25 +9865,30 @@ body.login-modal-open {
    首屏内的元素由 JS 跳过，不加 .ln-reveal，避免加载时闪一下。
    ============================================================ */
 :root {
-    --reveal-shift: var(--sp-20);
-    --reveal-duration: 0.55s;
-    --reveal-stagger: 70ms;
+    --reveal-shift: 10px;
+    --reveal-duration: 0.46s;
+    --reveal-stagger: 36ms;
     --reveal-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @media (prefers-reduced-motion: no-preference) {
     html.ln-reveal-ready .ln-reveal {
         opacity: 0;
-        transform: translateY(var(--reveal-shift));
+        filter: blur(2px);
+        transform: translate3d(0, var(--reveal-shift), 0) scale(0.995);
         transition:
             opacity var(--reveal-duration) var(--reveal-ease),
+            filter calc(var(--reveal-duration) * 0.82) var(--reveal-ease),
             transform var(--reveal-duration) var(--reveal-ease);
         transition-delay: calc(var(--reveal-index, 0) * var(--reveal-stagger));
+        will-change: opacity, filter, transform;
     }
 
     html.ln-reveal-ready .ln-reveal.is-revealed {
         opacity: 1;
+        filter: blur(0);
         transform: none;
+        will-change: auto;
     }
 }
 

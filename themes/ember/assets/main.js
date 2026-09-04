@@ -3734,7 +3734,7 @@
                     entry.target.classList.add('is-revealed');
                     revealObserver.unobserve(entry.target);
                 });
-            }, { rootMargin: '0px 0px -8% 0px', threshold: 0.06 });
+            }, { rootMargin: '0px 0px -3% 0px', threshold: 0.02 });
         }
 
         var viewportH = window.innerHeight || document.documentElement.clientHeight;
